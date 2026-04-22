@@ -73,71 +73,106 @@ button {
 .btn-cancel { background: transparent; color: var(--text-muted); }
 .btn-danger-small { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 0.8rem; }
 
-/* Task Cards */
-.task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+/* Project Grouping */
+.project-group {
+    margin-bottom: 2.5rem;
 }
 
-.glass {
-    background: var(--glass);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.chevron {
+    width: 16px;
+    transition: transform 0.3s ease;
+    color: var(--text-muted);
+}
+
+.project-group.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.project-group.collapsed .project-content {
+    display: none;
+}
+
+.task-count {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.1rem 0.5rem;
     border-radius: 1rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.project-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--glass-border) 0%, transparent 100%);
+}
+
+/* Task List Layout */
+.task-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .task-card {
-    padding: 1.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
 }
 
 .task-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transform: translateX(6px);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.task-info-block {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    min-width: 180px;
 }
 
-.task-title { font-weight: 600; font-size: 1.1rem; }
-.task-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 0.25rem;
-    text-transform: uppercase;
-}
-
-.bg-running { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-.bg-paused { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-.bg-pending { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+.task-title { font-weight: 600; font-size: 1rem; }
 
 .task-mission {
+    margin-bottom: 0;
+    height: auto;
+    -webkit-line-clamp: 1;
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin-bottom: 1.5rem;
-    height: 3.2rem;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    flex: 1;
 }
 
 .task-meta {
+    min-width: 140px;
     display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
+    flex-direction: column;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
 .task-footer {
-    margin-top: 1.5rem;
-    display: flex;
-    gap: 0.5rem;
+    margin-top: 0;
 }
 
 /* Modals */

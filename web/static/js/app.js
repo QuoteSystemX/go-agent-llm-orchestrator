@@ -20,32 +20,68 @@ function renderTasks() {
     const container = document.getElementById('task-list');
     if (!container) return;
     
-    container.innerHTML = tasks.map(task => `
-        <div class="task-card glass">
-            <div class="task-header">
-                <div>
-                    <div class="task-title">${task.name}</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
+    // Group tasks by name (repository)
+    const grouped = tasks.reduce((acc, task) => {
+        const key = task.name || 'Other';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(task);
+        return acc;
+    }, {});
+
+    let html = '';
+    for (const [projectName, projectTasks] of Object.entries(grouped)) {
+        const safeName = projectName.replace(/[^a-z0-9]/gi, '-');
+        html += `
+            <div class="project-group collapsed" id="group-${safeName}">
+                <div class="project-header" onclick="toggleGroup('${safeName}')">
+                    <i data-lucide="chevron-right" class="chevron"></i>
+                    <i data-lucide="folder" style="width:16px; color:var(--primary)"></i>
+                    <span>${projectName}</span>
+                    <span class="task-count">${projectTasks.length}</span>
+                    <div class="project-line"></div>
                 </div>
-                <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                <div class="project-content">
+                    <div class="task-grid">
+                        ${projectTasks.map(task => `
+                            <div class="task-card glass">
+                                <div class="task-info-block">
+                                    <div class="task-header">
+                                        <div class="task-title">${task.id.split(':').pop()}</div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
+                                    </div>
+                                    <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
+                                </div>
+                                
+                                <div class="task-meta">
+                                    <span><i data-lucide="clock" style="width:12px; vertical-align:middle"></i> ${task.schedule}</span>
+                                    <span style="font-weight:600">${task.pattern}</span>
+                                </div>
+
+                                <div class="task-footer">
+                                    <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
+                                    <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit"><i data-lucide="edit-3"></i></button>
+                                    ${task.status === 'PAUSED' 
+                                        ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume"><i data-lucide="play"></i></button>`
+                                        : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause"><i data-lucide="pause"></i></button>`
+                                    }
+                                    <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
             </div>
-            <div class="task-mission">${task.mission || 'No mission defined.'}</div>
-            <div class="task-meta">
-                <span><i data-lucide="clock" style="width:12px; vertical-align:middle"></i> ${task.schedule}</span>
-                <span>${task.pattern}</span>
-            </div>
-            <div class="task-footer">
-                <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')"><i data-lucide="file-text"></i> Logs</button>
-                <button class="btn-secondary" onclick="editTask('${task.id}')"><i data-lucide="edit-3"></i> Edit</button>
-                ${task.status === 'PAUSED' 
-                    ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')"><i data-lucide="play"></i></button>`
-                    : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')"><i data-lucide="pause"></i></button>`
-                }
-                <button class="btn-danger-small" onclick="confirmDelete('${task.id}')"><i data-lucide="trash-2"></i></button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }
+    
+    container.innerHTML = html;
     lucide.createIcons();
+}
+
+function toggleGroup(safeName) {
+    const el = document.getElementById(`group-${safeName}`);
+    if (el) el.classList.toggle('collapsed');
 }
 
 // Modal Management
