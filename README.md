@@ -1,74 +1,68 @@
-# 🚀 Jules Orchestrator (K8s Edition)
+# 🚀 Jules Orchestrator (Pro Max Edition)
 
-Autonomous, stateful agent manager for the Antigravity Kit.
+Autonomous, stateful agent manager for the Antigravity Kit with Full CRUD Web UI.
 
 ## 📋 Overview
 
-Jules Orchestrator is a robust Go-based service designed to run in Kubernetes. It manages the lifecycle of AI agent sessions (Jules), handles complex task scheduling via SQLite persistence, and provides intelligent "Supervision" to resolve blocked sessions automatically.
+Jules Orchestrator is a robust Go-based service designed to run in Kubernetes. It manages the lifecycle of AI agent sessions (Jules), handles complex task scheduling via SQLite persistence, and provides a premium Web Management Interface for real-time control and auditing.
 
 ### Key Features
-- **Autonomous Scheduling**: Internal cron engine triggers tasks from SQLite.
-- **Intelligent LLM Routing**: Automatically routes tasks between local models (Ollama) and cloud models (Claude) based on complexity.
-- **Agent Supervision**: Detects `WAITING_FOR_USER` blocks and provides automated responses to keep agents moving.
-- **Traffic Management**: Respects Jules API rate limits with a priority-aware queuing system.
-- **K8s Native**: Designed for Kubernetes with multi-stage Docker builds and PVC support.
+
+- **Centralized Helm Management**: Task schedules are managed directly in `values.yaml` and synchronized automatically on startup.
+- **Full CRUD Web UI**: Modern glassmorphism dashboard to create, edit, pause, and delete agentic tasks.
+- **Execution Audit Logs**: Detailed "In/Out" logging for every task run, capturing prompts sent and responses received.
+- **Autonomous Scheduling**: Internal cron engine triggers tasks from SQLite with persistent state.
+- **Intelligent LLM Routing**: Automatically routes tasks between local models (Ollama) and cloud models based on complexity.
+- **Agent Supervision**: Detects `WAITING_FOR_USER` blocks and uses an internal LLM to provide automated responses, ensuring zero-downtime autonomy.
+- **Prompt-Driven Tasks**: The `mission` field in task definitions acts as the primary LLM prompt sent to the agent.
 
 ## 🛠️ Architecture
 
 ```mermaid
 graph TD
-    User[User/GHA] --> API[Jules Orchestrator]
+    User[User/Dev] --> WebUI[Web Dashboard]
+    WebUI --> API[Admin API]
+    Helm[Helm Values] --> CM[ConfigMap]
+    CM --> API
     API --> DB[(SQLite + PVC)]
     API --> Scheduler[Cron Engine]
-    API --> Monitor[Status Monitor]
-    Monitor --> Supervisor[Agent Supervisor]
-    Supervisor --> LLM[LLM Router]
-    LLM --> Ollama[Local LLM]
-    LLM --> Claude[Claude 3.5]
+    Scheduler --> TaskLogs[(Execution Logs)]
     API --> JulesAPI[Jules API]
+    Scheduler --> JulesAPI
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Go 1.25+
-- Kubernetes cluster (or Minikube/Docker Desktop)
-- `JULES_API_KEY` and `LLM_API_KEY`
 
-### Local Development
+- Go 1.25+ (for local development)
+- Kubernetes cluster with Helm
+- `JULES_API_KEY` and Ollama/OpenAI endpoint
+
+### Deployment (Helm)
+
+The orchestrator is now part of the central `RecipientOFQuotes-Charts` repository.
+
 ```bash
-# Setup environment
-export DB_PATH="./data/tasks.db"
-export LLM_ENDPOINT="http://localhost:11434"
-export LLM_MODEL="llama3"
-
-# Run the orchestrator
-go run cmd/orchestrator/main.go
+# Update schedule in values.yaml
+helm upgrade --install jules ./charts/go-agent-llm-orchestrator
 ```
 
-### Kubernetes Deployment
-1. **Apply PVC and Secrets**:
-   ```bash
-   kubectl apply -f k8s/pvc.yaml
-   # Edit secret.yaml with your keys first
-   kubectl apply -f k8s/secret.yaml
-   ```
-2. **Deploy**:
-   ```bash
-   kubectl apply -f k8s/deployment.yaml
-   ```
+### Accessing the Dashboard
+
+By default, the dashboard is available via Ingress at `http://jules.lab.me/dashboard`.
 
 ## ⚙️ Configuration
 
 | Variable | Description | Default |
-|----------|-------------|---------|
-| `JULES_API_KEY` | API key for Jules | - |
-| `LLM_API_KEY` | API key for LLM provider | - |
-| `LLM_ENDPOINT` | URL for OpenAI-compatible LLM API | - |
-| `LLM_MODEL` | Model name for classification/supervision | `llama3` |
+| :--- | :--- | :--- |
+| `DISTRIBUTION_CONFIG_PATH` | Path to the YAML file with default task schedule | `/app/config/distribution.yml` |
 | `DB_PATH` | Path to SQLite database file | `/app/data/tasks.db` |
+| `JULES_API_KEY` | API key for Jules | - |
+| `ADMIN_ADDR` | Listening address for Web UI & API | `:8080` |
 
 ## 🧪 Testing
+
 ```bash
 go test -v ./...
 ```

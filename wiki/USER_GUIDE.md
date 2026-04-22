@@ -1,47 +1,61 @@
-# 📖 Jules Orchestrator: User Guide
+# 📖 Jules Orchestrator: User Guide (Pro Max)
 
-Welcome to the autonomous orchestration engine. This guide covers how to manage and monitor your agentic workflows.
+Welcome to the autonomous orchestration engine. This guide covers how to manage and monitor your agentic workflows using the premium Management Dashboard.
 
 ## 🖥️ Using the Dashboard
 
-The dashboard is accessible at `http://<ingress-host>/dashboard`.
+The dashboard is accessible at `http://jules.lab.me/dashboard`.
 
-### Key Sections:
-- **Active Tasks**: Real-time view of all tasks defined in your configuration.
-- **Status Indicators**:
-    - 🟢 `RUNNING`: Task is currently executing a Jules session.
-    - 🟡 `PAUSED`: Task is disabled and will not trigger on schedule.
-    - ⚪ `PENDING`: Task is waiting for its next scheduled run.
-- **Audit Logs**: A chronological record of "Supervision" events. When the Orchestrator's LLM intervenes to unblock an agent, it's logged here.
+### 📋 Managing Tasks
 
-## ⚙️ Task Configuration (`distribution.yml`)
+- **Create New Task**: Click the "+ New Task" button in the header. You can specify the task name, **mission** (this is the LLM prompt sent to the agent), pattern, and cron schedule.
+- **Edit Task**: Click the "Edit" button on any task card. Changes to the schedule or mission are applied instantly without service restarts.
+- **Pause/Resume**: Use the Play/Pause buttons to toggle task execution. Paused tasks will not be triggered by the cron engine.
+- **Delete**: Remove a task from the system. (Note: Logs for deleted tasks are also removed via cascade).
 
-The orchestrator reads tasks from a YAML file. Use `distribution.example.yml` as a template.
+### 🔍 Viewing Execution Logs
 
-### Fields:
-- `name`: Full GitHub repository path (e.g., `owner/repo`).
-- `agent`: The specialist agent to invoke (e.g., `analyst`, `debugger`, `orchestrator`).
-- `pattern`: The workflow pattern to use.
-- `mission`: The command or description of the task.
-- `schedule`: Standard Cron expression.
+Click the **"Logs"** button on any task card to open the Execution History viewer.
 
-## 🤖 Agent Supervision
+- **Payload Audit**: You can see exactly what was sent to the agent (**IN**) and what the agent responded (**OUT**). This allows you to audit the LLM's reasoning and responses.
+- **Status & Timing**: Every run displays its success/failure status and the total duration in milliseconds.
+- **Error Tracking**: If a task fails, the specific error message will be displayed in the log entry.
 
-The "Auto-Responder" logic automatically monitors sessions in the `WAITING_FOR_USER` state.
-1. **Detection**: The Monitor detects a blocked session.
-2. **Analysis**: The LLM Router reads the last few messages from the session.
-3. **Decision**: If it's a routine architectural or implementation decision, the Supervisor posts a response.
-4. **Resumption**: The agent receives the response and continues the mission.
+## 🤖 LLM Routing & Supervision
 
-## 📊 Monitoring
+The orchestrator uses LLMs for two primary functions:
 
-Metrics are exported for Prometheus at `/metrics`. You can track:
-- `jules_sessions_triggered_total`: Total runs.
-- `jules_api_errors_total`: API failures by endpoint.
+1.  **Task Mission**: The `mission` field in your task configuration is the core prompt. The orchestrator passes this to the selected agent session.
+2.  **Supervision (Auto-Responder)**: If an agent becomes blocked (e.g., `WAITING_FOR_USER`), the orchestrator uses an internal LLM (local via Ollama or cloud) to analyze the context and provide a response to keep the agent moving autonomously.
+3.  **Routing**: Based on the `mission` complexity, the orchestrator determines whether to use a fast local model or a high-reasoning cloud model (Claude 3.5).
+
+## ⚙️ Helm Integration
+
+While you can manage tasks via UI, the "Source of Truth" for defaults is managed in the `RecipientOFQuotes-Charts` repository.
+
+### Updating Defaults
+
+1.  Edit `values.yaml` in the `go-agent-llm-orchestrator` chart.
+2.  Update the `distribution` section with your tasks.
+3.  Deploy via `helm upgrade`.
+4.  The orchestrator will automatically sync these defaults into SQLite on the next boot.
 
 ## 🛠️ Maintenance
 
-### SQLite Database
-The state is stored in `tasks.db` inside the PVC.
-- To view logs manually: `sqlite3 tasks.db "SELECT * FROM audit_logs;"`
-- To reset state: Simply delete the database file (Kubernetes will recreate it).
+### Database Persistence
+
+The state is stored in `tasks.db` inside the mounted K8s Persistent Volume.
+
+- **Storage Path**: `/app/data/tasks.db`
+- **Schema**: Includes `tasks` and `task_logs` tables.
+
+### Manual Troubleshooting
+
+If the dashboard is unreachable, check the pod logs:
+
+```bash
+kubectl logs -l app=jules-orchestrator
+```
+
+---
+> Part of the **Antigravity Kit** for automated agentic coding.
