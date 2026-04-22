@@ -173,6 +173,11 @@ button {
 
 .task-footer {
     margin-top: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
 }
 
 /* Modals */
