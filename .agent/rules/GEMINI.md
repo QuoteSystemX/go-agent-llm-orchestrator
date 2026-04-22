@@ -65,7 +65,24 @@ When auto-applying an agent, inform the user:
 [Continue with specialized response]
 ```
 
+### 📋 RESPONSE_TEMPLATE (Global Standard)
+
+**Trigger:** MANDATORY for every response that involves code changes, features, or complex logic.
+
+**Structure:**
+1. 🤖 **Agent Header** (🤖 **Applying knowledge of `@[agent-name]`...**)
+2. 🎯 **Context/Goal** (Briefly describe the task or problem being solved)
+3. 🛠 **Technical Implementation** (List key changes, algorithms, or fixes)
+4. 📂 **Impacted Components** (List files or directories modified)
+5. 📈 **Outcome/Result** (Final state or verification status)
+
 **Rules:**
+- Use the language of the user's request for the text content.
+- Keep bullet points concise and technical.
+- Always include the "Impacted Components" section.
+
+**Rules:**
+
 
 1. **Silent Analysis**: No verbose meta-commentary ("I am analyzing...").
 2. **Respect Overrides**: If user mentions `@agent`, use it.
