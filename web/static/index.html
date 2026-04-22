@@ -3,91 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jules Orchestrator Dashboard</title>
+    <title>Jules Orchestrator | Agent Control Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="app-container">
         <header>
             <div class="logo">
-                <i data-lucide="cpu"></i>
+                <i data-lucide="shield-check" class="logo-icon"></i>
                 <h1>Jules <span>Orchestrator</span></h1>
             </div>
             <div class="header-actions">
-                <button onclick="showSettings()"><i data-lucide="settings"></i> Telegram Setup</button>
-                <div class="status-badge">
-                    <span class="pulse"></span> System Online
-                </div>
+                <button class="btn-primary" onclick="showTaskModal()"><i data-lucide="plus"></i> New Task</button>
+                <button class="btn-secondary" onclick="showSettings()"><i data-lucide="settings"></i> Settings</button>
             </div>
         </header>
 
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="modal">
-            <div class="modal-content">
-                <h2><i data-lucide="send"></i> Telegram Bot Setup</h2>
-                <p>Enter your Bot Token from <a href="https://t.me/botfather" target="_blank">@BotFather</a></p>
-                <input type="text" id="bot-token" placeholder="Bot Token">
-                
-                <hr style="margin: 1.5rem 0; opacity: 0.1;">
-                
-                <h3><i data-lucide="brain"></i> LLM Models</h3>
-                <div class="input-group">
-                    <label>Local Model (Ollama)</label>
-                    <input type="text" id="local-model" placeholder="phi3:mini">
-                </div>
-                <div class="input-group">
-                    <label>Remote Model (OpenAI)</label>
-                    <input type="text" id="remote-model" placeholder="gpt-4o">
-                </div>
-                
-                <button onclick="saveAllSettings()">Save All Settings</button>
-                
-                <div id="qr-container" style="display:none; margin-top: 2rem; text-align: center;">
-                    <p>Now scan this QR and press <b>/start</b> in Telegram:</p>
-                    <canvas id="qrcode"></canvas>
-                    <p id="bot-link" style="margin-top: 0.5rem;"></p>
-                </div>
-                <button class="close-btn" onclick="hideSettings()">Close</button>
-            </div>
-        </div>
-
         <main>
             <section class="task-section">
-                <div class="section-header">
-                    <h2><i data-lucide="list-todo"></i> Active Tasks</h2>
-                </div>
                 <div id="task-list" class="task-grid">
                     <!-- Tasks will be injected here -->
                 </div>
             </section>
-
-            <section class="audit-section">
-                <div class="section-header">
-                    <h2><i data-lucide="activity"></i> Audit Logs</h2>
-                </div>
-                <div class="audit-table-container">
-                    <table id="audit-logs">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Session</th>
-                                <th>Action</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Logs will be injected here -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
         </main>
+
+        <!-- Task Modal (Create/Edit) -->
+        <div id="task-modal" class="modal">
+            <div class="modal-content glass">
+                <h2 id="modal-title">Create New Task</h2>
+                <input type="hidden" id="task-id-field">
+                <div class="form-group">
+                    <label>Task Name</label>
+                    <input type="text" id="task-name" placeholder="Deployment Auditor">
+                </div>
+                <div class="form-group">
+                    <label>Mission (Prompt)</label>
+                    <textarea id="task-mission" rows="4" placeholder="Scan for security vulnerabilities..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Workflow Pattern</label>
+                    <select id="task-pattern">
+                        <option value="discovery">Discovery</option>
+                        <option value="full_cycle">Full Cycle</option>
+                        <option value="reviewer">Reviewer</option>
+                        <option value="debugger">Debugger</option>
+                        <option value="auditor">Auditor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cron Schedule</label>
+                    <input type="text" id="task-schedule" placeholder="0 */6 * * *">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveTask()">Save Task</button>
+                    <button class="btn-cancel" onclick="hideModal('task-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Viewer Modal -->
+        <div id="log-modal" class="modal">
+            <div class="modal-content glass large">
+                <h2>Execution History: <span id="log-task-name"></span></h2>
+                <div id="log-list" class="log-container">
+                    <!-- Logs injected here -->
+                </div>
+                <button class="btn-cancel" onclick="hideModal('log-modal')">Close</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal">
+            <div class="modal-content glass">
+                <h2>System Settings</h2>
+                <div class="form-group">
+                    <label>Telegram Bot Token</label>
+                    <input type="password" id="bot-token" placeholder="Enter token...">
+                </div>
+                <div class="form-group">
+                    <label>Local LLM (Ollama)</label>
+                    <input type="text" id="local-model" placeholder="phi3:mini">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveSettings()">Save Changes</button>
+                    <button class="btn-cancel" onclick="hideModal('settings-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script src="/static/js/app.js"></script>
     <script>lucide.createIcons();</script>
 </body>

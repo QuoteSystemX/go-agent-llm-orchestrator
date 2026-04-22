@@ -44,14 +44,47 @@ func main() {
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier)
 	statMonitor := monitor.NewMonitor(database, tm)
-	adminServer := api.NewAdminServer(database)
+	adminServer := api.NewAdminServer(database, engine)
 
 	// 4. Start Background Processes
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	engine.Start()
+	
+	// Import distribution config if available
+	distPath := os.Getenv("DISTRIBUTION_CONFIG_PATH")
+	if distPath != "" {
+		if _, err := os.Stat(distPath); err == nil {
+			log.Printf("Loading distribution config from %s", distPath)
+			if err := engine.ImportDistribution(distPath); err != nil {
+				log.Printf("Failed to import distribution config: %v", err)
+			}
+		}
+	}
+
+	// Initial task sync
+	if err := engine.SyncTasks(ctx); err != nil {
+		log.Printf("Failed to sync initial tasks: %v", err)
+	}
+
 	go statMonitor.Start(ctx, 30*time.Second)
+
+	// Periodic task sync (Every 5 minutes)
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := engine.SyncTasks(ctx); err != nil {
+					log.Printf("Failed to sync tasks: %v", err)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 	
 	// Start Daily Summary (Every day at 09:00)
 	go func() {
