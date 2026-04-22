@@ -1,0 +1,94 @@
+# Workflow: /close-sprint
+
+**Agent**: `analyst`
+**Trigger**: `/close-sprint`
+**Purpose**: Manually close the active sprint, archive BMAD phase artifacts, and prepare the repository for the next discovery cycle.
+
+---
+
+## Pre-Conditions
+
+Before running, verify:
+
+1. `wiki/sprints/` has at least one sprint with `Status: ACTIVE`.
+2. If the active sprint has tasks still present in `tasks/` — warn the user:
+   > ⚠️ Sprint NN has N incomplete tasks still in `tasks/`. Closing now will NOT archive those tasks — they will carry over to the next sprint. Do you want to proceed? (yes/no)
+   - If no → STOP.
+   - If yes → proceed (forced close).
+
+---
+
+## Steps
+
+### Step 1: Inventory
+
+1. Read the active sprint file from `wiki/sprints/sprint-NN.md`.
+2. List all tasks from **Selected Tasks** table.
+3. For each task, check if it still exists in `tasks/` and report:
+   ```
+   ✅ tasks/2024-01-15-story-foo.md — DONE (file deleted)
+   ⏳ tasks/2024-01-15-story-bar.md — PENDING (file still exists)
+   ```
+
+### Step 2: Close Sprint
+
+1. Update `wiki/sprints/sprint-NN.md`:
+   - Change `Status: ACTIVE` → `Status: CLOSED`
+   - Append line: `Closed: YYYY-MM-DD`
+   - Append section:
+     ```markdown
+     ## Retrospective
+     [auto-generated] Sprint closed via /close-sprint on YYYY-MM-DD.
+     Completed: N stories. Remaining: M stories carried to next sprint.
+     ```
+
+### Step 3: Archive BMAD Artifacts (only if backlog is fully empty)
+
+Check `tasks/` for any remaining `[STORY]` or `[FEAT]` cards.
+
+**If backlog is empty** (all stories delivered):
+1. Create `wiki/archive/` directory if it doesn't exist.
+2. Move `wiki/BRIEF.md` → `wiki/archive/BRIEF-YYYY-MM-DD.md`.
+3. Move `wiki/PRD.md` → `wiki/archive/PRD-YYYY-MM-DD.md`.
+4. Do NOT move or modify `wiki/ARCHITECTURE.md` — it accumulates ADRs across all versions.
+5. Append to `wiki/ARCHITECTURE.md` under `## Version History` (create section if missing):
+   ```markdown
+   - YYYY-MM-DD: Sprint NN closed manually via /close-sprint. All stories delivered. BRIEF + PRD archived.
+   ```
+6. Update `wiki/_index.md`: move BRIEF and PRD links to an `## Archive` section.
+7. Log: `✅ Sprint NN closed. Full cycle complete — BRIEF.md and PRD.md archived. Repository ready for next /discovery.`
+
+**If backlog has remaining stories**:
+1. Do NOT archive BRIEF.md or PRD.md — they are still needed.
+2. Log: `✅ Sprint NN closed. N stories remain in backlog. Run /sprint to plan the next sprint.`
+
+### Step 4: Summary
+
+Print a closing summary:
+
+```
+🏁 /close-sprint complete
+
+Sprint NN:
+  - Status:    CLOSED
+  - Delivered: N stories
+  - Remaining: M stories in backlog
+
+BMAD artifacts:
+  - wiki/BRIEF.md    → [archived / still active]
+  - wiki/PRD.md      → [archived / still active]
+  - wiki/ARCHITECTURE.md → untouched (ADR log)
+
+Next steps:
+  → Run /sprint to plan sprint NN+1    (if backlog has stories)
+  → Run /discovery to start a new cycle (if backlog is empty)
+```
+
+---
+
+## Rules
+
+- NEVER delete ARCHITECTURE.md — only append to it.
+- NEVER force-close without user confirmation if tasks are incomplete.
+- ALWAYS archive with date suffix (`BRIEF-YYYY-MM-DD.md`) — never overwrite existing archives.
+- This workflow is idempotent: running it on an already-CLOSED sprint is safe (it will report the sprint is already closed and STOP).

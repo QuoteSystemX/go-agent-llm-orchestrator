@@ -1,0 +1,42 @@
+replicaCount: 1
+
+image:
+  repository: jules-orchestrator
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+persistence:
+  size: 1Gi
+  accessMode: ReadWriteOnce
+
+secrets:
+  julesApiKey: "your-key"
+  llmApiKey: "your-key"
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: jules.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+ollama:
+  enabled: true
+  model: "phi3:mini"
+  persistence:
+    size: 5Gi
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

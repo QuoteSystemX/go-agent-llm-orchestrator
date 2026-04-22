@@ -1,0 +1,80 @@
+---
+description: BMAD Phase 4. Reads wiki/PRD.md and wiki/ARCHITECTURE.md, decomposes into atomic [STORY] task cards in tasks/ directory. These cards feed the Jules automation pipeline. Run after /architecture-bmad.
+---
+
+# /stories — BMAD Story Generation Phase
+
+$ARGUMENTS
+
+---
+
+## Purpose
+
+Decompose the approved PRD + Architecture into atomic, executable `[STORY]` task cards in `tasks/`. These cards are picked up automatically by the Jules automation pipeline and executed by specialist agents.
+
+---
+
+## Pre-Condition Checks
+
+```
+IF wiki/PRD.md missing:
+  → STOP. Tell user: "wiki/PRD.md not found. Run /prd first."
+
+IF wiki/ARCHITECTURE.md missing:
+  → STOP. Tell user: "wiki/ARCHITECTURE.md not found. Run /architecture-bmad first."
+```
+
+---
+
+## Execution
+
+Use the `analyst` agent to run Phase 4: Stories.
+
+Provide this context:
+
+```
+MODE: STORIES (Phase 4 of BMAD)
+INPUT: wiki/PRD.md + wiki/ARCHITECTURE.md
+OUTPUT: tasks/YYYY-MM-DD-[story-slug].md (one file per atomic story)
+TEMPLATE: .agent/wiki-templates/STORY.md
+FILTER: $ARGUMENTS (e.g. "only MUST priority", "only Epic 2", "backend stories only")
+
+DECOMPOSITION RULES:
+1. Each story = smallest end-to-end executable slice (one story = one PR of work)
+2. Tag [STORY] for single executable stories
+3. Tag [EPIC] for grouping-only cards (not directly executable)
+4. Include in each card:
+   - Context: epic ref, PRD section number, user persona
+   - Impact: business value, severity if skipped
+   - Fix Hint: specific file paths, API contracts, patterns from ARCHITECTURE.md ADRs
+   - AC: Gherkin Given/When/Then, test requirements
+5. Filename: tasks/YYYY-MM-DD-[story-slug].md
+6. Check tasks/ for duplicates before writing (grep by PRD section ref)
+7. NEVER write application code — task cards only
+
+ROUTING HINTS (add to Fix Hint section):
+- Backend stories → note "Primary agent: backend-specialist"
+- Frontend stories → note "Primary agent: frontend-specialist"
+- Full-stack stories → note "Primary agent: orchestrator"
+- Go-specific stories → note "Primary agent: crypto-go-specialist"
+```
+
+---
+
+## Output
+
+| Deliverable | Location |
+|-------------|----------|
+| Story task cards | `tasks/YYYY-MM-DD-[story-slug].md` |
+| Summary | Inline: `[N] story cards written to tasks/` |
+
+---
+
+## Usage
+
+```
+/stories
+/stories only MUST priority stories
+/stories only Epic 2: Authentication
+/stories backend stories only
+```

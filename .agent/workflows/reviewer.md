@@ -1,0 +1,104 @@
+---
+description: Reconnaissance and task generation workflow. Scans for issues and seeds the task queue.
+---
+
+# /reviewer - Automated Audit and Task Generation
+
+$ARGUMENTS
+
+---
+
+## Purpose
+
+This command activates the REVIEWER workflow for systematic repository auditing. It is a "Pipeline Feeder" process that identifies issues but does NOT implement fixes directly.
+
+---
+
+## Behavior
+
+When `/reviewer` is triggered:
+
+1. **🕵️ Reconnaissance**
+   - Read `wiki/_index.md` and the `wiki/` folder to understand the intended architecture (GROUND TRUTH).
+   - Scan `internal/`, `pkg/`, and `cmd/` for deviations, bugs, missing tests, or unoptimized paths.
+   - Audit the codebase against `.agent/KNOWLEDGE.md` patterns.
+
+2. **🔪 Decomposition**
+   - Break down every discovered issue or missing feature into the smallest possible "Single Slice" tasks.
+   - Do NOT group unrelated findings into one task.
+
+3. **✍️ Task Creation**
+   - For each finding, generate a Markdown file in the `tasks/` directory of the target repository.
+   - Format: `tasks/YYYY-MM-DD-<slug>.md`.
+   - Use mandatory tags: `[BUG]`, `[FEAT]`, `[STORY]`, `[PERF]`, `[TEST]`, `[SECURITY]`, `[REFACTOR]`, `[DOCS]`, `[DB]`, `[INFRA]`, `[QA]`, `[CHORE]`.
+   - Tag selection guide: `[BUG]` → runtime errors/logic faults; `[REFACTOR]` → structural debt/blocking sync; `[DB]` → schema/query issues; `[INFRA]` → CI/CD/deploy gaps; `[QA]` → missing E2E coverage; `[DOCS]` → wiki/README drift; `[SECURITY]` → vulnerabilities/OWASP; `[PERF]` → profiling/memory; `[TEST]` → unit/integration gaps; `[FEAT]` → missing features.
+
+4. **♻️ Stale Task Cleanup**
+   - Review all existing files in the `tasks/` directory.
+   - If a task has already been addressed (code exists, tests pass), DELETE the task card.
+
+---
+
+## Mandatory Rules
+
+- **NO IMPLEMENTATION**: You are strictly forbidden from writing application code or fixing bugs in this mode. Your only output artifacts must be Task Cards and an Audit Report.
+- **TAGGING MANDATE**: Every task MUST have a routing tag in the title and filename.
+- **Wiki Fidelity**: Prioritize findings that show drift between the Wiki specification and the current code.
+
+---
+
+## Task Card Template
+
+All tasks written to `tasks/` MUST follow this format:
+
+```markdown
+> [!IMPORTANT]
+> !SILENT execution: No dialogue allowed. ZERO-TEXT finalization required.
+
+# [TAG] Title of the Task
+
+## Context
+Background and reference to Wiki or source file.
+
+## Impact
+Severity and rationale for execution.
+
+## Fix Hint / Implementation Guide
+Specific starting points, file paths, and code snippets.
+
+## Acceptance Criteria
+- [ ] Condition 1
+- [ ] Tests passed
+```
+
+---
+
+## Output Format
+
+After completing the audit, provide a summary:
+
+```markdown
+## 🔍 Reviewer Audit: [Repo Name]
+
+### 📊 Findings Summary
+| Category | Count | Priority |
+|----------|-------|----------|
+| BUG      | 3     | Critical |
+| TEST     | 2     | Medium   |
+| FEAT     | 1     | High     |
+
+### 📂 Tasks Generated
+- `tasks/2026-04-19-fix-race-condition.md`
+- `tasks/2026-04-19-add-auth-tests.md`
+
+---
+Audit complete. Task queue seeded.
+```
+
+---
+
+## Key Principles
+
+- **Decentralize effort** - identify, don't fix.
+- **High fidelity** - provide enough context so another agent can fix it without questions.
+- **Maintain silence** - follow the !SILENT protocol in automation.

@@ -1,0 +1,21 @@
+repositories:
+  # Example Repository Configuration
+  - name: your-org/your-repository
+    tasks:
+      # Daily code review
+      - agent: reviewer
+        pattern: reviewer
+        mission: "/reviewer 🔍 Automated Code Auditing"
+        schedule: "0 9 * * *" # Daily at 09:00
+
+      # Periodic bug hunting
+      - agent: debugger
+        pattern: bugcatcher
+        mission: "/debug 🐞 Bug Hunting"
+        schedule: "0 */4 * * *" # Every 4 hours
+
+      # Weekly full cycle orchestration
+      - agent: orchestrator
+        pattern: full_cycle
+        mission: "/orchestrate ⚡ Full Cycle"
+        schedule: "0 0 * * 0" # Sunday at midnight
