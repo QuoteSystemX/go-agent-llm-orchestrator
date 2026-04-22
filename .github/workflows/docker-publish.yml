@@ -7,7 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Используем подчеркивания для соответствия конвенции других сервисов и корректной работы автообновления
+  IMAGE_NAME: quotesystemx/go_agent_llm_orchestrator
 
 jobs:
   build:
@@ -32,6 +33,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -40,3 +47,23 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  notify-charts-repository:
+    name: "🔔 Notify Charts Repository"
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Trigger Auto Update Versions workflow
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          repository: QuoteSystemX/RecipientOFQuotes-Charts
+          event-type: container-published
+          client-payload: '{"container_tag": "${{ steps.vars.outputs.sha_short }}", "container_image": "ghcr.io/QuoteSystemX/go_agent_llm_orchestrator", "source_repo": "${{ github.repository }}", "commit_sha": "${{ github.sha }}", "branch": "${{ github.ref_name }}"}'
