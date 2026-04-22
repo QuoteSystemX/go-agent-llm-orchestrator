@@ -9,6 +9,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/web"
+	"github.com/robfig/cron/v3"
 )
 
 type Scheduler interface {
@@ -31,11 +32,12 @@ func (s *AdminServer) Start(addr string) error {
 	mux := http.NewServeMux()
 	
 	// Tasks API
+	mux.HandleFunc("/api/v1/tasks/next-runs", s.handleNextRuns)
 	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
 	mux.HandleFunc("/api/v1/tasks/", s.handleTaskByID)
 	
 	// Settings & Audit
-	mux.HandleFunc("/api/v1/settings/telegram", s.handleSaveTelegramToken)
+	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
 	mux.HandleFunc("/api/v1/settings/llm", s.handleSaveLLMSettings)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	
@@ -255,17 +257,44 @@ func (s *AdminServer) handleListAudit(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "message": "Audit logs moved to task history"})
 }
 
-func (s *AdminServer) handleSaveTelegramToken(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+// handleTelegramSettings handles GET (get bot info) and POST (save token).
+func (s *AdminServer) handleTelegramSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		var data struct {
+			Token string `json:"token"`
+		}
+		json.NewDecoder(r.Body).Decode(&data)
+		s.db.ExecContext(r.Context(), "INSERT OR REPLACE INTO settings (key, value) VALUES ('telegram_token', ?)", data.Token)
+		w.WriteHeader(http.StatusNoContent)
+
+	case http.MethodGet:
+		row := s.db.QueryRowContext(r.Context(), "SELECT value FROM settings WHERE key = 'telegram_token'")
+		var token string
+		if err := row.Scan(&token); err != nil || token == "" {
+			json.NewEncoder(w).Encode(map[string]string{"bot_name": "", "token": ""})
+			return
+		}
+		// Call Telegram to resolve bot username
+		resp, err := http.Get("https://api.telegram.org/bot" + token + "/getMe")
+		if err != nil {
+			http.Error(w, "telegram unreachable", http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		var tgResp struct {
+			Ok     bool `json:"ok"`
+			Result struct {
+				Username string `json:"username"`
+			} `json:"result"`
+		}
+		json.NewDecoder(resp.Body).Decode(&tgResp)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"bot_name": tgResp.Result.Username, "token": "***"})
+
+	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
 	}
-	var data struct {
-		Token string `json:"token"`
-	}
-	json.NewDecoder(r.Body).Decode(&data)
-	s.db.ExecContext(r.Context(), "INSERT OR REPLACE INTO settings (key, value) VALUES ('telegram_token', ?)", data.Token)
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *AdminServer) handleSaveLLMSettings(w http.ResponseWriter, r *http.Request) {
@@ -291,3 +320,54 @@ func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
 }
+
+// handleNextRuns returns the next scheduled run time for each active task.
+func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rows, err := s.db.QueryContext(r.Context(),
+		`SELECT id, name, schedule, status FROM tasks WHERE status != 'PAUSED' ORDER BY name`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type NextRun struct {
+		TaskID       string  `json:"task_id"`
+		Name         string  `json:"name"`
+		Schedule     string  `json:"schedule"`
+		NextRun      string  `json:"next_run"`
+		SecondsUntil float64 `json:"seconds_until"`
+	}
+
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	now := time.Now()
+	var results []NextRun
+
+	for rows.Next() {
+		var id, name, schedule, status string
+		if err := rows.Scan(&id, &name, &schedule, &status); err != nil {
+			continue
+		}
+		sched, err := parser.Parse(schedule)
+		if err != nil {
+			continue
+		}
+		next := sched.Next(now)
+		results = append(results, NextRun{
+			TaskID:       id,
+			Name:         name,
+			Schedule:     schedule,
+			NextRun:      next.UTC().Format(time.RFC3339),
+			SecondsUntil: next.Sub(now).Seconds(),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+

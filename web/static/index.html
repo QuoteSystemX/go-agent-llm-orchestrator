@@ -24,6 +24,19 @@
         </header>
 
         <main>
+            <!-- Next Run Status Bar -->
+            <div id="next-run-bar" class="next-run-bar glass">
+                <div class="next-run-left">
+                    <i data-lucide="clock" style="width:14px; color:var(--primary)"></i>
+                    <span class="next-run-label">Next Run</span>
+                    <span id="next-run-task" class="next-run-task-name">—</span>
+                </div>
+                <div class="next-run-right">
+                    <span id="next-run-countdown" class="next-run-countdown">calculating...</span>
+                    <span id="next-run-time" class="next-run-time">—</span>
+                </div>
+            </div>
+
             <section class="task-section">
                 <div id="task-list" class="task-grid">
                     <!-- Tasks will be injected here -->
@@ -36,28 +49,63 @@
             <div class="modal-content glass">
                 <h2 id="modal-title">Create New Task</h2>
                 <input type="hidden" id="task-id-field">
+
                 <div class="form-group">
-                    <label>Task Name</label>
-                    <input type="text" id="task-name" placeholder="Deployment Auditor">
+                    <label>Repository <span style="color:var(--text-muted); font-size:0.75rem">(owner/repo)</span></label>
+                    <input type="text" id="task-name" placeholder="QuoteSystemX/model-ML"
+                           list="project-suggestions" autocomplete="off">
+                    <datalist id="project-suggestions">
+                        <!-- populated dynamically from existing tasks -->
+                    </datalist>
                 </div>
+
+                <div class="form-group">
+                    <label>Agent</label>
+                    <select id="task-agent">
+                        <option value="analyst">analyst</option>
+                        <option value="orchestrator">orchestrator</option>
+                        <option value="reviewer">reviewer</option>
+                        <option value="debugger">debugger</option>
+                        <option value="backend-specialist">backend-specialist</option>
+                        <option value="frontend-specialist">frontend-specialist</option>
+                        <option value="security-auditor">security-auditor</option>
+                        <option value="project-planner">project-planner</option>
+                        <option value="test-engineer">test-engineer</option>
+                        <option value="crypto-go-specialist">crypto-go-specialist</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>Mission (Prompt)</label>
-                    <textarea id="task-mission" rows="4" placeholder="Scan for security vulnerabilities..."></textarea>
+                    <textarea id="task-mission" rows="3" placeholder="Scan for security vulnerabilities..."></textarea>
                 </div>
+
                 <div class="form-group">
                     <label>Workflow Pattern</label>
                     <select id="task-pattern">
-                        <option value="discovery">Discovery</option>
-                        <option value="full_cycle">Full Cycle</option>
-                        <option value="reviewer">Reviewer</option>
-                        <option value="debugger">Debugger</option>
-                        <option value="auditor">Auditor</option>
+                        <option value="discovery">discovery</option>
+                        <option value="full_cycle">full_cycle</option>
+                        <option value="reviewer">reviewer</option>
+                        <option value="bugcatcher">bugcatcher</option>
+                        <option value="leakhound">leakhound</option>
+                        <option value="auditor">auditor</option>
+                        <option value="featureforge">featureforge</option>
+                        <option value="refactor">refactor</option>
+                        <option value="story_writer">story_writer</option>
+                        <option value="sprint_planner">sprint_planner</option>
+                        <option value="sprint_closer">sprint_closer</option>
+                        <option value="test_engineer">test_engineer</option>
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label>Cron Schedule</label>
                     <input type="text" id="task-schedule" placeholder="0 */6 * * *">
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem">
+                        min hour day month weekday — e.g. <code>0 9 * * 1</code> = every Monday at 9:00
+                    </div>
                 </div>
+
                 <div class="modal-actions">
                     <button class="btn-success" onclick="saveTask()">Save Task</button>
                     <button class="btn-cancel" onclick="hideModal('task-modal')">Cancel</button>
@@ -80,10 +128,34 @@
         <div id="settings-modal" class="modal">
             <div class="modal-content glass">
                 <h2>System Settings</h2>
+                
+                <!-- Telegram Section -->
                 <div class="form-group">
                     <label>Telegram Bot Token</label>
-                    <input type="password" id="bot-token" placeholder="Enter token...">
+                    <div style="display:flex; gap:0.5rem">
+                        <input type="password" id="bot-token" placeholder="123456:ABC-DEF..." style="flex:1">
+                        <button class="btn-secondary" onclick="saveTelegramAndConnect()" title="Save & Connect">
+                            <i data-lucide="qr-code"></i>
+                        </button>
+                    </div>
                 </div>
+
+                <!-- QR Connect Block (shown after token saved) -->
+                <div id="tg-connect-block" style="display:none; text-align:center; margin-bottom:1rem;">
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem">
+                        Scan QR to open bot or click the link below
+                    </div>
+                    <img id="tg-qr-img" src="" alt="Telegram QR" 
+                         style="width:180px; height:180px; border-radius:0.5rem; border:2px solid var(--glass-border)">
+                    <div style="margin-top:0.75rem">
+                        <a id="tg-bot-link" href="#" target="_blank" class="btn-primary" 
+                           style="display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none; padding:0.5rem 1rem; border-radius:0.5rem">
+                            <i data-lucide="send" style="width:14px"></i>
+                            <span id="tg-bot-name">Open Bot</span>
+                        </a>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Local LLM (Ollama)</label>
                     <input type="text" id="local-model" placeholder="phi3:mini">

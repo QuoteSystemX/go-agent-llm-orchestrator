@@ -3,6 +3,11 @@ let tasks = [];
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchTasks();
+    fetchNextRun();
+    // Refresh next-run data every 30s
+    setInterval(fetchNextRun, 30000);
+    // Tick the countdown every second
+    setInterval(tickCountdown, 1000);
     lucide.createIcons();
 });
 
@@ -84,28 +89,93 @@ function toggleGroup(safeName) {
     if (el) el.classList.toggle('collapsed');
 }
 
+// ── Next Run Bar ─────────────────────────────────────────
+let _nextRunSeconds = null; // remaining seconds (live)
+let _nextRunTask = null;    // task name
+
+async function fetchNextRun() {
+    try {
+        const resp = await fetch('/api/v1/tasks/next-runs');
+        const runs = await resp.json();
+        if (!runs || runs.length === 0) return;
+
+        // Find the soonest task
+        const soonest = runs.reduce((min, r) =>
+            r.seconds_until < min.seconds_until ? r : min
+        );
+
+        _nextRunSeconds = soonest.seconds_until;
+        _nextRunTask = soonest.task_id.split(':').pop() + ' @ ' + soonest.name.split('/').pop();
+
+        const at = new Date(soonest.next_run).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        document.getElementById('next-run-task').textContent = _nextRunTask;
+        document.getElementById('next-run-time').textContent = `at ${at}`;
+        updateCountdownDisplay();
+    } catch (e) { /* silent */ }
+}
+
+function tickCountdown() {
+    if (_nextRunSeconds === null) return;
+    _nextRunSeconds = Math.max(0, _nextRunSeconds - 1);
+    updateCountdownDisplay();
+}
+
+function updateCountdownDisplay() {
+    const el = document.getElementById('next-run-countdown');
+    if (!el || _nextRunSeconds === null) return;
+    el.textContent = formatCountdown(_nextRunSeconds);
+}
+
+function formatCountdown(sec) {
+    if (sec <= 0) return 'running now';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
 // Modal Management
 function showTaskModal(task = null) {
     const modal = document.getElementById('task-modal');
     const title = document.getElementById('modal-title');
-    
+
+    // Populate project suggestions from existing tasks
+    const datalist = document.getElementById('project-suggestions');
+    const uniqueProjects = [...new Set(tasks.map(t => t.name))];
+    datalist.innerHTML = uniqueProjects.map(p => `<option value="${p}">`).join('');
+
     if (task) {
         title.innerText = 'Edit Task';
         document.getElementById('task-id-field').value = task.id;
         document.getElementById('task-name').value = task.name;
-        document.getElementById('task-mission').value = task.mission;
+        document.getElementById('task-mission').value = task.mission || '';
         document.getElementById('task-pattern').value = task.pattern;
         document.getElementById('task-schedule').value = task.schedule;
+        // Restore agent from task ID: name:agent:pattern
+        const parts = task.id.split(':');
+        const agent = parts.length >= 3 ? parts[parts.length - 2] : 'analyst';
+        const sel = document.getElementById('task-agent');
+        // Set or add option if not in list
+        if ([...sel.options].some(o => o.value === agent)) {
+            sel.value = agent;
+        } else {
+            const opt = new Option(agent, agent, true, true);
+            sel.add(opt);
+        }
     } else {
         title.innerText = 'Create New Task';
         document.getElementById('task-id-field').value = '';
         document.getElementById('task-name').value = '';
         document.getElementById('task-mission').value = '';
+        document.getElementById('task-agent').value = 'analyst';
         document.getElementById('task-pattern').value = 'discovery';
         document.getElementById('task-schedule').value = '0 */6 * * *';
     }
-    
+
     modal.style.display = 'flex';
+    lucide.createIcons();
 }
 
 function hideModal(id) {
@@ -113,17 +183,25 @@ function hideModal(id) {
 }
 
 async function saveTask() {
-    const id = document.getElementById('task-id-field').value;
-    const data = {
-        name: document.getElementById('task-name').value,
-        mission: document.getElementById('task-mission').value,
-        pattern: document.getElementById('task-pattern').value,
-        schedule: document.getElementById('task-schedule').value,
-        status: 'PENDING'
-    };
+    const existingId = document.getElementById('task-id-field').value;
+    const name     = document.getElementById('task-name').value.trim();
+    const agent    = document.getElementById('task-agent').value;
+    const pattern  = document.getElementById('task-pattern').value;
+    const schedule = document.getElementById('task-schedule').value.trim();
+    const mission  = document.getElementById('task-mission').value.trim();
 
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/v1/tasks/${id}` : '/api/v1/tasks';
+    if (!name || !schedule) {
+        alert('Repository and Schedule are required.');
+        return;
+    }
+
+    // Compose ID the same way the backend does: name:agent:pattern
+    const composedId = existingId || `${name}:${agent}:${pattern}`;
+
+    const data = { id: composedId, name, mission, pattern, schedule, status: 'PENDING' };
+
+    const method = existingId ? 'PUT' : 'POST';
+    const url    = existingId ? `/api/v1/tasks/${encodeURIComponent(existingId)}` : '/api/v1/tasks';
 
     try {
         const resp = await fetch(url, {
@@ -131,7 +209,6 @@ async function saveTask() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
         if (resp.ok) {
             hideModal('task-modal');
             fetchTasks();
@@ -206,6 +283,54 @@ async function viewLogs(id, name) {
 // Settings
 function showSettings() {
     document.getElementById('settings-modal').style.display = 'flex';
+    lucide.createIcons();
+    // Try to load existing bot info if token already saved
+    loadTelegramQR();
+}
+
+async function loadTelegramQR() {
+    try {
+        const resp = await fetch('/api/v1/settings/telegram');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.bot_name) showTelegramQR(data.bot_name);
+    } catch (e) { /* silent */ }
+}
+
+async function saveTelegramAndConnect() {
+    const token = document.getElementById('bot-token').value.trim();
+    if (!token) { alert('Please enter a Bot Token first.'); return; }
+
+    // Save token
+    await fetch('/api/v1/settings/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+    });
+
+    // Fetch bot info to get username
+    try {
+        const resp = await fetch('/api/v1/settings/telegram');
+        const data = await resp.json();
+        if (data.bot_name) {
+            showTelegramQR(data.bot_name);
+        } else {
+            alert('Token saved, but could not resolve bot name. Check the token.');
+        }
+    } catch (e) {
+        alert('Token saved, but Telegram API is unreachable.');
+    }
+}
+
+function showTelegramQR(botName) {
+    const url = `https://t.me/${botName}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&bgcolor=1e293b&color=ffffff&qzone=1`;
+
+    document.getElementById('tg-qr-img').src = qrUrl;
+    document.getElementById('tg-bot-link').href = url;
+    document.getElementById('tg-bot-name').textContent = `@${botName}`;
+    document.getElementById('tg-connect-block').style.display = 'block';
+    lucide.createIcons();
 }
 
 async function saveSettings() {
