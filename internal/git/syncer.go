@@ -94,13 +94,18 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(s.cacheDir, ".git")); os.IsNotExist(err) {
-		log.Printf("git: cloning %s (branch: %s) → %s", url, branch, s.cacheDir)
-		if err := s.runGit(ctx, sshCmd, ".", "clone", "--branch", branch, "--depth", "1", url, s.cacheDir); err != nil {
+		log.Printf("git: initializing %s (branch: %s) in %s", url, branch, s.cacheDir)
+		if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+			return fmt.Errorf("creating cache dir: %w", err)
+		}
+		if err := s.runGit(ctx, sshCmd, s.cacheDir, "init"); err != nil {
 			return err
 		}
-		log.Printf("git: clone OK")
-		s.notifySyncSuccess()
-		return nil
+		// Remote might already exist if init was partially successful
+		_ = s.runGit(ctx, sshCmd, s.cacheDir, "remote", "remove", "origin")
+		if err := s.runGit(ctx, sshCmd, s.cacheDir, "remote", "add", "origin", url); err != nil {
+			return err
+		}
 	}
 
 	log.Printf("git: pulling %s (branch: %s)", url, branch)
@@ -154,10 +159,11 @@ func (s *Syncer) IsSSHKeyConfigured() bool {
 }
 
 func (s *Syncer) writeTempKey(content string) (string, error) {
-	if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
-		return "", fmt.Errorf("creating cache dir: %w", err)
+	tmpDir := filepath.Join(filepath.Dir(s.cacheDir), ".ssh-tmp")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return "", fmt.Errorf("creating ssh-tmp dir: %w", err)
 	}
-	f, err := os.CreateTemp(s.cacheDir, "jules-ssh-key-*")
+	f, err := os.CreateTemp(tmpDir, "jules-ssh-key-*")
 	if err != nil {
 		return "", err
 	}
