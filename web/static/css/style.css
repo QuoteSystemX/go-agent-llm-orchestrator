@@ -69,6 +69,8 @@ button {
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 .btn-secondary { background: var(--glass); color: var(--text); border: 1px solid var(--glass-border); }
+.btn-help { background: rgba(245, 158, 11, 0.12); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25); }
+.btn-help:hover { background: rgba(245, 158, 11, 0.2); transform: translateY(-1px); }
 .btn-success { background: var(--success); color: white; }
 .btn-cancel { background: transparent; color: var(--text-muted); }
 .btn-danger-small { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 0.8rem; }
@@ -408,3 +410,71 @@ button {
 
 /* push page content up so panel doesn't overlap it */
 body { padding-bottom: 40px; }
+
+/* Task Status Badges */
+.task-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.bg-pending  { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+.bg-running  { background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid rgba(59,130,246,0.3); }
+.bg-paused   { background: rgba(148,163,184,0.12); color: var(--text-muted); border: 1px solid rgba(148,163,184,0.2); }
+.bg-success  { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+.bg-failed   { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+/* Help Modal */
+.help-section { margin-bottom: 1.5rem; }
+.help-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+.help-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+.help-text strong { color: var(--text); }
+.help-table { display: flex; flex-direction: column; gap: 0.1rem; }
+.help-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 0.75rem;
+    padding: 0.55rem 0.5rem;
+    border-radius: 0.4rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+.help-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
+.help-field {
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.3rem;
+    padding-top: 0.05rem;
+}
+.help-desc { color: var(--text-muted); }
+.help-desc em { color: var(--text); font-style: normal; }
+.help-badge {
+    display: inline-block;
+    background: rgba(59,130,246,0.12);
+    color: var(--primary);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 0.3rem;
+    padding: 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+}

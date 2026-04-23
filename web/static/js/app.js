@@ -287,6 +287,12 @@ async function viewLogs(id, name) {
     }
 }
 
+// Help
+function showHelp() {
+    document.getElementById('help-modal').style.display = 'flex';
+    lucide.createIcons();
+}
+
 // Settings
 function showSettings() {
     document.getElementById('settings-modal').style.display = 'flex';

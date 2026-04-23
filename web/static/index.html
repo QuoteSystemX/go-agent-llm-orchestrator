@@ -18,6 +18,7 @@
                 <h1>Jules <span>Orchestrator</span></h1>
             </div>
             <div class="header-actions">
+                <button class="btn-help" onclick="showHelp()" title="Help"><i data-lucide="circle-help"></i> Help</button>
                 <button class="btn-primary" onclick="showTaskModal()"><i data-lucide="plus"></i> New Task</button>
                 <button class="btn-secondary" onclick="showSettings()"><i data-lucide="settings"></i> Settings</button>
             </div>
@@ -259,6 +260,133 @@
             </div>
         </div>
     </div>
+
+        <!-- Help Modal -->
+        <div id="help-modal" class="modal">
+            <div class="modal-content glass large" style="max-height:85vh; overflow-y:auto">
+                <h2><i data-lucide="circle-help" style="width:20px; vertical-align:middle; color:var(--primary)"></i> User Guide</h2>
+
+                <div class="help-section">
+                    <div class="help-section-title">Overview</div>
+                    <p class="help-text">Jules Orchestrator schedules and runs AI agents against your repositories on a cron schedule. Each <strong>Task</strong> = one agent + one workflow pattern applied to one repo, fired automatically.</p>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">Upcoming Bar (top)</div>
+                    <p class="help-text">Shows the next 5 scheduled runs with a live countdown. Each slot displays: <code>pattern</code> · countdown · <code>repo</code> · exact time.</p>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">Creating a Task — field by field</div>
+                    <div class="help-table">
+                        <div class="help-row">
+                            <div class="help-field">Repository</div>
+                            <div class="help-desc">GitHub repo in <code>owner/repo</code> format, e.g. <code>QuoteSystemX/model-ML</code>. Tasks with the same repo are grouped together on the board.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Agent</div>
+                            <div class="help-desc">The AI persona that runs the task. Each agent has a different focus:<br>
+                                <span class="help-badge">analyst</span> code analysis &amp; insights &nbsp;
+                                <span class="help-badge">orchestrator</span> multi-step coordination &nbsp;
+                                <span class="help-badge">reviewer</span> code review &nbsp;
+                                <span class="help-badge">debugger</span> bug hunting &nbsp;
+                                <span class="help-badge">backend-specialist</span> server-side &nbsp;
+                                <span class="help-badge">frontend-specialist</span> UI/UX &nbsp;
+                                <span class="help-badge">security-auditor</span> security &nbsp;
+                                <span class="help-badge">project-planner</span> planning &nbsp;
+                                <span class="help-badge">test-engineer</span> testing &nbsp;
+                                <span class="help-badge">crypto-go-specialist</span> Go crypto
+                            </div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Mission</div>
+                            <div class="help-desc">Free-text prompt given to the agent. Be specific: <em>"Scan for SQL injection vulnerabilities and suggest fixes"</em>. The agent uses this as its primary instruction.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Workflow Pattern</div>
+                            <div class="help-desc">Defines <em>how</em> the agent works through the repo:<br>
+                                <span class="help-badge">discovery</span> quick scan, surface findings &nbsp;
+                                <span class="help-badge">full_cycle</span> plan → implement → review &nbsp;
+                                <span class="help-badge">reviewer</span> diff review &amp; comments &nbsp;
+                                <span class="help-badge">bugcatcher</span> hunt for bugs &nbsp;
+                                <span class="help-badge">leakhound</span> detect secret/data leaks &nbsp;
+                                <span class="help-badge">auditor</span> compliance audit &nbsp;
+                                <span class="help-badge">featureforge</span> implement a feature &nbsp;
+                                <span class="help-badge">refactor</span> code clean-up &nbsp;
+                                <span class="help-badge">story_writer</span> write user stories &nbsp;
+                                <span class="help-badge">sprint_planner</span> plan sprint &nbsp;
+                                <span class="help-badge">sprint_closer</span> close sprint &amp; retro &nbsp;
+                                <span class="help-badge">test_engineer</span> generate tests
+                            </div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Cron Schedule</div>
+                            <div class="help-desc">Standard 5-field cron: <code>min hour day month weekday</code>.<br>
+                                <code>0 */6 * * *</code> — every 6 hours &nbsp;|&nbsp;
+                                <code>0 9 * * 1</code> — every Monday 09:00 &nbsp;|&nbsp;
+                                <code>0 0 * * *</code> — daily at midnight
+                            </div>
+                        </div>
+                    </div>
+                    <p class="help-text" style="margin-top:0.75rem">
+                        The task <strong>ID</strong> is auto-composed as <code>repo:agent:pattern</code> and cannot be changed after creation. To change agent or pattern — delete and recreate.
+                    </p>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">Task Card — what each element means</div>
+                    <div class="help-table">
+                        <div class="help-row">
+                            <div class="help-field">Title / ID</div>
+                            <div class="help-desc">Top line shows the <em>pattern</em> name (last segment of ID). Grey line below is the full ID <code>repo:agent:pattern</code>.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Status badge</div>
+                            <div class="help-desc">
+                                <span class="task-badge bg-pending" style="display:inline-block">PENDING</span> waiting for next cron tick &nbsp;
+                                <span class="task-badge bg-running" style="display:inline-block">RUNNING</span> agent is executing right now &nbsp;
+                                <span class="task-badge bg-paused" style="display:inline-block">PAUSED</span> manually suspended &nbsp;
+                                <span class="task-badge bg-success" style="display:inline-block">SUCCESS</span> last run succeeded &nbsp;
+                                <span class="task-badge bg-failed" style="display:inline-block">FAILED</span> last run errored
+                            </div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Mission text</div>
+                            <div class="help-desc">The prompt you set. Hover to see the full text if it's truncated.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field">Meta row</div>
+                            <div class="help-desc">Clock icon + cron expression on the left. Bold pattern name on the right.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field"><i data-lucide="file-text" style="width:13px; vertical-align:middle"></i> Logs</div>
+                            <div class="help-desc">Opens execution history: each run shows status, duration, the full request sent to the LLM (IN), and the response (OUT).</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field"><i data-lucide="edit-3" style="width:13px; vertical-align:middle"></i> Edit</div>
+                            <div class="help-desc">Edit mission, schedule, or pattern. Agent and repo are fixed after creation.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field"><i data-lucide="pause" style="width:13px; vertical-align:middle"></i> / <i data-lucide="play" style="width:13px; vertical-align:middle"></i></div>
+                            <div class="help-desc">Pause suspends future runs without deleting the task. Resume re-activates it.</div>
+                        </div>
+                        <div class="help-row">
+                            <div class="help-field"><i data-lucide="trash-2" style="width:13px; vertical-align:middle"></i> Delete</div>
+                            <div class="help-desc">Permanently removes the task and its execution history. Cannot be undone.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">System Logs (bottom bar)</div>
+                    <p class="help-text">Click the bar to expand real-time server logs. Green lines = OK, red = errors, yellow = warnings. Auto-refreshes every 5 s.</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="hideModal('help-modal')">Close</button>
+                </div>
+            </div>
+        </div>
 
     <!-- Log Panel (footer) -->
     <div id="log-panel" class="log-panel collapsed">
