@@ -48,6 +48,18 @@ func (e *Engine) Stop() {
 	e.cron.Stop()
 }
 
+// PauseAllPending pauses every PENDING task and returns the count paused.
+// Called at startup when the prompt-library SSH key is not yet configured.
+func (e *Engine) PauseAllPending(ctx context.Context) int {
+	res, err := e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED' WHERE status = 'PENDING'")
+	if err != nil {
+		log.Printf("scheduler: failed to pause pending tasks: %v", err)
+		return 0
+	}
+	n, _ := res.RowsAffected()
+	return int(n)
+}
+
 func (e *Engine) SyncTasks(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

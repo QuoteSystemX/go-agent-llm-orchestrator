@@ -56,6 +56,11 @@ func main() {
 
 	// 3. Initialize Logic
 	julesClient := api.NewJulesClient(database)
+	if url := julesClient.EffectiveBaseURL(); url != "" {
+		log.Printf("  %-30s = %s", "JULES effective URL", url)
+	} else {
+		log.Printf("  %-30s (not set — Jules API disabled)", "JULES effective URL")
+	}
 	router := llm.NewRouter(database)
 	supervisor := llm.NewSupervisor(database, tm, router, julesClient)
 	telegramNotifier := notifier.NewTelegramNotifier(database)
@@ -82,6 +87,13 @@ func main() {
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
+
+	// Proactively pause all PENDING tasks if SSH key is not yet configured —
+	// they would fail anyway when the cron fires and buildPrompt() returns an error.
+	if !gitSyncer.IsSSHKeyConfigured() {
+		n := engine.PauseAllPending(ctx)
+		log.Printf("WARNING: prompt-library SSH key not set — %d PENDING task(s) paused. Set key via Settings → Prompt Library, then resume tasks manually.", n)
+	}
 
 	// Import distribution config if available
 	distPath := os.Getenv("DISTRIBUTION_CONFIG_PATH")

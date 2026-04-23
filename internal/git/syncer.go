@@ -72,7 +72,7 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	}
 
 	// Write key to temp file
-	keyFile, err := writeTempKey(keyContent)
+	keyFile, err := s.writeTempKey(keyContent)
 	if err != nil {
 		return fmt.Errorf("writing temp SSH key: %w", err)
 	}
@@ -132,8 +132,15 @@ func (s *Syncer) getRefreshInterval() time.Duration {
 	return d
 }
 
-func writeTempKey(content string) (string, error) {
-	f, err := os.CreateTemp("", "jules-ssh-key-*")
+func (s *Syncer) IsSSHKeyConfigured() bool {
+	return s.getSetting("prompt_library_ssh_key", "") != ""
+}
+
+func (s *Syncer) writeTempKey(content string) (string, error) {
+	if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+		return "", fmt.Errorf("creating cache dir: %w", err)
+	}
+	f, err := os.CreateTemp(s.cacheDir, "jules-ssh-key-*")
 	if err != nil {
 		return "", err
 	}

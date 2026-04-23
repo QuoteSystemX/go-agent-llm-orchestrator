@@ -45,10 +45,12 @@ func (c *JulesClient) getBaseURL() string {
 			return val
 		}
 	}
-	if c.BaseURL != "" {
-		return c.BaseURL
-	}
-	return "https://jules.googleapis.com/v1alpha"
+	return c.BaseURL
+}
+
+// EffectiveBaseURL returns the Jules API base URL that will actually be used.
+func (c *JulesClient) EffectiveBaseURL() string {
+	return c.getBaseURL()
 }
 
 // SessionRequest is the full Jules API payload for creating a session.
