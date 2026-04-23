@@ -1,21 +1,40 @@
+prompt_library:
+  git:
+    url: "git@github.com:your-org/prompt-library.git"
+    branch: "main"
+    # ssh_key_path: "~/.ssh/id_ed25519"   # optional: loaded once into DB on startup
+    #                                       # if omitted, set key via web UI Settings → Prompt Library
+  cache_dir: "/var/lib/orchestrator/prompt-lib"  # where to clone locally
+  refresh_interval: "1h"                          # how often to git pull
+
 repositories:
-  # Example Repository Configuration
   - name: your-org/your-repository
     tasks:
       # Daily code review
       - agent: reviewer
         pattern: reviewer
-        mission: "/reviewer 🔍 Automated Code Auditing"
-        schedule: "0 9 * * *" # Daily at 09:00
+        mission: "🔍 Automated Code Auditing"
+        schedule: "0 9 * * *"      # Daily at 09:00
 
       # Periodic bug hunting
       - agent: debugger
         pattern: bugcatcher
-        mission: "/debug 🐞 Bug Hunting"
-        schedule: "0 */4 * * *" # Every 4 hours
+        mission: "🐞 Bug Hunting"
+        schedule: "0 */4 * * *"   # Every 4 hours
 
-      # Weekly full cycle orchestration
+      # Weekly BMAD cycle
+      - agent: analyst
+        pattern: discovery
+        mission: "📋 BMAD PRD Refinement from Brief"
+        schedule: "0 8 * * 1"     # Monday 08:00
+
+      - agent: analyst
+        pattern: story_writer
+        mission: "📖 BMAD Story Card Generation"
+        schedule: "0 9 * * 1"     # Monday 09:00
+
+      # Full cycle implementation
       - agent: orchestrator
         pattern: full_cycle
-        mission: "/orchestrate ⚡ Full Cycle"
-        schedule: "0 0 * * 0" # Sunday at midnight
+        mission: "⚡ Full Cycle: Implement + Test + Security → Single PR"
+        schedule: "0 */6 * * *"   # Every 6 hours

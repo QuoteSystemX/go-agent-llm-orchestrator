@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -10,28 +11,31 @@ import (
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/notifier"
+	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/traffic"
 	"github.com/robfig/cron/v3"
 )
 
 type Engine struct {
-	cron    *cron.Cron
-	db      *db.DB
-	tm      *traffic.TrafficManager
-	client  *api.JulesClient
-	notifier *notifier.TelegramNotifier
-	mu      sync.Mutex
-	entries map[string]cron.EntryID
+	cron          *cron.Cron
+	db            *db.DB
+	tm            *traffic.TrafficManager
+	client        *api.JulesClient
+	notifier      *notifier.TelegramNotifier
+	promptBuilder *prompt.Builder
+	mu            sync.Mutex
+	entries       map[string]cron.EntryID
 }
 
-func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier) *Engine {
+func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder) *Engine {
 	return &Engine{
-		cron:    cron.New(),
-		db:      database,
-		tm:      tm,
-		client:  client,
-		notifier: nt,
-		entries: make(map[string]cron.EntryID),
+		cron:          cron.New(),
+		db:            database,
+		tm:            tm,
+		client:        client,
+		notifier:      nt,
+		promptBuilder: pb,
+		entries:       make(map[string]cron.EntryID),
 	}
 }
 
@@ -44,7 +48,6 @@ func (e *Engine) Stop() {
 	e.cron.Stop()
 }
 
-// SyncTasks reads tasks from DB and updates the cron schedule
 func (e *Engine) SyncTasks(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -74,7 +77,6 @@ func (e *Engine) SyncTasks(ctx context.Context) error {
 		}
 	}
 
-	// Remove tasks that are no longer in DB
 	removedCount := 0
 	for id, entryID := range e.entries {
 		if !activeIDs[id] {
@@ -99,8 +101,6 @@ func (e *Engine) printSchedule() {
 	log.Println("│ TASK ID                  │ CRON EXPRESSION                      │")
 	log.Println("├──────────────────────────┼──────────────────────────────────────┤")
 	for id := range e.entries {
-		// We could fetch actual next run time from cron, but for now just ID and schedule
-		// Fetching schedule string from entries map if we store it
 		log.Printf("│ %-24s │ (scheduled)                          │", id)
 	}
 	log.Println("└──────────────────────────┴──────────────────────────────────────┘")
@@ -120,15 +120,16 @@ func (e *Engine) addTask(id, schedule string) error {
 
 func (e *Engine) runTask(taskID string) {
 	log.Printf("Triggering task %s", taskID)
-	
+
 	ctx := context.Background()
 	start := time.Now()
-	
-	// Fetch task details for logging and execution
-	var status, mission, pattern string
-	err := e.db.QueryRowContext(ctx, "SELECT status, mission, pattern FROM tasks WHERE id = ?", taskID).Scan(&status, &mission, &pattern)
+
+	var status, mission, pattern, agent, repoName string
+	err := e.db.QueryRowContext(ctx,
+		"SELECT status, mission, pattern, COALESCE(agent,''), name FROM tasks WHERE id = ?", taskID,
+	).Scan(&status, &mission, &pattern, &agent, &repoName)
 	if err != nil {
-		log.Printf("Failed to fetch task %s details: %v", taskID, err)
+		log.Printf("Failed to fetch task %s: %v", taskID, err)
 		return
 	}
 
@@ -138,35 +139,54 @@ func (e *Engine) runTask(taskID string) {
 	}
 
 	var inputPayload, outputPayload []byte
-	var execStatus string = "SUCCESS"
+	execStatus := "SUCCESS"
 	var execError string
 
 	err = e.tm.Execute(ctx, traffic.PriorityHigh, func() error {
-		// 1. Update status to RUNNING
-		_, err := e.db.ExecContext(ctx, "UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
+		// Build the full Jules prompt — pause the task if library is not ready yet
+		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
+		if err != nil {
+			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
+			return fmt.Errorf("prompt-library not ready, task %s paused: %w", taskID, err)
+		}
+
+		_, dbErr := e.db.ExecContext(ctx,
+			"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
+		if dbErr != nil {
+			return dbErr
+		}
+
+		req := api.SessionRequest{
+			Prompt: fullPrompt,
+			SourceContext: api.SourceContext{
+				Source: "sources/github/" + repoName,
+				GithubRepoContext: api.GithubRepoContext{
+					StartingBranch: "main",
+				},
+			},
+			AutomationMode: "AUTO_CREATE_PR",
+			Title:          fmt.Sprintf("[%s] %s for %s", agent, mission, repoName),
+		}
+
+		reqJSON, _ := json.Marshal(req)
+		inputPayload = reqJSON
+
+		resp, rawOut, err := e.client.StartSession(ctx, req)
 		if err != nil {
 			return err
 		}
 
-		// 2. Call Jules API
-		resp, rawIn, err := e.client.StartSession(ctx, taskID, mission, pattern)
-		inputPayload = rawIn
-		if err != nil {
-			return err
+		sessionID := taskID
+		if resp != nil && resp.ID != "" {
+			sessionID = resp.ID
 		}
-		
-		// 3. Create session entry
-		_, err = e.db.ExecContext(ctx, 
+		outputPayload = rawOut
+
+		e.db.ExecContext(ctx,
 			"INSERT INTO sessions (id, task_id, jules_session_id, status) VALUES (?, ?, ?, ?)",
-			resp.ID, taskID, resp.ID, "RUNNING")
-		
-		// For now we assume the immediate response body is what we want to log as "Out"
-		// In a more complex setup, we'd poll for final result.
-		// Wait, if it returns ID, it's just started. But user wants "In/Out".
-		// Let's log the initial response for now.
-		outputPayload, _ = json.Marshal(resp)
-		
-		return err
+			sessionID, taskID, sessionID, "RUNNING")
+
+		return nil
 	})
 
 	duration := time.Since(start)
@@ -183,13 +203,21 @@ func (e *Engine) runTask(taskID string) {
 		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
 	}
 
-	// Record Execution Log
 	_, logErr := e.db.ExecContext(ctx, `
 		INSERT INTO task_logs (task_id, input_data, output_data, status, error, duration_ms)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`, taskID, string(inputPayload), string(outputPayload), execStatus, execError, duration.Milliseconds())
-	
+
 	if logErr != nil {
 		log.Printf("Failed to record log for task %s: %v", taskID, logErr)
 	}
+}
+
+// buildPrompt builds the Jules prompt from the prompt-library clone.
+// Returns an error (and causes the task to be paused) if the library is not ready.
+func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
+	if e.promptBuilder != nil && e.promptBuilder.IsReady() {
+		return e.promptBuilder.Build(agent, pattern, mission)
+	}
+	return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
 }

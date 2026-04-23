@@ -7,7 +7,7 @@ import (
 )
 
 func TestAdminServer_handleListTasks(t *testing.T) {
-	server := NewAdminServer(nil) // db is not used in mock handler yet
+	server := NewAdminServer(nil, nil) // db/scheduler not used in this mock test
 	
 	req, err := http.NewRequest("GET", "/api/v1/tasks", nil)
 	if err != nil {
@@ -15,7 +15,7 @@ func TestAdminServer_handleListTasks(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(server.handleListTasks)
+	handler := http.HandlerFunc(server.listTasks)
 
 	handler.ServeHTTP(rr, req)
 

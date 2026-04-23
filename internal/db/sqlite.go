@@ -31,9 +31,17 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("opening sqlite db: %w", err)
 	}
 
+	// Limit to 1 writer to avoid SQLITE_BUSY under concurrent tasks
+	db.SetMaxOpenConns(1)
+
 	// Set WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 		return nil, fmt.Errorf("setting WAL mode: %w", err)
+	}
+
+	// Wait up to 5 s instead of returning SQLITE_BUSY immediately
+	if _, err := db.Exec("PRAGMA busy_timeout=5000;"); err != nil {
+		return nil, fmt.Errorf("setting busy_timeout: %w", err)
 	}
 
 	// Initialize schema
@@ -41,6 +49,36 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("initializing schema: %w", err)
 	}
 
+	// Migrations: add columns that may not exist in older databases
+	migrations := []string{
+		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
+	}
+	for _, m := range migrations {
+		if _, err := db.Exec(m); err != nil {
+			// SQLite returns an error if the column already exists; ignore it
+			if !isSQLiteColumnExists(err) {
+				log.Printf("Migration warning: %v", err)
+			}
+		}
+	}
+
 	log.Printf("Database initialized at %s", dbPath)
 	return &DB{db}, nil
+}
+
+func isSQLiteColumnExists(err error) bool {
+	return err != nil && (contains(err.Error(), "duplicate column name") ||
+		contains(err.Error(), "already exists"))
+}
+
+func contains(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || len(s) > 0 &&
+		func() bool {
+			for i := 0; i <= len(s)-len(sub); i++ {
+				if s[i:i+len(sub)] == sub {
+					return true
+				}
+			}
+			return false
+		}())
 }

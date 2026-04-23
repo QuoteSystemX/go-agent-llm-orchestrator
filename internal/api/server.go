@@ -12,6 +12,16 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+const defaultClassifyPrompt = `Classify the following task as either SIMPLE or COMPLEX.
+SIMPLE: Short tasks, basic text processing, simple questions.
+COMPLEX: Tasks involving code, large data volumes, multiple steps, or deep reasoning.
+
+Task: %s
+
+Respond with ONLY the word SIMPLE or COMPLEX.`
+
+const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Provide a decision to unblock.`
+
 type Scheduler interface {
 	SyncTasks(ctx context.Context) error
 }
@@ -38,7 +48,10 @@ func (s *AdminServer) Start(addr string) error {
 	
 	// Settings & Audit
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
-	mux.HandleFunc("/api/v1/settings/llm", s.handleSaveLLMSettings)
+	mux.HandleFunc("/api/v1/settings/llm", s.handleLLMSettings)
+	mux.HandleFunc("/api/v1/settings/supervisor", s.handleSupervisorSettings)
+	mux.HandleFunc("/api/v1/settings/prompts", s.handlePromptSettings)
+	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	
 	// Health
@@ -146,27 +159,38 @@ func (s *AdminServer) createTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *AdminServer) handleTaskByID(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 5 {
+	// Task IDs can contain slashes (e.g. "org/repo:agent:pattern"),
+	// so we can't rely on parts[4] — extract everything after the prefix instead.
+	const prefix = "/api/v1/tasks/"
+	rest := strings.TrimPrefix(r.URL.Path, prefix)
+	if rest == "" {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
-	taskID := parts[4]
 
-	// Handle sub-resources: /api/v1/tasks/:id/logs
-	if len(parts) > 5 && parts[5] == "logs" {
+	// Sub-resource: /logs
+	if strings.HasSuffix(rest, "/logs") {
+		taskID := strings.TrimSuffix(rest, "/logs")
 		s.listTaskLogs(w, r, taskID)
 		return
 	}
 
+	// Actions: /run, /pause, /resume
+	for _, action := range []string{"run", "pause", "resume"} {
+		if strings.HasSuffix(rest, "/"+action) {
+			taskID := strings.TrimSuffix(rest, "/"+action)
+			s.handleTaskAction(w, r, taskID, action)
+			return
+		}
+	}
+
+	// Plain task CRUD
+	taskID := rest
 	switch r.Method {
 	case http.MethodPut:
 		s.updateTask(w, r, taskID)
 	case http.MethodDelete:
 		s.deleteTask(w, r, taskID)
-	case http.MethodPost: // Custom actions: /run, /pause
-		action := parts[len(parts)-1]
-		s.handleTaskAction(w, r, taskID, action)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -297,23 +321,178 @@ func (s *AdminServer) handleTelegramSettings(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (s *AdminServer) handleSaveLLMSettings(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+func (s *AdminServer) getSetting(ctx context.Context, key, def string) string {
+	var val string
+	if err := s.db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = ?", key).Scan(&val); err != nil || val == "" {
+		return def
+	}
+	return val
+}
+
+func (s *AdminServer) saveSetting(ctx context.Context, key, value string) error {
+	_, err := s.db.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	return err
+}
+
+func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"local_model":   s.getSetting(r.Context(), "llm_local_model", ""),
+			"remote_model":  s.getSetting(r.Context(), "llm_remote_model", ""),
+			"jules_api_key": func() string {
+				if s.getSetting(r.Context(), "jules_api_key", "") != "" {
+					return "***"
+				}
+				return ""
+			}(),
+			"jules_base_url": s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+		})
+	case http.MethodPost:
+		var data struct {
+			LocalModel   string `json:"local_model"`
+			RemoteModel  string `json:"remote_model"`
+			JulesAPIKey  string `json:"jules_api_key"`
+			JulesBaseURL string `json:"jules_base_url"`
+		}
+		json.NewDecoder(r.Body).Decode(&data)
+		if data.LocalModel != "" {
+			s.saveSetting(r.Context(), "llm_local_model", data.LocalModel)
+		}
+		if data.RemoteModel != "" {
+			s.saveSetting(r.Context(), "llm_remote_model", data.RemoteModel)
+		}
+		if data.JulesAPIKey != "" {
+			s.saveSetting(r.Context(), "jules_api_key", data.JulesAPIKey)
+		}
+		if data.JulesBaseURL != "" {
+			s.saveSetting(r.Context(), "jules_base_url", data.JulesBaseURL)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
 	}
-	var data struct {
-		LocalModel  string `json:"local_model"`
-		RemoteModel string `json:"remote_model"`
+}
+
+func (s *AdminServer) handleSupervisorSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		raw := s.getSetting(r.Context(), "trigger_statuses", "AWAITING_USER_FEEDBACK,AWAITING_PLAN_APPROVAL")
+		statuses := []string{}
+		for _, p := range strings.Split(raw, ",") {
+			if v := strings.TrimSpace(p); v != "" {
+				statuses = append(statuses, v)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"trigger_statuses": statuses,
+			"routing_simple":   s.getSetting(r.Context(), "routing_simple", "local"),
+			"routing_complex":  s.getSetting(r.Context(), "routing_complex", "remote"),
+		})
+	case http.MethodPost:
+		var data struct {
+			TriggerStatuses []string `json:"trigger_statuses"`
+			RoutingSimple   string   `json:"routing_simple"`
+			RoutingComplex  string   `json:"routing_complex"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if len(data.TriggerStatuses) > 0 {
+			s.saveSetting(r.Context(), "trigger_statuses", strings.Join(data.TriggerStatuses, ","))
+		}
+		if data.RoutingSimple != "" {
+			s.saveSetting(r.Context(), "routing_simple", data.RoutingSimple)
+		}
+		if data.RoutingComplex != "" {
+			s.saveSetting(r.Context(), "routing_complex", data.RoutingComplex)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	json.NewDecoder(r.Body).Decode(&data)
-	if data.LocalModel != "" {
-		s.db.ExecContext(r.Context(), "INSERT OR REPLACE INTO settings (key, value) VALUES ('llm_local_model', ?)", data.LocalModel)
+}
+
+func (s *AdminServer) handlePromptSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"classify":   s.getSetting(r.Context(), "prompt_classify", defaultClassifyPrompt),
+			"supervisor": s.getSetting(r.Context(), "prompt_supervisor", defaultSupervisorPrompt),
+		})
+	case http.MethodPost:
+		var data struct {
+			Classify   string `json:"classify"`
+			Supervisor string `json:"supervisor"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if data.Classify != "" {
+			s.saveSetting(r.Context(), "prompt_classify", data.Classify)
+		}
+		if data.Supervisor != "" {
+			s.saveSetting(r.Context(), "prompt_supervisor", data.Supervisor)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	if data.RemoteModel != "" {
-		s.db.ExecContext(r.Context(), "INSERT OR REPLACE INTO settings (key, value) VALUES ('llm_remote_model', ?)", data.RemoteModel)
+}
+
+func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"git_url":          s.getSetting(r.Context(), "prompt_library_git_url", ""),
+			"git_branch":       s.getSetting(r.Context(), "prompt_library_git_branch", "main"),
+			"cache_dir":        s.getSetting(r.Context(), "prompt_library_cache_dir", "/var/lib/orchestrator/prompt-lib"),
+			"refresh_interval": s.getSetting(r.Context(), "prompt_library_refresh_interval", "1h"),
+			// ssh_key is write-only: return masked indicator
+			"ssh_key_set": func() string {
+				if s.getSetting(r.Context(), "prompt_library_ssh_key", "") != "" {
+					return "true"
+				}
+				return "false"
+			}(),
+		})
+	case http.MethodPost:
+		var data struct {
+			GitURL          string `json:"git_url"`
+			GitBranch       string `json:"git_branch"`
+			CacheDir        string `json:"cache_dir"`
+			RefreshInterval string `json:"refresh_interval"`
+			SSHKey          string `json:"ssh_key"` // PEM content
+		}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if data.GitURL != "" {
+			s.saveSetting(r.Context(), "prompt_library_git_url", data.GitURL)
+		}
+		if data.GitBranch != "" {
+			s.saveSetting(r.Context(), "prompt_library_git_branch", data.GitBranch)
+		}
+		if data.CacheDir != "" {
+			s.saveSetting(r.Context(), "prompt_library_cache_dir", data.CacheDir)
+		}
+		if data.RefreshInterval != "" {
+			s.saveSetting(r.Context(), "prompt_library_refresh_interval", data.RefreshInterval)
+		}
+		if data.SSHKey != "" {
+			s.saveSetting(r.Context(), "prompt_library_ssh_key", data.SSHKey)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {

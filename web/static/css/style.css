@@ -253,6 +253,19 @@ button {
     max-width: 550px;
     padding: 2.5rem;
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.settings-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin: 1.5rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .modal-content.large { max-width: 900px; }

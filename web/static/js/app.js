@@ -24,7 +24,13 @@ async function fetchTasks() {
 function renderTasks() {
     const container = document.getElementById('task-list');
     if (!container) return;
-    
+
+    // Remember which groups are currently expanded
+    const openGroups = new Set(
+        [...container.querySelectorAll('.project-group:not(.collapsed)')]
+            .map(el => el.id)
+    );
+
     // Group tasks by name (repository)
     const grouped = tasks.reduce((acc, task) => {
         const key = task.name || 'Other';
@@ -36,8 +42,10 @@ function renderTasks() {
     let html = '';
     for (const [projectName, projectTasks] of Object.entries(grouped)) {
         const safeName = projectName.replace(/[^a-z0-9]/gi, '-');
+        const groupId = `group-${safeName}`;
+        const isOpen = openGroups.has(groupId);
         html += `
-            <div class="project-group collapsed" id="group-${safeName}">
+            <div class="project-group ${isOpen ? '' : 'collapsed'}" id="${groupId}">
                 <div class="project-header" onclick="toggleGroup('${safeName}')">
                     <i data-lucide="chevron-right" class="chevron"></i>
                     <i data-lucide="folder" style="width:16px; color:var(--primary)"></i>
@@ -284,8 +292,61 @@ async function viewLogs(id, name) {
 function showSettings() {
     document.getElementById('settings-modal').style.display = 'flex';
     lucide.createIcons();
-    // Try to load existing bot info if token already saved
     loadTelegramQR();
+    loadLLMSettings();
+    loadSupervisorSettings();
+    loadPromptSettings();
+    loadPromptLibrarySettings();
+}
+
+async function loadPromptLibrarySettings() {
+    try {
+        const resp = await fetch('/api/v1/settings/prompt-library');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.git_url) document.getElementById('pl-git-url').value = data.git_url;
+        if (data.git_branch) document.getElementById('pl-git-branch').value = data.git_branch;
+        if (data.refresh_interval) document.getElementById('pl-refresh-interval').value = data.refresh_interval;
+        const status = document.getElementById('pl-ssh-key-status');
+        status.textContent = data.ssh_key_set === 'true' ? '✓ key stored' : '';
+    } catch (e) { /* silent */ }
+}
+
+async function loadLLMSettings() {
+    try {
+        const resp = await fetch('/api/v1/settings/llm');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.local_model) document.getElementById('local-model').value = data.local_model;
+        if (data.remote_model) document.getElementById('remote-model').value = data.remote_model;
+        if (data.jules_base_url) document.getElementById('jules-base-url').value = data.jules_base_url;
+        // jules_api_key is masked server-side, leave field empty
+    } catch (e) { /* silent */ }
+}
+
+async function loadSupervisorSettings() {
+    try {
+        const resp = await fetch('/api/v1/settings/supervisor');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const statuses = data.trigger_statuses || [];
+        document.getElementById('trigger-awaiting-feedback').checked = statuses.includes('AWAITING_USER_FEEDBACK');
+        document.getElementById('trigger-awaiting-plan').checked = statuses.includes('AWAITING_PLAN_APPROVAL');
+        const routingSimple = document.getElementById('routing-simple');
+        const routingComplex = document.getElementById('routing-complex');
+        if (data.routing_simple) routingSimple.value = data.routing_simple;
+        if (data.routing_complex) routingComplex.value = data.routing_complex;
+    } catch (e) { /* silent */ }
+}
+
+async function loadPromptSettings() {
+    try {
+        const resp = await fetch('/api/v1/settings/prompts');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.classify) document.getElementById('prompt-classify').value = data.classify;
+        if (data.supervisor) document.getElementById('prompt-supervisor').value = data.supervisor;
+    } catch (e) { /* silent */ }
 }
 
 async function loadTelegramQR() {
@@ -334,9 +395,12 @@ function showTelegramQR(botName) {
 }
 
 async function saveSettings() {
-    const token = document.getElementById('bot-token').value;
-    const model = document.getElementById('local-model').value;
-    
+    const token = document.getElementById('bot-token').value.trim();
+    const localModel = document.getElementById('local-model').value.trim();
+    const remoteModel = document.getElementById('remote-model').value.trim();
+    const julesApiKey = document.getElementById('jules-api-key').value.trim();
+    const julesBaseUrl = document.getElementById('jules-base-url').value.trim();
+
     if (token) {
         await fetch('/api/v1/settings/telegram', {
             method: 'POST',
@@ -344,15 +408,62 @@ async function saveSettings() {
             body: JSON.stringify({ token })
         });
     }
-    
-    if (model) {
-        await fetch('/api/v1/settings/llm', {
+
+    await fetch('/api/v1/settings/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            local_model: localModel,
+            remote_model: remoteModel,
+            jules_api_key: julesApiKey,
+            jules_base_url: julesBaseUrl
+        })
+    });
+
+    const triggerStatuses = [];
+    if (document.getElementById('trigger-awaiting-feedback').checked) triggerStatuses.push('AWAITING_USER_FEEDBACK');
+    if (document.getElementById('trigger-awaiting-plan').checked) triggerStatuses.push('AWAITING_PLAN_APPROVAL');
+    await fetch('/api/v1/settings/supervisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            trigger_statuses: triggerStatuses,
+            routing_simple: document.getElementById('routing-simple').value,
+            routing_complex: document.getElementById('routing-complex').value
+        })
+    });
+
+    const classifyPrompt = document.getElementById('prompt-classify').value.trim();
+    const supervisorPrompt = document.getElementById('prompt-supervisor').value.trim();
+    if (classifyPrompt || supervisorPrompt) {
+        await fetch('/api/v1/settings/prompts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ local_model: model })
+            body: JSON.stringify({ classify: classifyPrompt, supervisor: supervisorPrompt })
         });
     }
-    
+
+    const plGitUrl = document.getElementById('pl-git-url').value.trim();
+    const plGitBranch = document.getElementById('pl-git-branch').value.trim();
+    const plRefreshInterval = document.getElementById('pl-refresh-interval').value.trim();
+    const plSSHKey = document.getElementById('pl-ssh-key').value.trim();
+    if (plGitUrl || plGitBranch || plRefreshInterval || plSSHKey) {
+        await fetch('/api/v1/settings/prompt-library', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                git_url: plGitUrl,
+                git_branch: plGitBranch,
+                refresh_interval: plRefreshInterval,
+                ssh_key: plSSHKey
+            })
+        });
+        if (plSSHKey) {
+            document.getElementById('pl-ssh-key').value = '';
+            document.getElementById('pl-ssh-key-status').textContent = '✓ key stored';
+        }
+    }
+
     hideModal('settings-modal');
     alert('Settings saved successfully!');
 }

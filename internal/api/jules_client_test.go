@@ -16,7 +16,7 @@ func TestJulesClient_GetStatus(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewJulesClient()
+	client := NewJulesClient(nil)
 	client.BaseURL = server.URL
 
 	status, err := client.GetStatus(context.Background(), "session-123")

@@ -156,10 +156,104 @@
                     </div>
                 </div>
 
+                <!-- LLM Models -->
                 <div class="form-group">
                     <label>Local LLM (Ollama)</label>
                     <input type="text" id="local-model" placeholder="phi3:mini">
                 </div>
+                <div class="form-group">
+                    <label>Remote LLM Model</label>
+                    <input type="text" id="remote-model" placeholder="gpt-4o">
+                </div>
+
+                <!-- Jules API -->
+                <div class="settings-section-title">Jules API</div>
+                <div class="form-group">
+                    <label>Jules API Key</label>
+                    <input type="password" id="jules-api-key" placeholder="AIza...">
+                </div>
+                <div class="form-group">
+                    <label>Jules Base URL</label>
+                    <input type="text" id="jules-base-url" placeholder="https://jules.googleapis.com/v1alpha">
+                </div>
+
+                <!-- Supervisor Trigger Statuses -->
+                <div class="settings-section-title">Supervisor Triggers</div>
+                <div class="form-group">
+                    <label>Trigger Statuses (which Jules states activate auto-response)</label>
+                    <div style="display:flex; gap:1.5rem; margin-top:0.4rem; flex-wrap:wrap">
+                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--text); cursor:pointer">
+                            <input type="checkbox" id="trigger-awaiting-feedback" value="AWAITING_USER_FEEDBACK">
+                            AWAITING_USER_FEEDBACK
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--text); cursor:pointer">
+                            <input type="checkbox" id="trigger-awaiting-plan" value="AWAITING_PLAN_APPROVAL">
+                            AWAITING_PLAN_APPROVAL
+                        </label>
+                    </div>
+                </div>
+
+                <!-- LLM Routing -->
+                <div class="form-group">
+                    <label>LLM Routing</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.4rem">
+                        <div>
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem">SIMPLE tasks</div>
+                            <select id="routing-simple" style="width:100%">
+                                <option value="local">Local (Ollama)</option>
+                                <option value="remote">Remote LLM</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem">COMPLEX tasks</div>
+                            <select id="routing-complex" style="width:100%">
+                                <option value="remote">Remote LLM</option>
+                                <option value="local">Local (Ollama)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Library (Git) -->
+                <div class="settings-section-title">Prompt Library (Git)</div>
+                <div class="form-group">
+                    <label>Repository URL (SSH)</label>
+                    <input type="text" id="pl-git-url" placeholder="git@github.com:org/prompt-library.git">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
+                    <div class="form-group">
+                        <label>Branch</label>
+                        <input type="text" id="pl-git-branch" placeholder="main">
+                    </div>
+                    <div class="form-group">
+                        <label>Refresh Interval</label>
+                        <input type="text" id="pl-refresh-interval" placeholder="1h">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        SSH Private Key
+                        <span id="pl-ssh-key-status" style="color:var(--success); font-size:0.7rem; margin-left:0.5rem"></span>
+                    </label>
+                    <textarea id="pl-ssh-key" rows="6"
+                        style="font-family:monospace; font-size:0.72rem; resize:vertical"
+                        placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                        Leave empty to keep existing key. Set once from YAML <code>ssh_key_path</code> on first load.
+                    </div>
+                </div>
+
+                <!-- Prompt Templates -->
+                <div class="settings-section-title">Prompt Templates</div>
+                <div class="form-group">
+                    <label>Classify Prompt <span style="color:var(--text-muted); font-size:0.7rem">(%s = task description)</span></label>
+                    <textarea id="prompt-classify" rows="5" style="font-family:monospace; font-size:0.75rem; resize:vertical"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Supervisor Prompt <span style="color:var(--text-muted); font-size:0.7rem">(first %s = sessionID, second %s = task)</span></label>
+                    <textarea id="prompt-supervisor" rows="3" style="font-family:monospace; font-size:0.75rem; resize:vertical"></textarea>
+                </div>
+
                 <div class="modal-actions">
                     <button class="btn-success" onclick="saveSettings()">Save Changes</button>
                     <button class="btn-cancel" onclick="hideModal('settings-modal')">Cancel</button>

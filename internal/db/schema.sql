@@ -2,11 +2,12 @@
 
 CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    mission TEXT,           -- Detailed task description for LLM
-    pattern TEXT,           -- Workflow pattern (discovery, story_writer, etc.)
-    schedule TEXT NOT NULL, -- Cron format
-    status TEXT NOT NULL,   -- PENDING, RUNNING, PAUSED, COMPLETED, FAILED
+    name TEXT NOT NULL,       -- Repository name (e.g. org/repo)
+    agent TEXT DEFAULT '',    -- Agent persona (e.g. analyst, orchestrator)
+    mission TEXT,             -- Short label shown in UI
+    pattern TEXT,             -- Workflow pattern (discovery, story_writer, etc.)
+    schedule TEXT NOT NULL,   -- Cron format
+    status TEXT NOT NULL,     -- PENDING, RUNNING, PAUSED, COMPLETED, FAILED
     last_run_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

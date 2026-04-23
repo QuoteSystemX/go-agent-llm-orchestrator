@@ -10,9 +10,11 @@ import (
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
+	gitpkg "go-agent-llm-orchestrator/internal/git"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/internal/notifier"
+	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/scheduler"
 	"go-agent-llm-orchestrator/internal/traffic"
 )
@@ -36,14 +38,22 @@ func main() {
 	tm := traffic.NewTrafficManager(1.0, 5) // 1 RPS, 5 burst (example)
 
 	// 3. Initialize Logic
+	julesClient := api.NewJulesClient(database)
 	router := llm.NewRouter(database)
-	_ = llm.NewSupervisor(database, tm, router)
-	julesClient := api.NewJulesClient()
+	supervisor := llm.NewSupervisor(database, tm, router, julesClient)
 	telegramNotifier := notifier.NewTelegramNotifier(database)
 	telegramNotifier.StartPolling()
 
-	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier)
-	statMonitor := monitor.NewMonitor(database, tm)
+	// Prompt-library git syncer: cache dir from env or default
+	cacheDir := os.Getenv("PROMPT_LIBRARY_CACHE_DIR")
+	if cacheDir == "" {
+		cacheDir = "./data/prompt-lib"
+	}
+	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
+	promptBuilder := prompt.NewBuilder(cacheDir)
+
+	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
+	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	adminServer := api.NewAdminServer(database, engine)
 
 	// 4. Start Background Processes
@@ -51,6 +61,9 @@ func main() {
 	defer cancel()
 
 	engine.Start()
+
+	// Start git syncer for prompt-library (runs initial sync then polls)
+	go gitSyncer.Start(ctx)
 	
 	// Import distribution config if available
 	distPath := os.Getenv("DISTRIBUTION_CONFIG_PATH")

@@ -54,6 +54,30 @@ const (
 	Complex Classification = "COMPLEX"
 )
 
+const defaultClassifyPrompt = `Classify the following task as either SIMPLE or COMPLEX.
+SIMPLE: Short tasks, basic text processing, simple questions.
+COMPLEX: Tasks involving code, large data volumes, multiple steps, or deep reasoning.
+
+Task: %s
+
+Respond with ONLY the word SIMPLE or COMPLEX.`
+
+func (r *Router) getClassifyPrompt() string {
+	return r.getModel("prompt_classify", defaultClassifyPrompt)
+}
+
+// getRoutingTarget reads routing_simple / routing_complex from settings.
+// Returns "local" or "remote".
+func (r *Router) getRoutingTarget(classification Classification) string {
+	key := "routing_simple"
+	def := "local"
+	if classification == Complex {
+		key = "routing_complex"
+		def = "remote"
+	}
+	return r.getModel(key, def)
+}
+
 // Classify determines if a task is simple or complex using the local LLM
 func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification, error) {
 	start := time.Now()
@@ -62,13 +86,7 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 	}()
 	monitor.LLMCalls.WithLabelValues("local", "classify").Inc()
 
-	prompt := fmt.Sprintf(`Classify the following task as either SIMPLE or COMPLEX.
-SIMPLE: Short tasks, basic text processing, simple questions.
-COMPLEX: Tasks involving code, large data volumes, multiple steps, or deep reasoning.
-
-Task: %s
-
-Respond with ONLY the word SIMPLE or COMPLEX.`, taskDesc)
+	prompt := fmt.Sprintf(r.getClassifyPrompt(), taskDesc)
 
 	payload := map[string]interface{}{
 		"model": r.getLocalModel(),
@@ -127,24 +145,22 @@ Respond with ONLY the word SIMPLE or COMPLEX.`, taskDesc)
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {
 	var endpoint, model, apiKey, provider string
 
-	if classification == Complex {
-		if r.RemoteEndpoint != "" {
-			endpoint = r.RemoteEndpoint
-			model = r.getRemoteModel()
-			apiKey = r.RemoteAPIKey
-			provider = "remote"
-			log.Printf("LLM Router: Routing COMPLEX task to REMOTE provider (%s)", model)
-		} else {
-			endpoint = r.LocalEndpoint
-			model = r.getLocalModel()
-			provider = "local"
-			log.Printf("LLM Router: Remote LLM not configured, falling back to LOCAL for COMPLEX task (%s)", model)
-		}
+	target := r.getRoutingTarget(classification)
+	if target == "remote" && r.RemoteEndpoint != "" {
+		endpoint = r.RemoteEndpoint
+		model = r.getRemoteModel()
+		apiKey = r.RemoteAPIKey
+		provider = "remote"
+		log.Printf("LLM Router: Routing %s task to REMOTE provider (%s)", classification, model)
 	} else {
+		if target == "remote" && r.RemoteEndpoint == "" {
+			log.Printf("LLM Router: Remote LLM not configured, falling back to LOCAL for %s task", classification)
+		} else {
+			log.Printf("LLM Router: Routing %s task to LOCAL provider", classification)
+		}
 		endpoint = r.LocalEndpoint
 		model = r.getLocalModel()
 		provider = "local"
-		log.Printf("LLM Router: Routing SIMPLE task to LOCAL provider (%s)", model)
 	}
 
 	start := time.Now()
