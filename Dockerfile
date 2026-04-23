@@ -20,6 +20,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o orchestrator cmd/orchestrator/main.go
 # Final stage
 FROM alpine:latest
 
+# Install runtime dependencies
+RUN apk add --no-cache git openssh-client ca-certificates
+
 # Security: Add a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
