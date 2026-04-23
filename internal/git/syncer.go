@@ -29,23 +29,28 @@ func (s *Syncer) CacheDir() string { return s.cacheDir }
 
 // Start runs an initial sync and then re-syncs on the configured interval.
 func (s *Syncer) Start(ctx context.Context) {
+	interval := s.getRefreshInterval()
+	log.Printf("git: syncer starting (interval: %v, cache: %s)", interval, s.cacheDir)
+
 	if err := s.Sync(ctx); err != nil {
-		log.Printf("git: initial sync failed: %v", err)
+		log.Printf("git: initial sync FAILED: %v", err)
+	} else {
+		log.Printf("git: initial sync OK — prompt-library is ready")
 	}
 
-	interval := s.getRefreshInterval()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-
-	log.Printf("git: syncer started (interval: %v, cache: %s)", interval, s.cacheDir)
 
 	for {
 		select {
 		case <-ctx.Done():
+			log.Printf("git: syncer stopped")
 			return
 		case <-ticker.C:
 			if err := s.Sync(ctx); err != nil {
-				log.Printf("git: sync failed: %v", err)
+				log.Printf("git: periodic sync FAILED: %v", err)
+			} else {
+				log.Printf("git: periodic sync OK")
 			}
 		}
 	}
@@ -55,13 +60,15 @@ func (s *Syncer) Start(ctx context.Context) {
 func (s *Syncer) Sync(ctx context.Context) error {
 	url := s.getSetting("prompt_library_git_url", "")
 	if url == "" {
+		log.Printf("git: NOT CONFIGURED — set git URL in Settings → Prompt Library")
 		return fmt.Errorf("prompt_library_git_url not configured")
 	}
 	branch := s.getSetting("prompt_library_git_branch", "main")
 
 	keyContent := s.getSetting("prompt_library_ssh_key", "")
 	if keyContent == "" {
-		return fmt.Errorf("SSH key not configured (set prompt_library_ssh_key in settings or ssh_key_path in distribution.yml)")
+		log.Printf("git: NOT CONFIGURED — set SSH key in Settings → Prompt Library")
+		return fmt.Errorf("SSH key not configured — set it via web UI Settings → Prompt Library")
 	}
 
 	// Write key to temp file
@@ -78,15 +85,23 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(s.cacheDir, ".git")); os.IsNotExist(err) {
-		log.Printf("git: cloning %s → %s", url, s.cacheDir)
-		return s.runGit(ctx, sshCmd, ".", "clone", "--branch", branch, "--depth", "1", url, s.cacheDir)
+		log.Printf("git: cloning %s (branch: %s) → %s", url, branch, s.cacheDir)
+		if err := s.runGit(ctx, sshCmd, ".", "clone", "--branch", branch, "--depth", "1", url, s.cacheDir); err != nil {
+			return err
+		}
+		log.Printf("git: clone OK")
+		return nil
 	}
 
 	log.Printf("git: pulling %s (branch: %s)", url, branch)
 	if err := s.runGit(ctx, sshCmd, s.cacheDir, "fetch", "--depth", "1", "origin", branch); err != nil {
 		return err
 	}
-	return s.runGit(ctx, sshCmd, s.cacheDir, "reset", "--hard", "origin/"+branch)
+	if err := s.runGit(ctx, sshCmd, s.cacheDir, "reset", "--hard", "origin/"+branch); err != nil {
+		return err
+	}
+	log.Printf("git: pull OK")
+	return nil
 }
 
 func (s *Syncer) runGit(ctx context.Context, sshCmd, dir string, args ...string) error {
