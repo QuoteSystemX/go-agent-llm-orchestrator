@@ -1,6 +1,6 @@
 # 🚀 Jules Orchestrator (Pro Max Edition)
 
-Autonomous, stateful agent manager for the Antigravity Kit with Full CRUD Web UI.
+Autonomous, stateful agent manager for the Antigravity Kit with Full CRUD Web UI and Intelligent LLM Routing.
 
 ## 📋 Overview
 
@@ -8,13 +8,12 @@ Jules Orchestrator is a robust Go-based service designed to run in Kubernetes. I
 
 ### Key Features
 
-- **Centralized Helm Management**: Task schedules are managed directly in `values.yaml` and synchronized automatically on startup.
-- **Full CRUD Web UI**: Modern glassmorphism dashboard to create, edit, pause, and delete agentic tasks.
-- **Execution Audit Logs**: Detailed "In/Out" logging for every task run, capturing prompts sent and responses received.
-- **Autonomous Scheduling**: Internal cron engine triggers tasks from SQLite with persistent state.
-- **Intelligent LLM Routing**: Automatically routes tasks between local models (Ollama) and cloud models based on complexity.
-- **Agent Supervision**: Detects `WAITING_FOR_USER` blocks and uses an internal LLM to provide automated responses, ensuring zero-downtime autonomy.
-- **Prompt-Driven Tasks**: The `mission` field in task definitions acts as the primary LLM prompt sent to the agent.
+- **Intelligent Hybrid LLM Routing**: Automatically classifies tasks as `SIMPLE` or `COMPLEX`. SIMPLE tasks are handled by local models (Ollama), while COMPLEX tasks are routed to high-reasoning cloud models (Claude 3.5/OpenAI).
+- **Autonomous Agent Supervision**: Detects when agents are stuck (e.g., `WAITING_FOR_USER`) and uses an internal LLM to provide automated "supervisor" responses, ensuring continuous progress.
+- **Full CRUD Web UI**: Modern glassmorphism dashboard to create, edit, pause, and delete agentic tasks, plus a dedicated Settings panel for LLM and Telegram.
+- **Execution Audit Logs**: Detailed "In/Out" logging for every task run, capturing exact prompts sent to the LLM and the raw responses received.
+- **Centralized Helm Management**: Default task schedules are managed in `values.yaml` and synchronized automatically on startup, while allowing runtime overrides.
+- **Autonomous Scheduling**: Internal cron engine triggers tasks from SQLite with persistent state across pod restarts.
 
 ## 🛠️ Architecture
 
@@ -29,19 +28,21 @@ graph TD
     Scheduler --> TaskLogs[(Execution Logs)]
     API --> JulesAPI[Jules API]
     Scheduler --> JulesAPI
+    JulesAPI --> LLM[Local/Remote LLM]
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Go 1.25+ (for local development)
-- Kubernetes cluster with Helm
-- `JULES_API_KEY` and Ollama/OpenAI endpoint
+- **Go 1.25+** (for local development)
+- **Kubernetes** cluster with Helm installed
+- **Ollama** (for local LLM tasks) or **OpenAI/Anthropic API Key**
+- `JULES_API_KEY` for agent session management
 
 ### Deployment (Helm)
 
-The orchestrator is now part of the central `RecipientOFQuotes-Charts` repository.
+The orchestrator is deployed using the `go-agent-llm-orchestrator` chart.
 
 ```bash
 # Update schedule in values.yaml
@@ -54,12 +55,22 @@ By default, the dashboard is available via Ingress at `http://jules.lab.me/dashb
 
 ## ⚙️ Configuration
 
+### Environment Variables
+
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `DISTRIBUTION_CONFIG_PATH` | Path to the YAML file with default task schedule | `/app/config/distribution.yml` |
+| `LLM_LOCAL_ENDPOINT` | URL for local LLM (e.g., Ollama) | `http://ollama:11434` |
+| `LLM_REMOTE_ENDPOINT` | URL for remote LLM provider (OpenAI compatible) | - |
+| `LLM_REMOTE_API_KEY` | API Key for remote LLM | - |
+| `LLM_LOCAL_MODEL` | Default model for local tasks | `phi3:mini` |
+| `LLM_REMOTE_MODEL` | Default model for complex tasks | `gpt-4o` |
+| `JULES_API_KEY` | API key for Jules session management | - |
 | `DB_PATH` | Path to SQLite database file | `/app/data/tasks.db` |
-| `JULES_API_KEY` | API key for Jules | - |
 | `ADMIN_ADDR` | Listening address for Web UI & API | `:8080` |
+
+### Runtime Settings
+
+Settings like specific models and Telegram bot tokens can be updated directly via the **Settings** modal in the Web UI, which persist in the `settings` table of the database.
 
 ## 🧪 Testing
 

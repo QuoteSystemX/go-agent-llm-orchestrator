@@ -21,13 +21,33 @@ Click the **"Logs"** button on any task card to open the Execution History viewe
 - **Status & Timing**: Every run displays its success/failure status and the total duration in milliseconds.
 - **Error Tracking**: If a task fails, the specific error message will be displayed in the log entry.
 
-## 🤖 LLM Routing & Supervision
+## 🤖 LLM Configuration & Supervision
 
-The orchestrator uses LLMs for two primary functions:
+The orchestrator uses LLMs for three primary functions:
 
-1.  **Task Mission**: The `mission` field in your task configuration is the core prompt. The orchestrator passes this to the selected agent session.
-2.  **Supervision (Auto-Responder)**: If an agent becomes blocked (e.g., `WAITING_FOR_USER`), the orchestrator uses an internal LLM (local via Ollama or cloud) to analyze the context and provide a response to keep the agent moving autonomously.
-3.  **Routing**: Based on the `mission` complexity, the orchestrator determines whether to use a fast local model or a high-reasoning cloud model (Claude 3.5).
+### 1. Hybrid Routing
+Based on the `mission` complexity, the orchestrator determines whether to use a fast local model or a high-reasoning cloud model.
+- **Local Model**: Used for `SIMPLE` tasks. Configure via `LLM_LOCAL_ENDPOINT` and `LLM_LOCAL_MODEL`.
+- **Remote Model**: Used for `COMPLEX` tasks (e.g., Claude 3.5). Configure via `LLM_REMOTE_ENDPOINT` and `LLM_REMOTE_API_KEY`.
+
+### 2. Task Execution
+The `mission` field in your task configuration is the core prompt. The orchestrator passes this to the selected agent session. The quality of the response depends on the model selected during routing.
+
+### 3. Supervision (Auto-Responder)
+If an agent becomes blocked (status: `WAITING_FOR_USER`), the orchestrator automatically:
+1. Analyzes the session context using the local LLM.
+2. Generates a logical response to the agent's question.
+3. Resumes the session autonomously.
+You can monitor these events in the Pod logs or by checking the `task_logs` for "Auto-responded" patterns.
+
+## ⚙️ Configuration via Web UI
+
+You can adjust certain system settings without re-deploying:
+
+1. Click the **"Settings"** button in the header.
+2. **Telegram**: Provide your bot token to receive execution notifications.
+3. **Local LLM**: Change the model name (e.g., `phi3:mini`, `llama3`) used for local tasks and classification.
+4. Click **"Save Changes"** to apply instantly.
 
 ## ⚙️ Helm Integration
 
