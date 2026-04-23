@@ -30,8 +30,7 @@ func NewSyncer(database *db.DB, cacheDir string) *Syncer {
 func (s *Syncer) CacheDir() string { return s.cacheDir }
 
 func (s *Syncer) notifySyncSuccess() {
-	if !s.syncedOnce && s.OnSyncSuccess != nil {
-		s.syncedOnce = true
+	if s.OnSyncSuccess != nil {
 		s.OnSyncSuccess()
 	}
 }
@@ -110,9 +109,11 @@ func (s *Syncer) Sync(ctx context.Context) error {
 
 	log.Printf("git: pulling %s (branch: %s)", url, branch)
 	if err := s.runGit(ctx, sshCmd, s.cacheDir, "fetch", "--depth", "1", "origin", branch); err != nil {
+		log.Printf("git: fetch FAILED: %v", err)
 		return err
 	}
 	if err := s.runGit(ctx, sshCmd, s.cacheDir, "reset", "--hard", "origin/"+branch); err != nil {
+		log.Printf("git: reset FAILED: %v", err)
 		return err
 	}
 	log.Printf("git: pull OK")

@@ -173,7 +173,7 @@ func (e *Engine) runTask(taskID string) {
 		// Build the full Jules prompt — pause the task if library is not ready yet
 		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
 		if err != nil {
-			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
+			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
 			return fmt.Errorf("prompt-library not ready, task %s paused: %w", taskID, err)
 		}
 
