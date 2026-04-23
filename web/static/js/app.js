@@ -97,49 +97,48 @@ function toggleGroup(safeName) {
     if (el) el.classList.toggle('collapsed');
 }
 
-// ── Next Run Bar ─────────────────────────────────────────
-let _nextRunSeconds = null; // remaining seconds (live)
-let _nextRunTask = null;    // task name
+// ── Next Run Bar (top-5) ──────────────────────────────────
+let _nextRuns = []; // [{seconds_until, task_id, name, next_run}, ...]
 
 async function fetchNextRun() {
     try {
         const resp = await fetch('/api/v1/tasks/next-runs');
         const runs = await resp.json();
         if (!runs || runs.length === 0) return;
-
-        // Find the soonest task
-        const soonest = runs.reduce((min, r) =>
-            r.seconds_until < min.seconds_until ? r : min
-        );
-
-        _nextRunSeconds = soonest.seconds_until;
-        _nextRunTask = soonest.task_id.split(':').pop() + ' @ ' + soonest.name.split('/').pop();
-
-        const at = new Date(soonest.next_run).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-        document.getElementById('next-run-task').textContent = _nextRunTask;
-        document.getElementById('next-run-time').textContent = `at ${at}`;
-        updateCountdownDisplay();
+        // Server already returns top-5 sorted by seconds_until
+        _nextRuns = runs.map(r => ({ ...r, _sec: r.seconds_until }));
+        renderNextRunSlots();
     } catch (e) { /* silent */ }
 }
 
 function tickCountdown() {
-    if (_nextRunSeconds === null) return;
-    _nextRunSeconds = Math.max(0, _nextRunSeconds - 1);
-    updateCountdownDisplay();
+    if (_nextRuns.length === 0) return;
+    _nextRuns.forEach(r => { r._sec = Math.max(0, r._sec - 1); });
+    renderNextRunSlots();
 }
 
-function updateCountdownDisplay() {
-    const el = document.getElementById('next-run-countdown');
-    if (!el || _nextRunSeconds === null) return;
-    el.textContent = formatCountdown(_nextRunSeconds);
+function renderNextRunSlots() {
+    const container = document.getElementById('next-run-slots');
+    if (!container) return;
+    container.innerHTML = _nextRuns.map(r => {
+        const pattern = r.task_id.split(':').pop();
+        const repo    = r.name.split('/').pop();
+        const at      = new Date(r.next_run).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return `<div class="next-run-slot">
+            <span class="next-run-slot-name">${pattern}</span>
+            <span class="next-run-slot-countdown">${formatCountdown(r._sec)}</span>
+            <span class="next-run-slot-repo">${repo}</span>
+            <span class="next-run-slot-time">at ${at}</span>
+        </div>`;
+    }).join('');
 }
 
 function formatCountdown(sec) {
-    if (sec <= 0) return 'running now';
+    if (sec <= 0) return 'now';
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
     const s = Math.floor(sec % 60);
-    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (h > 0) return `${h}h ${m}m`;
     if (m > 0) return `${m}m ${s}s`;
     return `${s}s`;
 }

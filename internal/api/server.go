@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -585,6 +586,13 @@ func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 			NextRun:      next.UTC().Format(time.RFC3339),
 			SecondsUntil: next.Sub(now).Seconds(),
 		})
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].SecondsUntil < results[j].SecondsUntil
+	})
+	if len(results) > 5 {
+		results = results[:5]
 	}
 
 	w.Header().Set("Content-Type", "application/json")

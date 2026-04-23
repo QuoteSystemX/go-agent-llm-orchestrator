@@ -77,7 +77,6 @@ button {
 .next-run-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0.6rem 1.25rem;
     margin-bottom: 1.5rem;
     border-radius: 0.75rem;
@@ -85,11 +84,11 @@ button {
     gap: 1rem;
 }
 
-.next-run-left {
+.next-run-title {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    overflow: hidden;
+    gap: 0.4rem;
+    flex-shrink: 0;
 }
 
 .next-run-label {
@@ -100,33 +99,65 @@ button {
     white-space: nowrap;
 }
 
-.next-run-task-name {
-    color: var(--text);
+.next-run-slots {
+    display: flex;
+    flex: 1;
+    gap: 0.6rem;
+    overflow: hidden;
+}
+
+.next-run-slot {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+}
+
+.next-run-slot-name {
     font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    grid-column: 1;
+    grid-row: 1;
 }
 
-.next-run-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-shrink: 0;
-}
-
-.next-run-countdown {
+.next-run-slot-countdown {
     font-family: 'Courier New', monospace;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--primary);
-    min-width: 80px;
+    white-space: nowrap;
+    grid-column: 2;
+    grid-row: 1;
     text-align: right;
 }
 
-.next-run-time {
+.next-run-slot-repo {
+    font-size: 0.65rem;
     color: var(--text-muted);
-    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.next-run-slot-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
 }
 
 /* Project Grouping */
