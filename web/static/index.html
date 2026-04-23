@@ -36,11 +36,36 @@
                 </div>
             </div>
 
-            <section class="task-section">
-                <div id="task-list" class="task-grid">
-                    <!-- Tasks will be injected here -->
-                </div>
-            </section>
+            <div class="tab-switcher">
+                <button id="tab-btn-repositories" class="tab-btn active" onclick="switchTab('repositories')">
+                    <i data-lucide="layout-grid"></i> Repositories
+                </button>
+                <button id="tab-btn-ai-chat" class="tab-btn" onclick="switchTab('ai-chat')">
+                    <i data-lucide="bot"></i> AI Chat
+                </button>
+            </div>
+
+            <div id="tab-repositories" class="tab-pane active">
+                <section class="task-section">
+                    <div id="task-list" class="task-grid">
+                        <!-- Tasks will be injected here -->
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-ai-chat" class="tab-pane">
+                <section class="chat-section glass">
+                    <div id="chat-history" class="chat-history">
+                        <!-- Chat messages will be injected here -->
+                    </div>
+                    <div class="chat-input-area">
+                        <textarea id="chat-input" placeholder="Ask anything about your agents or code..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+                        <button id="chat-send-btn" class="btn-primary" onclick="sendChatMessage()">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- Task Modal (Create/Edit) -->

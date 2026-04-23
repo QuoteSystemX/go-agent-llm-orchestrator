@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/web"
 	"github.com/robfig/cron/v3"
 )
@@ -100,6 +101,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
+	mux.HandleFunc("/api/v1/chat", s.handleChat)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -656,5 +658,36 @@ func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
+}
+
+func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Messages []map[string]string `json:"messages"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Messages) == 0 {
+		http.Error(w, "messages are required", http.StatusBadRequest)
+		return
+	}
+
+	// Use SIMPLE classification for chat by default (as it's a "lite" chat)
+	router := llm.NewRouter(s.db)
+	response, err := router.GenerateChat(r.Context(), llm.Simple, req.Messages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"response": response})
 }
 

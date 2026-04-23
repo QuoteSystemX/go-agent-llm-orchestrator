@@ -143,6 +143,12 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 }
 
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {
+	return r.GenerateChat(ctx, classification, []map[string]string{
+		{"role": "user", "content": prompt},
+	})
+}
+
+func (r *Router) GenerateChat(ctx context.Context, classification Classification, messages []map[string]string) (string, error) {
 	var endpoint, model, apiKey, provider string
 
 	target := r.getRoutingTarget(classification)
@@ -170,10 +176,8 @@ func (r *Router) GenerateResponse(ctx context.Context, classification Classifica
 	monitor.LLMCalls.WithLabelValues(provider, string(classification)).Inc()
 
 	payload := map[string]interface{}{
-		"model": model,
-		"messages": []map[string]string{
-			{"role": "user", "content": prompt},
-		},
+		"model":    model,
+		"messages": messages,
 	}
 
 	jsonData, _ := json.Marshal(payload)

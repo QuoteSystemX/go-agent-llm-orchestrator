@@ -576,3 +576,90 @@ async function fetchLogs() {
 function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// ── Tabs Logic ────────────────────────────────────────────────
+function switchTab(tabName) {
+    // Update buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+
+    // Update panes
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+
+    if (tabName === 'repositories') {
+        renderTasks();
+    }
+    lucide.createIcons();
+}
+
+// ── AI Chat Logic ─────────────────────────────────────────────
+let chatMessages = [
+    { role: 'bot', content: "Hello! I'm your AI assistant. How can I help you with your repositories today?" }
+];
+
+function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Add user message
+    chatMessages.push({ role: 'user', content: text });
+    input.value = '';
+    renderChat();
+
+    // Prepare messages for API (match OpenAI format expected by backend)
+    const apiMessages = chatMessages.map(m => ({
+        role: m.role === 'bot' ? 'assistant' : 'user',
+        content: m.content
+    }));
+
+    const btn = document.getElementById('chat-send-btn');
+    btn.disabled = true;
+
+    try {
+        const resp = await fetch('/api/v1/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: apiMessages })
+        });
+        
+        if (resp.ok) {
+            const data = await resp.json();
+            chatMessages.push({ role: 'bot', content: data.response });
+        } else {
+            const err = await resp.text();
+            chatMessages.push({ role: 'bot', content: `Error: ${err}` });
+        }
+    } catch (err) {
+        chatMessages.push({ role: 'bot', content: `Network error: ${err.message}` });
+    } finally {
+        btn.disabled = false;
+        renderChat();
+    }
+}
+
+function renderChat() {
+    const container = document.getElementById('chat-history');
+    if (!container) return;
+
+    container.innerHTML = chatMessages.map(m => `
+        <div class="chat-message ${m.role}">
+            ${escapeHtml(m.content).replace(/\n/g, '<br>')}
+        </div>
+    `).join('');
+
+    container.scrollTop = container.scrollHeight;
+}
+
+// Initial render of chat
+document.addEventListener('DOMContentLoaded', () => {
+    renderChat();
+});
