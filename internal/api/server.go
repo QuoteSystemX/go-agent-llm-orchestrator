@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -29,6 +30,7 @@ type Scheduler interface {
 type AdminServer struct {
 	db        *db.DB
 	scheduler Scheduler
+	logBuf    *LogBuffer
 }
 
 func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
@@ -38,6 +40,33 @@ func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
 	}
 }
 
+// SetLogBuffer attaches an in-memory log buffer so /api/v1/logs can serve it.
+func (s *AdminServer) SetLogBuffer(lb *LogBuffer) { s.logBuf = lb }
+
+// maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
+// Short secrets are fully masked.
+func maskSecret(v string) string {
+	if v == "" {
+		return ""
+	}
+	if len(v) <= 8 {
+		return "***"
+	}
+	return v[:4] + "..." + v[len(v)-4:]
+}
+
+// effectiveKey returns the key from DB first, then falls back to the env variable.
+// Second return value is the source: "db", "env", or "".
+func (s *AdminServer) effectiveKey(ctx context.Context, dbKey, envKey string) (string, string) {
+	if val := s.getSetting(ctx, dbKey, ""); val != "" {
+		return val, "db"
+	}
+	if val := os.Getenv(envKey); val != "" {
+		return val, "env"
+	}
+	return "", ""
+}
+
 func (s *AdminServer) Start(addr string) error {
 	mux := http.NewServeMux()
 	
@@ -45,7 +74,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/tasks/next-runs", s.handleNextRuns)
 	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
 	mux.HandleFunc("/api/v1/tasks/", s.handleTaskByID)
-	
+
 	// Settings & Audit
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
 	mux.HandleFunc("/api/v1/settings/llm", s.handleLLMSettings)
@@ -53,6 +82,9 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompts", s.handlePromptSettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
+
+	// Logs
+	mux.HandleFunc("/api/v1/logs", s.handleLogs)
 	
 	// Health
 	mux.HandleFunc("/healthz", s.handleHealth)
@@ -334,19 +366,28 @@ func (s *AdminServer) saveSetting(ctx context.Context, key, value string) error 
 	return err
 }
 
+func (s *AdminServer) handleLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.logBuf == nil {
+		json.NewEncoder(w).Encode([]LogEntry{})
+		return
+	}
+	json.NewEncoder(w).Encode(s.logBuf.Entries())
+}
+
 func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
+		julesKey, julesKeySource := s.effectiveKey(r.Context(), "jules_api_key", "JULES_API_KEY")
+		masked := maskSecret(julesKey)
+		if masked != "" {
+			masked = "[" + julesKeySource + "] " + masked
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
-			"local_model":   s.getSetting(r.Context(), "llm_local_model", ""),
-			"remote_model":  s.getSetting(r.Context(), "llm_remote_model", ""),
-			"jules_api_key": func() string {
-				if s.getSetting(r.Context(), "jules_api_key", "") != "" {
-					return "***"
-				}
-				return ""
-			}(),
+			"local_model":    s.getSetting(r.Context(), "llm_local_model", ""),
+			"remote_model":   s.getSetting(r.Context(), "llm_remote_model", ""),
+			"jules_api_key":  masked,
 			"jules_base_url": s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
 		})
 	case http.MethodPost:

@@ -4,10 +4,10 @@ let tasks = [];
 document.addEventListener('DOMContentLoaded', () => {
     fetchTasks();
     fetchNextRun();
-    // Refresh next-run data every 30s
+    fetchLogs();
     setInterval(fetchNextRun, 30000);
-    // Tick the countdown every second
     setInterval(tickCountdown, 1000);
+    setInterval(fetchLogs, 5000);
     lucide.createIcons();
 });
 
@@ -320,7 +320,14 @@ async function loadLLMSettings() {
         if (data.local_model) document.getElementById('local-model').value = data.local_model;
         if (data.remote_model) document.getElementById('remote-model').value = data.remote_model;
         if (data.jules_base_url) document.getElementById('jules-base-url').value = data.jules_base_url;
-        // jules_api_key is masked server-side, leave field empty
+        // Show masked key (e.g. "[env] AIza...abc4") as placeholder so the user knows it's set
+        const keyField = document.getElementById('jules-api-key');
+        if (data.jules_api_key) {
+            keyField.placeholder = data.jules_api_key;
+            keyField.value = '';
+        } else {
+            keyField.placeholder = 'AIza... (not set)';
+        }
     } catch (e) { /* silent */ }
 }
 
@@ -466,4 +473,56 @@ async function saveSettings() {
 
     hideModal('settings-modal');
     alert('Settings saved successfully!');
+}
+
+// ── Log Panel ─────────────────────────────────────────────────
+let _logPanelOpen = false;
+
+function toggleLogPanel() {
+    _logPanelOpen = !_logPanelOpen;
+    const panel = document.getElementById('log-panel');
+    const chevron = document.getElementById('log-panel-chevron');
+    panel.classList.toggle('collapsed', !_logPanelOpen);
+    chevron.style.transform = _logPanelOpen ? 'rotate(180deg)' : '';
+    if (_logPanelOpen) fetchLogs();
+}
+
+async function fetchLogs() {
+    try {
+        const resp = await fetch('/api/v1/logs');
+        if (!resp.ok) return;
+        const entries = await resp.json();
+        if (!entries || entries.length === 0) return;
+
+        // Update the "last line" preview in the collapsed bar
+        const last = entries[entries.length - 1];
+        document.getElementById('log-panel-last').textContent = last.msg;
+        document.getElementById('log-panel-count').textContent = entries.length + ' lines';
+
+        if (!_logPanelOpen) return;
+
+        const container = document.getElementById('log-panel-entries');
+        const wasAtBottom = container.parentElement.scrollHeight - container.parentElement.scrollTop
+            <= container.parentElement.clientHeight + 40;
+
+        container.innerHTML = entries.map(e => {
+            const msg = e.msg || '';
+            let cls = '';
+            if (/FAIL|error|ERR|fatal/i.test(msg)) cls = 'is-error';
+            else if (/OK|ready|started|success/i.test(msg)) cls = 'is-ok';
+            else if (/warn|NOT CONFIGURED/i.test(msg)) cls = 'is-warn';
+            return `<div class="log-line">
+                <span class="log-line-time">${e.time}</span>
+                <span class="log-line-msg ${cls}">${escapeHtml(msg)}</span>
+            </div>`;
+        }).join('');
+
+        if (wasAtBottom) {
+            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+        }
+    } catch (e) { /* silent */ }
+}
+
+function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }

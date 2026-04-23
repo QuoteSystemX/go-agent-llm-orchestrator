@@ -262,6 +262,24 @@
         </div>
     </div>
 
+    <!-- Log Panel (footer) -->
+    <div id="log-panel" class="log-panel collapsed">
+        <div class="log-panel-header" onclick="toggleLogPanel()">
+            <div style="display:flex; align-items:center; gap:0.5rem">
+                <i data-lucide="terminal" style="width:14px; color:var(--primary)"></i>
+                <span style="font-size:0.8rem; font-weight:600">System Logs</span>
+                <span id="log-panel-last" class="log-panel-last"></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem">
+                <span id="log-panel-count" style="font-size:0.7rem; color:var(--text-muted)"></span>
+                <i data-lucide="chevron-up" id="log-panel-chevron" style="width:14px; transition:transform 0.2s"></i>
+            </div>
+        </div>
+        <div id="log-panel-body" class="log-panel-body">
+            <div id="log-panel-entries"></div>
+        </div>
+    </div>
+
     <script src="/static/js/app.js"></script>
     <script>lucide.createIcons();</script>
 </body>

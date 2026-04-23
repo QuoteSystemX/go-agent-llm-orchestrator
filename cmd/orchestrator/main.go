@@ -20,6 +20,9 @@ import (
 )
 
 func main() {
+	// Set up in-memory log buffer before anything else so all startup logs are captured.
+	logBuf := api.NewLogBuffer(500)
+
 	log.Println("Starting Jules Orchestrator...")
 
 	// 1. Configuration
@@ -28,6 +31,20 @@ func main() {
 		dbPath = "./data/tasks.db"
 	}
 
+	// Log active environment variables (secrets are masked).
+	log.Println("=== Environment configuration ===")
+	logEnvVar("DB_PATH", dbPath, false)
+	logEnvVar("JULES_API_KEY", os.Getenv("JULES_API_KEY"), true)
+	logEnvVar("JULES_API_URL", os.Getenv("JULES_API_URL"), false)
+	logEnvVar("LLM_LOCAL_ENDPOINT", os.Getenv("LLM_LOCAL_ENDPOINT"), false)
+	logEnvVar("LLM_LOCAL_MODEL", os.Getenv("LLM_LOCAL_MODEL"), false)
+	logEnvVar("LLM_REMOTE_ENDPOINT", os.Getenv("LLM_REMOTE_ENDPOINT"), false)
+	logEnvVar("LLM_REMOTE_API_KEY", os.Getenv("LLM_REMOTE_API_KEY"), true)
+	logEnvVar("LLM_REMOTE_MODEL", os.Getenv("LLM_REMOTE_MODEL"), false)
+	logEnvVar("PROMPT_LIBRARY_CACHE_DIR", os.Getenv("PROMPT_LIBRARY_CACHE_DIR"), false)
+	logEnvVar("DISTRIBUTION_CONFIG_PATH", os.Getenv("DISTRIBUTION_CONFIG_PATH"), false)
+	log.Println("=================================")
+
 	// 2. Initialize Foundation
 	database, err := db.InitDB(dbPath)
 	if err != nil {
@@ -35,7 +52,7 @@ func main() {
 	}
 	defer database.Close()
 
-	tm := traffic.NewTrafficManager(1.0, 5) // 1 RPS, 5 burst (example)
+	tm := traffic.NewTrafficManager(1.0, 5)
 
 	// 3. Initialize Logic
 	julesClient := api.NewJulesClient(database)
@@ -55,6 +72,7 @@ func main() {
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	adminServer := api.NewAdminServer(database, engine)
+	adminServer.SetLogBuffer(logBuf)
 
 	// 4. Start Background Processes
 	ctx, cancel := context.WithCancel(context.Background())
@@ -64,7 +82,7 @@ func main() {
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
-	
+
 	// Import distribution config if available
 	distPath := os.Getenv("DISTRIBUTION_CONFIG_PATH")
 	if distPath != "" {
@@ -83,7 +101,7 @@ func main() {
 
 	go statMonitor.Start(ctx, 30*time.Second)
 
-	// Periodic task sync (Every 5 minutes)
+	// Periodic task sync (every 5 minutes)
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
@@ -98,8 +116,8 @@ func main() {
 			}
 		}
 	}()
-	
-	// Start Daily Summary (Every day at 09:00)
+
+	// Daily summary at 09:00
 	go func() {
 		for {
 			now := time.Now()
@@ -109,7 +127,7 @@ func main() {
 			}
 			time.Sleep(time.Until(next))
 			log.Println("Sending daily summary to Telegram")
-			telegramNotifier.SendDailySummary(10, 0, 2) // Example counts for now
+			telegramNotifier.SendDailySummary(10, 0, 2)
 		}
 	}()
 
@@ -131,8 +149,25 @@ func main() {
 
 	engine.Stop()
 	cancel()
-	
-	// Give some time for background tasks to finish
+
 	time.Sleep(2 * time.Second)
 	log.Println("Orchestrator stopped")
+}
+
+// logEnvVar logs the name and value of an environment variable.
+// If secret is true, the value is masked.
+func logEnvVar(name, value string, secret bool) {
+	if value == "" {
+		log.Printf("  %-30s (not set)", name)
+		return
+	}
+	display := value
+	if secret {
+		if len(value) <= 8 {
+			display = "***"
+		} else {
+			display = value[:4] + "..." + value[len(value)-4:]
+		}
+	}
+	log.Printf("  %-30s = %s", name, display)
 }
