@@ -16,8 +16,10 @@ import (
 // Syncer clones and periodically pulls a git repo using an SSH key.
 // Priority for SSH key: YAML config (loaded into DB on startup) → DB setting (set via web UI).
 type Syncer struct {
-	db       *db.DB
-	cacheDir string // where to clone the repo locally
+	db            *db.DB
+	cacheDir      string // where to clone the repo locally
+	OnSyncSuccess func() // called once after the first successful sync
+	syncedOnce    bool
 }
 
 func NewSyncer(database *db.DB, cacheDir string) *Syncer {
@@ -26,6 +28,13 @@ func NewSyncer(database *db.DB, cacheDir string) *Syncer {
 
 // CacheDir returns the local directory where the repo is cloned.
 func (s *Syncer) CacheDir() string { return s.cacheDir }
+
+func (s *Syncer) notifySyncSuccess() {
+	if !s.syncedOnce && s.OnSyncSuccess != nil {
+		s.syncedOnce = true
+		s.OnSyncSuccess()
+	}
+}
 
 // Start runs an initial sync and then re-syncs on the configured interval.
 func (s *Syncer) Start(ctx context.Context) {
@@ -90,6 +99,7 @@ func (s *Syncer) Sync(ctx context.Context) error {
 			return err
 		}
 		log.Printf("git: clone OK")
+		s.notifySyncSuccess()
 		return nil
 	}
 
@@ -101,7 +111,14 @@ func (s *Syncer) Sync(ctx context.Context) error {
 		return err
 	}
 	log.Printf("git: pull OK")
+	s.notifySyncSuccess()
 	return nil
+}
+
+// SyncNow triggers an immediate sync and blocks until it completes.
+// Safe to call from any goroutine.
+func (s *Syncer) SyncNow(ctx context.Context) error {
+	return s.Sync(ctx)
 }
 
 func (s *Syncer) runGit(ctx context.Context, sshCmd, dir string, args ...string) error {

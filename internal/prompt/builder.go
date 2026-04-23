@@ -46,6 +46,16 @@ func (b *Builder) IsReady() bool {
 	return err == nil
 }
 
+// HasPrompt reports whether the pattern file exists for the given pattern.
+// Agent file is optional in Build(), so only the pattern is required.
+func (b *Builder) HasPrompt(pattern string) bool {
+	if !b.IsReady() || pattern == "" {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(b.libraryDir, "prompt", "patterns", pattern+".md"))
+	return err == nil
+}
+
 // Build assembles the full Jules prompt for a task.
 func (b *Builder) Build(agent, pattern, mission string) (string, error) {
 	d := &Data{

@@ -78,12 +78,23 @@ func main() {
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	adminServer := api.NewAdminServer(database, engine)
 	adminServer.SetLogBuffer(logBuf)
+	adminServer.SetGitSyncer(gitSyncer)
+	adminServer.SetPromptChecker(promptBuilder)
 
 	// 4. Start Background Processes
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	engine.Start()
+
+	// When the prompt-library syncs successfully for the first time, auto-resume
+	// any tasks that were paused at startup due to a missing SSH key.
+	gitSyncer.OnSyncSuccess = func() {
+		n := engine.ResumeAutopaused(ctx)
+		if n > 0 {
+			log.Printf("git: prompt-library ready — %d auto-paused task(s) resumed", n)
+		}
+	}
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
@@ -92,7 +103,7 @@ func main() {
 	// they would fail anyway when the cron fires and buildPrompt() returns an error.
 	if !gitSyncer.IsSSHKeyConfigured() {
 		n := engine.PauseAllPending(ctx)
-		log.Printf("WARNING: prompt-library SSH key not set — %d PENDING task(s) paused. Set key via Settings → Prompt Library, then resume tasks manually.", n)
+		log.Printf("WARNING: prompt-library SSH key not set — %d PENDING task(s) paused. Set key via Settings → Prompt Library, they will resume automatically after first successful sync.", n)
 	}
 
 	// Import distribution config if available

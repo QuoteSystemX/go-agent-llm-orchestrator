@@ -28,10 +28,20 @@ type Scheduler interface {
 	SyncTasks(ctx context.Context) error
 }
 
+type GitSyncer interface {
+	Sync(ctx context.Context) error
+}
+
+type PromptChecker interface {
+	HasPrompt(pattern string) bool
+}
+
 type AdminServer struct {
-	db        *db.DB
-	scheduler Scheduler
-	logBuf    *LogBuffer
+	db             *db.DB
+	scheduler      Scheduler
+	gitSyncer      GitSyncer
+	promptChecker  PromptChecker
+	logBuf         *LogBuffer
 }
 
 func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
@@ -43,6 +53,12 @@ func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
 
 // SetLogBuffer attaches an in-memory log buffer so /api/v1/logs can serve it.
 func (s *AdminServer) SetLogBuffer(lb *LogBuffer) { s.logBuf = lb }
+
+// SetGitSyncer attaches a git syncer so saving SSH key triggers an immediate sync.
+func (s *AdminServer) SetGitSyncer(gs GitSyncer) { s.gitSyncer = gs }
+
+// SetPromptChecker attaches a prompt checker so tasks can report whether their prompt file exists.
+func (s *AdminServer) SetPromptChecker(pc PromptChecker) { s.promptChecker = pc }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -82,6 +98,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/supervisor", s.handleSupervisorSettings)
 	mux.HandleFunc("/api/v1/settings/prompts", s.handlePromptSettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
+	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 
 	// Logs
@@ -125,14 +142,16 @@ func (s *AdminServer) Start(addr string) error {
 }
 
 type TaskResponse struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Mission    string    `json:"mission"`
-	Pattern    string    `json:"pattern"`
-	Schedule   string    `json:"schedule"`
-	Status     string    `json:"status"`
-	LastRunAt  *time.Time `json:"last_run_at"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Agent       string     `json:"agent"`
+	Mission     string     `json:"mission"`
+	Pattern     string     `json:"pattern"`
+	Schedule    string     `json:"schedule"`
+	Status      string     `json:"status"`
+	PromptReady bool       `json:"prompt_ready"`
+	LastRunAt   *time.Time `json:"last_run_at"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +166,8 @@ func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), "SELECT id, name, mission, pattern, schedule, status, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
+	rows, err := s.db.QueryContext(r.Context(),
+		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -157,8 +177,13 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []TaskResponse
 	for rows.Next() {
 		var t TaskResponse
-		if err := rows.Scan(&t.ID, &t.Name, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.LastRunAt, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.LastRunAt, &t.CreatedAt); err != nil {
 			continue
+		}
+		if s.promptChecker != nil {
+			t.PromptReady = s.promptChecker.HasPrompt(t.Pattern)
+		} else {
+			t.PromptReady = true // assume ready when checker not wired
 		}
 		tasks = append(tasks, t)
 	}
@@ -530,11 +555,29 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 		}
 		if data.SSHKey != "" {
 			s.saveSetting(r.Context(), "prompt_library_ssh_key", data.SSHKey)
+			// Trigger immediate sync so auto-paused tasks resume without waiting for the interval.
+			if s.gitSyncer != nil {
+				go s.gitSyncer.Sync(context.Background())
+			}
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// handlePromptLibrarySync triggers an immediate git sync of the prompt library.
+func (s *AdminServer) handlePromptLibrarySync(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.gitSyncer == nil {
+		http.Error(w, "git syncer not available", http.StatusServiceUnavailable)
+		return
+	}
+	go s.gitSyncer.Sync(context.Background())
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {

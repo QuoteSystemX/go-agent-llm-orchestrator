@@ -48,12 +48,27 @@ func (e *Engine) Stop() {
 	e.cron.Stop()
 }
 
-// PauseAllPending pauses every PENDING task and returns the count paused.
+// PauseAllPending pauses every PENDING task and marks them auto_paused=1.
 // Called at startup when the prompt-library SSH key is not yet configured.
+// Only auto_paused tasks are eligible for automatic resume via ResumeAutopaused.
 func (e *Engine) PauseAllPending(ctx context.Context) int {
-	res, err := e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED' WHERE status = 'PENDING'")
+	res, err := e.db.ExecContext(ctx,
+		"UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE status = 'PENDING'")
 	if err != nil {
 		log.Printf("scheduler: failed to pause pending tasks: %v", err)
+		return 0
+	}
+	n, _ := res.RowsAffected()
+	return int(n)
+}
+
+// ResumeAutopaused restores PAUSED tasks that were auto-paused at startup (auto_paused=1)
+// back to PENDING. Called after a successful prompt-library sync.
+func (e *Engine) ResumeAutopaused(ctx context.Context) int {
+	res, err := e.db.ExecContext(ctx,
+		"UPDATE tasks SET status = 'PENDING', auto_paused = 0 WHERE status = 'PAUSED' AND auto_paused = 1")
+	if err != nil {
+		log.Printf("scheduler: failed to resume auto-paused tasks: %v", err)
 		return 0
 	}
 	n, _ := res.RowsAffected()

@@ -237,8 +237,15 @@
                     <textarea id="pl-ssh-key" rows="6"
                         style="font-family:monospace; font-size:0.72rem; resize:vertical"
                         placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
-                        Leave empty to keep existing key. Set once from YAML <code>ssh_key_path</code> on first load.
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.4rem">
+                        <div style="font-size:0.7rem; color:var(--text-muted)">
+                            Leave empty to keep existing key. Saving a key triggers an immediate sync.
+                        </div>
+                        <button type="button" class="btn-secondary" id="btn-sync-now"
+                            style="font-size:0.72rem; padding:0.3rem 0.75rem; flex-shrink:0"
+                            onclick="syncPromptLibrary()">
+                            <i data-lucide="refresh-cw" style="width:12px;height:12px"></i> Sync Now
+                        </button>
                     </div>
                 </div>
 

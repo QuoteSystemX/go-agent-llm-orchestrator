@@ -52,6 +52,7 @@ func InitDB(dbPath string) (*DB, error) {
 	// Migrations: add columns that may not exist in older databases
 	migrations := []string{
 		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
+		`ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {

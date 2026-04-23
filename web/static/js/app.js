@@ -44,28 +44,35 @@ function renderTasks() {
         const safeName = projectName.replace(/[^a-z0-9]/gi, '-');
         const groupId = `group-${safeName}`;
         const isOpen = openGroups.has(groupId);
+        const promptCount = projectTasks.filter(t => t.prompt_ready).length;
+        const promptBadgeClass = promptCount === projectTasks.length ? 'prompt-count-ok' : 'prompt-count-warn';
         html += `
             <div class="project-group ${isOpen ? '' : 'collapsed'}" id="${groupId}">
                 <div class="project-header" onclick="toggleGroup('${safeName}')">
                     <i data-lucide="chevron-right" class="chevron"></i>
                     <i data-lucide="folder" style="width:16px; color:var(--primary)"></i>
                     <span>${projectName}</span>
-                    <span class="task-count">${projectTasks.length}</span>
+                    <span class="task-count">${projectTasks.length} tasks</span>
+                    <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
                     <div class="project-line"></div>
                 </div>
                 <div class="project-content">
                     <div class="task-grid">
-                        ${projectTasks.map(task => `
-                            <div class="task-card glass">
+                        ${projectTasks.map(task => {
+                            const noPrompt = !task.prompt_ready;
+                            const dis = noPrompt ? 'disabled' : '';
+                            return `
+                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''}">
                                 <div class="task-info-block">
                                     <div class="task-header">
                                         <div class="task-title">${task.id.split(':').pop()}</div>
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
                                     </div>
                                     <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    ${noPrompt ? `<span class="task-badge no-prompt-badge" title="Pattern file not found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
                                 </div>
-                                
+
                                 <div class="task-meta">
                                     <span><i data-lucide="clock" style="width:12px; vertical-align:middle"></i> ${task.schedule}</span>
                                     <span style="font-weight:600">${task.pattern}</span>
@@ -73,15 +80,15 @@ function renderTasks() {
 
                                 <div class="task-footer">
                                     <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
-                                    <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit"><i data-lucide="edit-3"></i></button>
-                                    ${task.status === 'PAUSED' 
-                                        ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume"><i data-lucide="play"></i></button>`
-                                        : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause"><i data-lucide="pause"></i></button>`
+                                    <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
+                                    ${task.status === 'PAUSED'
+                                        ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
+                                        : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis}><i data-lucide="pause"></i></button>`
                                     }
-                                    <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
+                                    <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 </div>
             </div>
@@ -478,6 +485,30 @@ async function saveSettings() {
 
     hideModal('settings-modal');
     alert('Settings saved successfully!');
+}
+
+async function syncPromptLibrary() {
+    const btn = document.getElementById('btn-sync-now');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" style="width:12px;height:12px"></i> Syncing...';
+    lucide.createIcons();
+    try {
+        const resp = await fetch('/api/v1/settings/prompt-library/sync', { method: 'POST' });
+        if (resp.ok) {
+            btn.innerHTML = '<i data-lucide="check" style="width:12px;height:12px"></i> Triggered';
+            lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; lucide.createIcons(); }, 3000);
+        } else {
+            btn.innerHTML = '<i data-lucide="x" style="width:12px;height:12px"></i> Failed';
+            lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; lucide.createIcons(); }, 3000);
+        }
+    } catch {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+        lucide.createIcons();
+    }
 }
 
 // ── Log Panel ─────────────────────────────────────────────────
