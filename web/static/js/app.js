@@ -318,9 +318,13 @@ async function loadPromptLibrarySettings() {
         const data = await resp.json();
         if (data.git_url) document.getElementById('pl-git-url').value = data.git_url;
         if (data.git_branch) document.getElementById('pl-git-branch').value = data.git_branch;
+        if (data.ssh_user) document.getElementById('pl-ssh-user').value = data.ssh_user;
         if (data.refresh_interval) document.getElementById('pl-refresh-interval').value = data.refresh_interval;
+        if (data.patterns_path) document.getElementById('pl-patterns-path').value = data.patterns_path;
+        if (data.agents_path) document.getElementById('pl-agents-path').value = data.agents_path;
+        if (data.workflows_path) document.getElementById('pl-workflows-path').value = data.workflows_path;
         const status = document.getElementById('pl-ssh-key-status');
-        status.textContent = data.ssh_key_set === 'true' ? '✓ key stored' : '';
+        status.textContent = data.ssh_key_set.startsWith('true') ? '✓ key stored' : '';
     } catch (e) { /* silent */ }
 }
 
@@ -463,10 +467,13 @@ async function saveSettings() {
     }
 
     const plGitUrl = document.getElementById('pl-git-url').value.trim();
-    const plGitBranch = document.getElementById('pl-git-branch').value.trim();
     const plRefreshInterval = document.getElementById('pl-refresh-interval').value.trim();
+    const plPatternsPath = document.getElementById('pl-patterns-path').value.trim();
+    const plAgentsPath = document.getElementById('pl-agents-path').value.trim();
+    const plWorkflowsPath = document.getElementById('pl-workflows-path').value.trim();
+    const plSSHUser = document.getElementById('pl-ssh-user').value.trim();
     const plSSHKey = document.getElementById('pl-ssh-key').value.trim();
-    if (plGitUrl || plGitBranch || plRefreshInterval || plSSHKey) {
+    if (plGitUrl || plGitBranch || plRefreshInterval || plSSHKey || plSSHUser || plPatternsPath || plAgentsPath || plWorkflowsPath) {
         await fetch('/api/v1/settings/prompt-library', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -474,6 +481,10 @@ async function saveSettings() {
                 git_url: plGitUrl,
                 git_branch: plGitBranch,
                 refresh_interval: plRefreshInterval,
+                patterns_path: plPatternsPath,
+                agents_path: plAgentsPath,
+                workflows_path: plWorkflowsPath,
+                ssh_user: plSSHUser,
                 ssh_key: plSSHKey
             })
         });

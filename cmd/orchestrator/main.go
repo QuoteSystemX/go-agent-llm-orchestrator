@@ -72,7 +72,7 @@ func main() {
 		cacheDir = "./data/prompt-lib"
 	}
 	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
-	promptBuilder := prompt.NewBuilder(cacheDir)
+	promptBuilder := prompt.NewBuilder(database, cacheDir)
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)

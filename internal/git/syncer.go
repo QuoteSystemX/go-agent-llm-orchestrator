@@ -66,14 +66,14 @@ func (s *Syncer) Start(ctx context.Context) {
 
 // Sync performs a clone (if repo not present) or pull (if already cloned).
 func (s *Syncer) Sync(ctx context.Context) error {
-	url := s.getSetting("prompt_library_git_url", "")
+	url := s.db.GetSetting("prompt_library_git_url", "")
 	if url == "" {
 		log.Printf("git: NOT CONFIGURED — set git URL in Settings → Prompt Library")
 		return fmt.Errorf("prompt_library_git_url not configured")
 	}
-	branch := s.getSetting("prompt_library_git_branch", "main")
+	branch := s.db.GetSetting("prompt_library_git_branch", "main")
 
-	keyContent := s.getSetting("prompt_library_ssh_key", "")
+	keyContent := s.db.GetSetting("prompt_library_ssh_key", "")
 	if keyContent == "" {
 		log.Printf("git: NOT CONFIGURED — set SSH key in Settings → Prompt Library")
 		return fmt.Errorf("SSH key not configured — set it via web UI Settings → Prompt Library")
@@ -130,7 +130,16 @@ func (s *Syncer) SyncNow(ctx context.Context) error {
 func (s *Syncer) runGit(ctx context.Context, sshCmd, dir string, args ...string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "GIT_SSH_COMMAND="+sshCmd)
+	// Provide HOME and USER to avoid "No user exists for uid..." errors in some restricted environments (e.g. Docker/K8s).
+	// We use the parent of the cache directory as a likely writable location for home-related files.
+	homeDir := filepath.Dir(s.cacheDir)
+	sshUser := s.db.GetSetting("prompt_library_ssh_user", "appuser")
+
+	cmd.Env = append(os.Environ(),
+		"GIT_SSH_COMMAND="+sshCmd,
+		"HOME="+homeDir,
+		"USER="+sshUser,
+	)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, string(out))
@@ -138,16 +147,8 @@ func (s *Syncer) runGit(ctx context.Context, sshCmd, dir string, args ...string)
 	return nil
 }
 
-func (s *Syncer) getSetting(key, def string) string {
-	var val string
-	if err := s.db.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&val); err != nil || val == "" {
-		return def
-	}
-	return val
-}
-
 func (s *Syncer) getRefreshInterval() time.Duration {
-	raw := s.getSetting("prompt_library_refresh_interval", "1h")
+	raw := s.db.GetSetting("prompt_library_refresh_interval", "1h")
 	d, err := time.ParseDuration(raw)
 	if err != nil {
 		return time.Hour
@@ -156,7 +157,7 @@ func (s *Syncer) getRefreshInterval() time.Duration {
 }
 
 func (s *Syncer) IsSSHKeyConfigured() bool {
-	return s.getSetting("prompt_library_ssh_key", "") != ""
+	return s.db.GetSetting("prompt_library_ssh_key", "") != ""
 }
 
 func (s *Syncer) writeTempKey(content string) (string, error) {

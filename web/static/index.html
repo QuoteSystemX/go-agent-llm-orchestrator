@@ -219,6 +219,10 @@
                     <label>Repository URL (SSH)</label>
                     <input type="text" id="pl-git-url" placeholder="git@github.com:org/prompt-library.git">
                 </div>
+                <div class="form-group">
+                    <label>SSH User (system owner)</label>
+                    <input type="text" id="pl-ssh-user" placeholder="appuser">
+                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
                     <div class="form-group">
                         <label>Branch</label>
@@ -227,6 +231,20 @@
                     <div class="form-group">
                         <label>Refresh Interval</label>
                         <input type="text" id="pl-refresh-interval" placeholder="1h">
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem">
+                    <div class="form-group">
+                        <label>Patterns Path</label>
+                        <input type="text" id="pl-patterns-path" placeholder="prompt/patterns">
+                    </div>
+                    <div class="form-group">
+                        <label>Agents Path</label>
+                        <input type="text" id="pl-agents-path" placeholder=".agent/agents">
+                    </div>
+                    <div class="form-group">
+                        <label>Workflows Path</label>
+                        <input type="text" id="pl-workflows-path" placeholder=".agent/workflows">
                     </div>
                 </div>
                 <div class="form-group">

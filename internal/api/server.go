@@ -515,16 +515,30 @@ func (s *AdminServer) handlePromptSettings(w http.ResponseWriter, r *http.Reques
 func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
+		sshKey, sshKeySource := s.effectiveKey(r.Context(), "prompt_library_ssh_key", "PROMPT_LIBRARY_SSH_KEY")
+		sshUser, sshUserSource := s.effectiveKey(r.Context(), "prompt_library_ssh_user", "PROMPT_LIBRARY_SSH_USER")
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
-			"git_url":          s.getSetting(r.Context(), "prompt_library_git_url", ""),
-			"git_branch":       s.getSetting(r.Context(), "prompt_library_git_branch", "main"),
-			"cache_dir":        s.getSetting(r.Context(), "prompt_library_cache_dir", "/var/lib/orchestrator/prompt-lib"),
-			"refresh_interval": s.getSetting(r.Context(), "prompt_library_refresh_interval", "1h"),
-			// ssh_key is write-only: return masked indicator
+			"git_url":          s.db.GetSetting("prompt_library_git_url", ""),
+			"git_branch":       s.db.GetSetting("prompt_library_git_branch", "main"),
+			"cache_dir":        s.db.GetSetting("prompt_library_cache_dir", "/var/lib/orchestrator/prompt-lib"),
+			"refresh_interval": s.db.GetSetting("prompt_library_refresh_interval", "1h"),
+			"patterns_path":    s.db.GetSetting("prompt_library_patterns_path", "prompt/patterns"),
+			"agents_path":      s.db.GetSetting("prompt_library_agents_path", ".agent/agents"),
+			"workflows_path":   s.db.GetSetting("prompt_library_workflows_path", ".agent/workflows"),
+			"ssh_user": func() string {
+				if sshUser == "" {
+					return "appuser"
+				}
+				if sshUserSource != "" {
+					return "[" + sshUserSource + "] " + sshUser
+				}
+				return sshUser
+			}(),
 			"ssh_key_set": func() string {
-				if s.getSetting(r.Context(), "prompt_library_ssh_key", "") != "" {
-					return "true"
+				if sshKey != "" {
+					return "true (" + sshKeySource + ")"
 				}
 				return "false"
 			}(),
@@ -535,6 +549,10 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 			GitBranch       string `json:"git_branch"`
 			CacheDir        string `json:"cache_dir"`
 			RefreshInterval string `json:"refresh_interval"`
+			PatternsPath    string `json:"patterns_path"`
+			AgentsPath      string `json:"agents_path"`
+			WorkflowsPath   string `json:"workflows_path"`
+			SSHUser         string `json:"ssh_user"`
 			SSHKey          string `json:"ssh_key"` // PEM content
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
@@ -552,6 +570,18 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 		}
 		if data.RefreshInterval != "" {
 			s.saveSetting(r.Context(), "prompt_library_refresh_interval", data.RefreshInterval)
+		}
+		if data.PatternsPath != "" {
+			s.saveSetting(r.Context(), "prompt_library_patterns_path", data.PatternsPath)
+		}
+		if data.AgentsPath != "" {
+			s.saveSetting(r.Context(), "prompt_library_agents_path", data.AgentsPath)
+		}
+		if data.WorkflowsPath != "" {
+			s.saveSetting(r.Context(), "prompt_library_workflows_path", data.WorkflowsPath)
+		}
+		if data.SSHUser != "" {
+			s.saveSetting(r.Context(), "prompt_library_ssh_user", data.SSHUser)
 		}
 		if data.SSHKey != "" {
 			s.saveSetting(r.Context(), "prompt_library_ssh_key", data.SSHKey)

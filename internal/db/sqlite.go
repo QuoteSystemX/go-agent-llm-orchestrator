@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"strings"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -82,4 +84,18 @@ func contains(s, sub string) bool {
 			}
 			return false
 		}())
+}
+
+// GetSetting retrieves a setting from the database or environment variables.
+func (db *DB) GetSetting(key, def string) string {
+	var val string
+	if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&val); err == nil && val != "" {
+		return val
+	}
+	// Fallback to environment variables
+	envKey := strings.ToUpper(key)
+	if envVal := os.Getenv(envKey); envVal != "" {
+		return envVal
+	}
+	return def
 }
