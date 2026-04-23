@@ -13,8 +13,7 @@ import (
 	"go-agent-llm-orchestrator/internal/db"
 )
 
-// Syncer clones and periodically pulls a git repo using an SSH key.
-// Priority for SSH key: YAML config (loaded into DB on startup) → DB setting (set via web UI).
+// Syncer clones and periodically pulls a git repo using a GitHub PAT (HTTPS).
 type Syncer struct {
 	db            *db.DB
 	cacheDir      string // where to clone the repo locally
@@ -66,53 +65,58 @@ func (s *Syncer) Start(ctx context.Context) {
 
 // Sync performs a clone (if repo not present) or pull (if already cloned).
 func (s *Syncer) Sync(ctx context.Context) error {
-	url := s.db.GetSetting("prompt_library_git_url", "")
-	if url == "" {
+	rawUrl := s.db.GetSetting("prompt_library_git_url", "")
+	if rawUrl == "" {
 		log.Printf("git: NOT CONFIGURED — set git URL in Settings → Prompt Library")
 		return fmt.Errorf("prompt_library_git_url not configured")
 	}
 	branch := s.db.GetSetting("prompt_library_git_branch", "main")
 
-	keyContent := s.db.GetSetting("prompt_library_ssh_key", "")
-	if keyContent == "" {
-		log.Printf("git: NOT CONFIGURED — set SSH key in Settings → Prompt Library")
-		return fmt.Errorf("SSH key not configured — set it via web UI Settings → Prompt Library")
+	pat := s.db.GetSetting("prompt_library_pat", "")
+	if pat == "" {
+		log.Printf("git: NOT CONFIGURED — set GitHub PAT in Settings → Prompt Library")
+		return fmt.Errorf("GitHub PAT not configured — set it via web UI Settings → Prompt Library")
 	}
 
-	// Write key to temp file
-	keyFile, err := s.writeTempKey(keyContent)
-	if err != nil {
-		return fmt.Errorf("writing temp SSH key: %w", err)
-	}
-	defer os.Remove(keyFile)
-
-	sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=accept-new -o BatchMode=yes", keyFile)
+	// Ensure we use HTTPS and inject PAT
+	syncUrl := s.prepareSyncURL(rawUrl, pat)
 
 	if err := os.MkdirAll(filepath.Dir(s.cacheDir), 0755); err != nil {
 		return fmt.Errorf("creating cache parent dir: %w", err)
 	}
 
 	if _, err := os.Stat(filepath.Join(s.cacheDir, ".git")); os.IsNotExist(err) {
-		log.Printf("git: initializing %s (branch: %s) in %s", url, branch, s.cacheDir)
+		log.Printf("git: initializing %s (branch: %s) in %s", rawUrl, branch, s.cacheDir)
 		if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
 			return fmt.Errorf("creating cache dir: %w", err)
 		}
-		if err := s.runGit(ctx, sshCmd, s.cacheDir, "init"); err != nil {
+		if err := s.runGit(ctx, s.cacheDir, "init"); err != nil {
 			return err
 		}
-		// Remote might already exist if init was partially successful
-		_ = s.runGit(ctx, sshCmd, s.cacheDir, "remote", "remove", "origin")
-		if err := s.runGit(ctx, sshCmd, s.cacheDir, "remote", "add", "origin", url); err != nil {
-			return err
+		
+		// Set remote origin
+		if err := s.runGit(ctx, s.cacheDir, "remote", "add", "origin", syncUrl); err != nil {
+			if strings.Contains(err.Error(), "already exists") {
+				if err := s.runGit(ctx, s.cacheDir, "remote", "set-url", "origin", syncUrl); err != nil {
+					return fmt.Errorf("failed to reset remote origin: %w", err)
+				}
+			} else {
+				return fmt.Errorf("failed to add remote origin: %w", err)
+			}
+		}
+	} else {
+		// Update remote URL in case PAT or URL changed
+		if err := s.runGit(ctx, s.cacheDir, "remote", "set-url", "origin", syncUrl); err != nil {
+			return fmt.Errorf("failed to update remote origin: %w", err)
 		}
 	}
 
-	log.Printf("git: pulling %s (branch: %s)", url, branch)
-	if err := s.runGit(ctx, sshCmd, s.cacheDir, "fetch", "--depth", "1", "origin", branch); err != nil {
+	log.Printf("git: pulling %s (branch: %s)", rawUrl, branch)
+	if err := s.runGit(ctx, s.cacheDir, "fetch", "--depth", "1", "origin", branch); err != nil {
 		log.Printf("git: fetch FAILED: %v", err)
 		return err
 	}
-	if err := s.runGit(ctx, sshCmd, s.cacheDir, "reset", "--hard", "origin/"+branch); err != nil {
+	if err := s.runGit(ctx, s.cacheDir, "reset", "--hard", "origin/"+branch); err != nil {
 		log.Printf("git: reset FAILED: %v", err)
 		return err
 	}
@@ -121,28 +125,52 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	return nil
 }
 
+// prepareSyncURL ensures the URL is HTTPS and includes the PAT for authentication.
+func (s *Syncer) prepareSyncURL(rawUrl, pat string) string {
+	finalUrl := rawUrl
+	if strings.HasPrefix(rawUrl, "git@github.com:") {
+		repoPath := strings.TrimPrefix(rawUrl, "git@github.com:")
+		finalUrl = "https://github.com/" + repoPath
+	}
+
+	if strings.HasPrefix(finalUrl, "https://") {
+		pureUrl := strings.TrimPrefix(finalUrl, "https://")
+		if idx := strings.Index(pureUrl, "@"); idx != -1 {
+			pureUrl = pureUrl[idx+1:]
+		}
+		return fmt.Sprintf("https://%s@%s", pat, pureUrl)
+	}
+	return finalUrl
+}
+
 // SyncNow triggers an immediate sync and blocks until it completes.
-// Safe to call from any goroutine.
 func (s *Syncer) SyncNow(ctx context.Context) error {
 	return s.Sync(ctx)
 }
 
-func (s *Syncer) runGit(ctx context.Context, sshCmd, dir string, args ...string) error {
+func (s *Syncer) runGit(ctx context.Context, dir string, args ...string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
-	// Provide HOME and USER to avoid "No user exists for uid..." errors in some restricted environments (e.g. Docker/K8s).
-	// We use the parent of the cache directory as a likely writable location for home-related files.
-	homeDir := filepath.Dir(s.cacheDir)
-	sshUser := s.db.GetSetting("prompt_library_ssh_user", "appuser")
+	
+	// Use a dedicated .home directory inside the PVC to avoid cluttering the root data folder.
+	homeDir := filepath.Join(filepath.Dir(s.cacheDir), ".home")
+	if err := os.MkdirAll(homeDir, 0755); err != nil {
+		return fmt.Errorf("failed to create git home directory: %w", err)
+	}
 
 	cmd.Env = append(os.Environ(),
-		"GIT_SSH_COMMAND="+sshCmd,
 		"HOME="+homeDir,
-		"USER="+sshUser,
+		"GIT_TERMINAL_PROMPT=0",
 	)
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, string(out))
+		errMsg := string(out)
+		pat := s.db.GetSetting("prompt_library_pat", "")
+		if pat != "" {
+			errMsg = strings.ReplaceAll(errMsg, pat, "***")
+		}
+		return fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, errMsg)
 	}
 	return nil
 }
@@ -156,29 +184,6 @@ func (s *Syncer) getRefreshInterval() time.Duration {
 	return d
 }
 
-func (s *Syncer) IsSSHKeyConfigured() bool {
-	return s.db.GetSetting("prompt_library_ssh_key", "") != ""
-}
-
-func (s *Syncer) writeTempKey(content string) (string, error) {
-	tmpDir := filepath.Join(filepath.Dir(s.cacheDir), ".ssh-tmp")
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return "", fmt.Errorf("creating ssh-tmp dir: %w", err)
-	}
-	f, err := os.CreateTemp(tmpDir, "jules-ssh-key-*")
-	if err != nil {
-		return "", err
-	}
-	if err := os.Chmod(f.Name(), 0600); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return "", err
-	}
-	if _, err := f.WriteString(content); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return "", err
-	}
-	f.Close()
-	return f.Name(), nil
+func (s *Syncer) IsPATConfigured() bool {
+	return s.db.GetSetting("prompt_library_pat", "") != ""
 }

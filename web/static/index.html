@@ -216,12 +216,8 @@
                 <!-- Prompt Library (Git) -->
                 <div class="settings-section-title">Prompt Library (Git)</div>
                 <div class="form-group">
-                    <label>Repository URL (SSH)</label>
-                    <input type="text" id="pl-git-url" placeholder="git@github.com:org/prompt-library.git">
-                </div>
-                <div class="form-group">
-                    <label>SSH User (system owner)</label>
-                    <input type="text" id="pl-ssh-user" placeholder="appuser">
+                    <label>Repository URL (HTTPS)</label>
+                    <input type="text" id="pl-git-url" placeholder="https://github.com/org/prompt-library.git">
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
                     <div class="form-group">
@@ -249,15 +245,14 @@
                 </div>
                 <div class="form-group">
                     <label>
-                        SSH Private Key
-                        <span id="pl-ssh-key-status" style="color:var(--success); font-size:0.7rem; margin-left:0.5rem"></span>
+                        GitHub Personal Access Token (PAT)
+                        <span id="pl-pat-status" style="color:var(--success); font-size:0.7rem; margin-left:0.5rem"></span>
                     </label>
-                    <textarea id="pl-ssh-key" rows="6"
-                        style="font-family:monospace; font-size:0.72rem; resize:vertical"
-                        placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
+                    <input type="password" id="pl-pat"
+                        placeholder="ghp_xxxxxxxxxxxx">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.4rem">
                         <div style="font-size:0.7rem; color:var(--text-muted)">
-                            Leave empty to keep existing key. Saving a key triggers an immediate sync.
+                            Required for HTTPS authentication. Token must have <b>read</b> access.
                         </div>
                         <button type="button" class="btn-secondary" id="btn-sync-now"
                             style="font-size:0.72rem; padding:0.3rem 0.75rem; flex-shrink:0"

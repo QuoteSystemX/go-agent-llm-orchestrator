@@ -99,11 +99,11 @@ func main() {
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
 
-	// Proactively pause all PENDING tasks if SSH key is not yet configured —
+	// Proactively pause all PENDING tasks if PAT is not yet configured —
 	// they would fail anyway when the cron fires and buildPrompt() returns an error.
-	if !gitSyncer.IsSSHKeyConfigured() {
+	if !gitSyncer.IsPATConfigured() {
 		n := engine.PauseAllPending(ctx)
-		log.Printf("WARNING: prompt-library SSH key not set — %d PENDING task(s) paused. Set key via Settings → Prompt Library, they will resume automatically after first successful sync.", n)
+		log.Printf("WARNING: prompt-library GitHub PAT not set — %d PENDING task(s) paused. Set PAT via Settings → Prompt Library, they will resume automatically after first successful sync.", n)
 	}
 
 	// Import distribution config if available

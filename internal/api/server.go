@@ -515,8 +515,7 @@ func (s *AdminServer) handlePromptSettings(w http.ResponseWriter, r *http.Reques
 func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		sshKey, sshKeySource := s.effectiveKey(r.Context(), "prompt_library_ssh_key", "PROMPT_LIBRARY_SSH_KEY")
-		sshUser, sshUserSource := s.effectiveKey(r.Context(), "prompt_library_ssh_user", "PROMPT_LIBRARY_SSH_USER")
+		pat, patSource := s.effectiveKey(r.Context(), "prompt_library_pat", "PROMPT_LIBRARY_PAT")
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
@@ -527,18 +526,9 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 			"patterns_path":    s.db.GetSetting("prompt_library_patterns_path", "prompt/patterns"),
 			"agents_path":      s.db.GetSetting("prompt_library_agents_path", ".agent/agents"),
 			"workflows_path":   s.db.GetSetting("prompt_library_workflows_path", ".agent/workflows"),
-			"ssh_user": func() string {
-				if sshUser == "" {
-					return "appuser"
-				}
-				if sshUserSource != "" {
-					return "[" + sshUserSource + "] " + sshUser
-				}
-				return sshUser
-			}(),
-			"ssh_key_set": func() string {
-				if sshKey != "" {
-					return "true (" + sshKeySource + ")"
+			"pat_set": func() string {
+				if pat != "" {
+					return "true (" + patSource + ")"
 				}
 				return "false"
 			}(),
@@ -552,8 +542,7 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 			PatternsPath    string `json:"patterns_path"`
 			AgentsPath      string `json:"agents_path"`
 			WorkflowsPath   string `json:"workflows_path"`
-			SSHUser         string `json:"ssh_user"`
-			SSHKey          string `json:"ssh_key"` // PEM content
+			PAT             string `json:"pat"` // GitHub token
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -580,11 +569,8 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 		if data.WorkflowsPath != "" {
 			s.saveSetting(r.Context(), "prompt_library_workflows_path", data.WorkflowsPath)
 		}
-		if data.SSHUser != "" {
-			s.saveSetting(r.Context(), "prompt_library_ssh_user", data.SSHUser)
-		}
-		if data.SSHKey != "" {
-			s.saveSetting(r.Context(), "prompt_library_ssh_key", data.SSHKey)
+		if data.PAT != "" {
+			s.saveSetting(r.Context(), "prompt_library_pat", data.PAT)
 			// Trigger immediate sync so auto-paused tasks resume without waiting for the interval.
 			if s.gitSyncer != nil {
 				go s.gitSyncer.Sync(context.Background())
