@@ -68,8 +68,12 @@ func (e *Engine) Run(ctx context.Context) {
 			e.scaleUp(repoName, count)
 		} else {
 			e.scaleDown(repoName)
-			// Propose a Reviewer task if no worker tasks exist at all
-			e.ProposeIdea(repoName, "project-planner", "reviewer", "/discovery and audit", "@daily", 5)
+			// Check if a draft already exists to avoid duplication
+			var exists int
+			err := e.db.QueryRow("SELECT COUNT(*) FROM tasks WHERE name = ? AND status = 'DRAFT' AND pattern = 'reviewer'", repoName).Scan(&exists)
+			if err == nil && exists == 0 {
+				e.ProposeIdea(repoName, "project-planner", "reviewer", "/discovery and audit", "@daily", 5)
+			}
 		}
 	}
 }
