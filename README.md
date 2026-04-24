@@ -9,6 +9,8 @@ Jules Orchestrator is a robust Go-based service designed for production-grade ag
 ### Key Features
 
 - **BMAD 4-Phase Pipeline**: Every task follows a structured lifecycle: Analysis → Planning → Execution → Verification. Each phase has independent retry logic and latency tracking.
+- **Autopilot Engine (Dynamic Scaling)**: Intelligent resource manager that monitors repository `tasks/` folders. It automatically activates workers when backlog exists and pauses them when empty to save LLM context and costs.
+- **DTO Auto-Sync (Hot Reload)**: Background worker that pulls fresh agent templates from Git every hour and reloads them into the system without downtime.
 - **Source-Aware RAG**: Automatically indexes repository source code (.go, .js, .py, etc.) to provide agents with accurate project context. Includes guardrails (file size/count limits) for performance.
 - **Human-in-the-Loop (HITL)**: Optional "Approval Mode" pauses the agent after the planning phase, allowing users to review and edit the execution plan before any changes are made.
 - **Real-time Live Tracking**: Terminal-style "Inspect" view with live streaming of phase output and real-time dashboard Sparklines for CPU/RAM/Load monitoring.
@@ -25,9 +27,12 @@ graph TD
     API --> DB[(SQLite + PVC)]
     API --> Stats[Stats Aggregator]
     API --> RAG[Source RAG Store]
+    API --> AP[Autopilot Engine]
     API --> Scheduler[BMAD Engine]
+    AP --> Scheduler
     Scheduler --> TaskLogs[(Phase Audit Logs)]
     Scheduler --> LLM[Local Ollama / Remote Cloud]
+    Stats --> AP
     Stats --> WebUI
     RAG --> LLM
 ```

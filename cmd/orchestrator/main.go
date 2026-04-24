@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/api"
+	"go-agent-llm-orchestrator/internal/autopilot"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/dto"
 	gitpkg "go-agent-llm-orchestrator/internal/git"
@@ -99,11 +101,39 @@ func main() {
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
 
+	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
+
 	// 4. Start Background Processes
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	engine.Start()
+
+	// Background DTO Sync (once per hour)
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				log.Println("Background DTO Sync: Pulling fresh templates...")
+				if err := gitSyncer.Sync(ctx); err != nil {
+					log.Printf("Background DTO Sync Error: %v", err)
+					continue
+				}
+				// Sync templates from the cloned repo
+				tplDir := filepath.Join(cacheDir, "templates")
+				if err := dtoMgr.SyncFromDir(ctx, tplDir); err != nil {
+					log.Printf("Background Template Sync Error: %v", err)
+				}
+			}
+		}
+	}()
+
+	// Start Autopilot Engine (decision loop)
+	go autopilotEngine.Start(ctx)
 
 	// When the prompt-library syncs successfully for the first time, auto-resume
 	// any tasks that were paused at startup due to a missing SSH key.

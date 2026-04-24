@@ -3,6 +3,11 @@ package dto
 import (
 	"context"
 	"database/sql"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"go-agent-llm-orchestrator/internal/db"
 )
 
@@ -61,4 +66,33 @@ func (m *TemplateManager) SaveTemplate(ctx context.Context, name, content string
 func (m *TemplateManager) DeleteTemplate(ctx context.Context, name string) error {
 	_, err := m.db.ExecContext(ctx, "DELETE FROM templates WHERE name = ?", name)
 	return err
+}
+
+func (m *TemplateManager) SyncFromDir(ctx context.Context, dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil // Directory doesn't exist yet, skip
+	}
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		ext := filepath.Ext(f.Name())
+		if ext == ".yaml" || ext == ".yml" || ext == ".json" {
+			name := strings.TrimSuffix(f.Name(), ext)
+			content, err := ioutil.ReadFile(filepath.Join(dir, f.Name()))
+			if err != nil {
+				continue
+			}
+			if err := m.SaveTemplate(ctx, name, string(content)); err != nil {
+				continue
+			}
+		}
+	}
+	return nil
 }
