@@ -33,8 +33,8 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("opening sqlite db: %w", err)
 	}
 
-	// Limit to 1 writer to avoid SQLITE_BUSY under concurrent tasks
-	db.SetMaxOpenConns(1)
+	// Limit to 10 concurrent connections to allow multiple readers in WAL mode
+	db.SetMaxOpenConns(10)
 
 	// Set WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {

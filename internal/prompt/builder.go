@@ -35,8 +35,11 @@ type Data struct {
 
 // Builder reads pattern and agent files from a local prompt-library clone.
 type Builder struct {
-	db         *db.DB
-	libraryDir string
+	db                *db.DB
+	libraryDir        string
+	cachedPatternsPath string
+	cachedAgentsPath   string
+	cachedWorkflowsPath string
 }
 
 func NewBuilder(database *db.DB, libraryDir string) *Builder {
@@ -55,8 +58,10 @@ func (b *Builder) HasPrompt(pattern string) bool {
 	if !b.IsReady() || pattern == "" {
 		return false
 	}
-	patternsPath := b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
-	_, err := os.Stat(filepath.Join(b.libraryDir, patternsPath, pattern+".md"))
+	if b.cachedPatternsPath == "" {
+		b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
+	}
+	_, err := os.Stat(filepath.Join(b.libraryDir, b.cachedPatternsPath, pattern+".md"))
 	return err == nil
 }
 
@@ -70,8 +75,10 @@ func (b *Builder) Build(agent, pattern, mission string) (string, error) {
 	}
 
 	// Agent profile
-	agentsPath := b.db.GetSetting("prompt_library_agents_path", ".agent/agents")
-	if content, err := os.ReadFile(filepath.Join(b.libraryDir, agentsPath, agent+".md")); err == nil {
+	if b.cachedAgentsPath == "" {
+		b.cachedAgentsPath = b.db.GetSetting("prompt_library_agents_path", ".agent/agents")
+	}
+	if content, err := os.ReadFile(filepath.Join(b.libraryDir, b.cachedAgentsPath, agent+".md")); err == nil {
 		d.AgentProfile = string(content)
 	}
 
@@ -79,16 +86,20 @@ func (b *Builder) Build(agent, pattern, mission string) (string, error) {
 	if strings.HasPrefix(mission, "/") {
 		parts := strings.SplitN(mission, " ", 2)
 		d.Command = strings.TrimPrefix(parts[0], "/")
-		workflowsPath := b.db.GetSetting("prompt_library_workflows_path", ".agent/workflows")
-		wfPath := filepath.Join(b.libraryDir, workflowsPath, d.Command+".md")
+		if b.cachedWorkflowsPath == "" {
+			b.cachedWorkflowsPath = b.db.GetSetting("prompt_library_workflows_path", ".agent/workflows")
+		}
+		wfPath := filepath.Join(b.libraryDir, b.cachedWorkflowsPath, d.Command+".md")
 		if content, err := os.ReadFile(wfPath); err == nil {
 			d.WorkflowProtocol = string(content)
 		}
 	}
 
 	// Pattern methodology
-	patternsPath := b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
-	if content, err := os.ReadFile(filepath.Join(b.libraryDir, patternsPath, pattern+".md")); err == nil {
+	if b.cachedPatternsPath == "" {
+		b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
+	}
+	if content, err := os.ReadFile(filepath.Join(b.libraryDir, b.cachedPatternsPath, pattern+".md")); err == nil {
 		d.PatternMethodology = string(content)
 	}
 

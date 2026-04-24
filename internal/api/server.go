@@ -182,12 +182,17 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.LastRunAt, &t.CreatedAt); err != nil {
 			continue
 		}
-		if s.promptChecker != nil {
-			t.PromptReady = s.promptChecker.HasPrompt(t.Pattern)
-		} else {
-			t.PromptReady = true // assume ready when checker not wired
-		}
 		tasks = append(tasks, t)
+	}
+	rows.Close() // Close rows immediately to release the DB connection
+
+	// Enrich tasks with prompt status outside of the DB iteration
+	for i := range tasks {
+		if s.promptChecker != nil {
+			tasks[i].PromptReady = s.promptChecker.HasPrompt(tasks[i].Pattern)
+		} else {
+			tasks[i].PromptReady = true
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
