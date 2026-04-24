@@ -10,7 +10,7 @@ import (
 
 func TestAdminServer_handleListTasks(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	server := NewAdminServer(database, nil, nil, nil)
+	server := NewAdminServer(database, nil, nil, nil, nil)
 	
 	req, err := http.NewRequest("GET", "/api/v1/tasks", nil)
 	if err != nil {
