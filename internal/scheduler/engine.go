@@ -170,16 +170,30 @@ func (e *Engine) runTask(taskID string) {
 		return
 	}
 
-	var inputPayload, outputPayload []byte
+	var logID int64
 	var sessionID string
-	execStatus := "SUCCESS"
 	var execError string
+	execStatus := "SUCCESS"
+
+	res, logErr := e.db.ExecContext(ctx, `
+		INSERT INTO task_logs (task_id, status, duration_ms)
+		VALUES (?, ?, ?)
+	`, taskID, "TRIGGERED", 0)
+	if logErr == nil {
+		logID, _ = res.LastInsertId()
+	}
 
 	err = e.tm.Execute(ctx, traffic.PriorityHigh, func() error {
+		if logID > 0 {
+			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
+		}
 		// Build the full Jules prompt — pause the task if library is not ready yet
 		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
 		if err != nil {
 			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
+			if logID > 0 {
+				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID)
+			}
 			return fmt.Errorf("prompt-library not ready, task %s paused: %w", taskID, err)
 		}
 		log.Printf("Task %s: Prompt assembled successfully", taskID)
@@ -188,6 +202,10 @@ func (e *Engine) runTask(taskID string) {
 			"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
 		if dbErr != nil {
 			return dbErr
+		}
+
+		if logID > 0 {
+			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'EXECUTING' WHERE id = ?", logID)
 		}
 
 		req := api.SessionRequest{
@@ -203,7 +221,9 @@ func (e *Engine) runTask(taskID string) {
 		}
 
 		reqJSON, _ := json.Marshal(req)
-		inputPayload = reqJSON
+		if logID > 0 {
+			e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID)
+		}
 
 		log.Printf("Task %s: Sending request to Jules API...", taskID)
 		resp, rawOut, err := e.client.StartSession(ctx, req)
@@ -215,9 +235,11 @@ func (e *Engine) runTask(taskID string) {
 		if resp != nil && resp.ID != "" {
 			sessionID = resp.ID
 		}
-		outputPayload = rawOut
 
 		log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
+		if logID > 0 {
+			e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID)
+		}
 
 		_, sessErr := e.db.ExecContext(ctx,
 			"INSERT INTO sessions (id, task_id, jules_session_id, status) VALUES (?, ?, ?, ?)",
@@ -242,17 +264,17 @@ func (e *Engine) runTask(taskID string) {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
+		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
 		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
 	}
 
-	_, logErr := e.db.ExecContext(ctx, `
-		INSERT INTO task_logs (task_id, session_id, input_data, output_data, status, error, duration_ms)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, taskID, sessionID, string(inputPayload), string(outputPayload), execStatus, execError, duration.Milliseconds())
-
-	if logErr != nil {
-		log.Printf("Task %s: FAILED to record task_logs: %v", taskID, logErr)
+	if logID > 0 {
+		e.db.ExecContext(ctx, `
+			UPDATE task_logs 
+			SET status = ?, error = ?, duration_ms = ?
+			WHERE id = ?
+		`, execStatus, execError, duration.Milliseconds(), logID)
 	}
 }
 

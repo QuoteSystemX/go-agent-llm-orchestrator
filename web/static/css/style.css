@@ -844,6 +844,16 @@ body { padding-bottom: 40px; }
 
 .status-success { color: var(--success); }
 .status-failed { color: var(--danger); }
+.status-running { color: var(--primary); }
+
+.spin {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 
 .activity-details {
     display: flex;

@@ -805,9 +805,33 @@ function renderActivityLogs() {
     }
 
     container.innerHTML = activityLogs.map(log => {
-        const isSuccess = log.status === 'SUCCESS';
-        const icon = isSuccess ? 'check-circle' : 'alert-circle';
-        const colorClass = isSuccess ? 'status-success' : 'status-failed';
+        let icon = 'clock';
+        let colorClass = '';
+        let spin = false;
+        let statusLabel = log.status;
+
+        switch (log.status) {
+            case 'COMPLETED': 
+                icon = 'check-circle'; colorClass = 'status-success'; 
+                statusLabel = 'Completed';
+                break;
+            case 'FAILED': 
+                icon = 'alert-circle'; colorClass = 'status-failed'; 
+                statusLabel = 'Failed';
+                break;
+            case 'EXECUTING': 
+                icon = 'loader'; colorClass = 'status-running'; spin = true; 
+                statusLabel = 'Executing...';
+                break;
+            case 'PROMPTING': 
+                icon = 'cpu'; colorClass = 'status-running'; spin = true; 
+                statusLabel = 'Prompting...';
+                break;
+            case 'TRIGGERED': 
+                icon = 'zap'; colorClass = 'status-running'; 
+                statusLabel = 'Triggered';
+                break;
+        }
         
         return `
             <div class="activity-item">
@@ -819,20 +843,21 @@ function renderActivityLogs() {
                     <div class="activity-time">${formatDate(log.executed_at)}</div>
                 </div>
                 <div class="activity-body">
-                    <i data-lucide="${icon}" class="activity-status-icon ${colorClass}"></i>
-                    <span>${log.agent}: ${log.mission}</span>
+                    <i data-lucide="${icon}" class="activity-status-icon ${colorClass} ${spin ? 'spin' : ''}"></i>
+                    <span style="font-weight:600; color:var(--text)">${statusLabel}</span>
+                    <span style="margin-left:auto; opacity:0.7">${log.agent}: ${log.mission}</span>
                 </div>
                 <div class="activity-details">
-                    <div class="detail-item">
+                    <div class="detail-item" title="Session ID">
                         <i data-lucide="fingerprint" style="width:10px; height:10px"></i>
-                        ${log.session_id || 'no-session'}
+                        ${log.session_id ? log.session_id.substring(0, 12) : 'pending...'}
                     </div>
-                    <div class="detail-item">
+                    <div class="detail-item" title="Duration">
                         <i data-lucide="timer" style="width:10px; height:10px"></i>
-                        ${log.duration_ms}ms
+                        ${log.duration_ms > 0 ? log.duration_ms + 'ms' : '-'}
                     </div>
                     ${log.error ? `
-                        <div class="detail-item status-failed" style="color:var(--danger)">
+                        <div class="detail-item status-failed" style="color:var(--danger); grid-column: span 2">
                             <i data-lucide="x-circle" style="width:10px; height:10px"></i>
                             ${log.error}
                         </div>
