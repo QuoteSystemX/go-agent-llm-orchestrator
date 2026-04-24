@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/git"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/rag"
@@ -21,14 +22,16 @@ type Analyzer struct {
 	router        *llm.Router
 	promptBuilder *prompt.Builder
 	ragStore      *rag.MemoryStore
+	syncer        *git.Syncer
 }
 
-func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder) *Analyzer {
+func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
 	return &Analyzer{
 		db:            database,
 		router:        router,
 		promptBuilder: pb,
 		ragStore:      rag.NewMemoryStore(),
+		syncer:        syncer,
 	}
 }
 
@@ -48,11 +51,21 @@ type AnalysisResult struct {
 	Progress     int               `json:"progress"`      // 0-100%
 	Warnings     []string          `json:"warnings"`      // Warnings about missing data
 	Metadata     map[string]string `json:"metadata"`      // Project metadata (language, etc)
+	LastAnalysis string            `json:"last_analysis"`
 }
 
 func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisResult, error) {
-	basePath := a.db.GetSetting("repo_base_path", "./repos")
+	basePath := a.db.GetSetting("repo_base_path", "./data/repos")
 	repoPath := filepath.Join(basePath, repoName)
+
+	// Ensure repo is synced on PVC
+	if a.syncer != nil {
+		log.Printf("DTO [%s]: Syncing repository to %s...", repoName, repoPath)
+		rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
+		if err := a.syncer.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
+			log.Printf("DTO [%s]: Sync failed: %v. Proceeding with existing files if any.", repoName, err)
+		}
+	}
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("repository directory not found: %s", repoPath)
@@ -163,6 +176,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	
 	result.Warnings = append(result.Warnings, warnings...)
 	result.Metadata = metadata
+	result.LastAnalysis = time.Now().Format(time.RFC3339)
+
+	// Persist last analysis time
+	a.db.SetSetting("dto_last_analysis_"+repoName, result.LastAnalysis)
+
 	return result, nil
 }
 

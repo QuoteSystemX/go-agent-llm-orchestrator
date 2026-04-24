@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchLogs, 5000);
     setInterval(fetchActivityLogs, 10000);
     loadChatHistory();
+
+    const repoSelect = document.getElementById('dto-repo-select');
+    if (repoSelect) {
+        repoSelect.addEventListener('change', loadRepoStatus);
+    }
+
     lucide.createIcons();
 });
 
@@ -825,6 +831,32 @@ function populateRepoSelect() {
     if (!select) return;
     const uniqueRepos = [...new Set(tasks.map(t => t.name))];
     select.innerHTML = uniqueRepos.map(r => `<option value="${r}">${r}</option>`).join('');
+    loadRepoStatus(); // Load status for initially selected repo
+}
+
+function updateLastAnalysisDisplay(timestamp) {
+    const el = document.getElementById('dto-last-analysis');
+    if (!el) return;
+    if (!timestamp) {
+        el.textContent = 'Last analysis: never';
+        return;
+    }
+    const date = new Date(timestamp);
+    el.textContent = `Last analysis: ${date.toLocaleString()}`;
+}
+
+async function loadRepoStatus() {
+    const repo = document.getElementById('dto-repo-select').value;
+    if (!repo) return;
+    try {
+        const resp = await fetch(`/api/v1/dto/status?repo=${encodeURIComponent(repo)}`);
+        if (resp.ok) {
+            const status = await resp.json();
+            updateLastAnalysisDisplay(status.last_analysis);
+        }
+    } catch (e) {
+        console.error('Failed to load repo status:', e);
+    }
 }
 
 let currentProposals = [];
@@ -880,7 +912,7 @@ async function runAnalysis() {
         if (resp.ok) {
             const proposals = await resp.json();
             renderProposals(proposals);
-            document.getElementById('dto-last-analysis').textContent = `Last analysis: ${new Date().toLocaleTimeString()}`;
+            updateLastAnalysisDisplay(proposals.last_analysis);
         } else {
             alert('Analysis failed: ' + await resp.text());
         }

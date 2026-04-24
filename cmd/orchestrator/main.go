@@ -87,7 +87,7 @@ func main() {
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder, router)
 	dtoMgr := dto.NewTemplateManager(database)
-	analyzer := dto.NewAnalyzer(database, router, promptBuilder)
+	analyzer := dto.NewAnalyzer(database, router, promptBuilder, gitSyncer)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
@@ -146,6 +146,9 @@ func main() {
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
+	
+	// Start background repos syncer for managed projects
+	go gitSyncer.StartBackgroundReposSync(ctx)
 	
 	// Start DTO background analyzer
 	go analyzer.StartBackgroundLoop(ctx)

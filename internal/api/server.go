@@ -132,10 +132,11 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
 	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
 
-	// DTO Templates API
+	// DTO API
 	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
 	mux.HandleFunc("/api/v1/dto/templates/", s.handleTemplateByID)
 	mux.HandleFunc("/api/v1/dto/analyze", s.handleAnalyze)
+	mux.HandleFunc("/api/v1/dto/status", s.handleDTOStatus)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -1130,4 +1131,19 @@ func (s *AdminServer) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	log.Printf("DTO: Analysis complete for %s. Found %d proposals.", repoName, len(proposals.Proposals))
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(proposals)
+}
+
+func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
+	repoName := r.URL.Query().Get("repo")
+	if repoName == "" {
+		http.Error(w, "missing repo parameter", http.StatusBadRequest)
+		return
+	}
+
+	lastAnalysis := s.db.GetSetting("dto_last_analysis_"+repoName, "")
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"last_analysis": lastAnalysis,
+	})
 }

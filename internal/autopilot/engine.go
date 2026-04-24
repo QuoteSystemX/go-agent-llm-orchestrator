@@ -49,7 +49,7 @@ func (e *Engine) Start(ctx context.Context) {
 func (e *Engine) Run(ctx context.Context) {
 	log.Println("Autopilot Cycle: Analyzing task backlogs...")
 
-	basePath := e.db.GetSetting("repo_base_path", "./repos")
+	basePath := e.db.GetSetting("repo_base_path", "./data/repos")
 	
 	// Get unique repos from tasks
 	repos, err := e.getManagedRepos()
@@ -70,16 +70,18 @@ func (e *Engine) Run(ctx context.Context) {
 			e.scaleDown(repoName)
 			// Check if a draft already exists to avoid duplication
 			var exists int
-			err := e.db.QueryRow("SELECT COUNT(*) FROM tasks WHERE name = ? AND status = 'DRAFT' AND pattern = 'reviewer'", repoName).Scan(&exists)
+			err := e.db.QueryRow("SELECT COUNT(*) FROM tasks WHERE name = ? AND status = 'DRAFT' AND pattern = 'discovery'", repoName).Scan(&exists)
 			if err == nil && exists == 0 {
-				e.ProposeIdea(repoName, "project-planner", "reviewer", "/discovery and audit", "@daily", 5)
+				log.Printf("Autopilot: Proposing discovery for %s", repoName)
+				e.ProposeIdea(repoName, "project-planner", "discovery", "/discovery and audit", "@daily", 5)
 			}
 		}
 	}
 }
 
 func (e *Engine) getManagedRepos() ([]string, error) {
-	rows, err := e.db.Query("SELECT DISTINCT name FROM tasks")
+	// Only get real repositories, not draft task names
+	rows, err := e.db.Query("SELECT DISTINCT name FROM tasks WHERE name NOT LIKE 'draft-%'")
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +132,9 @@ func (e *Engine) scaleDown(repoName string) {
 }
 
 func (e *Engine) ProposeIdea(repoName, agent, pattern, mission, schedule string, importance int) error {
-	id := fmt.Sprintf("draft-%s-%d", repoName, time.Now().Unix())
+	// Clean repo name for ID (replace slashes with underscores)
+	safeRepo := strings.ReplaceAll(repoName, "/", "_")
+	id := fmt.Sprintf("draft-%s-%d", safeRepo, time.Now().Unix())
 	
 	// 1. Create a DRAFT task
 	_, err := e.db.Exec(`

@@ -63,7 +63,43 @@ func (s *Syncer) Start(ctx context.Context) {
 	}
 }
 
-// Sync performs a clone (if repo not present) or pull (if already cloned).
+// StartBackgroundReposSync periodically syncs all repositories found in the tasks table.
+func (s *Syncer) StartBackgroundReposSync(ctx context.Context) {
+	interval := s.getRefreshInterval()
+	log.Printf("git: background repos syncer starting (interval: %v)", interval)
+	
+	ticker := time.Now() // Trigger immediately
+	for {
+		if time.Since(ticker) >= interval {
+			ticker = time.Now()
+			
+			basePath := s.db.GetSetting("repo_base_path", "./data/repos")
+			repos, err := s.db.GetDistinctRepos(ctx)
+			if err != nil {
+				log.Printf("git: failed to get distinct repos for sync: %v", err)
+			} else {
+				for _, repoName := range repos {
+					repoPath := filepath.Join(basePath, repoName)
+					rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
+					
+					log.Printf("git: background sync for %s...", repoName)
+					if err := s.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
+						log.Printf("git: sync failed for %s: %v", repoName, err)
+					}
+				}
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(1 * time.Minute):
+			// Check again in 1 minute
+		}
+	}
+}
+
+// Sync performs a clone (if repo not present) or pull (if already cloned) for the prompt library.
 func (s *Syncer) Sync(ctx context.Context) error {
 	rawUrl := s.db.GetSetting("prompt_library_git_url", "")
 	if rawUrl == "" {
@@ -72,32 +108,36 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	}
 	branch := s.db.GetSetting("prompt_library_git_branch", "main")
 
+	return s.SyncCustom(ctx, rawUrl, branch, s.cacheDir)
+}
+
+// SyncCustom allows syncing any repository to a specific directory.
+func (s *Syncer) SyncCustom(ctx context.Context, rawUrl, branch, targetDir string) error {
 	pat := s.db.GetSetting("prompt_library_pat", "")
 	if pat == "" {
-		log.Printf("git: NOT CONFIGURED — set GitHub PAT in Settings → Prompt Library")
 		return fmt.Errorf("GitHub PAT not configured — set it via web UI Settings → Prompt Library")
 	}
 
 	// Ensure we use HTTPS and inject PAT
 	syncUrl := s.prepareSyncURL(rawUrl, pat)
 
-	if err := os.MkdirAll(filepath.Dir(s.cacheDir), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(targetDir), 0755); err != nil {
 		return fmt.Errorf("creating cache parent dir: %w", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(s.cacheDir, ".git")); os.IsNotExist(err) {
-		log.Printf("git: initializing %s (branch: %s) in %s", rawUrl, branch, s.cacheDir)
-		if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+	if _, err := os.Stat(filepath.Join(targetDir, ".git")); os.IsNotExist(err) {
+		log.Printf("git: initializing %s (branch: %s) in %s", rawUrl, branch, targetDir)
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
 			return fmt.Errorf("creating cache dir: %w", err)
 		}
-		if err := s.runGit(ctx, s.cacheDir, "init"); err != nil {
+		if err := s.runGit(ctx, targetDir, "init"); err != nil {
 			return err
 		}
 		
 		// Set remote origin
-		if err := s.runGit(ctx, s.cacheDir, "remote", "add", "origin", syncUrl); err != nil {
+		if err := s.runGit(ctx, targetDir, "remote", "add", "origin", syncUrl); err != nil {
 			if strings.Contains(err.Error(), "already exists") {
-				if err := s.runGit(ctx, s.cacheDir, "remote", "set-url", "origin", syncUrl); err != nil {
+				if err := s.runGit(ctx, targetDir, "remote", "set-url", "origin", syncUrl); err != nil {
 					return fmt.Errorf("failed to reset remote origin: %w", err)
 				}
 			} else {
@@ -106,22 +146,22 @@ func (s *Syncer) Sync(ctx context.Context) error {
 		}
 	} else {
 		// Update remote URL in case PAT or URL changed
-		if err := s.runGit(ctx, s.cacheDir, "remote", "set-url", "origin", syncUrl); err != nil {
+		if err := s.runGit(ctx, targetDir, "remote", "set-url", "origin", syncUrl); err != nil {
 			return fmt.Errorf("failed to update remote origin: %w", err)
 		}
 	}
 
-	log.Printf("git: pulling %s (branch: %s)", rawUrl, branch)
-	if err := s.runGit(ctx, s.cacheDir, "fetch", "--depth", "1", "origin", branch); err != nil {
-		log.Printf("git: fetch FAILED: %v", err)
-		return err
+	log.Printf("git: syncing %s (branch: %s) to %s", rawUrl, branch, targetDir)
+	if err := s.runGit(ctx, targetDir, "fetch", "--depth", "1", "origin", branch); err != nil {
+		return fmt.Errorf("fetch failed: %w", err)
 	}
-	if err := s.runGit(ctx, s.cacheDir, "reset", "--hard", "origin/"+branch); err != nil {
-		log.Printf("git: reset FAILED: %v", err)
-		return err
+	if err := s.runGit(ctx, targetDir, "reset", "--hard", "origin/"+branch); err != nil {
+		return fmt.Errorf("reset failed: %w", err)
 	}
-	log.Printf("git: pull OK")
-	s.notifySyncSuccess()
+	
+	if targetDir == s.cacheDir {
+		s.notifySyncSuccess()
+	}
 	return nil
 }
 
