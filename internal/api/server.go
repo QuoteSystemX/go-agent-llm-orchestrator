@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -981,9 +982,11 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	var logs []map[string]any
 	for rows.Next() {
 		var id int
-		var taskID, sessionID, executedAt, status, errorMsg string
+		var taskID, executedAt, status string
+		var sessionID, errorMsg sql.NullString
 		var duration int
 		if err := rows.Scan(&id, &taskID, &sessionID, &executedAt, &status, &errorMsg, &duration); err != nil {
+			log.Printf("Scan error: %v", err)
 			continue
 		}
 
@@ -991,10 +994,10 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 		logs = append(logs, map[string]any{
 			"id":          id,
 			"task_id":      taskID,
-			"session_id":   sessionID,
+			"session_id":   sessionID.String,
 			"executed_at":  executedAt,
 			"status":       status,
-			"error":        errorMsg,
+			"error":        errorMsg.String,
 			"duration_ms":  duration,
 			"repo_name":    tInfo.Name,
 			"agent":        tInfo.Agent,
