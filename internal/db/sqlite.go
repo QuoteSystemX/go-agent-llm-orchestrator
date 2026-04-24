@@ -44,6 +44,21 @@ func (db *DB) QueryRow(query string, args ...any) *sql.Row {
 func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 	return db.main.Exec(query, args...)
 }
+func (db *DB) Begin() (*sql.Tx, error) {
+	return db.main.Begin()
+}
+func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return db.main.BeginTx(ctx, opts)
+}
+func (db *DB) Query(query string, args ...any) (*sql.Rows, error) {
+	return db.main.Query(query, args...)
+}
+func (db *DB) Ping() error {
+	return db.main.Ping()
+}
+func (db *DB) Stats() sql.DBStats {
+	return db.main.Stats()
+}
 
 // InitDB initializes the SQLite databases at the given paths
 func InitDB(dbPath string) (*DB, error) {
