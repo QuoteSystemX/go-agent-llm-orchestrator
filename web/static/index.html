@@ -43,6 +43,9 @@
                 <button id="tab-btn-ai-chat" class="tab-btn" onclick="switchTab('ai-chat')">
                     <i data-lucide="bot"></i> AI Chat
                 </button>
+                <button id="tab-btn-activity" class="tab-btn" onclick="switchTab('activity')">
+                    <i data-lucide="activity"></i> Activity
+                </button>
             </div>
 
             <div id="tab-repositories" class="tab-pane active">
@@ -73,6 +76,29 @@
                         <button id="chat-send-btn" class="btn-primary" onclick="sendChatMessage()">
                             <i data-lucide="send"></i>
                         </button>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-activity" class="tab-pane">
+                <section class="activity-section glass">
+                    <div class="activity-controls">
+                        <div class="filter-group">
+                            <span class="filter-label">Filter:</span>
+                            <button class="filter-btn active" data-hours="1">1h</button>
+                            <button class="filter-btn" data-hours="3">3h</button>
+                            <button class="filter-btn" data-hours="12">12h</button>
+                            <button class="filter-btn" data-hours="24">24h</button>
+                            <button class="filter-btn" data-hours="72">3d</button>
+                            <button class="filter-btn" data-hours="168">1w</button>
+                        </div>
+                        <button class="btn-secondary" onclick="downloadActivityJSON()">
+                            <i data-lucide="download"></i> Export JSON
+                        </button>
+                    </div>
+                    <div id="activity-list" class="activity-list">
+                        <!-- Activity logs will be injected here -->
+                        <div class="empty-state">No activity in the selected period</div>
                     </div>
                 </section>
             </div>

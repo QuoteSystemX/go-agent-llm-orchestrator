@@ -55,6 +55,7 @@ func InitDB(dbPath string) (*DB, error) {
 	migrations := []string{
 		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
 		`ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0`,
+		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {

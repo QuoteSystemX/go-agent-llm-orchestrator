@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 CREATE TABLE IF NOT EXISTS task_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    session_id TEXT,
     executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     input_data TEXT,        -- Request payload / prompt
     output_data TEXT,       -- Response payload / result

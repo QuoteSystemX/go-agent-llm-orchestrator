@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"sort"
@@ -106,6 +107,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
+	mux.HandleFunc("/api/v1/audit/logs", s.handleListAuditLogs)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
 
@@ -704,5 +706,53 @@ func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.healthMonitor.GetStatus())
+}
+
+func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request) {
+	hoursStr := r.URL.Query().Get("hours")
+	hours := 24
+	if hoursStr != "" {
+		fmt.Sscanf(hoursStr, "%d", &hours)
+	}
+
+	rows, err := s.db.QueryContext(r.Context(), `
+		SELECT 
+			l.id, l.task_id, l.session_id, l.executed_at, l.status, l.error, l.duration_ms,
+			t.name as repo_name, t.agent, t.mission
+		FROM task_logs l
+		JOIN tasks t ON l.task_id = t.id
+		WHERE l.executed_at > datetime('now', '-' || ? || ' hours')
+		ORDER BY l.executed_at DESC
+	`, hours)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var logs []map[string]any
+	for rows.Next() {
+		var id int
+		var taskID, sessionID, executedAt, status, errorMsg, repoName, agent, mission string
+		var duration int
+		if err := rows.Scan(&id, &taskID, &sessionID, &executedAt, &status, &errorMsg, &duration, &repoName, &agent, &mission); err != nil {
+			continue
+		}
+		logs = append(logs, map[string]any{
+			"id":          id,
+			"task_id":      taskID,
+			"session_id":   sessionID,
+			"executed_at":  executedAt,
+			"status":       status,
+			"error":        errorMsg,
+			"duration_ms":  duration,
+			"repo_name":    repoName,
+			"agent":        agent,
+			"mission":      mission,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(logs)
 }
 

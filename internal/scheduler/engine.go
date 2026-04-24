@@ -166,6 +166,7 @@ func (e *Engine) runTask(taskID string) {
 	}
 
 	var inputPayload, outputPayload []byte
+	var sessionID string
 	execStatus := "SUCCESS"
 	var execError string
 
@@ -205,7 +206,7 @@ func (e *Engine) runTask(taskID string) {
 			return err
 		}
 
-		sessionID := taskID
+		sessionID = taskID
 		if resp != nil && resp.ID != "" {
 			sessionID = resp.ID
 		}
@@ -241,9 +242,9 @@ func (e *Engine) runTask(taskID string) {
 	}
 
 	_, logErr := e.db.ExecContext(ctx, `
-		INSERT INTO task_logs (task_id, input_data, output_data, status, error, duration_ms)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, taskID, string(inputPayload), string(outputPayload), execStatus, execError, duration.Milliseconds())
+		INSERT INTO task_logs (task_id, session_id, input_data, output_data, status, error, duration_ms)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, taskID, sessionID, string(inputPayload), string(outputPayload), execStatus, execError, duration.Milliseconds())
 
 	if logErr != nil {
 		log.Printf("Task %s: FAILED to record task_logs: %v", taskID, logErr)

@@ -5,9 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchTasks();
     fetchNextRun();
     fetchLogs();
+    fetchActivityLogs();
+    initActivityFilters();
     setInterval(fetchNextRun, 30000);
     setInterval(tickCountdown, 1000);
     setInterval(fetchLogs, 5000);
+    setInterval(fetchActivityLogs, 10000);
     lucide.createIcons();
 });
 
@@ -717,4 +720,98 @@ async function fetchHealth() {
         if (dot) dot.className = 'status-dot disconnected';
         if (text) text.innerText = 'AI Error';
     }
+}
+
+let activityLogs = [];
+let currentFilterHours = 1;
+
+async function fetchActivityLogs() {
+    try {
+        const resp = await fetch(`/api/v1/audit/logs?hours=${currentFilterHours}`);
+        if (!resp.ok) return;
+        activityLogs = await resp.json();
+        renderActivityLogs();
+    } catch (err) {
+        console.error('Failed to fetch activity logs:', err);
+    }
+}
+
+function renderActivityLogs() {
+    const container = document.getElementById('activity-list');
+    if (!container) return;
+
+    if (!activityLogs || activityLogs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No activity in the selected period</div>';
+        return;
+    }
+
+    container.innerHTML = activityLogs.map(log => {
+        const isSuccess = log.status === 'SUCCESS';
+        const icon = isSuccess ? 'check-circle' : 'alert-circle';
+        const colorClass = isSuccess ? 'status-success' : 'status-failed';
+        
+        return `
+            <div class="activity-item">
+                <div class="activity-header">
+                    <div class="activity-repo">
+                        <i data-lucide="github" style="width:14px; height:14px; vertical-align:middle; margin-right:4px"></i>
+                        ${log.repo_name}
+                    </div>
+                    <div class="activity-time">${formatDate(log.executed_at)}</div>
+                </div>
+                <div class="activity-body">
+                    <i data-lucide="${icon}" class="activity-status-icon ${colorClass}"></i>
+                    <span>${log.agent}: ${log.mission}</span>
+                </div>
+                <div class="activity-details">
+                    <div class="detail-item">
+                        <i data-lucide="fingerprint" style="width:10px; height:10px"></i>
+                        ${log.session_id || 'no-session'}
+                    </div>
+                    <div class="detail-item">
+                        <i data-lucide="timer" style="width:10px; height:10px"></i>
+                        ${log.duration_ms}ms
+                    </div>
+                    ${log.error ? `
+                        <div class="detail-item status-failed" style="color:var(--danger)">
+                            <i data-lucide="x-circle" style="width:10px; height:10px"></i>
+                            ${log.error}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+function initActivityFilters() {
+    const btns = document.querySelectorAll('.filter-btn');
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilterHours = parseInt(btn.dataset.hours);
+            fetchActivityLogs();
+        });
+    });
+}
+
+function downloadActivityJSON() {
+    const data = JSON.stringify(activityLogs, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `activity-logs-${currentFilterHours}h.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleString();
 }
