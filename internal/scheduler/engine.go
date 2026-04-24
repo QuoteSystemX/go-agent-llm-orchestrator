@@ -303,6 +303,9 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	if err != nil {
 		return fmt.Errorf("analysis phase failed: %w", err)
 	}
+	if logID > 0 {
+		e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis)
+	}
 
 	// Phase 2: PLANNING
 	e.updateProgress(ctx, taskID, "planning", 50, logID)
@@ -310,6 +313,9 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	plan, err := e.router.GenerateResponse(ctx, "simple", planningPrompt)
 	if err != nil {
 		return fmt.Errorf("planning phase failed: %w", err)
+	}
+	if logID > 0 {
+		e.db.AddTaskRunDetail(ctx, logID, "planning", plan)
 	}
 
 	// Phase 3: EXECUTION
@@ -319,6 +325,9 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	if err != nil {
 		return fmt.Errorf("execution phase failed: %w", err)
 	}
+	if logID > 0 {
+		e.db.AddTaskRunDetail(ctx, logID, "execution", result)
+	}
 
 	// Phase 4: VERIFICATION
 	e.updateProgress(ctx, taskID, "verification", 100, logID)
@@ -326,6 +335,9 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	audit, err := e.router.GenerateResponse(ctx, "simple", verifyPrompt)
 	if err != nil {
 		return fmt.Errorf("verification phase failed: %w", err)
+	}
+	if logID > 0 {
+		e.db.AddTaskRunDetail(ctx, logID, "verification", audit)
 	}
 
 	log.Printf("Task %s: LOCAL AGENTIC PIPELINE COMPLETED", taskID)

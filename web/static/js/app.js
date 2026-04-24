@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(tickCountdown, 1000);
     setInterval(fetchLogs, 5000);
     setInterval(fetchActivityLogs, 10000);
+    loadChatHistory();
     lucide.createIcons();
 });
 
@@ -118,6 +119,13 @@ function renderTasks() {
 function updateChatRepoSelector(repos) {
     const selector = document.getElementById('chat-repo-context');
     if (!selector) return;
+    
+    // Add event listener if not already added
+    if (!selector._listenerAttached) {
+        selector.addEventListener('change', loadChatHistory);
+        selector._listenerAttached = true;
+    }
+
     const current = selector.value;
     selector.innerHTML = '<option value="">No Context</option>' + 
         repos.map(r => `<option value="${r}" ${r === current ? 'selected' : ''}>Repo: ${r}</option>`).join('');
@@ -745,6 +753,24 @@ async function runAnalysis() {
     }
 }
 
+async function loadChatHistory() {
+    const repo = document.getElementById('chat-repo-context').value;
+    try {
+        const response = await fetch(`/api/v1/chat/history?repo=${repo}`);
+        if (!response.ok) throw new Error('Failed to fetch history');
+        const history = await response.json();
+        
+        chatMessages = history.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at
+        }));
+        renderChat();
+    } catch (err) {
+        console.error('Chat history error:', err);
+    }
+}
+
 function renderProposals(data) {
     const container = document.getElementById('dto-proposals');
     const warningContainer = document.getElementById('dto-warnings');
@@ -1262,12 +1288,12 @@ function renderActivityLogs() {
                         <i data-lucide="timer" style="width:10px; height:10px"></i>
                         ${log.duration_ms > 0 ? log.duration_ms + 'ms' : '-'}
                     </div>
-                    ${log.error ? `
-                        <div class="detail-item status-failed" style="color:var(--danger); grid-column: span 2">
-                            <i data-lucide="x-circle" style="width:10px; height:10px"></i>
-                            ${log.error}
-                        </div>
-                    ` : ''}
+                    <button class="btn-secondary btn-sm" style="margin-left:auto; padding: 0.1rem 0.5rem" onclick="toggleLogDetails(${log.id}, event)">
+                        <i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect
+                    </button>
+                </div>
+                <div id="log-details-${log.id}" class="log-phase-details" style="display:none">
+                    <!-- Phases injected here -->
                 </div>
             </div>
         `;
@@ -1304,4 +1330,40 @@ function downloadActivityJSON() {
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     return d.toLocaleString();
+}
+
+async function toggleLogDetails(logId, event) {
+    const detailDiv = document.getElementById(`log-details-${logId}`);
+    if (!detailDiv) return;
+
+    if (detailDiv.style.display === 'block') {
+        detailDiv.style.display = 'none';
+        return;
+    }
+
+    // Fetch details
+    detailDiv.innerHTML = '<div class="loading-spinner" style="padding:1rem; text-align:center; opacity:0.5">Loading phase details...</div>';
+    detailDiv.style.display = 'block';
+
+    try {
+        const resp = await fetch(`/api/v1/audit/logs/details?log_id=${logId}`);
+        if (!resp.ok) throw new Error('Failed to fetch');
+        const details = await resp.json();
+
+        if (details.length === 0) {
+            detailDiv.innerHTML = '<div class="empty-state" style="padding:1rem">No phase details recorded.</div>';
+        } else {
+            detailDiv.innerHTML = details.map(d => `
+                <div class="phase-detail">
+                    <div class="phase-detail-header">
+                        <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                        <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="phase-content">${escapeHtml(d.content)}</div>
+                </div>
+            `).join('');
+        }
+    } catch (err) {
+        detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;
+    }
 }

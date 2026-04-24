@@ -118,8 +118,10 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	mux.HandleFunc("/api/v1/audit/logs", s.handleListAuditLogs)
+	mux.HandleFunc("/api/v1/audit/logs/details", s.handleGetTaskRunDetails)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
 	mux.HandleFunc("/api/v1/chat/stream", s.handleChatStream)
+	mux.HandleFunc("/api/v1/chat/history", s.handleGetChatHistory)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
 	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
@@ -757,10 +759,13 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Save user message (last one)
+	userMsg := req.Messages[len(req.Messages)-1]["content"]
+	s.db.SaveChatMessage(r.Context(), "user", userMsg, req.Provider, req.Repo)
+
 	// If a repository is selected, use RAG to enhance the context
 	if req.Repo != "" && s.analyzer != nil {
-		lastMsg := req.Messages[len(req.Messages)-1]["content"]
-		context := s.analyzer.SearchContext(lastMsg, 3)
+		context := s.analyzer.SearchContext(userMsg, 3)
 		if context != "" {
 			ragMsg := map[string]string{
 				"role":    "system",
@@ -789,13 +794,45 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var fullResponse strings.Builder
 	for token := range tokens {
+		fullResponse.WriteString(token)
 		fmt.Fprintf(w, "data: %s\n\n", token)
 		flusher.Flush()
 	}
 
+	// Save assistant response
+	if fullResponse.Len() > 0 {
+		s.db.SaveChatMessage(r.Context(), "assistant", fullResponse.String(), req.Provider, req.Repo)
+	}
+
 	fmt.Fprintf(w, "data: [DONE]\n\n")
 	flusher.Flush()
+}
+
+func (s *AdminServer) handleGetTaskRunDetails(w http.ResponseWriter, r *http.Request) {
+	logIDStr := r.URL.Query().Get("log_id")
+	var logID int64
+	fmt.Sscanf(logIDStr, "%d", &logID)
+	
+	details, err := s.db.GetTaskRunDetails(r.Context(), logID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(details)
+}
+
+func (s *AdminServer) handleGetChatHistory(w http.ResponseWriter, r *http.Request) {
+	repo := r.URL.Query().Get("repo")
+	history, err := s.db.GetChatHistory(r.Context(), repo, 50)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
 }
 
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {

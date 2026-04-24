@@ -61,6 +61,8 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
 		`ALTER TABLE tasks ADD COLUMN current_stage TEXT DEFAULT 'idle'`,
 		`ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0`,
+		`CREATE TABLE IF NOT EXISTS task_run_details (id INTEGER PRIMARY KEY AUTOINCREMENT, log_id INTEGER NOT NULL, phase TEXT NOT NULL, content TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`CREATE TABLE IF NOT EXISTS web_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, content TEXT NOT NULL, provider TEXT, repo TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
 tasks:
@@ -227,4 +229,71 @@ func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string
 func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage string, progress int) error {
 	_, err := db.ExecContext(ctx, "UPDATE tasks SET current_stage = ?, progress = ? WHERE id = ?", stage, progress, taskID)
 	return err
+}
+
+func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string) error {
+	_, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content) VALUES (?, ?, ?)", logID, phase, content)
+	return err
+}
+
+func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]any, error) {
+	rows, err := db.QueryContext(ctx, "SELECT phase, content, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var details []map[string]any
+	for rows.Next() {
+		var phase, content, createdAt string
+		if err := rows.Scan(&phase, &content, &createdAt); err == nil {
+			details = append(details, map[string]any{
+				"phase":      phase,
+				"content":    content,
+				"created_at": createdAt,
+			})
+		}
+	}
+	return details, nil
+}
+
+func (db *DB) SaveChatMessage(ctx context.Context, role, content, provider, repo string) error {
+	_, err := db.ExecContext(ctx, "INSERT INTO web_chat_history (role, content, provider, repo) VALUES (?, ?, ?, ?)", role, content, provider, repo)
+	return err
+}
+
+func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map[string]any, error) {
+	query := "SELECT role, content, provider, repo, created_at FROM web_chat_history "
+	var args []any
+	if repo != "" {
+		query += "WHERE repo = ? OR repo = '' "
+		args = append(args, repo)
+	}
+	query += "ORDER BY created_at DESC LIMIT ?"
+	args = append(args, limit)
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []map[string]any
+	for rows.Next() {
+		var role, content, provider, repoName, createdAt string
+		if err := rows.Scan(&role, &content, &provider, &repoName, &createdAt); err == nil {
+			history = append(history, map[string]any{
+				"role":       role,
+				"content":    content,
+				"provider":   provider,
+				"repo":       repoName,
+				"created_at": createdAt,
+			})
+		}
+	}
+	// Reverse to get chronological order
+	for i, j := 0, len(history)-1; i < j; i, j = i+1, j-1 {
+		history[i], history[j] = history[j], history[i]
+	}
+	return history, nil
 }
