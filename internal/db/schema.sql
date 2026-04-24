@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     current_stage TEXT DEFAULT 'idle', -- analysis, planning, implementation, verification
     progress INTEGER DEFAULT 0,
     last_run_at DATETIME,
+    approval_required INTEGER DEFAULT 0,
+    pending_decision TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,6 +61,7 @@ CREATE TABLE IF NOT EXISTS task_run_details (
     log_id INTEGER NOT NULL REFERENCES task_logs(id) ON DELETE CASCADE,
     phase TEXT NOT NULL,
     content TEXT,
+    duration_ms INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
