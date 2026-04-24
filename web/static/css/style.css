@@ -639,6 +639,13 @@ body { padding-bottom: 40px; }
 .bg-success  { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
 .bg-failed   { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
+.service-task-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+}
+
 /* Help Modal */
 .help-section { margin-bottom: 1.5rem; }
 .help-section-title {

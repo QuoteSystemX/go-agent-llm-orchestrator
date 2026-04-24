@@ -138,6 +138,7 @@ function renderTasks() {
                                             </div>
                                         </div>
                                     ` : ''}
+                                    ${servicePatterns.includes(task.pattern) ? `<span class="task-badge service-task-badge" title="Core BMAD Service Task — essential for project lifecycle">SERVICE</span>` : ''}
                                     ${noPrompt ? `<span class="task-badge no-prompt-badge" title="No agent profile, pattern methodology, or workflow protocol found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
                                 </div>
@@ -345,7 +346,16 @@ function editTask(id) {
 }
 
 async function confirmDelete(id) {
-    if (confirm(`Are you sure you want to delete task ${id}? This cannot be undone.`)) {
+    const task = tasks.find(t => t.id === id);
+    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer'];
+    const isService = task && servicePatterns.includes(task.pattern);
+
+    let msg = `Are you sure you want to delete task ${id}? This cannot be undone.`;
+    if (isService) {
+        msg = `⚠️ WARNING: This is a CORE SERVICE task (${task.pattern}).\n\nDeleting it will break the BMAD automation cycle for this repository.\n\nAre you absolutely sure you want to proceed?`;
+    }
+
+    if (confirm(msg)) {
         await fetch(`/api/v1/tasks/${id}`, { method: 'DELETE' });
         fetchTasks();
     }
