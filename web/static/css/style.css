@@ -992,6 +992,53 @@ body { padding-bottom: 40px; }
     font-size: 1.1rem;
     font-weight: 600;
 }
+.dto-bmad-tracker {
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
+.bmad-stages {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    position: relative;
+}
+
+.bmad-stage {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    z-index: 2;
+    background: var(--bg-dark);
+    padding: 0 0.5rem;
+    transition: all 0.3s;
+}
+
+.bmad-stage.active {
+    color: var(--primary);
+}
+
+.bmad-stage.completed {
+    color: var(--success);
+}
+
+.bmad-progress-bg {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.bmad-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--success), var(--primary));
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 .dto-info-card {
     padding: 1.5rem;

@@ -630,6 +630,44 @@ function populateRepoSelect() {
     select.innerHTML = uniqueRepos.map(r => `<option value="${r}">${r}</option>`).join('');
 }
 
+let currentProposals = [];
+
+async function createSelectedTasks() {
+    const repo = document.getElementById('dto-repo-select').value;
+    const selected = currentProposals.filter((_, idx) => {
+        const chk = document.getElementById(`prop-check-${idx}`);
+        return chk && chk.checked;
+    });
+    
+    if (selected.length === 0) {
+        showToast('Please select at least one task', 'error');
+        return;
+    }
+
+    for (const p of selected) {
+        try {
+            await fetch('/api/v1/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: repo,
+                    agent: p.agent,
+                    pattern: p.pattern,
+                    mission: p.mission,
+                    schedule: p.schedule || '0 9 * * *',
+                    importance: p.importance,
+                    category: p.category
+                })
+            });
+        } catch (err) {
+            console.error('Failed to create task:', err);
+        }
+    }
+    
+    showToast(`Successfully created ${selected.length} tasks!`, 'success');
+    runAnalysis(); // Refresh
+}
+
 async function runAnalysis() {
     const repo = document.getElementById('dto-repo-select').value;
     if (!repo) return;
@@ -658,30 +696,49 @@ async function runAnalysis() {
     }
 }
 
-function renderProposals(proposals) {
+function renderProposals(data) {
     const container = document.getElementById('dto-proposals');
-    if (!container) return;
+    const proposals = data.proposals || [];
+    currentProposals = proposals;
+    
+    // Update Tracker
+    const stages = ['discovery', 'prd', 'architecture', 'stories', 'sprint', 'worker', 'closure'];
+    const currentIdx = stages.indexOf(data.current_stage);
+    
+    document.querySelectorAll('.bmad-stage').forEach((el, idx) => {
+        el.classList.remove('active', 'completed');
+        if (idx < currentIdx) el.classList.add('completed');
+        if (idx === currentIdx) el.classList.add('active');
+    });
+    
+    document.getElementById('bmad-progress-fill').style.width = `${data.progress || 0}%`;
 
-    if (!proposals || proposals.length === 0) {
-        container.innerHTML = '<div class="empty-state">No tasks proposed. Repository seems to be in good state.</div>';
+    if (proposals.length === 0) {
+        container.innerHTML = '<div class="empty-state">No proposals found for the current state.</div>';
+        header.style.display = 'none';
         return;
     }
 
-    container.innerHTML = proposals.map((p, index) => `
+    header.style.display = 'flex';
+    container.innerHTML = proposals.map((p, idx) => `
         <div class="proposal-card glass">
             <div class="proposal-header">
-                <div class="proposal-type">
-                    <span class="task-badge ${p.category === 'service' ? 'bg-running' : 'bg-success'}">${p.category}</span>
-                    <span class="task-badge bg-pending">Priority: ${p.importance}</span>
+                <div class="proposal-check">
+                    <input type="checkbox" id="prop-check-${idx}" checked>
                 </div>
-                <div class="proposal-pattern">${p.pattern} (${p.agent})</div>
+                <div class="proposal-type">
+                    <span class="badge ${p.category === 'service' ? 'badge-service' : 'badge-worker'}">${p.category}</span>
+                    <span class="proposal-pattern">${p.pattern}</span>
+                </div>
+                <div class="proposal-importance">
+                    <span class="importance-dot" style="background:${getImportanceColor(p.importance)}"></span>
+                    ${p.importance}/10
+                </div>
             </div>
-            <div class="proposal-mission"><strong>Task:</strong> ${p.mission}</div>
-            <div class="proposal-reason"><strong>Why:</strong> ${p.reason}</div>
+            <div class="proposal-mission">${escapeHtml(p.mission)}</div>
+            <div class="proposal-reason">${escapeHtml(p.reason)}</div>
             <div class="proposal-actions">
-                <button class="btn-success btn-sm" onclick="applyProposal(${index})">
-                    <i data-lucide="plus-circle"></i> Create Task
-                </button>
+                <button class="btn-primary btn-sm" onclick="applyProposal(${idx})">Quick Edit</button>
             </div>
         </div>
     `).join('');

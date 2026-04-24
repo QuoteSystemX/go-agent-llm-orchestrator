@@ -105,6 +105,9 @@ func main() {
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
+	
+	// Start DTO background analyzer
+	go analyzer.StartBackgroundLoop(ctx)
 
 	// Proactively pause all PENDING tasks if PAT is not yet configured —
 	// they would fail anyway when the cron fires and buildPrompt() returns an error.

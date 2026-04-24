@@ -10,20 +10,19 @@ import (
 func TestAnalyzer_ParseProposals(t *testing.T) {
 	a := &Analyzer{}
 	
-	response := `Here are the proposals:
-[
-	{"pattern": "discovery", "agent": "project-planner", "mission": "Analyze project", "reason": "Initial step"}
-]`
+	response := `{"current_stage": "discovery", "progress": 10, "proposals": [
+		{"pattern": "discovery", "agent": "project-planner", "mission": "Analyze project", "reason": "Initial step"}
+	]}`
 
-	proposals, err := a.parseProposals(response)
+	result, err := a.parseAnalysisResult(response)
 	if err != nil {
 		t.Fatalf("failed to parse: %v", err)
 	}
-	if len(proposals) != 1 {
-		t.Errorf("expected 1 proposal, got %d", len(proposals))
+	if len(result.Proposals) != 1 {
+		t.Errorf("expected 1 proposal, got %d", len(result.Proposals))
 	}
-	if proposals[0].Pattern != "discovery" {
-		t.Errorf("expected discovery pattern, got %s", proposals[0].Pattern)
+	if result.CurrentStage != "discovery" {
+		t.Errorf("expected discovery stage, got %s", result.CurrentStage)
 	}
 }
 

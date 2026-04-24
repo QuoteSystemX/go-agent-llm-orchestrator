@@ -159,6 +159,21 @@ func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 	`).Scan(&count)
 	return count, err
 }
+func (db *DB) GetDistinctRepos(ctx context.Context) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SELECT DISTINCT name FROM tasks")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var repos []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			repos = append(repos, name)
+		}
+	}
+	return repos, nil
+}
 
 func (db *DB) GetUpcomingTaskCountToday(ctx context.Context) (int, error) {
 	// This is a simple approximation. In a real system, we'd parse the cron schedules.
