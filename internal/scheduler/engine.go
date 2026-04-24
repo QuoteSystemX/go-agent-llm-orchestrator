@@ -201,11 +201,24 @@ func (e *Engine) runTask(taskID string) {
 		// Build the full Jules prompt — pause the task if library is not ready yet
 		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
 		if err != nil {
-			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
+			// Do not auto-pause service tasks
+			servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
+			isService := false
+			for _, p := range servicePatterns {
+				if p == pattern {
+					isService = true
+					break
+				}
+			}
+
+			if !isService {
+				e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
+			}
+			
 			if logID > 0 {
 				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID)
 			}
-			return fmt.Errorf("prompt-library not ready, task %s paused: %w", taskID, err)
+			return fmt.Errorf("prompt-library not ready, task %s: %w", taskID, err)
 		}
 		log.Printf("Task %s: Prompt assembled successfully", taskID)
 

@@ -366,6 +366,17 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 		// Manual run could be implemented by adding to a high-priority queue
 		w.WriteHeader(http.StatusAccepted)
 	case "pause":
+		// Protect service tasks from manual pause
+		var pattern string
+		s.db.QueryRowContext(r.Context(), "SELECT pattern FROM tasks WHERE id = ?", taskID).Scan(&pattern)
+		servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
+		for _, p := range servicePatterns {
+			if p == pattern {
+				http.Error(w, "Core service tasks cannot be paused", http.StatusForbidden)
+				return
+			}
+		}
+
 		s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
 		s.scheduler.SyncTasks(r.Context())
 		w.WriteHeader(http.StatusNoContent)
@@ -902,7 +913,21 @@ func (s *AdminServer) handleRejectTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	taskID := r.URL.Query().Get("id")
-	_, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED', pending_decision = '' WHERE id = ?", taskID)
+
+	// Check if this is a service task
+	var pattern string
+	err := s.db.QueryRowContext(r.Context(), "SELECT pattern FROM tasks WHERE id = ?", taskID).Scan(&pattern)
+	if err == nil {
+		servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
+		for _, p := range servicePatterns {
+			if p == pattern {
+				http.Error(w, "cannot pause service tasks", http.StatusForbidden)
+				return
+			}
+		}
+	}
+
+	_, err = s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED', pending_decision = '' WHERE id = ?", taskID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
