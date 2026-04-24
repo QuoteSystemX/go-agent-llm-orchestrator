@@ -87,6 +87,14 @@ func main() {
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder, router)
 	dtoMgr := dto.NewTemplateManager(database)
+	// Initial template sync from cache if it exists
+	tplDir := filepath.Join(cacheDir, "templates")
+	if _, err := os.Stat(tplDir); err == nil {
+		log.Println("Initial DTO Template Sync...")
+		if err := dtoMgr.SyncFromDir(context.Background(), tplDir); err != nil {
+			log.Printf("Initial Template Sync Error: %v", err)
+		}
+	}
 	analyzer := dto.NewAnalyzer(database, router, promptBuilder, gitSyncer)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
@@ -141,6 +149,13 @@ func main() {
 		n := engine.ResumeAutopaused(ctx)
 		if n > 0 {
 			log.Printf("git: prompt-library ready — %d auto-paused task(s) resumed", n)
+		}
+		// Sync templates after successful git pull
+		tplDir := filepath.Join(cacheDir, "templates")
+		if err := dtoMgr.SyncFromDir(ctx, tplDir); err != nil {
+			log.Printf("git: template sync failed: %v", err)
+		} else {
+			log.Println("git: DTO templates synchronized")
 		}
 	}
 

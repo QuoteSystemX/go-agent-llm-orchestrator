@@ -459,7 +459,7 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 			"remote_model":            s.getSetting(r.Context(), "llm_remote_model", ""),
 			"jules_api_key":           masked,
 			"jules_base_url":          s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
-			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "4096"),
+			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "32768"),
 			"local_temperature":       s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
 			"system_prompt":           s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
 		})

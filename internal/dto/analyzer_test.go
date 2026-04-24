@@ -34,7 +34,7 @@ func TestAnalyzer_ParseProposals(t *testing.T) {
 
 func TestAnalyzer_BuildPrompt(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	a := NewAnalyzer(database, nil, nil)
+	a := NewAnalyzer(database, nil, nil, nil)
 	
 	prompt := a.buildAnalysisPrompt("test-repo", "README content", "Wiki content", "Agent context", nil, nil)
 	

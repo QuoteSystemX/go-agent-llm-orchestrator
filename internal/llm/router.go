@@ -50,7 +50,7 @@ func (r *Router) getRemoteModel() string {
 }
 
 func (r *Router) getLocalContextWindow() int {
-	valStr := r.getModel("llm_local_context_window", "4096")
+	valStr := r.getModel("llm_local_context_window", "32768")
 	var val int
 	fmt.Sscanf(valStr, "%d", &val)
 	return val
@@ -235,7 +235,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 				req.Header.Set("Authorization", "Bearer "+key)
 			}
 
-			client := &http.Client{Timeout: 60 * time.Second}
+			client := &http.Client{Timeout: 300 * time.Second}
 			resp, err := client.Do(req)
 			if err != nil {
 				log.Printf("LLM Router: [%s] attempt %d failed: %v", prov, i+1, err)

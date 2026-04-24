@@ -91,7 +91,7 @@ func (m *TemplateManager) SyncFromDir(ctx context.Context, dir string) error {
 			continue
 		}
 		ext := filepath.Ext(f.Name())
-		if ext == ".yaml" || ext == ".yml" || ext == ".json" {
+		if ext == ".yaml" || ext == ".yml" || ext == ".json" || ext == ".md" {
 			name := strings.TrimSuffix(f.Name(), ext)
 			content, err := ioutil.ReadFile(filepath.Join(dir, f.Name()))
 			if err != nil {
