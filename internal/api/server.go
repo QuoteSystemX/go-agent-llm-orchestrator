@@ -107,6 +107,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/tasks/next-runs", s.handleNextRuns)
 	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
 	mux.HandleFunc("/api/v1/tasks/", s.handleTaskByID)
+	mux.HandleFunc("/api/v1/tasks/approve", s.handleApproveTask)
+	mux.HandleFunc("/api/v1/tasks/reject", s.handleRejectTask)
 
 	// Settings & Audit
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
@@ -856,6 +858,43 @@ func (s *AdminServer) handleRunTask(w http.ResponseWriter, r *http.Request) {
 	}
 	s.scheduler.TriggerTask(taskID)
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *AdminServer) handleApproveTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	taskID := r.URL.Query().Get("id")
+	var req struct {
+		Plan string `json:"plan"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PENDING', pending_decision = ? WHERE id = ?", req.Plan, taskID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.scheduler.TriggerTask(taskID)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *AdminServer) handleRejectTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	taskID := r.URL.Query().Get("id")
+	_, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED', pending_decision = '' WHERE id = ?", taskID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request) {

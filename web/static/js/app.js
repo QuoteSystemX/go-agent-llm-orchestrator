@@ -76,6 +76,13 @@ function renderTasks() {
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
                                     </div>
                                     <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    ${task.status === 'WAITING' ? `
+                                        <div class="task-approval-needed">
+                                            <i data-lucide="help-circle" style="width:14px; color:var(--warning)"></i>
+                                            <span style="color:var(--warning); font-weight:700; font-size:0.7rem">ACTION REQUIRED</span>
+                                            <button class="btn-primary btn-sm" onclick="reviewTaskPlan('${task.id}')" style="margin-top:0.5rem; width:100%">Review Plan</button>
+                                        </div>
+                                    ` : ''}
                                     ${task.status === 'RUNNING' ? `
                                         <div class="task-stage-info">
                                             <div class="stage-label">${task.current_stage || 'initializing'}</div>
@@ -212,6 +219,7 @@ function showTaskModal(task = null) {
             const opt = new Option(agent, agent, true, true);
             sel.add(opt);
         }
+        document.getElementById('task-approval-required').checked = task.approval_required === 1;
     } else {
         title.innerText = 'Create New Task';
         document.getElementById('task-id-field').value = '';
@@ -222,6 +230,7 @@ function showTaskModal(task = null) {
         document.getElementById('task-schedule').value = '0 */6 * * *';
         document.getElementById('task-importance').value = 1;
         document.getElementById('task-category').value = 'worker';
+        document.getElementById('task-approval-required').checked = false;
     }
 
     modal.style.display = 'flex';
@@ -241,6 +250,7 @@ async function saveTask() {
     const mission  = document.getElementById('task-mission').value.trim();
     const importance = parseInt(document.getElementById('task-importance').value) || 1;
     const category   = document.getElementById('task-category').value;
+    const approval_required = document.getElementById('task-approval-required').checked ? 1 : 0;
 
     if (!name || !schedule) {
         alert('Repository and Schedule are required.');
@@ -250,7 +260,7 @@ async function saveTask() {
     // Compose ID the same way the backend does: name:agent:pattern
     const composedId = existingId || `${name}:${agent}:${pattern}`;
 
-    const data = { id: composedId, name, mission, pattern, schedule, importance, category, status: 'PENDING' };
+    const data = { id: composedId, name, mission, pattern, schedule, importance, category, status: 'PENDING', approval_required };
 
     const method = existingId ? 'PUT' : 'POST';
     const url    = existingId ? `/api/v1/tasks/${encodeURIComponent(existingId)}` : '/api/v1/tasks';
@@ -1369,5 +1379,50 @@ async function toggleLogDetails(logId, event) {
         }
     } catch (err) {
         detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;
+    }
+}
+
+async function reviewTaskPlan(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const plan = task.pending_decision || "";
+    const newPlan = prompt("Review Agent Plan (Edit if needed):", plan);
+    if (newPlan === null) return;
+
+    if (confirm("Approve this plan and resume execution?")) {
+        await approveTask(taskId, newPlan);
+    } else {
+        if (confirm("Reject this plan and pause task?")) {
+            await rejectTask(taskId);
+        }
+    }
+}
+
+async function approveTask(taskId, plan) {
+    try {
+        const resp = await fetch(`/api/v1/tasks/approve?id=${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan })
+        });
+        if (resp.ok) {
+            fetchTasks();
+            alert('Plan approved! Agent resuming...');
+        }
+    } catch (e) {
+        alert('Failed to approve: ' + e.message);
+    }
+}
+
+async function rejectTask(taskId) {
+    try {
+        const resp = await fetch(`/api/v1/tasks/reject?id=${taskId}`, { method: 'POST' });
+        if (resp.ok) {
+            fetchTasks();
+            alert('Plan rejected. Task paused.');
+        }
+    } catch (e) {
+        alert('Failed to reject: ' + e.message);
     }
 }

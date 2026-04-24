@@ -295,6 +295,10 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 
 func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string) error {
 	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
+	var start time.Time
+	var duration int64
+	var err error
+	var result, audit string
 
 	runWithRetry := func(phase string, prompt string, modelType llm.Classification) (string, error) {
 		var lastErr error
@@ -312,37 +316,62 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 		return "", lastErr
 	}
 
-	// Phase 1: ANALYSIS
-	e.updateProgress(ctx, taskID, "analysis", 25, logID)
-	analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
-	start := time.Now()
-	analysis, err := runWithRetry("analysis", analysisPrompt, llm.Simple)
-	duration := time.Since(start).Milliseconds()
-	if err != nil {
-		return fmt.Errorf("analysis phase failed after 3 attempts: %w", err)
-	}
-	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis, duration)
-	}
+	// Phase 1 & 2: ANALYSIS & PLANNING
+	var analysis, plan string
+	
+	// Check if we have a pending decision to resume from
+	var existingDecision string
+	err = e.db.QueryRowContext(ctx, "SELECT pending_decision FROM tasks WHERE id = ?", taskID).Scan(&existingDecision)
+	
+	if err == nil && existingDecision != "" {
+		log.Printf("Task %s: Resuming from PENDING DECISION", taskID)
+		plan = existingDecision
+		e.updateProgress(ctx, taskID, "execution", 60, logID)
+	} else {
+		// Phase 1: ANALYSIS
+		e.updateProgress(ctx, taskID, "analysis", 25, logID)
+		analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
+		start = time.Now()
+		analysis, err = runWithRetry("analysis", analysisPrompt, llm.Simple)
+		duration = time.Since(start).Milliseconds()
+		if err != nil {
+			return fmt.Errorf("analysis phase failed after 3 attempts: %w", err)
+		}
+		if logID > 0 {
+			e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis, duration)
+		}
 
-	// Phase 2: PLANNING
-	e.updateProgress(ctx, taskID, "planning", 50, logID)
-	planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
-	start = time.Now()
-	plan, err := runWithRetry("planning", planningPrompt, llm.Simple)
-	duration = time.Since(start).Milliseconds()
-	if err != nil {
-		return fmt.Errorf("planning phase failed after 3 attempts: %w", err)
-	}
-	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "planning", plan, duration)
+		// Phase 2: PLANNING
+		e.updateProgress(ctx, taskID, "planning", 50, logID)
+		planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
+		start = time.Now()
+		plan, err = runWithRetry("planning", planningPrompt, llm.Simple)
+		duration = time.Since(start).Milliseconds()
+		if err != nil {
+			return fmt.Errorf("planning phase failed after 3 attempts: %w", err)
+		}
+		if logID > 0 {
+			e.db.AddTaskRunDetail(ctx, logID, "planning", plan, duration)
+		}
+
+		// Check if human approval is required
+		var approvalReq int
+		e.db.QueryRowContext(ctx, "SELECT approval_required FROM tasks WHERE id = ?", taskID).Scan(&approvalReq)
+		if approvalReq == 1 {
+			log.Printf("Task %s: PAUSING FOR HUMAN APPROVAL", taskID)
+			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'WAITING', pending_decision = ? WHERE id = ?", plan, taskID)
+			if logID > 0 {
+				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'AWAITING_APPROVAL' WHERE id = ?", logID)
+			}
+			return nil // Pause execution here
+		}
 	}
 
 	// Phase 3: EXECUTION
 	e.updateProgress(ctx, taskID, "execution", 75, logID)
 	execPrompt := fmt.Sprintf("Phase 3: EXECUTION. Mission: %s. Plan: %s. Implement the task and provide the final output.", mission, plan)
 	start = time.Now()
-	result, err := runWithRetry("execution", execPrompt, llm.Complex)
+	result, err = runWithRetry("execution", execPrompt, llm.Complex)
 	duration = time.Since(start).Milliseconds()
 	if err != nil {
 		return fmt.Errorf("execution phase failed after 3 attempts: %w", err)
@@ -355,7 +384,7 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	e.updateProgress(ctx, taskID, "verification", 100, logID)
 	verifyPrompt := fmt.Sprintf("Phase 4: VERIFICATION. Original Mission: %s. Result: %s. Review the result for correctness and security.", mission, result)
 	start = time.Now()
-	audit, err := runWithRetry("verification", verifyPrompt, llm.Simple)
+	audit, err = runWithRetry("verification", verifyPrompt, llm.Simple)
 	duration = time.Since(start).Milliseconds()
 	if err != nil {
 		return fmt.Errorf("verification phase failed after 3 attempts: %w", err)
@@ -363,6 +392,9 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	if logID > 0 {
 		e.db.AddTaskRunDetail(ctx, logID, "verification", audit, duration)
 	}
+
+	// Clear pending decision upon success
+	e.db.ExecContext(ctx, "UPDATE tasks SET pending_decision = '' WHERE id = ?", taskID)
 
 	log.Printf("Task %s: LOCAL AGENTIC PIPELINE COMPLETED", taskID)
 	if logID > 0 {

@@ -276,6 +276,10 @@
                         <option value="service">Service (Wiki, Docs, Maintenance)</option>
                     </select>
                 </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:0.5rem; margin-top:0.5rem">
+                    <input type="checkbox" id="task-approval-required" style="width:auto">
+                    <label for="task-approval-required" style="margin-bottom:0; font-weight:700; color:var(--warning)">Require Plan Approval (HITL)</label>
+                </div>
                 <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem">
                     min hour day month weekday — e.g. <code>0 9 * * 1</code> = every Monday at 9:00
                 </div>
