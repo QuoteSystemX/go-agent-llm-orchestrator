@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -50,23 +51,30 @@ func (e *Engine) ImportDistribution(path string) error {
 
 	ctx := context.Background()
 
+	// Use a transaction for all database operations to avoid SQLITE_BUSY and ensure atomicity
+	tx, err := e.db.Begin()
+	if err != nil {
+		return fmt.Errorf("starting import transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	// Persist prompt_library git config to settings so web UI and git syncer can read it
 	if cfg.PromptLibrary.Git.URL != "" {
-		e.db.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_git_url', ?)", cfg.PromptLibrary.Git.URL)
+		tx.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_git_url', ?)", cfg.PromptLibrary.Git.URL)
 	}
 	if cfg.PromptLibrary.Git.Branch != "" {
-		e.db.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_git_branch', ?)", cfg.PromptLibrary.Git.Branch)
+		tx.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_git_branch', ?)", cfg.PromptLibrary.Git.Branch)
 	}
 	if cfg.PromptLibrary.CacheDir != "" {
-		e.db.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_cache_dir', ?)", cfg.PromptLibrary.CacheDir)
+		tx.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_cache_dir', ?)", cfg.PromptLibrary.CacheDir)
 	}
 	if cfg.PromptLibrary.RefreshInterval != "" {
-		e.db.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_refresh_interval', ?)", cfg.PromptLibrary.RefreshInterval)
+		tx.ExecContext(ctx, "INSERT OR REPLACE INTO settings (key, value) VALUES ('prompt_library_refresh_interval', ?)", cfg.PromptLibrary.RefreshInterval)
 	}
 	// SSHKeyPath: read file content and store in DB only if not already set
 	if cfg.PromptLibrary.Git.SSHKeyPath != "" {
 		if keyData, err := ioutil.ReadFile(cfg.PromptLibrary.Git.SSHKeyPath); err == nil {
-			e.db.ExecContext(ctx, "INSERT OR IGNORE INTO settings (key, value) VALUES ('prompt_library_ssh_key', ?)", string(keyData))
+			tx.ExecContext(ctx, "INSERT OR IGNORE INTO settings (key, value) VALUES ('prompt_library_ssh_key', ?)", string(keyData))
 			log.Printf("Loaded SSH key from %s into DB (INSERT OR IGNORE)", cfg.PromptLibrary.Git.SSHKeyPath)
 		} else {
 			log.Printf("Warning: could not read SSH key from %s: %v", cfg.PromptLibrary.Git.SSHKeyPath, err)
@@ -77,7 +85,7 @@ func (e *Engine) ImportDistribution(path string) error {
 		for _, task := range repo.Tasks {
 			taskID := repo.Name + ":" + task.Agent + ":" + task.Pattern
 
-			_, err := e.db.ExecContext(ctx, `
+			_, err := tx.ExecContext(ctx, `
 				INSERT INTO tasks (id, name, agent, pattern, schedule, mission, status)
 				VALUES (?, ?, ?, ?, ?, ?, 'PENDING')
 				ON CONFLICT(id) DO UPDATE SET
@@ -90,8 +98,13 @@ func (e *Engine) ImportDistribution(path string) error {
 
 			if err != nil {
 				log.Printf("Failed to import task %s: %v", taskID, err)
+				return err // Fail the whole transaction if a task import fails
 			}
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing import transaction: %w", err)
 	}
 
 	log.Printf("Imported distribution from %s", path)

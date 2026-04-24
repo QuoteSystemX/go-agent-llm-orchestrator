@@ -42,13 +42,24 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("setting WAL mode: %w", err)
 	}
 
-	// Wait up to 5 s instead of returning SQLITE_BUSY immediately
-	if _, err := db.Exec("PRAGMA busy_timeout=5000;"); err != nil {
+	// Wait up to 10 s instead of returning SQLITE_BUSY immediately
+	if _, err := db.Exec("PRAGMA busy_timeout=10000;"); err != nil {
 		return nil, fmt.Errorf("setting busy_timeout: %w", err)
 	}
 
-	// Initialize schema
-	if _, err := db.Exec(schemaSQL); err != nil {
+	// Recommended for WAL mode: slightly less safe but much faster
+	if _, err := db.Exec("PRAGMA synchronous=NORMAL;"); err != nil {
+		return nil, fmt.Errorf("setting synchronous mode: %w", err)
+	}
+
+	// Initialize schema and migrations in a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("starting init transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(schemaSQL); err != nil {
 		return nil, fmt.Errorf("initializing schema: %w", err)
 	}
 
@@ -106,12 +117,16 @@ tasks:
     category: "service"')`,
 	}
 	for _, m := range migrations {
-		if _, err := db.Exec(m); err != nil {
+		if _, err := tx.Exec(m); err != nil {
 			// SQLite returns an error if the column already exists; ignore it
 			if !isSQLiteColumnExists(err) {
 				log.Printf("Migration warning: %v", err)
 			}
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("committing init transaction: %w", err)
 	}
 
 	log.Printf("Database initialized at %s", dbPath)

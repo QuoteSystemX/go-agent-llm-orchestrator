@@ -3,6 +3,7 @@ package dto
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -78,6 +79,13 @@ func (m *TemplateManager) SyncFromDir(ctx context.Context, dir string) error {
 		return err
 	}
 
+	// Use a transaction for batch template updates
+	tx, err := m.db.Begin()
+	if err != nil {
+		return fmt.Errorf("starting template sync transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	for _, f := range files {
 		if f.IsDir() {
 			continue
@@ -89,10 +97,14 @@ func (m *TemplateManager) SyncFromDir(ctx context.Context, dir string) error {
 			if err != nil {
 				continue
 			}
-			if err := m.SaveTemplate(ctx, name, string(content)); err != nil {
-				continue
+			_, err = tx.ExecContext(ctx,
+				"INSERT OR REPLACE INTO templates (name, content, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+				name, string(content))
+			if err != nil {
+				return fmt.Errorf("saving template %s in transaction: %w", name, err)
 			}
 		}
 	}
-	return nil
+
+	return tx.Commit()
 }
