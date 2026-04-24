@@ -19,6 +19,7 @@
             </div>
             <div class="header-actions">
                 <div id="system-stats-widget" class="system-stats-widget glass" title="System Resources (Process-level)">
+                    <div class="stat-item" title="Daily Task Quota (Used / Limit)"><i data-lucide="zap"></i> <span id="stat-quota">0 / 0</span></div>
                     <div class="stat-item" title="Goroutines (Concurrent Tasks)"><i data-lucide="activity"></i> <span id="stat-cpu">-</span> <div class="sparkline" id="cpu-sparkline"></div></div>
                     <div class="stat-item" title="Total System Memory Reserved"><i data-lucide="database"></i> <span id="stat-mem">-</span> <div class="sparkline mem" id="mem-sparkline"></div></div>
                     <div class="stat-item" title="Pod Uptime"><i data-lucide="clock"></i> <span id="stat-uptime">-</span></div>
@@ -30,26 +31,6 @@
         </header>
 
         <main>
-            <!-- Daily Limit Bar -->
-            <div id="daily-limit-bar" class="daily-limit-bar glass" title="Daily task usage limit">
-                <div class="limit-info">
-                    <i data-lucide="zap" style="width:14px; color:var(--primary)"></i>
-                    <span class="limit-label">Daily Quota</span>
-                    <span id="limit-text" class="limit-text">0 / 0</span>
-                </div>
-                <div class="limit-progress-bg">
-                    <div id="limit-progress-fill" class="limit-progress-fill"></div>
-                </div>
-                <div id="limit-tooltip" class="limit-tooltip glass">
-                    <div class="tooltip-header">Usage Details</div>
-                    <div class="tooltip-row"><span>Today:</span> <span id="limit-usage-count">0</span></div>
-                    <div class="tooltip-row"><span>Limit:</span> <span id="limit-max-count">0</span></div>
-                    <div class="tooltip-row"><span>Remaining:</span> <span id="limit-remaining-count">0</span></div>
-                    <div class="tooltip-row" style="margin-top:0.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:0.5rem">
-                        <span>Forecast:</span> <span id="limit-forecast-count">0</span>
-                    </div>
-                </div>
-            </div>
 
             <!-- Next Run Status Bar -->
             <div id="next-run-bar" class="next-run-bar glass">

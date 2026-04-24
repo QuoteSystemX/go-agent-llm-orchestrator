@@ -950,69 +950,10 @@ body { padding-bottom: 40px; }
 }
 
 /* Daily Limit Bar */
-.daily-limit-bar {
-    position: relative;
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 0.75rem;
-    border-radius: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    cursor: help;
-}
-
-.limit-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.limit-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    font-weight: 600;
-}
-
-.limit-text {
-    margin-left: auto;
-    font-size: 0.75rem;
-    font-weight: 700;
+#stat-quota {
     font-family: monospace;
+    font-weight: 700;
 }
-
-.limit-progress-bg {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.limit-progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--primary) 0%, #60a5fa 100%);
-    transition: width 0.5s ease-out;
-}
-
-.limit-tooltip {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 1.25rem;
-    padding: 1rem;
-    width: 200px;
-    z-index: 50;
-    display: none;
-    flex-direction: column;
-    gap: 0.4rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-}
-
-.daily-limit-bar:hover .limit-tooltip {
-    display: flex;
-}
-
 .tooltip-header {
     font-size: 0.65rem;
     text-transform: uppercase;

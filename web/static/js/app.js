@@ -199,7 +199,9 @@ function tickCountdown() {
 function renderNextRunSlots() {
     const container = document.getElementById('next-run-slots');
     if (!container) return;
-    container.innerHTML = _nextRuns.map(r => {
+    // Show top 5 runs
+    const displayRuns = _nextRuns.slice(0, 5);
+    container.innerHTML = displayRuns.map(r => {
         const pattern = r.task_id.split(':').pop();
         const repo    = r.name.split('/').pop();
         const at      = new Date(r.next_run).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
@@ -579,6 +581,14 @@ async function saveSettings() {
             body: JSON.stringify({ classify: classifyPrompt, supervisor: supervisorPrompt })
         });
     }
+
+    const plGitUrl = document.getElementById('pl-git-url').value.trim();
+    const plGitBranch = document.getElementById('pl-git-branch').value.trim();
+    const plRefreshInterval = document.getElementById('pl-refresh-interval').value.trim();
+    const plPatternsPath = document.getElementById('pl-patterns-path').value.trim();
+    const plAgentsPath = document.getElementById('pl-agents-path').value.trim();
+    const plWorkflowsPath = document.getElementById('pl-workflows-path').value.trim();
+    const plPAT = document.getElementById('pl-pat').value.trim();
 
     if (plGitUrl || plGitBranch || plRefreshInterval || plPAT || plPatternsPath || plAgentsPath || plWorkflowsPath) {
         await fetch('/api/v1/settings/prompt-library', {
@@ -1178,7 +1188,7 @@ async function fetchSystemUsage() {
         if (!resp.ok) return;
         const data = await resp.json();
         
-        const text = document.getElementById('limit-text');
+        const quotaEl = document.getElementById('stat-quota');
         const fill = document.getElementById('limit-progress-fill');
         const usageCount = document.getElementById('limit-usage-count');
         const maxCount = document.getElementById('limit-max-count');
@@ -1188,7 +1198,16 @@ async function fetchSystemUsage() {
         const limit = data.limit || 0;
         const remaining = limit > 0 ? Math.max(0, limit - usage) : '∞';
         
-        text.textContent = `${usage} / ${limit || '∞'}`;
+        if (quotaEl) {
+            quotaEl.textContent = `${usage} / ${limit || '∞'}`;
+            if (limit > 0) {
+                const pct = (usage / limit) * 100;
+                if (pct > 90) quotaEl.style.color = 'var(--danger)';
+                else if (pct > 70) quotaEl.style.color = 'var(--warning)';
+                else quotaEl.style.color = 'var(--text)';
+            }
+        }
+
         usageCount.textContent = usage;
         maxCount.textContent = limit || '∞';
         remainingCount.textContent = remaining;
