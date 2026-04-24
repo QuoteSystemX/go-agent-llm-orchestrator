@@ -143,7 +143,7 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `[CHORE]` | `chore` | `project-planner` | `analyst`, `code-archaeologist` | Planning cards, tech debt, architecture ADRs |
   | `[EPIC]` | `feat` | `analyst` | — | Grouping card only, NOT directly executable |
 
-- **Agent Capability Map** (all 22 agents):
+- **Agent Capability Map** (all 24 agents):
 
   | Agent | Primary Labels | Role in Ecosystem |
   | :--- | :--- | :--- |
@@ -169,6 +169,8 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `mobile-developer` | `[FEAT]` (mobile) | React Native, Flutter |
   | `game-developer` | `[FEAT]` (games) | Unity, Godot, Phaser |
   | `seo-specialist` | `[CHORE]` (SEO) | Core Web Vitals, GEO, AI search |
+  | `rest-api-designer` | `[FEAT]` (API) | REST / OpenAPI design, spec-first development |
+  | `grpc-architect` | `[FEAT]` (API) | gRPC / Protobuf design, streaming patterns |
 
 - **Execution Protocol**:
   - At the start of a session, agents MUST check the `tasks/` directory for cards matching their domain.

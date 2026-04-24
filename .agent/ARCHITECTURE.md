@@ -8,9 +8,9 @@
 
 Antigravity Kit is a modular system consisting of:
 
-- **20 Specialist Agents** - Role-based AI personas
-- **36 Skills** - Domain-specific knowledge modules
-- **11 Workflows** - Slash command procedures
+- **24 Specialist Agents** - Role-based AI personas
+- **41 Skills** - Domain-specific knowledge modules
+- **18 Workflows** - Slash command procedures
 
 ---
 
@@ -34,7 +34,7 @@ Antigravity Kit is a modular system consisting of:
 
 ---
 
-## 🤖 Agents (20)
+## 🤖 Agents (24)
 
 Specialist AI personas for different domains.
 
@@ -42,13 +42,13 @@ Specialist AI personas for different domains.
 | ------------------------ | -------------------------- | -------------------------------------------------------- |
 | `orchestrator`           | Multi-agent coordination   | parallel-agents, behavioral-modes                        |
 | `project-planner`        | Discovery, task planning   | brainstorming, plan-writing, architecture                |
-| `frontend-specialist`    | Web UI/UX                  | frontend-design, react-best-practices, tailwind-patterns |
+| `frontend-specialist`    | Web UI/UX                  | frontend-design, nextjs-react-expert, tailwind-patterns  |
 | `backend-specialist`     | API, business logic        | api-patterns, nodejs-best-practices, database-design     |
-| `database-architect`     | Schema, SQL                | database-design, prisma-expert                           |
+| `database-architect`     | Schema, SQL                | database-design                                          |
 | `mobile-developer`       | iOS, Android, RN           | mobile-design                                            |
 | `game-developer`         | Game logic, mechanics      | game-development                                         |
 | `crypto-go-specialist`   | Go, Microservices, Perf    | go-patterns, api-patterns, architecture                  |
-| `devops-engineer`        | CI/CD, Docker              | deployment-procedures, docker-expert                     |
+| `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                 |
 | `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                  |
 | `penetration-tester`     | Offensive security         | red-team-tactics                                         |
 | `test-engineer`          | Testing strategies         | testing-patterns, tdd-workflow, webapp-testing           |
@@ -60,12 +60,14 @@ Specialist AI personas for different domains.
 | `product-owner`          | Strategy, backlog, MVP     | plan-writing, brainstorming                              |
 | `qa-automation-engineer` | E2E testing, CI pipelines  | webapp-testing, testing-patterns                         |
 | `code-archaeologist`     | Legacy code, refactoring   | clean-code, code-review-checklist                        |
+| `rest-api-designer`      | REST / OpenAPI design      | api-patterns, documentation-templates                    |
+| `grpc-architect`         | gRPC / Protobuf design     | go-patterns, api-patterns, architecture                  |
 | `explorer-agent`         | Codebase analysis          | -                                                        |
 | `reviewer`               | Automated code auditing    | -                                                        |
 
 ---
 
-## 🧩 Skills (36)
+## 🧩 Skills (41)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -73,7 +75,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 | Skill                   | Description                                                           |
 | ----------------------- | --------------------------------------------------------------------- |
-| `react-best-practices`  | React & Next.js performance optimization (Vercel - 57 rules)          |
+| `nextjs-react-expert`   | React & Next.js performance optimization (Vercel - 57 rules)          |
 | `web-design-guidelines` | Web UI audit - 100+ rules for accessibility, UX, performance (Vercel) |
 | `tailwind-patterns`     | Tailwind CSS v4 utilities                                             |
 | `frontend-design`       | UI/UX patterns, design systems                                        |
@@ -84,29 +86,21 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | Skill                   | Description                    |
 | ----------------------- | ------------------------------ |
 | `api-patterns`          | REST, GraphQL, tRPC            |
-| `nestjs-expert`         | NestJS modules, DI, decorators |
 | `nodejs-best-practices` | Node.js async, modules         |
 | `python-patterns`       | Python standards, FastAPI      |
 | `go-patterns`           | Go frameworks, gRPC, buf       |
+| `rust-pro`              | Rust patterns, systems         |
 
 ### Database
 
 | Skill             | Description                 |
 | ----------------- | --------------------------- |
 | `database-design` | Schema design, optimization |
-| `prisma-expert`   | Prisma ORM, migrations      |
-
-### TypeScript/JavaScript
-
-| Skill               | Description                         |
-| ------------------- | ----------------------------------- |
-| `typescript-expert` | Type-level programming, performance |
 
 ### Cloud & Infrastructure
 
 | Skill                   | Description               |
 | ----------------------- | ------------------------- |
-| `docker-expert`         | Containerization, Compose |
 | `deployment-procedures` | CI/CD, deploy workflows   |
 | `server-management`     | Infrastructure management |
 
@@ -162,44 +156,54 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `bash-linux`         | Linux commands, scripting |
 | `powershell-windows` | Windows PowerShell        |
 
-### Other
+### Code Quality & Refactoring
 
-| Skill                     | Description               |
-| ------------------------- | ------------------------- |
-| `clean-code`              | Coding standards (Global) |
-| `behavioral-modes`        | Agent personas            |
-| `parallel-agents`         | Multi-agent patterns      |
-| `mcp-builder`             | Model Context Protocol    |
-| `documentation-templates` | Doc formats               |
-| `i18n-localization`       | Internationalization      |
-| `performance-profiling`   | Web Vitals, optimization  |
-| `systematic-debugging`    | Troubleshooting           |
+| Skill                    | Description                              |
+| ------------------------ | ---------------------------------------- |
+| `clean-code`             | Coding standards (Global)                |
+| `refactoring-patterns`   | Code smell detection, safe transforms    |
+| `code-review-checklist`  | Code review standards                    |
+
+### Agent & Lifecycle
+
+| Skill                     | Description                       |
+| ------------------------- | --------------------------------- |
+| `behavioral-modes`        | Agent personas                    |
+| `parallel-agents`         | Multi-agent patterns              |
+| `mcp-builder`             | Model Context Protocol            |
+| `documentation-templates` | Doc formats                       |
+| `i18n-localization`       | Internationalization              |
+| `performance-profiling`   | Web Vitals, optimization          |
+| `systematic-debugging`    | Troubleshooting                   |
+| `bmad-lifecycle`          | BMAD phase knowledge & contracts  |
+| `intelligent-routing`     | Task routing & agent coordination |
 
 ---
 
-## 🔄 Workflows (11)
+## 🔄 Workflows (18)
 
 Slash command procedures. Invoke with `/command`.
 
-| Command          | Description              |
-| ---------------- | ------------------------ |
-| `/brainstorm`       | Socratic discovery                    |
-| `/create`           | Create new features                   |
-| `/debug`            | Debug issues                          |
-| `/deploy`           | Deploy application                    |
-| `/enhance`          | Improve existing code                 |
-| `/orchestrate`      | Multi-agent coordination              |
-| `/plan`             | Task breakdown                        |
-| `/preview`          | Preview changes                       |
-| `/status`           | Check project status                  |
-| `/test`             | Run tests                             |
-| `/ui-ux-pro-max`    | Design with 50 styles                 |
-| `/discovery`        | BMAD Phase 1 — Socratic brief         |
-| `/prd`              | BMAD Phase 2 — PRD from brief         |
-| `/architecture-bmad`| BMAD Phase 3 — Architecture + ADRs   |
-| `/stories`          | BMAD Phase 4 — Story card batch       |
-| `/sprint`           | BMAD Phase 5 — Sprint board           |
-| `/close-sprint`     | BMAD — Close sprint, archive artifacts|
+| Command               | Description                            |
+| --------------------- | -------------------------------------- |
+| `/brainstorm`         | Socratic discovery                     |
+| `/create`             | Create new features                    |
+| `/debug`              | Debug issues                           |
+| `/deploy`             | Deploy application                     |
+| `/enhance`            | Improve existing code                  |
+| `/orchestrate`        | Multi-agent coordination               |
+| `/plan`               | Task breakdown                         |
+| `/preview`            | Preview changes                        |
+| `/status`             | Check project status                   |
+| `/test`               | Run tests                              |
+| `/ui-ux-pro-max`      | Design with 50 styles                  |
+| `/reviewer`           | Scan code, generate task queue         |
+| `/discovery`          | BMAD Phase 1 — Socratic brief          |
+| `/prd`                | BMAD Phase 2 — PRD from brief          |
+| `/architecture-bmad`  | BMAD Phase 3 — Architecture + ADRs     |
+| `/stories`            | BMAD Phase 4 — Story card batch        |
+| `/sprint`             | BMAD Phase 5 — Sprint board            |
+| `/close-sprint`       | BMAD — Close sprint, archive artifacts |
 
 ---
 
@@ -277,13 +281,83 @@ For details, see [scripts/README.md](scripts/README.md)
 
 ---
 
+## 🤖 Claude Code Integration
+
+The `.agent/` folder is the **source of truth** for both Antigravity (Gemini) and Claude Code.
+A thin adapter layer in `.claude/` makes the same agents and skills available to Claude Code.
+
+### How It Works
+
+```plaintext
+.agent/agents/*.md     → .claude/agents/*.md         (specialist subagents, @-invokable)
+.agent/workflows/*.md  → .claude/agents/wf-*.md      (workflow subagents,   @-invokable)
+.agent/workflows/*.md  → .claude/commands/*.md        (slash commands,       /name invokable)
+```
+
+`$ARGUMENTS` is preserved verbatim in commands — identical syntax for both Antigravity and Claude Code.
+
+### Files Added for Claude Code
+
+- `CLAUDE.md` (repo root) — Claude Code entry point, @includes KNOWLEDGE.md + ARCHITECTURE.md
+- `.agent/templates/CLAUDE.md` — Template provisioned to target repos on first CI deploy
+- `.claude/settings.json` — MCP server config for Claude Code
+- `.claude/agents/*.md` — 24 specialist agents + 18 workflow agents (generated, @-invokable)
+- `.claude/commands/*.md` — 18 slash commands `/name` (generated, same source as workflows)
+- `.agent/scripts/sync_claude_agents.py` — Generator script
+
+### Skill Loading: Antigravity vs Claude Code
+
+- **Antigravity**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
+- **Claude Code**: `skills:` field ignored → skill content embedded inline via `## Embedded Skills` section
+
+### Slash Commands vs Subagents in Claude Code
+
+Both are generated from the same `.agent/workflows/` source. Use the right one for the job:
+
+- `/debug error message` — slash command, runs inline in current chat
+- `@wf-debug` — subagent, used by orchestrator to delegate work programmatically
+
+### Regenerating After Changes
+
+```bash
+# After editing .agent/agents/, .agent/skills/, or .agent/workflows/:
+python3 .agent/scripts/sync_claude_agents.py
+
+# Agents only (skip commands):
+python3 .agent/scripts/sync_claude_agents.py --no-commands
+
+# Single agent only:
+python3 .agent/scripts/sync_claude_agents.py --agent debugger
+
+# Preview without writing:
+python3 .agent/scripts/sync_claude_agents.py --dry-run
+```
+
+### CI Distribution
+
+`distribute-agentic-kit.yml` runs `sync_claude_agents.py` before rsync and distributes:
+
+- `.agent/` — Antigravity Kit (unchanged)
+- `.claude/agents/` — Claude Code subagents (generated)
+- `.claude/commands/` — Claude Code slash commands (generated)
+- `CLAUDE.md` — first-time provisioning only (target repos own their copy after that)
+
+Triggers on changes to `.agent/**` or `.claude/**`.
+
+### Naming Conventions in `.claude/`
+
+- `.claude/agents/` — no prefix: specialist (`debugger.md`); `wf-` prefix: workflow (`wf-debug.md`)
+- `.claude/commands/` — filename = command name (`debug.md` → `/debug`)
+
+---
+
 ## 📊 Statistics
 
 | Metric              | Value                         |
 | ------------------- | ----------------------------- |
-| **Total Agents**    | 22                            |
-| **Total Skills**    | 38                            |
-| **Total Workflows** | 17                            |
+| **Total Agents**    | 24                            |
+| **Total Skills**    | 41                            |
+| **Total Workflows** | 18                            |
 | **Total Scripts**   | 2 (master) + 18 (skill-level) |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)      |
 | **Coverage**        | ~95% web/mobile development   |
