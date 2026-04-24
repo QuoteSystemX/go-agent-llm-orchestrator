@@ -63,9 +63,15 @@
                             <span id="ai-status-dot" class="status-dot disconnected"></span>
                             <span id="ai-status-text">Connecting...</span>
                         </div>
-                        <div id="ai-model-info" class="ai-model-info" style="display:none">
-                            <i data-lucide="cpu" style="width:12px; height:12px; margin-right:4px"></i>
-                            <span id="ai-model-name"></span>
+                        <div class="chat-header-actions">
+                            <div class="provider-switcher glass">
+                                <button class="provider-btn active" id="provider-local" onclick="setChatProvider('local')">Internal</button>
+                                <button class="provider-btn" id="provider-remote" onclick="setChatProvider('remote')">External</button>
+                            </div>
+                            <div id="ai-model-info" class="ai-model-info" style="display:none">
+                                <i data-lucide="cpu" style="width:12px; height:12px; margin-right:4px"></i>
+                                <span id="ai-model-name"></span>
+                            </div>
                         </div>
                     </div>
                     <div id="chat-history" class="chat-history">

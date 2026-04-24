@@ -29,6 +29,7 @@ const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Pro
 
 type Scheduler interface {
 	SyncTasks(ctx context.Context) error
+	TriggerTask(taskID string)
 }
 
 type GitSyncer interface {
@@ -103,7 +104,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
 	mux.HandleFunc("/api/v1/settings/llm", s.handleLLMSettings)
 	mux.HandleFunc("/api/v1/settings/supervisor", s.handleSupervisorSettings)
-	mux.HandleFunc("/api/v1/settings/prompts", s.handlePromptSettings)
+	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
+	mux.HandleFunc("/api/v1/tasks/run", s.handleRunTask)
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
@@ -676,6 +678,7 @@ func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Messages []map[string]string `json:"messages"`
+		Provider string              `json:"provider"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -689,7 +692,7 @@ func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	// Use SIMPLE classification for chat by default (as it's a "lite" chat)
 	router := llm.NewRouter(s.db)
-	response, err := router.GenerateChat(r.Context(), llm.Simple, req.Messages)
+	response, err := router.GenerateChat(r.Context(), llm.Simple, req.Messages, req.Provider)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -706,6 +709,20 @@ func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.healthMonitor.GetStatus())
+}
+
+func (s *AdminServer) handleRunTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	taskID := r.URL.Query().Get("id")
+	if taskID == "" {
+		http.Error(w, "missing task id", http.StatusBadRequest)
+		return
+	}
+	s.scheduler.TriggerTask(taskID)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request) {

@@ -75,6 +75,11 @@ func (e *Engine) ResumeAutopaused(ctx context.Context) int {
 	return int(n)
 }
 
+func (e *Engine) TriggerTask(taskID string) {
+	log.Printf("Manual trigger for task %s", taskID)
+	go e.runTask(taskID)
+}
+
 func (e *Engine) SyncTasks(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

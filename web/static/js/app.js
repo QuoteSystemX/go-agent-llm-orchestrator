@@ -82,6 +82,7 @@ function renderTasks() {
                                 </div>
 
                                 <div class="task-footer">
+                                    <button class="btn-primary" onclick="runTaskNow('${task.id}')" title="Run Now" ${dis}><i data-lucide="zap"></i></button>
                                     <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
                                     <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
                                     ${task.status === 'PAUSED'
@@ -246,6 +247,20 @@ async function confirmDelete(id) {
     if (confirm(`Are you sure you want to delete task ${id}? This cannot be undone.`)) {
         await fetch(`/api/v1/tasks/${id}`, { method: 'DELETE' });
         fetchTasks();
+    }
+}
+
+async function runTaskNow(id) {
+    try {
+        const resp = await fetch(`/api/v1/tasks/run?id=${encodeURIComponent(id)}`, { method: 'POST' });
+        if (resp.ok) {
+            fetchActivityLogs();
+            alert(`Task triggered!`);
+        } else {
+            alert('Failed to trigger task: ' + await resp.text());
+        }
+    } catch (err) {
+        alert('Error triggering task: ' + err.message);
     }
 }
 
@@ -601,6 +616,14 @@ let chatMessages = [
     { role: 'bot', content: "Hello! I'm your AI assistant. How can I help you with your repositories today?" }
 ];
 
+let currentChatProvider = 'local';
+
+function setChatProvider(provider) {
+    currentChatProvider = provider;
+    document.querySelectorAll('.provider-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`provider-${provider}`).classList.add('active');
+}
+
 function handleChatKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -608,10 +631,13 @@ function handleChatKey(e) {
     }
 }
 
+let isAITyping = false;
+let currentChatTimer = 0;
+
 async function sendChatMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || !aiReady || isAITyping) return;
 
     // Add user message
     chatMessages.push({ role: 'user', content: text });
@@ -628,15 +654,28 @@ async function sendChatMessage() {
     btn.disabled = true;
     btn.classList.add('sending');
 
+    isAITyping = true;
+    currentChatTimer = 0;
+    const startTime = Date.now();
+    const timerInterval = setInterval(() => {
+        currentChatTimer = (Date.now() - startTime) / 1000;
+        renderChat();
+    }, 100);
+
     try {
         const resp = await fetch('/api/v1/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: apiMessages })
+            body: JSON.stringify({ 
+                messages: apiMessages,
+                provider: currentChatProvider
+            })
         });
         
         if (resp.ok) {
             const data = await resp.json();
+            const lastUserMsg = chatMessages[chatMessages.length - 1];
+            lastUserMsg.duration = (Date.now() - startTime) / 1000;
             chatMessages.push({ role: 'bot', content: data.response });
         } else {
             const err = await resp.text();
@@ -645,6 +684,8 @@ async function sendChatMessage() {
     } catch (err) {
         chatMessages.push({ role: 'bot', content: `Network error: ${err.message}` });
     } finally {
+        isAITyping = false;
+        clearInterval(timerInterval);
         btn.disabled = !aiReady;
         btn.classList.remove('sending');
         renderChat();
@@ -655,11 +696,29 @@ function renderChat() {
     const container = document.getElementById('chat-history');
     if (!container) return;
 
-    container.innerHTML = chatMessages.map(m => `
-        <div class="chat-message ${m.role}">
-            ${escapeHtml(m.content).replace(/\n/g, '<br>')}
-        </div>
-    `).join('');
+    container.innerHTML = chatMessages.map((m, index) => {
+        let showTimer = false;
+        let dText = '';
+        
+        if (m.role === 'user') {
+            if (isAITyping && index === chatMessages.length - 1) {
+                showTimer = true;
+                dText = currentChatTimer.toFixed(1) + 's';
+            } else if (m.duration) {
+                showTimer = true;
+                dText = m.duration.toFixed(1) + 's';
+            }
+        }
+
+        return `
+            <div class="chat-message-wrapper ${m.role}">
+                <div class="chat-message">
+                    ${escapeHtml(m.content).replace(/\n/g, '<br>')}
+                </div>
+                ${showTimer ? `<div class="message-timer">${dText}</div>` : ''}
+            </div>
+        `;
+    }).join('');
 
     container.scrollTop = container.scrollHeight;
 }

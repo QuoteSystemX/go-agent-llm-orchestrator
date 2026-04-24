@@ -147,13 +147,19 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {
 	return r.GenerateChat(ctx, classification, []map[string]string{
 		{"role": "user", "content": prompt},
-	})
+	}, "")
 }
 
-func (r *Router) GenerateChat(ctx context.Context, classification Classification, messages []map[string]string) (string, error) {
+func (r *Router) GenerateChat(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (string, error) {
 	var endpoint, model, apiKey, provider string
 
 	target := r.getRoutingTarget(classification)
+	if preferredProvider == "remote" {
+		target = "remote"
+	} else if preferredProvider == "local" {
+		target = "local"
+	}
+
 	if target == "remote" && r.RemoteEndpoint != "" {
 		endpoint = r.RemoteEndpoint
 		model = r.getRemoteModel()
