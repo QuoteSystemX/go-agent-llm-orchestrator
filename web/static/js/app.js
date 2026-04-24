@@ -38,27 +38,52 @@ function renderTasks() {
             .map(el => el.id)
     );
 
+    // Define service patterns
+    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer'];
+
     // Group tasks by name (repository)
     const grouped = tasks.reduce((acc, task) => {
         const key = task.name || 'Other';
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(task);
+        if (!acc[key]) acc[key] = { all: [], filtered: [] };
+        acc[key].all.push(task);
+        if (!servicePatterns.includes(task.pattern)) {
+            acc[key].filtered.push(task);
+        }
         return acc;
     }, {});
 
     let html = '';
-    for (const [projectName, projectTasks] of Object.entries(grouped)) {
+    for (const [projectName, data] of Object.entries(grouped)) {
+        const projectTasks = data.filtered;
+        const allProjectTasks = data.all;
         const safeName = projectName.replace(/[^a-z0-9]/gi, '-');
         const groupId = `group-${safeName}`;
         const isOpen = openGroups.has(groupId);
+        
         const promptCount = projectTasks.filter(t => t.prompt_ready).length;
         const promptBadgeClass = promptCount === projectTasks.length ? 'prompt-count-ok' : 'prompt-count-warn';
+        
+        // BMAD suite check (using ALL tasks)
+        const hasBMAD = servicePatterns.every(p => allProjectTasks.some(t => t.pattern === p));
+        const partialBMAD = !hasBMAD && servicePatterns.some(p => allProjectTasks.some(t => t.pattern === p));
+
         html += `
             <div class="project-group ${isOpen ? '' : 'collapsed'}" id="${groupId}">
                 <div class="project-header" onclick="toggleGroup('${safeName}')">
                     <i data-lucide="chevron-right" class="chevron"></i>
                     <i data-lucide="folder" style="width:16px; color:var(--primary)"></i>
-                    <span>${projectName}</span>
+                    <span class="project-name-text">${projectName}</span>
+                    
+                    ${hasBMAD ? `
+                        <span class="service-badge bmad-complete" title="Full BMAD Suite Installed">
+                            <i data-lucide="shield-check" style="width:12px"></i> BMAD
+                        </span>
+                    ` : partialBMAD ? `
+                        <span class="service-badge bmad-partial" title="Partial BMAD Suite (some tasks missing)">
+                            <i data-lucide="shield-alert" style="width:12px"></i> BMAD
+                        </span>
+                    ` : ''}
+
                     <span class="task-count">${projectTasks.length} tasks</span>
                     <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
                     <div class="project-line"></div>
