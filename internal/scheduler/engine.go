@@ -296,48 +296,72 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string) error {
 	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
 
+	runWithRetry := func(phase string, prompt string, modelType llm.Classification) (string, error) {
+		var lastErr error
+		for i := 1; i <= 3; i++ {
+			if i > 1 {
+				log.Printf("Task %s: Retrying phase %s (attempt %d/3)...", taskID, phase, i)
+				time.Sleep(time.Duration(i) * time.Second)
+			}
+			res, err := e.router.GenerateResponse(ctx, modelType, prompt)
+			if err == nil {
+				return res, nil
+			}
+			lastErr = err
+		}
+		return "", lastErr
+	}
+
 	// Phase 1: ANALYSIS
 	e.updateProgress(ctx, taskID, "analysis", 25, logID)
 	analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
-	analysis, err := e.router.GenerateResponse(ctx, "simple", analysisPrompt)
+	start := time.Now()
+	analysis, err := runWithRetry("analysis", analysisPrompt, llm.Simple)
+	duration := time.Since(start).Milliseconds()
 	if err != nil {
-		return fmt.Errorf("analysis phase failed: %w", err)
+		return fmt.Errorf("analysis phase failed after 3 attempts: %w", err)
 	}
 	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis)
+		e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis, duration)
 	}
 
 	// Phase 2: PLANNING
 	e.updateProgress(ctx, taskID, "planning", 50, logID)
 	planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
-	plan, err := e.router.GenerateResponse(ctx, "simple", planningPrompt)
+	start = time.Now()
+	plan, err := runWithRetry("planning", planningPrompt, llm.Simple)
+	duration = time.Since(start).Milliseconds()
 	if err != nil {
-		return fmt.Errorf("planning phase failed: %w", err)
+		return fmt.Errorf("planning phase failed after 3 attempts: %w", err)
 	}
 	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "planning", plan)
+		e.db.AddTaskRunDetail(ctx, logID, "planning", plan, duration)
 	}
 
 	// Phase 3: EXECUTION
 	e.updateProgress(ctx, taskID, "execution", 75, logID)
 	execPrompt := fmt.Sprintf("Phase 3: EXECUTION. Mission: %s. Plan: %s. Implement the task and provide the final output.", mission, plan)
-	result, err := e.router.GenerateResponse(ctx, "complex", execPrompt)
+	start = time.Now()
+	result, err := runWithRetry("execution", execPrompt, llm.Complex)
+	duration = time.Since(start).Milliseconds()
 	if err != nil {
-		return fmt.Errorf("execution phase failed: %w", err)
+		return fmt.Errorf("execution phase failed after 3 attempts: %w", err)
 	}
 	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "execution", result)
+		e.db.AddTaskRunDetail(ctx, logID, "execution", result, duration)
 	}
 
 	// Phase 4: VERIFICATION
 	e.updateProgress(ctx, taskID, "verification", 100, logID)
 	verifyPrompt := fmt.Sprintf("Phase 4: VERIFICATION. Original Mission: %s. Result: %s. Review the result for correctness and security.", mission, result)
-	audit, err := e.router.GenerateResponse(ctx, "simple", verifyPrompt)
+	start = time.Now()
+	audit, err := runWithRetry("verification", verifyPrompt, llm.Simple)
+	duration = time.Since(start).Milliseconds()
 	if err != nil {
-		return fmt.Errorf("verification phase failed: %w", err)
+		return fmt.Errorf("verification phase failed after 3 attempts: %w", err)
 	}
 	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "verification", audit)
+		e.db.AddTaskRunDetail(ctx, logID, "verification", audit, duration)
 	}
 
 	log.Printf("Task %s: LOCAL AGENTIC PIPELINE COMPLETED", taskID)

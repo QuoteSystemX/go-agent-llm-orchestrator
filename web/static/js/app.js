@@ -1356,12 +1356,16 @@ async function toggleLogDetails(logId, event) {
             detailDiv.innerHTML = details.map(d => `
                 <div class="phase-detail">
                     <div class="phase-detail-header">
-                        <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                        <div style="display:flex; gap:0.5rem; align-items:center">
+                            <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                            <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
+                        </div>
                         <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
                     </div>
                     <div class="phase-content">${escapeHtml(d.content)}</div>
                 </div>
             `).join('');
+            lucide.createIcons();
         }
     } catch (err) {
         detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;

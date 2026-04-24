@@ -77,21 +77,28 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	// Check for .agent folder (BMAD context)
 	// 3. Index and Search Context (RAG)
 	a.ragStore.Reset()
-	docFiles := []string{filepath.Join(repoPath, "README.md")}
-	// Also index everything in .agent and wiki
-	if files, err := os.ReadDir(filepath.Join(repoPath, "wiki")); err == nil {
-		for _, f := range files {
-			if !f.IsDir() {
-				docFiles = append(docFiles, filepath.Join(repoPath, "wiki", f.Name()))
-			}
-		}
-	}
 	
-	for _, f := range docFiles {
-		if _, err := os.Stat(f); err == nil {
-			a.indexFile(f)
-		}
+	// Extensions to index
+	targetExts := map[string]bool{
+		".md": true, ".go": true, ".js": true, ".ts": true, 
+		".py": true, ".sql": true, ".yaml": true, ".yml": true, ".json": true,
 	}
+
+	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		// Skip common noise directories
+		if strings.Contains(path, "/node_modules/") || strings.Contains(path, "/.git/") || strings.Contains(path, "/vendor/") {
+			return nil
+		}
+
+		ext := filepath.Ext(path)
+		if targetExts[ext] {
+			a.indexFile(path)
+		}
+		return nil
+	})
 
 	// Search for relevant context for "Dynamic Task Orchestration"
 	docContext := a.SearchContext("task orchestration project structure goals", 5)

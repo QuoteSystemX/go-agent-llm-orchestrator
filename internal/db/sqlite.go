@@ -61,7 +61,7 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
 		`ALTER TABLE tasks ADD COLUMN current_stage TEXT DEFAULT 'idle'`,
 		`ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0`,
-		`CREATE TABLE IF NOT EXISTS task_run_details (id INTEGER PRIMARY KEY AUTOINCREMENT, log_id INTEGER NOT NULL, phase TEXT NOT NULL, content TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`CREATE TABLE IF NOT EXISTS task_run_details (id INTEGER PRIMARY KEY AUTOINCREMENT, log_id INTEGER NOT NULL, phase TEXT NOT NULL, content TEXT, duration_ms INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`CREATE TABLE IF NOT EXISTS web_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, content TEXT NOT NULL, provider TEXT, repo TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
@@ -231,13 +231,13 @@ func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage strin
 	return err
 }
 
-func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string) error {
-	_, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content) VALUES (?, ?, ?)", logID, phase, content)
+func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string, duration int64) error {
+	_, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
 	return err
 }
 
 func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]any, error) {
-	rows, err := db.QueryContext(ctx, "SELECT phase, content, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
+	rows, err := db.QueryContext(ctx, "SELECT phase, content, duration_ms, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
 	if err != nil {
 		return nil, err
 	}
@@ -246,11 +246,13 @@ func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]
 	var details []map[string]any
 	for rows.Next() {
 		var phase, content, createdAt string
-		if err := rows.Scan(&phase, &content, &createdAt); err == nil {
+		var duration int64
+		if err := rows.Scan(&phase, &content, &duration, &createdAt); err == nil {
 			details = append(details, map[string]any{
-				"phase":      phase,
-				"content":    content,
-				"created_at": createdAt,
+				"phase":       phase,
+				"content":     content,
+				"duration_ms": duration,
+				"created_at":  createdAt,
 			})
 		}
 	}
