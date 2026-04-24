@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/notifier"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/traffic"
@@ -23,11 +25,12 @@ type Engine struct {
 	client        *api.JulesClient
 	notifier      *notifier.TelegramNotifier
 	promptBuilder *prompt.Builder
+	router        *llm.Router
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 }
 
-func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder) *Engine {
+func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder, router *llm.Router) *Engine {
 	return &Engine{
 		cron:          cron.New(),
 		db:            database,
@@ -35,6 +38,7 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 		client:        client,
 		notifier:      nt,
 		promptBuilder: pb,
+		router:        router,
 		entries:       make(map[string]cron.EntryID),
 	}
 }
@@ -205,8 +209,9 @@ func (e *Engine) runTask(taskID string) {
 			return dbErr
 		}
 
-		if logID > 0 {
-			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'EXECUTING' WHERE id = ?", logID)
+		// Decision: Use Local Agentic Worker or Jules API
+		if e.router != nil && e.db.GetSetting("llm_local_endpoint", "") != "" {
+			return e.runAgenticLocalTask(ctx, taskID, agent, pattern, mission, repoName, importance, category, logID, fullPrompt)
 		}
 
 		req := api.SessionRequest{
@@ -286,4 +291,54 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 		return e.promptBuilder.Build(agent, pattern, mission)
 	}
 	return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
+}
+
+func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string) error {
+	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
+
+	// Phase 1: ANALYSIS
+	e.updateProgress(ctx, taskID, "analysis", 25, logID)
+	analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
+	analysis, err := e.router.GenerateResponse(ctx, "simple", analysisPrompt)
+	if err != nil {
+		return fmt.Errorf("analysis phase failed: %w", err)
+	}
+
+	// Phase 2: PLANNING
+	e.updateProgress(ctx, taskID, "planning", 50, logID)
+	planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
+	plan, err := e.router.GenerateResponse(ctx, "simple", planningPrompt)
+	if err != nil {
+		return fmt.Errorf("planning phase failed: %w", err)
+	}
+
+	// Phase 3: EXECUTION
+	e.updateProgress(ctx, taskID, "execution", 75, logID)
+	execPrompt := fmt.Sprintf("Phase 3: EXECUTION. Mission: %s. Plan: %s. Implement the task and provide the final output.", mission, plan)
+	result, err := e.router.GenerateResponse(ctx, "complex", execPrompt)
+	if err != nil {
+		return fmt.Errorf("execution phase failed: %w", err)
+	}
+
+	// Phase 4: VERIFICATION
+	e.updateProgress(ctx, taskID, "verification", 100, logID)
+	verifyPrompt := fmt.Sprintf("Phase 4: VERIFICATION. Original Mission: %s. Result: %s. Review the result for correctness and security.", mission, result)
+	audit, err := e.router.GenerateResponse(ctx, "simple", verifyPrompt)
+	if err != nil {
+		return fmt.Errorf("verification phase failed: %w", err)
+	}
+
+	log.Printf("Task %s: LOCAL AGENTIC PIPELINE COMPLETED", taskID)
+	if logID > 0 {
+		e.db.ExecContext(ctx, "UPDATE task_logs SET output_data = ? WHERE id = ?", fmt.Sprintf("RESULT:\n%s\n\nAUDIT:\n%s", result, audit), logID)
+	}
+
+	return nil
+}
+
+func (e *Engine) updateProgress(ctx context.Context, taskID string, stage string, progress int, logID int64) {
+	e.db.UpdateTaskProgress(ctx, taskID, stage, progress)
+	if logID > 0 {
+		e.db.ExecContext(ctx, "UPDATE task_logs SET status = ? WHERE id = ?", fmt.Sprintf("PHASE: %s", strings.ToUpper(stage)), logID)
+	}
 }

@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     pattern TEXT,             -- Workflow pattern (discovery, story_writer, etc.)
     schedule TEXT NOT NULL,   -- Cron format
     status TEXT NOT NULL,     -- PENDING, RUNNING, PAUSED, COMPLETED, FAILED
+    current_stage TEXT DEFAULT 'idle', -- analysis, planning, implementation, verification
+    progress INTEGER DEFAULT 0,
     last_run_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

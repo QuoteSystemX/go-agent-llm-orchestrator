@@ -59,6 +59,8 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
 		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
 		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
+		`ALTER TABLE tasks ADD COLUMN current_stage TEXT DEFAULT 'idle'`,
+		`ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0`,
 		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
 tasks:
@@ -192,7 +194,7 @@ func (db *DB) GetDailyLimit(ctx context.Context) (int, error) {
 }
 
 func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
-	rows, err := db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category FROM tasks WHERE name = ?", repoName)
+	rows, err := db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category, current_stage, progress FROM tasks WHERE name = ?", repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -200,22 +202,29 @@ func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string
 
 	var tasks []map[string]any
 	for rows.Next() {
-		var id, name, mission, pattern, agent, schedule, status, category string
-		var importance int
-		if err := rows.Scan(&id, &name, &mission, &pattern, &agent, &schedule, &status, &importance, &category); err != nil {
+		var id, name, mission, pattern, agent, schedule, status, category, currentStage string
+		var importance, progress int
+		if err := rows.Scan(&id, &name, &mission, &pattern, &agent, &schedule, &status, &importance, &category, &currentStage, &progress); err != nil {
 			continue
 		}
 		tasks = append(tasks, map[string]any{
-			"id":         id,
-			"name":       name,
-			"mission":    mission,
-			"pattern":    pattern,
-			"agent":      agent,
-			"schedule":   schedule,
-			"status":     status,
-			"importance": importance,
-			"category":   category,
+			"id":            id,
+			"name":          name,
+			"mission":       mission,
+			"pattern":       pattern,
+			"agent":         agent,
+			"schedule":      schedule,
+			"status":        status,
+			"importance":    importance,
+			"category":      category,
+			"current_stage": currentStage,
+			"progress":      progress,
 		})
 	}
 	return tasks, nil
+}
+
+func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage string, progress int) error {
+	_, err := db.ExecContext(ctx, "UPDATE tasks SET current_stage = ?, progress = ? WHERE id = ?", stage, progress, taskID)
+	return err
 }

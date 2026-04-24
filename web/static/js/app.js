@@ -75,6 +75,14 @@ function renderTasks() {
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
                                     </div>
                                     <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    ${task.status === 'RUNNING' ? `
+                                        <div class="task-stage-info">
+                                            <div class="stage-label">${task.current_stage || 'initializing'}</div>
+                                            <div class="stage-progress-bg">
+                                                <div class="stage-progress-fill" style="width: ${task.progress || 5}%"></div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                     ${noPrompt ? `<span class="task-badge no-prompt-badge" title="Pattern file not found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
                                 </div>
