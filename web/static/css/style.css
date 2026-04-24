@@ -251,6 +251,30 @@ button {
     background: linear-gradient(90deg, var(--glass-border) 0%, transparent 100%);
 }
 
+.repo-status-container {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: 0.5rem;
+}
+
+.repo-status-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    opacity: 0.8;
+}
+
+.repo-status-pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+.repo-status-running { background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.2); }
+.repo-status-paused  { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
+.repo-status-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+.repo-status-failed  { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+.repo-status-waiting { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px dashed var(--warning); }
+.repo-status-draft   { background: rgba(148, 163, 184, 0.1); color: #fbbf24; border: 1px dotted #fbbf24; }
+
 .project-name-text {
     flex-shrink: 0;
 }

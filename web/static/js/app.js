@@ -69,6 +69,18 @@ function renderTasks() {
         const promptCount = projectTasks.filter(t => t.prompt_ready).length;
         const promptBadgeClass = promptCount === projectTasks.length ? 'prompt-count-ok' : 'prompt-count-warn';
         
+        // Calculate status counts
+        const statusCounts = allProjectTasks.reduce((acc, t) => {
+            const status = t.status.toLowerCase();
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {});
+
+        const statusBadgesHtml = Object.entries(statusCounts)
+            .filter(([_, count]) => count > 0)
+            .map(([status, count]) => `<span class="repo-status-badge repo-status-${status}">${count} ${status}</span>`)
+            .join('');
+
         // BMAD suite check (using ALL tasks)
         const missingPatterns = servicePatterns.filter(p => !allProjectTasks.some(t => t.pattern === p));
         const hasBMAD = missingPatterns.length === 0;
@@ -91,8 +103,11 @@ function renderTasks() {
                         </span>
                     ` : ''}
 
-                    <span class="task-count">${projectTasks.length} tasks</span>
-                    <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
+                    <div class="repo-status-container">
+                        ${statusBadgesHtml}
+                    </div>
+
+                    <span class="task-count ${promptBadgeClass}">${promptCount}/${allProjectTasks.length} prompts</span>
                     <div class="project-line"></div>
                 </div>
                 <div class="project-content">
