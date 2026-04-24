@@ -2,11 +2,12 @@ package monitor
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"go-agent-llm-orchestrator/internal/db"
 )
 
 type OllamaModel struct {
@@ -96,10 +97,8 @@ func (m *HealthMonitor) check() {
 
 	// 2. Check Remote LLM
 	remoteEndpoint := ""
-	remoteKey := ""
 	if m.db != nil {
 		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT"))
-		remoteKey = m.db.GetSetting("llm_remote_api_key", os.Getenv("LLM_REMOTE_API_KEY"))
 	}
 
 	if remoteEndpoint != "" {
