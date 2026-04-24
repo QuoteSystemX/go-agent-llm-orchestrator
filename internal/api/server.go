@@ -104,7 +104,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
 	mux.HandleFunc("/api/v1/settings/llm", s.handleLLMSettings)
 	mux.HandleFunc("/api/v1/settings/supervisor", s.handleSupervisorSettings)
-	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
+	mux.HandleFunc("/api/v1/settings/prompts", s.handlePromptSettings)
 	mux.HandleFunc("/api/v1/tasks/run", s.handleRunTask)
 	mux.HandleFunc("/api/v1/settings/prompt-library", s.handlePromptLibrarySettings)
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
