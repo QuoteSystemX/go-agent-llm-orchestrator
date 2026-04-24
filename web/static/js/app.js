@@ -623,6 +623,7 @@ async function sendChatMessage() {
 
     const btn = document.getElementById('chat-send-btn');
     btn.disabled = true;
+    btn.classList.add('sending');
 
     try {
         const resp = await fetch('/api/v1/chat', {
@@ -641,7 +642,8 @@ async function sendChatMessage() {
     } catch (err) {
         chatMessages.push({ role: 'bot', content: `Network error: ${err.message}` });
     } finally {
-        btn.disabled = false;
+        btn.disabled = !aiReady;
+        btn.classList.remove('sending');
         renderChat();
     }
 }
@@ -662,4 +664,57 @@ function renderChat() {
 // Initial render of chat
 document.addEventListener('DOMContentLoaded', () => {
     renderChat();
+    fetchHealth();
+    setInterval(fetchHealth, 10000);
 });
+
+let aiReady = false;
+
+async function fetchHealth() {
+    try {
+        const resp = await fetch('/api/v1/health');
+        if (!resp.ok) throw new Error('Health check failed');
+        const data = await resp.json();
+        const ollama = data.components.ollama;
+        
+        const dot = document.getElementById('ai-status-dot');
+        const text = document.getElementById('ai-status-text');
+        const modelInfo = document.getElementById('ai-model-info');
+        const modelName = document.getElementById('ai-model-name');
+        const btn = document.getElementById('chat-send-btn');
+        const input = document.getElementById('chat-input');
+
+        if (!dot || !text) return;
+
+        dot.className = 'status-dot ' + (ollama.status === 'READY' ? 'ready' : 'loading');
+        if (ollama.status === 'DISCONNECTED') dot.className = 'status-dot disconnected';
+        
+        aiReady = (ollama.status === 'READY');
+        text.innerText = ollama.status === 'READY' ? 'AI Ready' : 'AI Loading...';
+        if (ollama.status === 'DISCONNECTED') text.innerText = 'AI Offline';
+
+        if (ollama.model) {
+            modelInfo.style.display = 'flex';
+            modelName.innerText = ollama.model.name;
+        } else {
+            modelInfo.style.display = 'none';
+        }
+
+        // Only disable if we are not currently sending a message
+        if (!btn.classList.contains('sending')) {
+            btn.disabled = !aiReady;
+            input.disabled = !aiReady;
+            if (!aiReady) {
+                input.placeholder = "AI is warming up... please wait.";
+            } else {
+                input.placeholder = "Ask anything about your agents or code...";
+            }
+        }
+
+    } catch (err) {
+        const dot = document.getElementById('ai-status-dot');
+        const text = document.getElementById('ai-status-text');
+        if (dot) dot.className = 'status-dot disconnected';
+        if (text) text.innerText = 'AI Error';
+    }
+}

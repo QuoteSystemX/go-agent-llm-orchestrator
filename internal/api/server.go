@@ -11,6 +11,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/llm"
+	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/web"
 	"github.com/robfig/cron/v3"
 )
@@ -42,6 +43,7 @@ type AdminServer struct {
 	scheduler      Scheduler
 	gitSyncer      GitSyncer
 	promptChecker  PromptChecker
+	healthMonitor  *monitor.HealthMonitor
 	logBuf         *LogBuffer
 }
 
@@ -60,6 +62,9 @@ func (s *AdminServer) SetGitSyncer(gs GitSyncer) { s.gitSyncer = gs }
 
 // SetPromptChecker attaches a prompt checker so tasks can report whether their prompt file exists.
 func (s *AdminServer) SetPromptChecker(pc PromptChecker) { s.promptChecker = pc }
+
+// SetHealthMonitor attaches a health monitor to track system component status.
+func (s *AdminServer) SetHealthMonitor(hm *monitor.HealthMonitor) { s.healthMonitor = hm }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -102,6 +107,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
+	mux.HandleFunc("/api/v1/health", s.handleHealth)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -603,11 +609,6 @@ func (s *AdminServer) handlePromptLibrarySync(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
-}
-
 // handleNextRuns returns the next scheduled run time for each active task.
 func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -694,5 +695,14 @@ func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"response": response})
+}
+
+func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+	if s.healthMonitor == nil {
+		http.Error(w, "health monitor not initialized", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(s.healthMonitor.GetStatus())
 }
 

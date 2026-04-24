@@ -76,7 +76,11 @@ func main() {
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
+	healthMonitor := monitor.NewHealthMonitor()
+	healthMonitor.Start()
+
 	adminServer := api.NewAdminServer(database, engine)
+	adminServer.SetHealthMonitor(healthMonitor)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)

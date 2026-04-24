@@ -55,6 +55,16 @@
 
             <div id="tab-ai-chat" class="tab-pane">
                 <section class="chat-section glass">
+                    <div class="chat-header">
+                        <div class="ai-status">
+                            <span id="ai-status-dot" class="status-dot disconnected"></span>
+                            <span id="ai-status-text">Connecting...</span>
+                        </div>
+                        <div id="ai-model-info" class="ai-model-info" style="display:none">
+                            <i data-lucide="cpu" style="width:12px; height:12px; margin-right:4px"></i>
+                            <span id="ai-model-name"></span>
+                        </div>
+                    </div>
                     <div id="chat-history" class="chat-history">
                         <!-- Chat messages will be injected here -->
                     </div>
