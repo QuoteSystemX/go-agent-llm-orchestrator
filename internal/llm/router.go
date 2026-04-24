@@ -111,11 +111,13 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("LLM Router: local classification request failed: %v", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("LLM Router: local classification returned status %d", resp.StatusCode)
 		return "", fmt.Errorf("local llm error: status %d", resp.StatusCode)
 	}
 
@@ -194,6 +196,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		client := &http.Client{Timeout: 60 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
+			log.Printf("LLM Router: request attempt %d failed: %v", i+1, err)
 			lastErr = err
 			time.Sleep(time.Duration(i+1) * time.Second)
 			continue
@@ -201,6 +204,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			log.Printf("LLM Router: request attempt %d returned status %d", i+1, resp.StatusCode)
 			lastErr = fmt.Errorf("llm api error: status %d", resp.StatusCode)
 			time.Sleep(time.Duration(i+1) * time.Second)
 			continue
