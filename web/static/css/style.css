@@ -101,6 +101,7 @@ button {
 .btn-success { background: var(--success); color: white; }
 .btn-cancel { background: transparent; color: var(--text-muted); }
 .btn-danger-small { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 0.8rem; }
+.status-draft { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px dashed #fbbf24; }
 
 /* Next Run Bar */
 .next-run-bar {

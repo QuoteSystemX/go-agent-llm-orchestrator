@@ -192,6 +192,16 @@ func (e *Engine) runTask(taskID string) {
 		if logID > 0 {
 			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 		}
+		// 1. Determine which model to use (with Self-Healing)
+		var failureCount int
+		e.db.QueryRow("SELECT failure_count FROM tasks WHERE id = ?", taskID).Scan(&failureCount)
+
+		isComplex := category == "service"
+		if failureCount >= 3 {
+			log.Printf("Engine: [Self-Healing] Task %s failed %d times. Forcing REMOTE model.", taskID, failureCount)
+			isComplex = true
+		}
+
 		// Build the full Jules prompt — pause the task if library is not ready yet
 		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
 		if err != nil {
@@ -211,7 +221,7 @@ func (e *Engine) runTask(taskID string) {
 
 		// Decision: Use Local Agentic Worker or Jules API
 		if e.router != nil && e.db.GetSetting("llm_local_endpoint", "") != "" {
-			return e.runAgenticLocalTask(ctx, taskID, agent, pattern, mission, repoName, importance, category, logID, fullPrompt)
+			return e.runAgenticLocalTask(ctx, taskID, agent, pattern, mission, repoName, importance, category, logID, fullPrompt, isComplex)
 		}
 
 		req := api.SessionRequest{
@@ -265,14 +275,14 @@ func (e *Engine) runTask(taskID string) {
 		execStatus = "FAILED"
 		execError = err.Error()
 		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED' WHERE id = ?", taskID)
+		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED', failure_count = failure_count + 1 WHERE id = ?", taskID)
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
 		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
+		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING', failure_count = 0 WHERE id = ?", taskID)
 	}
 
 	if logID > 0 {
@@ -293,7 +303,7 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 	return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
 }
 
-func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string) error {
+func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string, forceComplex bool) error {
 	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
 	var err error
 	var result, audit string
@@ -364,7 +374,11 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 		// Phase 1: ANALYSIS
 		e.updateProgress(ctx, taskID, "analysis", 25, logID)
 		analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
-		analysis, err = runWithStreaming("analysis", analysisPrompt, llm.Simple, logID)
+		analysisModel := llm.Simple
+		if forceComplex {
+			analysisModel = llm.Complex
+		}
+		analysis, err = runWithStreaming("analysis", analysisPrompt, analysisModel, logID)
 		if err != nil {
 			return fmt.Errorf("analysis phase failed: %w", err)
 		}
@@ -372,7 +386,11 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 		// Phase 2: PLANNING
 		e.updateProgress(ctx, taskID, "planning", 50, logID)
 		planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
-		plan, err = runWithStreaming("planning", planningPrompt, llm.Simple, logID)
+		planningModel := llm.Simple
+		if forceComplex {
+			planningModel = llm.Complex
+		}
+		plan, err = runWithStreaming("planning", planningPrompt, planningModel, logID)
 		if err != nil {
 			return fmt.Errorf("planning phase failed: %w", err)
 		}

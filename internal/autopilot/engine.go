@@ -68,6 +68,8 @@ func (e *Engine) Run(ctx context.Context) {
 			e.scaleUp(repoName, count)
 		} else {
 			e.scaleDown(repoName)
+			// Propose a Reviewer task if no worker tasks exist at all
+			e.ProposeIdea(repoName, "project-planner", "reviewer", "/discovery and audit", "@daily", 5)
 		}
 	}
 }
@@ -123,8 +125,23 @@ func (e *Engine) scaleDown(repoName string) {
 	}
 }
 
-func (e *Engine) ProposeIdea(repoName, content string) error {
-	_, err := e.db.Exec("INSERT INTO web_chat_history (role, content, provider, repo) VALUES ('assistant', ?, 'autopilot', ?)", 
-		fmt.Sprintf("💡 **Autopilot Idea for %s**: %s", repoName, content), repoName)
+func (e *Engine) ProposeIdea(repoName, agent, pattern, mission, schedule string, importance int) error {
+	id := fmt.Sprintf("draft-%s-%d", repoName, time.Now().Unix())
+	
+	// 1. Create a DRAFT task
+	_, err := e.db.Exec(`
+		INSERT INTO tasks (id, name, agent, pattern, mission, schedule, status, importance, category) 
+		VALUES (?, ?, ?, ?, ?, ?, 'DRAFT', ?, 'worker')`,
+		id, repoName, agent, pattern, mission, schedule, importance)
+	if err != nil {
+		return err
+	}
+
+	// 2. Notify in chat
+	msg := fmt.Sprintf("💡 **Autopilot Proposal for %s**: I suggest running `%s` with `%s` agent. [Approve/Discard in Tasks]", 
+		repoName, mission, agent)
+	_, err = e.db.Exec("INSERT INTO web_chat_history (role, content, provider, repo) VALUES ('assistant', ?, 'autopilot', ?)", 
+		msg, repoName)
+	
 	return err
 }

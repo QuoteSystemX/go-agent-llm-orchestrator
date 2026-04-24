@@ -101,14 +101,22 @@ function renderTasks() {
                                 </div>
 
                                 <div class="task-footer">
-                                    <button class="btn-primary" onclick="runTaskNow('${task.id}')" title="Run Now" ${dis}><i data-lucide="zap"></i></button>
-                                    <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
-                                    <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
-                                    ${task.status === 'PAUSED'
-                                        ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
-                                        : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis}><i data-lucide="pause"></i></button>`
+                                    ${task.status === 'DRAFT'
+                                        ? `
+                                           <button class="btn-success" onclick="approveDraft('${task.id}')" title="Approve"><i data-lucide="check-circle"></i> Approve</button>
+                                           <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Discard"><i data-lucide="x-circle"></i> Discard</button>
+                                        `
+                                        : `
+                                           <button class="btn-primary" onclick="runTaskNow('${task.id}')" title="Run Now" ${dis}><i data-lucide="zap"></i></button>
+                                           <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
+                                           <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
+                                           ${task.status === 'PAUSED'
+                                               ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
+                                               : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis}><i data-lucide="pause"></i></button>`
+                                           }
+                                           <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
+                                        `
                                     }
-                                    <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
                                 </div>
                             </div>
                         `}).join('')}
@@ -311,6 +319,11 @@ async function runTaskNow(id) {
 async function toggleTask(id, action) {
     await fetch(`/api/v1/tasks/${id}/${action}`, { method: 'POST' });
     fetchTasks();
+}
+
+async function approveDraft(id) {
+    if (!confirm('Approve this autopilot proposal?')) return;
+    await toggleTask(id, 'resume');
 }
 
 // Logs Logic

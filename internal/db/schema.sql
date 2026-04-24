@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     last_run_at DATETIME,
     approval_required INTEGER DEFAULT 0,
     pending_decision TEXT DEFAULT '',
+    failure_count INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
