@@ -10,6 +10,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/dto"
 	gitpkg "go-agent-llm-orchestrator/internal/git"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
@@ -75,11 +76,13 @@ func main() {
 	promptBuilder := prompt.NewBuilder(database, cacheDir)
 
 	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
+	dtoMgr := dto.NewTemplateManager(database)
+	analyzer := dto.NewAnalyzer(database, router, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor()
 	healthMonitor.Start()
 
-	adminServer := api.NewAdminServer(database, engine)
+	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer)
 	adminServer.SetHealthMonitor(healthMonitor)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)

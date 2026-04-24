@@ -145,6 +145,19 @@
                         <div class="dto-info-card glass">
                             <h4>Repository Analysis</h4>
                             <p>DTO analyzes your repository state (wiki, readme, tasks) and proposes tasks based on BMAD methodology.</p>
+                            
+                            <div class="form-row" style="margin-bottom: 1rem; align-items: flex-end;">
+                                <div class="form-group">
+                                    <label>Select Repository</label>
+                                    <select id="dto-repo-select" class="glass">
+                                        <!-- Repositories injected here -->
+                                    </select>
+                                </div>
+                                <button class="btn-primary" onclick="runAnalysis()" id="btn-run-analysis">
+                                    <i data-lucide="search"></i> Analyze Repository
+                                </button>
+                            </div>
+
                             <div class="dto-status">
                                 <span class="status-badge active">System Ready</span>
                                 <span id="dto-last-analysis" class="last-analysis">Last analysis: never</span>
@@ -420,6 +433,43 @@
             </div>
         </div>
     </div>
+
+        <!-- Template Editor Modal -->
+        <div id="template-modal" class="modal">
+            <div class="modal-content large glass">
+                <div class="modal-header">
+                    <div class="modal-header-title">
+                        <i data-lucide="file-code" style="color:var(--primary)"></i>
+                        <h3>DTO Templates</h3>
+                    </div>
+                    <button class="btn-secondary btn-sm" onclick="createNewTemplate()">
+                        <i data-lucide="plus"></i> New Template
+                    </button>
+                </div>
+                
+                <div class="template-editor-layout">
+                    <div id="template-list-sidebar" class="template-sidebar glass">
+                        <!-- Templates list injected here -->
+                    </div>
+                    <div class="template-main">
+                        <div class="form-group">
+                            <label>Template Name (key)</label>
+                            <input type="text" id="template-name" placeholder="e.g. bmad-skeleton">
+                        </div>
+                        <div class="form-group" style="flex:1; display:flex; flex-direction:column">
+                            <label>Content (YAML/JSON)</label>
+                            <textarea id="template-content" style="flex:1; font-family:monospace; font-size:0.8rem; min-height:300px; resize:vertical"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveCurrentTemplate()">Save Template</button>
+                    <button class="btn-danger-small" id="btn-delete-template" onclick="deleteCurrentTemplate()" style="margin-right:auto">Delete</button>
+                    <button class="btn-cancel" onclick="hideModal('template-modal')">Close</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Help Modal -->
         <div id="help-modal" class="modal">

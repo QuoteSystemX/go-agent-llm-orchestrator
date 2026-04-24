@@ -102,7 +102,7 @@ func (m *Monitor) pollStatuses(ctx context.Context) error {
 
 	for _, sess := range activeSessions {
 		sess := sess
-		m.tm.Execute(ctx, traffic.PriorityLow, func() error {
+		m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
 			newStatus, err := m.julesClient.GetStatus(ctx, sess.julesSessionID)
 			if err != nil {
 				log.Printf("Failed to get status for session %s: %v", sess.julesSessionID, err)

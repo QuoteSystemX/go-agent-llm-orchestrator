@@ -40,7 +40,7 @@ func NewTrafficManager(rps float64, burst int, checker UsageChecker) *TrafficMan
 }
 
 // Wait blocks until the rate limiter allows the call based on priority.
-func (tm *TrafficManager) Wait(ctx context.Context, p Priority) error {
+func (tm *TrafficManager) Wait(ctx context.Context, p Priority, importance int, category string) error {
 	// 1. Check daily limit first if it's a High priority (task execution) call
 	if p == PriorityHigh && tm.checker != nil {
 		usage, err := tm.checker.GetDailyUsage(ctx)
@@ -52,8 +52,26 @@ func (tm *TrafficManager) Wait(ctx context.Context, p Priority) error {
 			return err
 		}
 
-		if limit > 0 && usage >= limit {
-			return ErrDailyLimitExceeded
+		if limit > 0 {
+			// Budget-aware prioritization
+			pct := float64(usage) / float64(limit)
+
+			if usage >= limit {
+				return ErrDailyLimitExceeded
+			}
+
+			// Critical budget: > 90%
+			if pct > 0.9 {
+				// Only Service tasks with importance >= 8 or any task with importance >= 10
+				if importance < 10 && (category != "service" || importance < 8) {
+					return errors.New("daily budget critical: only high importance service tasks allowed")
+				}
+			} else if pct > 0.75 {
+				// > 75%: Only importance >= 5 or any service task
+				if importance < 5 && category != "service" {
+					return errors.New("daily budget low: only service or mid-importance tasks allowed")
+				}
+			}
 		}
 	}
 
@@ -62,8 +80,8 @@ func (tm *TrafficManager) Wait(ctx context.Context, p Priority) error {
 }
 
 // Execute wraps a function call with rate limiting
-func (tm *TrafficManager) Execute(ctx context.Context, p Priority, fn func() error) error {
-	if err := tm.Wait(ctx, p); err != nil {
+func (tm *TrafficManager) Execute(ctx context.Context, p Priority, importance int, category string, fn func() error) error {
+	if err := tm.Wait(ctx, p, importance, category); err != nil {
 		return err
 	}
 	return fn()

@@ -156,10 +156,11 @@ func (e *Engine) runTask(taskID string) {
 	ctx := context.Background()
 	start := time.Now()
 
-	var status, mission, pattern, agent, repoName string
+	var status, mission, pattern, agent, repoName, category string
+	var importance int
 	err := e.db.QueryRowContext(ctx,
-		"SELECT status, mission, pattern, COALESCE(agent,''), name FROM tasks WHERE id = ?", taskID,
-	).Scan(&status, &mission, &pattern, &agent, &repoName)
+		"SELECT status, mission, pattern, COALESCE(agent,''), name, importance, category FROM tasks WHERE id = ?", taskID,
+	).Scan(&status, &mission, &pattern, &agent, &repoName, &importance, &category)
 	if err != nil {
 		log.Printf("Task %s: FAILED to fetch from DB: %v", taskID, err)
 		return
@@ -183,7 +184,7 @@ func (e *Engine) runTask(taskID string) {
 		logID, _ = res.LastInsertId()
 	}
 
-	err = e.tm.Execute(ctx, traffic.PriorityHigh, func() error {
+	err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
 		if logID > 0 {
 			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 		}

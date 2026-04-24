@@ -46,6 +46,12 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS templates (
+    name TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);

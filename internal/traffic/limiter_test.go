@@ -17,13 +17,13 @@ func TestTrafficManager_Wait(t *testing.T) {
 
 	// First call should be immediate
 	start := time.Now()
-	err := tm.Wait(ctx, PriorityHigh)
+	err := tm.Wait(ctx, PriorityHigh, 1, "worker")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	// Second call should be throttled (at least 100ms)
-	err = tm.Wait(ctx, PriorityLow)
+	err = tm.Wait(ctx, PriorityLow, 1, "worker")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

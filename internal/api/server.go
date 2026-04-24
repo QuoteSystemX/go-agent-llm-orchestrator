@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/dto"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/web"
@@ -47,12 +48,16 @@ type AdminServer struct {
 	promptChecker  PromptChecker
 	healthMonitor  *monitor.HealthMonitor
 	logBuf         *LogBuffer
+	dtoMgr         *dto.TemplateManager
+	analyzer       *dto.Analyzer
 }
 
-func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
+func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManager, analyzer *dto.Analyzer) *AdminServer {
 	return &AdminServer{
 		db:        database,
 		scheduler: sched,
+		dtoMgr:    dtoMgr,
+		analyzer:  analyzer,
 	}
 }
 
@@ -114,6 +119,11 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
 	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
+
+	// DTO Templates API
+	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
+	mux.HandleFunc("/api/v1/dto/templates/", s.handleTemplateByID)
+	mux.HandleFunc("/api/v1/dto/analyze", s.handleAnalyze)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -813,4 +823,84 @@ func (s *AdminServer) handleSystemUsage(w http.ResponseWriter, r *http.Request) 
 		"usage": usage,
 		"limit": limit,
 	})
+}
+
+func (s *AdminServer) handleTemplates(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		templates, err := s.dtoMgr.ListTemplates(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(templates)
+	case http.MethodPost:
+		var t dto.Template
+		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+			http.Error(w, "invalid payload", http.StatusBadRequest)
+			return
+		}
+		if t.Name == "" || t.Content == "" {
+			http.Error(w, "name and content are required", http.StatusBadRequest)
+			return
+		}
+		if err := s.dtoMgr.SaveTemplate(r.Context(), t.Name, t.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleTemplateByID(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/v1/dto/templates/")
+	if name == "" {
+		http.Error(w, "missing template name", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		t, err := s.dtoMgr.GetTemplate(r.Context(), name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if t == nil {
+			http.NotFound(w, r)
+			return
+		}
+		json.NewEncoder(w).Encode(t)
+	case http.MethodDelete:
+		if err := s.dtoMgr.DeleteTemplate(r.Context(), name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleAnalyze(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	repoName := r.URL.Query().Get("repo")
+	if repoName == "" {
+		http.Error(w, "missing repo parameter", http.StatusBadRequest)
+		return
+	}
+
+	proposals, err := s.analyzer.AnalyzeRepo(r.Context(), repoName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(proposals)
 }

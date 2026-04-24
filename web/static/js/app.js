@@ -617,8 +617,95 @@ function switchTab(tabName) {
 
     if (tabName === 'repositories') {
         renderTasks();
+    } else if (tabName === 'dto') {
+        populateRepoSelect();
     }
     lucide.createIcons();
+}
+
+function populateRepoSelect() {
+    const select = document.getElementById('dto-repo-select');
+    if (!select) return;
+    const uniqueRepos = [...new Set(tasks.map(t => t.name))];
+    select.innerHTML = uniqueRepos.map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+async function runAnalysis() {
+    const repo = document.getElementById('dto-repo-select').value;
+    if (!repo) return;
+
+    const btn = document.getElementById('btn-run-analysis');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Analyzing...';
+    lucide.createIcons();
+
+    try {
+        const resp = await fetch(`/api/v1/dto/analyze?repo=${encodeURIComponent(repo)}`, { method: 'POST' });
+        if (resp.ok) {
+            const proposals = await resp.json();
+            renderProposals(proposals);
+            document.getElementById('dto-last-analysis').textContent = `Last analysis: ${new Date().toLocaleTimeString()}`;
+        } else {
+            alert('Analysis failed: ' + await resp.text());
+        }
+    } catch (e) {
+        alert('Error during analysis: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        lucide.createIcons();
+    }
+}
+
+function renderProposals(proposals) {
+    const container = document.getElementById('dto-proposals');
+    if (!container) return;
+
+    if (!proposals || proposals.length === 0) {
+        container.innerHTML = '<div class="empty-state">No tasks proposed. Repository seems to be in good state.</div>';
+        return;
+    }
+
+    container.innerHTML = proposals.map((p, index) => `
+        <div class="proposal-card glass">
+            <div class="proposal-header">
+                <div class="proposal-type">
+                    <span class="task-badge ${p.category === 'service' ? 'bg-running' : 'bg-success'}">${p.category}</span>
+                    <span class="task-badge bg-pending">Priority: ${p.importance}</span>
+                </div>
+                <div class="proposal-pattern">${p.pattern} (${p.agent})</div>
+            </div>
+            <div class="proposal-mission"><strong>Task:</strong> ${p.mission}</div>
+            <div class="proposal-reason"><strong>Why:</strong> ${p.reason}</div>
+            <div class="proposal-actions">
+                <button class="btn-success btn-sm" onclick="applyProposal(${index})">
+                    <i data-lucide="plus-circle"></i> Create Task
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Store current proposals globally to apply them
+    window._lastProposals = proposals;
+    lucide.createIcons();
+}
+
+async function applyProposal(index) {
+    const p = window._lastProposals[index];
+    const repo = document.getElementById('dto-repo-select').value;
+    
+    // Show task modal with proposal data
+    showTaskModal({
+        id: '', // New task
+        name: repo,
+        mission: p.mission,
+        pattern: p.pattern,
+        agent: p.agent,
+        schedule: p.schedule,
+        importance: p.importance,
+        category: p.category
+    });
 }
 
 // ── AI Chat Logic ─────────────────────────────────────────────
@@ -847,8 +934,105 @@ async function loadSystemSettings() {
     } catch (e) { /* silent */ }
 }
 
-function showTemplateModal() {
-    alert('DTO Template Editor is part of Phase 2. This will allow editing ConfigMap-based templates.');
+let currentTemplates = [];
+let selectedTemplateName = null;
+
+async function showTemplateModal() {
+    document.getElementById('template-modal').style.display = 'flex';
+    lucide.createIcons();
+    await fetchTemplates();
+    if (currentTemplates.length > 0) {
+        selectTemplate(currentTemplates[0].name);
+    } else {
+        createNewTemplate();
+    }
+}
+
+async function fetchTemplates() {
+    try {
+        const resp = await fetch('/api/v1/dto/templates');
+        if (!resp.ok) return;
+        currentTemplates = await resp.json();
+        renderTemplateList();
+    } catch (e) { /* silent */ }
+}
+
+function renderTemplateList() {
+    const sidebar = document.getElementById('template-list-sidebar');
+    if (!sidebar) return;
+    
+    if (currentTemplates.length === 0) {
+        sidebar.innerHTML = '<div class="empty-state" style="font-size:0.7rem">No templates</div>';
+        return;
+    }
+
+    sidebar.innerHTML = currentTemplates.map(t => `
+        <div class="template-item ${selectedTemplateName === t.name ? 'active' : ''}" 
+             onclick="selectTemplate('${t.name}')">
+            ${t.name}
+        </div>
+    `).join('');
+}
+
+function selectTemplate(name) {
+    selectedTemplateName = name;
+    const t = currentTemplates.find(x => x.name === name);
+    if (!t) return;
+
+    document.getElementById('template-name').value = t.name;
+    document.getElementById('template-name').disabled = true;
+    document.getElementById('template-content').value = t.content;
+    document.getElementById('btn-delete-template').style.display = 'block';
+    
+    renderTemplateList();
+}
+
+function createNewTemplate() {
+    selectedTemplateName = null;
+    document.getElementById('template-name').value = '';
+    document.getElementById('template-name').disabled = false;
+    document.getElementById('template-content').value = '# New BMAD Template\n\ntasks:\n  - pattern: discovery\n    agent: analyst\n    importance: 8\n';
+    document.getElementById('btn-delete-template').style.display = 'none';
+    renderTemplateList();
+}
+
+async function saveCurrentTemplate() {
+    const name = document.getElementById('template-name').value.trim();
+    const content = document.getElementById('template-content').value;
+
+    if (!name) { alert('Template name is required'); return; }
+
+    try {
+        const resp = await fetch('/api/v1/dto/templates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, content })
+        });
+        if (resp.ok) {
+            alert('Template saved!');
+            await fetchTemplates();
+            selectTemplate(name);
+        } else {
+            alert('Failed to save template: ' + await resp.text());
+        }
+    } catch (e) {
+        alert('Error saving template: ' + e.message);
+    }
+}
+
+async function deleteCurrentTemplate() {
+    if (!selectedTemplateName) return;
+    if (!confirm(`Delete template "${selectedTemplateName}"?`)) return;
+
+    try {
+        const resp = await fetch(`/api/v1/dto/templates/${selectedTemplateName}`, { method: 'DELETE' });
+        if (resp.ok) {
+            selectedTemplateName = null;
+            await fetchTemplates();
+            if (currentTemplates.length > 0) selectTemplate(currentTemplates[0].name);
+            else createNewTemplate();
+        }
+    } catch (e) { alert('Error deleting template'); }
 }
 
 function renderActivityLogs() {

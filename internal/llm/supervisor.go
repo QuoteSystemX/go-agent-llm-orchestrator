@@ -82,7 +82,7 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 	}
 
 	// 4. Post response to Jules API
-	err = s.tm.Execute(ctx, traffic.PriorityHigh, func() error {
+	err = s.tm.Execute(ctx, traffic.PriorityHigh, 5, "service", func() error {
 		if session != nil && session.Status == "AWAITING_PLAN_APPROVAL" {
 			log.Printf("Approving plan for session %s", sessionID)
 			return s.julesClient.ApprovePlan(ctx, sessionID)

@@ -59,6 +59,7 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
 		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
 		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
+		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
@@ -128,4 +129,33 @@ func (db *DB) GetDailyLimit(ctx context.Context) (int, error) {
 	var val int
 	fmt.Sscanf(valStr, "%d", &val)
 	return val, nil
+}
+
+func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category FROM tasks WHERE name = ?", repoName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []map[string]any
+	for rows.Next() {
+		var id, name, mission, pattern, agent, schedule, status, category string
+		var importance int
+		if err := rows.Scan(&id, &name, &mission, &pattern, &agent, &schedule, &status, &importance, &category); err != nil {
+			continue
+		}
+		tasks = append(tasks, map[string]any{
+			"id":         id,
+			"name":       name,
+			"mission":    mission,
+			"pattern":    pattern,
+			"agent":      agent,
+			"schedule":   schedule,
+			"status":     status,
+			"importance": importance,
+			"category":   category,
+		})
+	}
+	return tasks, nil
 }
