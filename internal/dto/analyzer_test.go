@@ -10,7 +10,7 @@ import (
 func TestAnalyzer_ParseProposals(t *testing.T) {
 	a := &Analyzer{}
 	
-	response := `{"current_stage": "discovery", "progress": 10, "proposals": [
+	response := `{"current_stage": "discovery", "progress": 10, "warnings": ["test warning"], "metadata": {"has_readme": "true"}, "proposals": [
 		{"pattern": "discovery", "agent": "project-planner", "mission": "Analyze project", "reason": "Initial step"}
 	]}`
 
@@ -23,6 +23,12 @@ func TestAnalyzer_ParseProposals(t *testing.T) {
 	}
 	if result.CurrentStage != "discovery" {
 		t.Errorf("expected discovery stage, got %s", result.CurrentStage)
+	}
+	if len(result.Warnings) != 1 || result.Warnings[0] != "test warning" {
+		t.Errorf("warnings not parsed correctly")
+	}
+	if result.Metadata["has_readme"] != "true" {
+		t.Errorf("metadata not parsed correctly")
 	}
 }
 

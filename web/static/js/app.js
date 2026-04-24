@@ -698,8 +698,34 @@ async function runAnalysis() {
 
 function renderProposals(data) {
     const container = document.getElementById('dto-proposals');
+    const warningContainer = document.getElementById('dto-warnings');
+    const metadataContainer = document.getElementById('dto-metadata');
+    const header = document.getElementById('dto-proposals-header');
+    
     const proposals = data.proposals || [];
+    const warnings = data.warnings || [];
+    const metadata = data.metadata || {};
     currentProposals = proposals;
+    
+    // Render Warnings
+    if (warnings.length > 0) {
+        warningContainer.innerHTML = warnings.map(w => `
+            <div class="dto-warning-card glass">
+                <i data-lucide="alert-triangle"></i>
+                <span>${escapeHtml(w)}</span>
+            </div>
+        `).join('');
+    } else {
+        warningContainer.innerHTML = '';
+    }
+
+    // Render Metadata
+    metadataContainer.innerHTML = Object.entries(metadata).map(([key, val]) => `
+        <span class="dto-meta-badge">
+            <i data-lucide="check-circle" style="width:10px; color:var(--success)"></i>
+            ${key.replace('has_', '')}
+        </span>
+    `).join('');
     
     // Update Tracker
     const stages = ['discovery', 'prd', 'architecture', 'stories', 'sprint', 'worker', 'closure'];
@@ -716,6 +742,7 @@ function renderProposals(data) {
     if (proposals.length === 0) {
         container.innerHTML = '<div class="empty-state">No proposals found for the current state.</div>';
         header.style.display = 'none';
+        lucide.createIcons();
         return;
     }
 
@@ -730,20 +757,24 @@ function renderProposals(data) {
                     <span class="badge ${p.category === 'service' ? 'badge-service' : 'badge-worker'}">${p.category}</span>
                     <span class="proposal-pattern">${p.pattern}</span>
                 </div>
-                <div class="proposal-importance">
-                    <span class="importance-dot" style="background:${getImportanceColor(p.importance)}"></span>
-                    ${p.importance}/10
+                <div class="proposal-importance" title="Importance: ${p.importance}/10">
+                    <span class="importance-dot" style="background:${getImportanceColor(p.importance)}; box-shadow: 0 0 8px ${getImportanceColor(p.importance)}"></span>
+                    ${p.importance}
                 </div>
             </div>
             <div class="proposal-mission">${escapeHtml(p.mission)}</div>
-            <div class="proposal-reason">${escapeHtml(p.reason)}</div>
+            <div class="proposal-reason">
+                <i data-lucide="info" style="width:12px; margin-right:4px"></i>
+                ${escapeHtml(p.reason)}
+            </div>
             <div class="proposal-actions">
-                <button class="btn-primary btn-sm" onclick="applyProposal(${idx})">Quick Edit</button>
+                <button class="btn-secondary btn-sm" onclick="applyProposal(${idx})">
+                    <i data-lucide="edit-3"></i> Quick Edit
+                </button>
             </div>
         </div>
     `).join('');
     
-    // Store current proposals globally to apply them
     window._lastProposals = proposals;
     lucide.createIcons();
 }

@@ -40,22 +40,41 @@ type Proposal struct {
 }
 
 type AnalysisResult struct {
-	Proposals    []Proposal `json:"proposals"`
-	CurrentStage string     `json:"current_stage"` // discovery, prd, architecture, stories, sprint, worker, closure
-	Progress     int        `json:"progress"`      // 0-100%
+	Proposals    []Proposal        `json:"proposals"`
+	CurrentStage string            `json:"current_stage"` // discovery, prd, architecture, stories, sprint, worker, closure
+	Progress     int               `json:"progress"`      // 0-100%
+	Warnings     []string          `json:"warnings"`      // Warnings about missing data
+	Metadata     map[string]string `json:"metadata"`      // Project metadata (language, etc)
 }
 
 func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisResult, error) {
 	basePath := a.db.GetSetting("repo_base_path", "./repos")
 	repoPath := filepath.Join(basePath, repoName)
 
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("repository directory not found: %s", repoPath)
+	}
+
+	var warnings []string
+	metadata := make(map[string]string)
+
 	// 1. Gather repository intel
-	readme, _ := a.readFile(filepath.Join(repoPath, "README.md"))
+	readme, err := a.readFile(filepath.Join(repoPath, "README.md"))
+	if err != nil {
+		warnings = append(warnings, "README.md not found or unreadable")
+	} else {
+		metadata["has_readme"] = "true"
+	}
+
 	wiki, _ := a.readDir(filepath.Join(repoPath, "wiki"), ".md")
+	if wiki == "" {
+		warnings = append(warnings, "No wiki pages found in 'wiki/' directory")
+	}
 	
 	// Check for .agent folder (BMAD context)
 	agentContext := ""
 	if _, err := os.Stat(filepath.Join(repoPath, ".agent")); err == nil {
+		metadata["has_agent"] = "true"
 		workflows, _ := a.readDir(filepath.Join(repoPath, ".agent", "workflows"), ".md")
 		skills, _ := a.readDir(filepath.Join(repoPath, ".agent", "skills"), ".md")
 		knowledge, _ := a.readFile(filepath.Join(repoPath, ".agent", "KNOWLEDGE.md"))
@@ -63,6 +82,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		
 		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\n", 
 			workflows, skills, knowledge, arch)
+	} else {
+		warnings = append(warnings, "No .agent folder found (BMAD context missing)")
 	}
 
 	// Get current tasks for this repo
@@ -77,11 +98,18 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	// 3. Call LLM
 	response, err := a.router.GenerateResponse(ctx, llm.Complex, prompt)
 	if err != nil {
+		return nil, fmt.Errorf("LLM analysis failed: %w", err)
+	}
+	
+	// 4. Parse response
+	result, err := a.parseAnalysisResult(response)
+	if err != nil {
 		return nil, err
 	}
 	
-	// 4. Parse response (expecting markdown-wrapped JSON or just JSON)
-	return a.parseAnalysisResult(response)
+	result.Warnings = append(result.Warnings, warnings...)
+	result.Metadata = metadata
+	return result, nil
 }
 
 func (a *Analyzer) readFile(path string) (string, error) {
@@ -89,7 +117,11 @@ func (a *Analyzer) readFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(data), nil
+	content := string(data)
+	if len(content) > 5000 {
+		content = content[:5000] + "... [truncated]"
+	}
+	return content, nil
 }
 
 func (a *Analyzer) readDir(path string, ext string) (string, error) {
@@ -98,10 +130,17 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 		return "", err
 	}
 	var content strings.Builder
+	totalLen := 0
 	for _, f := range files {
 		if !f.IsDir() && filepath.Ext(f.Name()) == ext {
 			data, _ := ioutil.ReadFile(filepath.Join(path, f.Name()))
-			content.WriteString(fmt.Sprintf("File: %s\n%s\n---\n", f.Name(), string(data)))
+			s := string(data)
+			if totalLen+len(s) > 10000 {
+				content.WriteString(fmt.Sprintf("File: %s\n%s\n... [truncated dir reading]\n", f.Name(), s[:10000-totalLen]))
+				break
+			}
+			content.WriteString(fmt.Sprintf("File: %s\n%s\n---\n", f.Name(), s))
+			totalLen += len(s)
 		}
 	}
 	return content.String(), nil
