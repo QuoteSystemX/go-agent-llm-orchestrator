@@ -947,21 +947,27 @@ body { padding-bottom: 40px; }
 }
 
 .tooltip-header {
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    color: var(--primary);
-    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.25rem;
 }
 
 .tooltip-row {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.tooltip-row span {
     color: var(--text-muted);
 }
 
-.tooltip-row span:last-child {
+.tooltip-row strong {
     color: var(--text);
     font-weight: 600;
 }

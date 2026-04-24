@@ -133,9 +133,11 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 	}
 	sb.WriteString("\n")
 	
-	sb.WriteString("Your goal: Propose 3-5 new tasks or updates. Focus on BMAD methodology:\n")
-	sb.WriteString("1. Service tasks (Wiki updates, Docs) should have high importance if they are lagging.\n")
-	sb.WriteString("2. Worker tasks should follow the project goals.\n\n")
+	sb.WriteString("Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n")
+	sb.WriteString("1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n")
+	sb.WriteString("2. Execution: Worker tasks (implementing features/fixes)\n")
+	sb.WriteString("3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n")
+	sb.WriteString("Critical priority: Service tasks (Wiki updates, Docs) MUST have high importance if they are lagging behind the worker tasks.\n\n")
 	sb.WriteString("Return ONLY a JSON array of objects with fields: pattern, agent, mission, schedule, importance (1-10), category (worker/service), reason.\n")
 	
 	return sb.String()

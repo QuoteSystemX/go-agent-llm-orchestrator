@@ -912,6 +912,7 @@ async function fetchSystemUsage() {
         usageCount.textContent = usage;
         maxCount.textContent = limit || '∞';
         remainingCount.textContent = remaining;
+        document.getElementById('limit-forecast-count').textContent = data.forecast || usage;
 
         if (limit > 0) {
             const pct = Math.min(100, (usage / limit) * 100);

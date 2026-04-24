@@ -60,6 +60,43 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
 		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
 		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
+tasks:
+  - mission: "/discovery"
+    pattern: "discovery"
+    agent: "project-planner"
+    importance: 10
+    category: "service"
+  - mission: "/prd"
+    pattern: "prd"
+    agent: "project-planner"
+    importance: 9
+    category: "service"
+  - mission: "/stories"
+    pattern: "stories"
+    agent: "project-planner"
+    importance: 8
+    category: "service"
+  - mission: "/sprint"
+    pattern: "sprint"
+    agent: "project-planner"
+    importance: 7
+    category: "service"
+  - mission: "Execute sprint tasks and implement features"
+    pattern: "implement"
+    agent: "backend-specialist"
+    importance: 6
+    category: "worker"
+  - mission: "/sprint-closer"
+    pattern: "sprint_closer"
+    agent: "project-planner"
+    importance: 8
+    category: "service"
+  - mission: "Actualize Wiki and documentation"
+    pattern: "docs"
+    agent: "analyst"
+    importance: 5
+    category: "service"')`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
@@ -120,6 +157,14 @@ func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 		WHERE executed_at >= date('now', 'start of day')
 		AND status NOT IN ('FAILED', 'TRIGGERED') -- Only count those that actually started or finished
 	`).Scan(&count)
+	return count, err
+}
+
+func (db *DB) GetUpcomingTaskCountToday(ctx context.Context) (int, error) {
+	// This is a simple approximation. In a real system, we'd parse the cron schedules.
+	// For now, let's just count all active tasks as a baseline for the forecast.
+	var count int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tasks WHERE status = 'PENDING'").Scan(&count)
 	return count, err
 }
 

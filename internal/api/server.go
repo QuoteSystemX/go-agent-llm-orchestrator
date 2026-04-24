@@ -817,11 +817,13 @@ func (s *AdminServer) handleSystemUsage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	limit, _ := s.db.GetDailyLimit(r.Context())
+	upcoming, _ := s.db.GetUpcomingTaskCountToday(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"usage": usage,
-		"limit": limit,
+		"usage":    usage,
+		"limit":    limit,
+		"forecast": usage + upcoming,
 	})
 }
 

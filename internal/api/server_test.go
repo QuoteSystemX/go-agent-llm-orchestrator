@@ -4,10 +4,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go-agent-llm-orchestrator/internal/db"
 )
 
 func TestAdminServer_handleListTasks(t *testing.T) {
-	server := NewAdminServer(nil, nil, nil, nil) // db/scheduler/dto/analyzer not used in this mock test
+	database, _ := db.InitDB(":memory:")
+	server := NewAdminServer(database, nil, nil, nil)
 	
 	req, err := http.NewRequest("GET", "/api/v1/tasks", nil)
 	if err != nil {
