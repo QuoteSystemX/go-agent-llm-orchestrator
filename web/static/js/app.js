@@ -64,8 +64,9 @@ function renderTasks() {
         const promptBadgeClass = promptCount === projectTasks.length ? 'prompt-count-ok' : 'prompt-count-warn';
         
         // BMAD suite check (using ALL tasks)
-        const hasBMAD = servicePatterns.every(p => allProjectTasks.some(t => t.pattern === p));
-        const partialBMAD = !hasBMAD && servicePatterns.some(p => allProjectTasks.some(t => t.pattern === p));
+        const missingPatterns = servicePatterns.filter(p => !allProjectTasks.some(t => t.pattern === p));
+        const hasBMAD = missingPatterns.length === 0;
+        const partialBMAD = !hasBMAD && missingPatterns.length < servicePatterns.length;
 
         html += `
             <div class="project-group ${isOpen ? '' : 'collapsed'}" id="${groupId}">
@@ -79,7 +80,7 @@ function renderTasks() {
                             <i data-lucide="shield-check" style="width:12px"></i> BMAD
                         </span>
                     ` : partialBMAD ? `
-                        <span class="service-badge bmad-partial" title="Partial BMAD Suite (some tasks missing)">
+                        <span class="service-badge bmad-partial" title="Partial BMAD. Missing: ${missingPatterns.join(', ')}">
                             <i data-lucide="shield-alert" style="width:12px"></i> BMAD
                         </span>
                     ` : ''}
@@ -637,15 +638,29 @@ async function saveSettings() {
     }
 
     const sysDailyLimit = parseInt(document.getElementById('sys-daily-limit').value) || 0;
-    await fetch('/api/v1/system/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ daily_task_limit: sysDailyLimit })
-    });
+    const saveBtn = document.querySelector('#settings-modal .btn-success');
+    const origText = saveBtn.innerText;
+    saveBtn.disabled = true;
+    saveBtn.innerText = 'Saving...';
 
-    hideModal('settings-modal');
-    alert('Settings saved successfully!');
-    fetchSystemUsage();
+    try {
+        await fetch('/api/v1/system/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ daily_task_limit: sysDailyLimit })
+        });
+
+        alert('Settings saved successfully!');
+        hideModal('settings-modal');
+        fetchHealth(); // Refresh AI status
+        updateSystemStats(); // Refresh header
+    } catch (err) {
+        console.error('Failed to save settings:', err);
+        alert('Failed to save settings. Check console for details.');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = origText;
+    }
 }
 
 async function syncPromptLibrary() {
@@ -1148,8 +1163,9 @@ let aiReady = false;
 async function fetchHealth() {
     try {
         const resp = await fetch('/api/v1/health');
-        if (!resp.ok) throw new Error('Health check failed');
+        if (!resp.ok) throw new Error('Health check failed: ' + resp.status);
         const data = await resp.json();
+        console.log('AI Health Check:', data);
         const ollama = data.components.ollama;
         const remote = data.components.remote;
         
@@ -1192,6 +1208,7 @@ async function fetchHealth() {
         }
 
     } catch (err) {
+        console.error('Health check failed:', err);
         const dot = document.getElementById('ai-status-dot');
         const text = document.getElementById('ai-status-text');
         if (dot) dot.className = 'status-dot disconnected';

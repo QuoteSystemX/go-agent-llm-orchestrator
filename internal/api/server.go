@@ -767,6 +767,7 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 
 	// Save user message (last one)
 	userMsg := req.Messages[len(req.Messages)-1]["content"]
+	log.Printf("Chat: Received message for repo '%s' (Provider: %s): %s", req.Repo, req.Provider, userMsg)
 	s.db.SaveChatMessage(r.Context(), "user", userMsg, req.Provider, req.Repo)
 
 	// If a repository is selected, use RAG to enhance the context
@@ -796,6 +797,7 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	router := llm.NewRouter(s.db)
 	tokens, err := router.GenerateChatStream(r.Context(), llm.Simple, req.Messages, req.Provider)
 	if err != nil {
+		log.Printf("Chat: Stream error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -809,6 +811,7 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 
 	// Save assistant response
 	if fullResponse.Len() > 0 {
+		log.Printf("Chat: Assistant responded with %d characters", fullResponse.Len())
 		s.db.SaveChatMessage(r.Context(), "assistant", fullResponse.String(), req.Provider, req.Repo)
 	}
 
