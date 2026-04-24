@@ -88,6 +88,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	maxFiles := 500
 	maxFileSize := int64(100 * 1024) // 100 KB
 
+	log.Printf("DTO [%s]: Scanning repository files...", repoName)
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -97,9 +98,17 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		}
 
 		// Skip common noise directories and large files
-		if strings.Contains(path, "/node_modules/") || strings.Contains(path, "/.git/") || 
-		   strings.Contains(path, "/vendor/") || strings.Contains(path, "/dist/") ||
-		   strings.Contains(path, "/build/") || info.Size() > maxFileSize {
+		ignoredDirs := []string{
+			"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", 
+			"/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", 
+			"/.venv/", "/__pycache__/", "/pkg/",
+		}
+		for _, dir := range ignoredDirs {
+			if strings.Contains(path, dir) {
+				return nil
+			}
+		}
+		if info.Size() > maxFileSize {
 			return nil
 		}
 
@@ -111,6 +120,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		return nil
 	})
 
+	log.Printf("DTO [%s]: Indexed %d files. Searching for project context...", repoName, fileCount)
 	// Search for relevant context for "Dynamic Task Orchestration"
 	docContext := a.SearchContext("task orchestration project structure goals", 5)
 
@@ -139,6 +149,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	prompt := a.buildAnalysisPrompt(repoName, readme, wiki, agentContext, currentTasks, templates)
 	
 	// 3. Call LLM
+	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
 	response, err := a.router.GenerateResponse(ctx, llm.Complex, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("LLM analysis failed: %w", err)
