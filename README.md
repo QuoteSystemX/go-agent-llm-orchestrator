@@ -1,19 +1,20 @@
-# 🚀 Jules Orchestrator (Pro Max Edition)
+# 🚀 Jules Orchestrator (Pro Max Ultra)
 
-Autonomous, stateful agent manager for the Antigravity Kit with Full CRUD Web UI and Intelligent LLM Routing.
+Autonomous, RAG-enhanced agentic platform for the Antigravity Kit with Full CRUD Web UI, Human-in-the-Loop control, and Intelligent LLM Routing.
 
 ## 📋 Overview
 
-Jules Orchestrator is a robust Go-based service designed to run in Kubernetes. It manages the lifecycle of AI agent sessions (Jules), handles complex task scheduling via SQLite persistence, and provides a premium Web Management Interface for real-time control and auditing.
+Jules Orchestrator is a robust Go-based service designed for production-grade agent management. It implements the **BMAD (Discovery-Planning-Execution-Verification)** methodology for local tasks, integrates **Source-Aware RAG** for deep repository understanding, and provides **Human-in-the-Loop (HITL)** safety rails.
 
 ### Key Features
 
-- **Intelligent Hybrid LLM Routing**: Automatically classifies tasks as `SIMPLE` or `COMPLEX`. SIMPLE tasks are handled by local models (Ollama), while COMPLEX tasks are routed to high-reasoning cloud models (Claude 3.5/OpenAI).
-- **Autonomous Agent Supervision**: Detects when agents are stuck (e.g., `WAITING_FOR_USER`) and uses an internal LLM to provide automated "supervisor" responses, ensuring continuous progress.
-- **Full CRUD Web UI**: Modern glassmorphism dashboard to create, edit, pause, and delete agentic tasks, plus a dedicated Settings panel for LLM and Telegram.
-- **Execution Audit Logs**: Detailed "In/Out" logging for every task run, capturing exact prompts sent to the LLM and the raw responses received.
-- **Centralized Helm Management**: Default task schedules are managed in `values.yaml` and synchronized automatically on startup, while allowing runtime overrides.
-- **Autonomous Scheduling**: Internal cron engine triggers tasks from SQLite with persistent state across pod restarts.
+- **BMAD 4-Phase Pipeline**: Every task follows a structured lifecycle: Analysis → Planning → Execution → Verification. Each phase has independent retry logic and latency tracking.
+- **Source-Aware RAG**: Automatically indexes repository source code (.go, .js, .py, etc.) to provide agents with accurate project context. Includes guardrails (file size/count limits) for performance.
+- **Human-in-the-Loop (HITL)**: Optional "Approval Mode" pauses the agent after the planning phase, allowing users to review and edit the execution plan before any changes are made.
+- **Real-time Live Tracking**: Terminal-style "Inspect" view with live streaming of phase output and real-time dashboard Sparklines for CPU/RAM/Load monitoring.
+- **Intelligent Hybrid LLM Routing**: Automatically classifies tasks. SIMPLE tasks run on local Ollama (phi3/mistral), while COMPLEX tasks route to cloud models (Claude 3.5/GPT-4o).
+- **Persistent Chat History**: Maintains context across sessions, allowing agents to remember past decisions and user feedback.
+- **Autonomous Supervision**: Detects stuck agents and provides automated "supervisor" responses to ensure continuous progress.
 
 ## 🛠️ Architecture
 
@@ -21,37 +22,34 @@ Jules Orchestrator is a robust Go-based service designed to run in Kubernetes. I
 graph TD
     User[User/Dev] --> WebUI[Web Dashboard]
     WebUI --> API[Admin API]
-    Helm[Helm Values] --> CM[ConfigMap]
-    CM --> API
     API --> DB[(SQLite + PVC)]
-    API --> Scheduler[Cron Engine]
-    Scheduler --> TaskLogs[(Execution Logs)]
-    API --> JulesAPI[Jules API]
-    Scheduler --> JulesAPI
-    JulesAPI --> LLM[Local/Remote LLM]
+    API --> Stats[Stats Aggregator]
+    API --> RAG[Source RAG Store]
+    API --> Scheduler[BMAD Engine]
+    Scheduler --> TaskLogs[(Phase Audit Logs)]
+    Scheduler --> LLM[Local Ollama / Remote Cloud]
+    Stats --> WebUI
+    RAG --> LLM
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Go 1.25+** (for local development)
-- **Kubernetes** cluster with Helm installed
-- **Ollama** (for local LLM tasks) or **OpenAI/Anthropic API Key**
-- `JULES_API_KEY` for agent session management
+- **Go 1.25+**
+- **Ollama** (for local agentic tasks)
+- **SQLite 3**
+- **Antigravity Agent Context** (`.agent` directory in target repos)
 
-### Deployment (Helm)
-
-The orchestrator is deployed using the `go-agent-llm-orchestrator` chart.
+### Installation & Run
 
 ```bash
-# Update schedule in values.yaml
-helm upgrade --install jules ./charts/go-agent-llm-orchestrator
+# Build the orchestrator
+go build -o orchestrator ./cmd/orchestrator/main.go
+
+# Start with default settings
+./orchestrator
 ```
-
-### Accessing the Dashboard
-
-By default, the dashboard is available via Ingress at `http://jules.lab.me/dashboard`.
 
 ## ⚙️ Configuration
 
@@ -59,22 +57,22 @@ By default, the dashboard is available via Ingress at `http://jules.lab.me/dashb
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `LLM_LOCAL_ENDPOINT` | URL for local LLM (e.g., Ollama) | `http://ollama:11434` |
-| `LLM_REMOTE_ENDPOINT` | URL for remote LLM provider (OpenAI compatible) | - |
-| `LLM_REMOTE_API_KEY` | API Key for remote LLM | - |
-| `LLM_LOCAL_MODEL` | Default model for local tasks | `phi3:mini` |
-| `LLM_REMOTE_MODEL` | Default model for complex tasks | `gpt-4o` |
-| `JULES_API_KEY` | API key for Jules session management | - |
-| `DB_PATH` | Path to SQLite database file | `/app/data/tasks.db` |
-| `ADMIN_ADDR` | Listening address for Web UI & API | `:8080` |
+| `LLM_LOCAL_ENDPOINT` | URL for Ollama | `http://localhost:11434` |
+| `LLM_REMOTE_ENDPOINT` | URL for Cloud LLM (OpenAI compatible) | - |
+| `LLM_LOCAL_MODEL` | Model for local tasks | `phi3:mini` |
+| `LLM_REMOTE_MODEL` | Model for complex tasks | `gpt-4o` |
+| `PROMPT_LIBRARY_CACHE_DIR`| Cache for agent prompts | `./data/prompt-lib` |
+| `DB_PATH` | Path to SQLite database | `/app/data/tasks.db` |
 
-### Runtime Settings
-
-Settings like specific models and Telegram bot tokens can be updated directly via the **Settings** modal in the Web UI, which persist in the `settings` table of the database.
+### Indexer Guardrails (Hardcoded)
+- **Max Files**: 500 per repository.
+- **Max File Size**: 100 KB (to optimize LLM context).
+- **Ignore List**: `.git`, `node_modules`, `vendor`, `dist`, `build`.
 
 ## 🧪 Testing
 
 ```bash
+# Run all tests (including new guardrail checks)
 go test -v ./...
 ```
 
