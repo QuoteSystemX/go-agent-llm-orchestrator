@@ -52,7 +52,7 @@ func main() {
 	}
 	defer database.Close()
 
-	tm := traffic.NewTrafficManager(1.0, 5)
+	tm := traffic.NewTrafficManager(1.0, 5, database)
 
 	// 3. Initialize Logic
 	julesClient := api.NewJulesClient(database)

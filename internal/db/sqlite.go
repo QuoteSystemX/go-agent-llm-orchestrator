@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"fmt"
@@ -56,6 +57,8 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
 		`ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0`,
 		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
+		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
+		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
@@ -99,4 +102,30 @@ func (db *DB) GetSetting(key, def string) string {
 		return envVal
 	}
 	return def
+}
+
+// SetSetting saves or updates a setting in the database.
+func (db *DB) SetSetting(key, value string) error {
+	_, err := db.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	return err
+}
+
+// GetDailyUsage counts tasks executed today.
+func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
+	var count int
+	// We count task_logs from the beginning of the current day (UTC)
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM task_logs 
+		WHERE executed_at >= date('now', 'start of day')
+		AND status NOT IN ('FAILED', 'TRIGGERED') -- Only count those that actually started or finished
+	`).Scan(&count)
+	return count, err
+}
+
+// GetDailyLimit retrieves the global daily task limit.
+func (db *DB) GetDailyLimit(ctx context.Context) (int, error) {
+	valStr := db.GetSetting("daily_task_limit", "0")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	return val, nil
 }

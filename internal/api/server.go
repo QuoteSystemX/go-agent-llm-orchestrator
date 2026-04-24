@@ -112,6 +112,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/audit/logs", s.handleListAuditLogs)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
+	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
+	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -162,6 +164,8 @@ type TaskResponse struct {
 	Schedule    string     `json:"schedule"`
 	Status      string     `json:"status"`
 	PromptReady bool       `json:"prompt_ready"`
+	Importance  int        `json:"importance"`
+	Category    string     `json:"category"`
 	LastRunAt   *time.Time `json:"last_run_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
@@ -179,7 +183,7 @@ func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
 
 func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(),
-		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
+		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, importance, category, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -189,7 +193,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []TaskResponse
 	for rows.Next() {
 		var t TaskResponse
-		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.LastRunAt, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt); err != nil {
 			continue
 		}
 		tasks = append(tasks, t)
@@ -221,8 +225,8 @@ func (s *AdminServer) createTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := s.db.ExecContext(r.Context(), 
-		"INSERT INTO tasks (id, name, mission, pattern, schedule, status) VALUES (?, ?, ?, ?, ?, ?)",
-		t.ID, t.Name, t.Mission, t.Pattern, t.Schedule, "PENDING")
+		"INSERT INTO tasks (id, name, mission, pattern, schedule, status, importance, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		t.ID, t.Name, t.Mission, t.Pattern, t.Schedule, "PENDING", t.Importance, t.Category)
 	
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -279,8 +283,8 @@ func (s *AdminServer) updateTask(w http.ResponseWriter, r *http.Request, id stri
 	}
 
 	_, err := s.db.ExecContext(r.Context(), 
-		"UPDATE tasks SET name = ?, mission = ?, pattern = ?, schedule = ?, status = ? WHERE id = ?",
-		t.Name, t.Mission, t.Pattern, t.Schedule, t.Status, id)
+		"UPDATE tasks SET name = ?, mission = ?, pattern = ?, schedule = ?, status = ?, importance = ?, category = ? WHERE id = ?",
+		t.Name, t.Mission, t.Pattern, t.Schedule, t.Status, t.Importance, t.Category, id)
 	
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -773,3 +777,40 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(logs)
 }
 
+func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		limit, _ := s.db.GetDailyLimit(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"daily_task_limit": limit,
+		})
+	case http.MethodPost:
+		var data struct {
+			DailyTaskLimit int `json:"daily_task_limit"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.db.SetSetting("daily_task_limit", fmt.Sprintf("%d", data.DailyTaskLimit))
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleSystemUsage(w http.ResponseWriter, r *http.Request) {
+	usage, err := s.db.GetDailyUsage(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	limit, _ := s.db.GetDailyLimit(r.Context())
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"usage": usage,
+		"limit": limit,
+	})
+}

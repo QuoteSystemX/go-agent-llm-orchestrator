@@ -2,6 +2,7 @@ package traffic
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"golang.org/x/time/rate"
@@ -14,27 +15,49 @@ const (
 	PriorityLow  Priority = 2 // Monitoring
 )
 
-// TrafficManager handles rate limiting with priority awareness
+var (
+	ErrDailyLimitExceeded = errors.New("daily task limit exceeded")
+)
+
+type UsageChecker interface {
+	GetDailyUsage(ctx context.Context) (int, error)
+	GetDailyLimit(ctx context.Context) (int, error)
+}
+
+// TrafficManager handles rate limiting with priority awareness and daily quotas
 type TrafficManager struct {
 	limiter *rate.Limiter
+	checker UsageChecker
 	mu      sync.Mutex
 }
 
 // NewTrafficManager creates a new limiter with given requests per second and burst size
-func NewTrafficManager(rps float64, burst int) *TrafficManager {
+func NewTrafficManager(rps float64, burst int, checker UsageChecker) *TrafficManager {
 	return &TrafficManager{
 		limiter: rate.NewLimiter(rate.Limit(rps), burst),
+		checker: checker,
 	}
 }
 
 // Wait blocks until the rate limiter allows the call based on priority.
-// High priority calls bypass the queue if burst allows, or wait less.
 func (tm *TrafficManager) Wait(ctx context.Context, p Priority) error {
-	// In a more complex implementation, we could use separate limiters or 
-	// a weighted reservation system. For MVP, we use a single limiter
-	// but can add logic here to "reserve" capacity for High priority.
-	
-	// For now, we use standard rate.Wait which handles queuing
+	// 1. Check daily limit first if it's a High priority (task execution) call
+	if p == PriorityHigh && tm.checker != nil {
+		usage, err := tm.checker.GetDailyUsage(ctx)
+		if err != nil {
+			return err
+		}
+		limit, err := tm.checker.GetDailyLimit(ctx)
+		if err != nil {
+			return err
+		}
+
+		if limit > 0 && usage >= limit {
+			return ErrDailyLimitExceeded
+		}
+	}
+
+	// 2. Standard RPS limiting
 	return tm.limiter.Wait(ctx)
 }
 

@@ -6,8 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchNextRun();
     fetchLogs();
     fetchActivityLogs();
+    fetchSystemUsage();
     initActivityFilters();
     setInterval(fetchNextRun, 30000);
+    setInterval(fetchSystemUsage, 30000);
     setInterval(tickCountdown, 1000);
     setInterval(fetchLogs, 5000);
     setInterval(fetchActivityLogs, 10000);
@@ -171,6 +173,8 @@ function showTaskModal(task = null) {
         document.getElementById('task-mission').value = task.mission || '';
         document.getElementById('task-pattern').value = task.pattern;
         document.getElementById('task-schedule').value = task.schedule;
+        document.getElementById('task-importance').value = task.importance || 1;
+        document.getElementById('task-category').value = task.category || 'worker';
         // Restore agent from task ID: name:agent:pattern
         const parts = task.id.split(':');
         const agent = parts.length >= 3 ? parts[parts.length - 2] : 'analyst';
@@ -190,6 +194,8 @@ function showTaskModal(task = null) {
         document.getElementById('task-agent').value = 'analyst';
         document.getElementById('task-pattern').value = 'discovery';
         document.getElementById('task-schedule').value = '0 */6 * * *';
+        document.getElementById('task-importance').value = 1;
+        document.getElementById('task-category').value = 'worker';
     }
 
     modal.style.display = 'flex';
@@ -207,6 +213,8 @@ async function saveTask() {
     const pattern  = document.getElementById('task-pattern').value;
     const schedule = document.getElementById('task-schedule').value.trim();
     const mission  = document.getElementById('task-mission').value.trim();
+    const importance = parseInt(document.getElementById('task-importance').value) || 1;
+    const category   = document.getElementById('task-category').value;
 
     if (!name || !schedule) {
         alert('Repository and Schedule are required.');
@@ -216,7 +224,7 @@ async function saveTask() {
     // Compose ID the same way the backend does: name:agent:pattern
     const composedId = existingId || `${name}:${agent}:${pattern}`;
 
-    const data = { id: composedId, name, mission, pattern, schedule, status: 'PENDING' };
+    const data = { id: composedId, name, mission, pattern, schedule, importance, category, status: 'PENDING' };
 
     const method = existingId ? 'PUT' : 'POST';
     const url    = existingId ? `/api/v1/tasks/${encodeURIComponent(existingId)}` : '/api/v1/tasks';
@@ -327,6 +335,7 @@ function showSettings() {
     loadSupervisorSettings();
     loadPromptSettings();
     loadPromptLibrarySettings();
+    loadSystemSettings();
 }
 
 async function loadPromptLibrarySettings() {
@@ -488,13 +497,6 @@ async function saveSettings() {
         });
     }
 
-    const plGitUrl = document.getElementById('pl-git-url').value.trim();
-    const plGitBranch = document.getElementById('pl-git-branch').value.trim();
-    const plRefreshInterval = document.getElementById('pl-refresh-interval').value.trim();
-    const plPatternsPath = document.getElementById('pl-patterns-path').value.trim();
-    const plAgentsPath = document.getElementById('pl-agents-path').value.trim();
-    const plWorkflowsPath = document.getElementById('pl-workflows-path').value.trim();
-    const plPAT = document.getElementById('pl-pat').value.trim();
     if (plGitUrl || plGitBranch || plRefreshInterval || plPAT || plPatternsPath || plAgentsPath || plWorkflowsPath) {
         await fetch('/api/v1/settings/prompt-library', {
             method: 'POST',
@@ -515,8 +517,16 @@ async function saveSettings() {
         }
     }
 
+    const sysDailyLimit = parseInt(document.getElementById('sys-daily-limit').value) || 0;
+    await fetch('/api/v1/system/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ daily_task_limit: sysDailyLimit })
+    });
+
     hideModal('settings-modal');
     alert('Settings saved successfully!');
+    fetchSystemUsage();
 }
 
 async function syncPromptLibrary() {
@@ -793,6 +803,52 @@ async function fetchActivityLogs() {
     } catch (err) {
         console.error('Failed to fetch activity logs:', err);
     }
+}
+
+async function fetchSystemUsage() {
+    try {
+        const resp = await fetch('/api/v1/system/usage');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        
+        const text = document.getElementById('limit-text');
+        const fill = document.getElementById('limit-progress-fill');
+        const usageCount = document.getElementById('limit-usage-count');
+        const maxCount = document.getElementById('limit-max-count');
+        const remainingCount = document.getElementById('limit-remaining-count');
+
+        const usage = data.usage || 0;
+        const limit = data.limit || 0;
+        const remaining = limit > 0 ? Math.max(0, limit - usage) : '∞';
+        
+        text.textContent = `${usage} / ${limit || '∞'}`;
+        usageCount.textContent = usage;
+        maxCount.textContent = limit || '∞';
+        remainingCount.textContent = remaining;
+
+        if (limit > 0) {
+            const pct = Math.min(100, (usage / limit) * 100);
+            fill.style.width = `${pct}%`;
+            if (pct > 90) fill.style.background = 'var(--danger)';
+            else if (pct > 70) fill.style.background = 'var(--warning)';
+            else fill.style.background = 'linear-gradient(90deg, var(--primary) 0%, #60a5fa 100%)';
+        } else {
+            fill.style.width = '0%';
+        }
+    } catch (e) { /* silent */ }
+}
+
+async function loadSystemSettings() {
+    try {
+        const resp = await fetch('/api/v1/system/settings');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        document.getElementById('sys-daily-limit').value = data.daily_task_limit || 0;
+    } catch (e) { /* silent */ }
+}
+
+function showTemplateModal() {
+    alert('DTO Template Editor is part of Phase 2. This will allow editing ConfigMap-based templates.');
 }
 
 function renderActivityLogs() {
