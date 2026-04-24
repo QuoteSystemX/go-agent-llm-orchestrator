@@ -2,12 +2,14 @@ package llm
 
 import (
 	"bytes"
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
@@ -45,6 +47,24 @@ func (r *Router) getLocalModel() string {
 
 func (r *Router) getRemoteModel() string {
 	return r.getModel("llm_remote_model", os.Getenv("LLM_REMOTE_MODEL"))
+}
+
+func (r *Router) getLocalContextWindow() int {
+	valStr := r.getModel("llm_local_context_window", "4096")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	return val
+}
+
+func (r *Router) getLocalTemperature() float64 {
+	valStr := r.getModel("llm_local_temperature", "0.7")
+	var val float64
+	fmt.Sscanf(valStr, "%f", &val)
+	return val
+}
+
+func (r *Router) getSystemPrompt() string {
+	return r.getModel("llm_system_prompt", "You are a professional coding assistant and project orchestrator.")
 }
 
 type Classification string
@@ -183,9 +203,26 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 	}()
 	monitor.LLMCalls.WithLabelValues(provider, string(classification)).Inc()
 
+	// Prepend system prompt if not present
+	hasSystem := false
+	for _, m := range messages {
+		if m["role"] == "system" {
+			hasSystem = true
+			break
+		}
+	}
+	if !hasSystem {
+		messages = append([]map[string]string{{"role": "system", "content": r.getSystemPrompt()}}, messages...)
+	}
+
 	payload := map[string]interface{}{
 		"model":    model,
 		"messages": messages,
+	}
+
+	if provider == "local" {
+		payload["temperature"] = r.getLocalTemperature()
+		payload["num_ctx"] = r.getLocalContextWindow()
 	}
 
 	jsonData, _ := json.Marshal(payload)
@@ -235,4 +272,109 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 	}
 
 	return "", fmt.Errorf("failed after 3 attempts: %v", lastErr)
+}
+
+func (r *Router) GenerateChatStream(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (<-chan string, error) {
+	var endpoint, model, apiKey, provider string
+
+	target := r.getRoutingTarget(classification)
+	if preferredProvider == "remote" {
+		target = "remote"
+	} else if preferredProvider == "local" {
+		target = "local"
+	}
+
+	if target == "remote" && r.RemoteEndpoint != "" {
+		endpoint = r.RemoteEndpoint
+		model = r.getRemoteModel()
+		apiKey = r.RemoteAPIKey
+		provider = "remote"
+	} else {
+		endpoint = r.LocalEndpoint
+		model = r.getLocalModel()
+		provider = "local"
+	}
+
+	// Prepend system prompt if not present
+	hasSystem := false
+	for _, m := range messages {
+		if m["role"] == "system" {
+			hasSystem = true
+			break
+		}
+	}
+	if !hasSystem {
+		messages = append([]map[string]string{{"role": "system", "content": r.getSystemPrompt()}}, messages...)
+	}
+
+	payload := map[string]interface{}{
+		"model":    model,
+		"messages": messages,
+		"stream":   true,
+	}
+
+	if provider == "local" {
+		payload["temperature"] = r.getLocalTemperature()
+		payload["num_ctx"] = r.getLocalContextWindow()
+	}
+
+	jsonData, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint+"/v1/chat/completions", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("llm api error: status %d", resp.StatusCode)
+	}
+
+	out := make(chan string)
+	go func() {
+		defer resp.Body.Close()
+		defer close(out)
+
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+			data := strings.TrimPrefix(line, "data: ")
+			if data == "[DONE]" {
+				return
+			}
+
+			var chunk struct {
+				Choices []struct {
+					Delta struct {
+						Content string `json:"content"`
+					} `json:"delta"`
+				} `json:"choices"`
+			}
+			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+				continue
+			}
+
+			if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+				select {
+				case out <- chunk.Choices[0].Delta.Content:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return out, nil
 }

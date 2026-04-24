@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/api"
+	"go-agent-llm-orchestrator/internal/autopilot"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/dto"
 	gitpkg "go-agent-llm-orchestrator/internal/git"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
@@ -43,6 +47,7 @@ func main() {
 	logEnvVar("LLM_REMOTE_MODEL", os.Getenv("LLM_REMOTE_MODEL"), false)
 	logEnvVar("PROMPT_LIBRARY_CACHE_DIR", os.Getenv("PROMPT_LIBRARY_CACHE_DIR"), false)
 	logEnvVar("DISTRIBUTION_CONFIG_PATH", os.Getenv("DISTRIBUTION_CONFIG_PATH"), false)
+	logEnvVar("LLM_WORKER_LIMIT", os.Getenv("LLM_WORKER_LIMIT"), false)
 	log.Println("=================================")
 
 	// 2. Initialize Foundation
@@ -52,7 +57,13 @@ func main() {
 	}
 	defer database.Close()
 
-	tm := traffic.NewTrafficManager(1.0, 5)
+	workerLimitStr := os.Getenv("LLM_WORKER_LIMIT")
+	workerLimit := 3
+	if workerLimitStr != "" {
+		fmt.Sscanf(workerLimitStr, "%d", &workerLimit)
+	}
+
+	tm := traffic.NewTrafficManager(1.0, 5, workerLimit, database)
 
 	// 3. Initialize Logic
 	julesClient := api.NewJulesClient(database)
@@ -74,22 +85,55 @@ func main() {
 	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
 	promptBuilder := prompt.NewBuilder(database, cacheDir)
 
-	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
+	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder, router)
+	dtoMgr := dto.NewTemplateManager(database)
+	analyzer := dto.NewAnalyzer(database, router, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor()
 	healthMonitor.Start()
 
-	adminServer := api.NewAdminServer(database, engine)
+	statsAggregator := monitor.NewStatsAggregator(60)
+	statsAggregator.Start()
+
+	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer, statsAggregator)
 	adminServer.SetHealthMonitor(healthMonitor)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
+
+	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 
 	// 4. Start Background Processes
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	engine.Start()
+
+	// Background DTO Sync (once per hour)
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				log.Println("Background DTO Sync: Pulling fresh templates...")
+				if err := gitSyncer.Sync(ctx); err != nil {
+					log.Printf("Background DTO Sync Error: %v", err)
+					continue
+				}
+				// Sync templates from the cloned repo
+				tplDir := filepath.Join(cacheDir, "templates")
+				if err := dtoMgr.SyncFromDir(ctx, tplDir); err != nil {
+					log.Printf("Background Template Sync Error: %v", err)
+				}
+			}
+		}
+	}()
+
+	// Start Autopilot Engine (decision loop)
+	go autopilotEngine.Start(ctx)
 
 	// When the prompt-library syncs successfully for the first time, auto-resume
 	// any tasks that were paused at startup due to a missing SSH key.
@@ -102,6 +146,9 @@ func main() {
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)
+	
+	// Start DTO background analyzer
+	go analyzer.StartBackgroundLoop(ctx)
 
 	// Proactively pause all PENDING tasks if PAT is not yet configured —
 	// they would fail anyway when the cron fires and buildPrompt() returns an error.

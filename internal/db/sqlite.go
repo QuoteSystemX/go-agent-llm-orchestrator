@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"fmt"
@@ -56,6 +57,53 @@ func InitDB(dbPath string) (*DB, error) {
 		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
 		`ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0`,
 		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
+		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
+		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
+		`ALTER TABLE tasks ADD COLUMN current_stage TEXT DEFAULT 'idle'`,
+		`ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0`,
+		`ALTER TABLE tasks ADD COLUMN approval_required INTEGER DEFAULT 0`,
+		`ALTER TABLE tasks ADD COLUMN pending_decision TEXT DEFAULT ''`,
+		`ALTER TABLE tasks ADD COLUMN failure_count INTEGER DEFAULT 0`,
+		`CREATE TABLE IF NOT EXISTS task_run_details (id INTEGER PRIMARY KEY AUTOINCREMENT, log_id INTEGER NOT NULL, phase TEXT NOT NULL, content TEXT, duration_ms INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`CREATE TABLE IF NOT EXISTS web_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, content TEXT NOT NULL, provider TEXT, repo TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
+tasks:
+  - mission: "/discovery"
+    pattern: "discovery"
+    agent: "project-planner"
+    importance: 10
+    category: "service"
+  - mission: "/prd"
+    pattern: "prd"
+    agent: "project-planner"
+    importance: 9
+    category: "service"
+  - mission: "/stories"
+    pattern: "stories"
+    agent: "project-planner"
+    importance: 8
+    category: "service"
+  - mission: "/sprint"
+    pattern: "sprint"
+    agent: "project-planner"
+    importance: 7
+    category: "service"
+  - mission: "Execute sprint tasks and implement features"
+    pattern: "implement"
+    agent: "backend-specialist"
+    importance: 6
+    category: "worker"
+  - mission: "/sprint-closer"
+    pattern: "sprint_closer"
+    agent: "project-planner"
+    importance: 8
+    category: "service"
+  - mission: "Actualize Wiki and documentation"
+    pattern: "docs"
+    agent: "analyst"
+    importance: 5
+    category: "service"')`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
@@ -99,4 +147,166 @@ func (db *DB) GetSetting(key, def string) string {
 		return envVal
 	}
 	return def
+}
+
+// SetSetting saves or updates a setting in the database.
+func (db *DB) SetSetting(key, value string) error {
+	_, err := db.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	return err
+}
+
+// GetDailyUsage counts tasks executed today.
+func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
+	var count int
+	// We count task_logs from the beginning of the current day (UTC)
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM task_logs 
+		WHERE executed_at >= date('now', 'start of day')
+		AND status NOT IN ('FAILED', 'TRIGGERED') -- Only count those that actually started or finished
+	`).Scan(&count)
+	return count, err
+}
+func (db *DB) GetDistinctRepos(ctx context.Context) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SELECT DISTINCT name FROM tasks")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var repos []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			repos = append(repos, name)
+		}
+	}
+	return repos, nil
+}
+
+func (db *DB) GetUpcomingTaskCountToday(ctx context.Context) (int, error) {
+	// This is a simple approximation. In a real system, we'd parse the cron schedules.
+	// For now, let's just count all active tasks as a baseline for the forecast.
+	var count int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tasks WHERE status = 'PENDING'").Scan(&count)
+	return count, err
+}
+
+// GetDailyLimit retrieves the global daily task limit.
+func (db *DB) GetDailyLimit(ctx context.Context) (int, error) {
+	valStr := db.GetSetting("daily_task_limit", "0")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	return val, nil
+}
+
+func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category, current_stage, progress FROM tasks WHERE name = ?", repoName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []map[string]any
+	for rows.Next() {
+		var id, name, mission, pattern, agent, schedule, status, category, currentStage string
+		var importance, progress int
+		if err := rows.Scan(&id, &name, &mission, &pattern, &agent, &schedule, &status, &importance, &category, &currentStage, &progress); err != nil {
+			continue
+		}
+		tasks = append(tasks, map[string]any{
+			"id":            id,
+			"name":          name,
+			"mission":       mission,
+			"pattern":       pattern,
+			"agent":         agent,
+			"schedule":      schedule,
+			"status":        status,
+			"importance":    importance,
+			"category":      category,
+			"current_stage": currentStage,
+			"progress":      progress,
+		})
+	}
+	return tasks, nil
+}
+
+func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage string, progress int) error {
+	_, err := db.ExecContext(ctx, "UPDATE tasks SET current_stage = ?, progress = ? WHERE id = ?", stage, progress, taskID)
+	return err
+}
+
+func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string, duration int64) (int64, error) {
+	res, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (db *DB) UpdateTaskRunDetailContent(ctx context.Context, id int64, content string) error {
+	_, err := db.ExecContext(ctx, "UPDATE task_run_details SET content = ? WHERE id = ?", content, id)
+	return err
+}
+
+func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]any, error) {
+	rows, err := db.QueryContext(ctx, "SELECT phase, content, duration_ms, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var details []map[string]any
+	for rows.Next() {
+		var phase, content, createdAt string
+		var duration int64
+		if err := rows.Scan(&phase, &content, &duration, &createdAt); err == nil {
+			details = append(details, map[string]any{
+				"phase":       phase,
+				"content":     content,
+				"duration_ms": duration,
+				"created_at":  createdAt,
+			})
+		}
+	}
+	return details, nil
+}
+
+func (db *DB) SaveChatMessage(ctx context.Context, role, content, provider, repo string) error {
+	_, err := db.ExecContext(ctx, "INSERT INTO web_chat_history (role, content, provider, repo) VALUES (?, ?, ?, ?)", role, content, provider, repo)
+	return err
+}
+
+func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map[string]any, error) {
+	query := "SELECT role, content, provider, repo, created_at FROM web_chat_history "
+	var args []any
+	if repo != "" {
+		query += "WHERE repo = ? OR repo = '' "
+		args = append(args, repo)
+	}
+	query += "ORDER BY created_at DESC LIMIT ?"
+	args = append(args, limit)
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []map[string]any
+	for rows.Next() {
+		var role, content, provider, repoName, createdAt string
+		if err := rows.Scan(&role, &content, &provider, &repoName, &createdAt); err == nil {
+			history = append(history, map[string]any{
+				"role":       role,
+				"content":    content,
+				"provider":   provider,
+				"repo":       repoName,
+				"created_at": createdAt,
+			})
+		}
+	}
+	// Reverse to get chronological order
+	for i, j := 0, len(history)-1; i < j; i, j = i+1, j-1 {
+		history[i], history[j] = history[j], history[i]
+	}
+	return history, nil
 }

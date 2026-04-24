@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/notifier"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/traffic"
@@ -23,11 +25,12 @@ type Engine struct {
 	client        *api.JulesClient
 	notifier      *notifier.TelegramNotifier
 	promptBuilder *prompt.Builder
+	router        *llm.Router
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 }
 
-func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder) *Engine {
+func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder, router *llm.Router) *Engine {
 	return &Engine{
 		cron:          cron.New(),
 		db:            database,
@@ -35,6 +38,7 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 		client:        client,
 		notifier:      nt,
 		promptBuilder: pb,
+		router:        router,
 		entries:       make(map[string]cron.EntryID),
 	}
 }
@@ -156,10 +160,11 @@ func (e *Engine) runTask(taskID string) {
 	ctx := context.Background()
 	start := time.Now()
 
-	var status, mission, pattern, agent, repoName string
+	var status, mission, pattern, agent, repoName, category string
+	var importance int
 	err := e.db.QueryRowContext(ctx,
-		"SELECT status, mission, pattern, COALESCE(agent,''), name FROM tasks WHERE id = ?", taskID,
-	).Scan(&status, &mission, &pattern, &agent, &repoName)
+		"SELECT status, mission, pattern, COALESCE(agent,''), name, importance, category FROM tasks WHERE id = ?", taskID,
+	).Scan(&status, &mission, &pattern, &agent, &repoName, &importance, &category)
 	if err != nil {
 		log.Printf("Task %s: FAILED to fetch from DB: %v", taskID, err)
 		return
@@ -183,10 +188,20 @@ func (e *Engine) runTask(taskID string) {
 		logID, _ = res.LastInsertId()
 	}
 
-	err = e.tm.Execute(ctx, traffic.PriorityHigh, func() error {
+	err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
 		if logID > 0 {
 			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 		}
+		// 1. Determine which model to use (with Self-Healing)
+		var failureCount int
+		e.db.QueryRow("SELECT failure_count FROM tasks WHERE id = ?", taskID).Scan(&failureCount)
+
+		isComplex := category == "service"
+		if failureCount >= 3 {
+			log.Printf("Engine: [Self-Healing] Task %s failed %d times. Forcing REMOTE model.", taskID, failureCount)
+			isComplex = true
+		}
+
 		// Build the full Jules prompt — pause the task if library is not ready yet
 		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
 		if err != nil {
@@ -204,8 +219,9 @@ func (e *Engine) runTask(taskID string) {
 			return dbErr
 		}
 
-		if logID > 0 {
-			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'EXECUTING' WHERE id = ?", logID)
+		// Decision: Use Local Agentic Worker or Jules API
+		if e.router != nil && e.db.GetSetting("llm_local_endpoint", "") != "" {
+			return e.runAgenticLocalTask(ctx, taskID, agent, pattern, mission, repoName, importance, category, logID, fullPrompt, isComplex)
 		}
 
 		req := api.SessionRequest{
@@ -259,14 +275,14 @@ func (e *Engine) runTask(taskID string) {
 		execStatus = "FAILED"
 		execError = err.Error()
 		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED' WHERE id = ?", taskID)
+		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED', failure_count = failure_count + 1 WHERE id = ?", taskID)
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
 		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
+		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING', failure_count = 0 WHERE id = ?", taskID)
 	}
 
 	if logID > 0 {
@@ -285,4 +301,143 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 		return e.promptBuilder.Build(agent, pattern, mission)
 	}
 	return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
+}
+
+func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string, forceComplex bool) error {
+	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
+	var err error
+	var result, audit string
+
+	runWithRetry := func(phase string, prompt string, modelType llm.Classification) (string, error) {
+		var lastErr error
+		for i := 1; i <= 3; i++ {
+			if i > 1 {
+				log.Printf("Task %s: Retrying phase %s (attempt %d/3)...", taskID, phase, i)
+				time.Sleep(time.Duration(i) * time.Second)
+			}
+			res, err := e.router.GenerateResponse(ctx, modelType, prompt)
+			if err == nil {
+				return res, nil
+			}
+			lastErr = err
+		}
+		return "", lastErr
+	}
+
+	runWithStreaming := func(phase string, prompt string, modelType llm.Classification, logID int64) (string, error) {
+		if logID == 0 {
+			// Fallback to non-streaming if no logID
+			return runWithRetry(phase, prompt, modelType)
+		}
+
+		var fullContent string
+		start := time.Now()
+		
+		// Create placeholder
+		detailID, err := e.db.AddTaskRunDetail(ctx, logID, phase, "Thinking...", 0)
+		if err != nil {
+			return "", err
+		}
+
+		stream, err := e.router.GenerateChatStream(ctx, modelType, []map[string]string{{"role": "user", "content": prompt}}, "")
+		if err != nil {
+			return "", err
+		}
+
+		lastUpdate := time.Now()
+		for chunk := range stream {
+			fullContent += chunk
+			if time.Since(lastUpdate) > 1*time.Second {
+				e.db.UpdateTaskRunDetailContent(ctx, detailID, fullContent)
+				lastUpdate = time.Now()
+			}
+		}
+
+		duration := time.Since(start).Milliseconds()
+		e.db.ExecContext(ctx, "UPDATE task_run_details SET content = ?, duration_ms = ? WHERE id = ?", fullContent, duration, detailID)
+		
+		return fullContent, nil
+	}
+
+	// Phase 1 & 2: ANALYSIS & PLANNING
+	var analysis, plan string
+	
+	// Check if we have a pending decision to resume from
+	var existingDecision string
+	err = e.db.QueryRowContext(ctx, "SELECT pending_decision FROM tasks WHERE id = ?", taskID).Scan(&existingDecision)
+	
+	if err == nil && existingDecision != "" {
+		log.Printf("Task %s: Resuming from PENDING DECISION", taskID)
+		plan = existingDecision
+		e.updateProgress(ctx, taskID, "execution", 60, logID)
+	} else {
+		// Phase 1: ANALYSIS
+		e.updateProgress(ctx, taskID, "analysis", 25, logID)
+		analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
+		analysisModel := llm.Simple
+		if forceComplex {
+			analysisModel = llm.Complex
+		}
+		analysis, err = runWithStreaming("analysis", analysisPrompt, analysisModel, logID)
+		if err != nil {
+			return fmt.Errorf("analysis phase failed: %w", err)
+		}
+
+		// Phase 2: PLANNING
+		e.updateProgress(ctx, taskID, "planning", 50, logID)
+		planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
+		planningModel := llm.Simple
+		if forceComplex {
+			planningModel = llm.Complex
+		}
+		plan, err = runWithStreaming("planning", planningPrompt, planningModel, logID)
+		if err != nil {
+			return fmt.Errorf("planning phase failed: %w", err)
+		}
+
+		// Check if human approval is required
+		var approvalReq int
+		e.db.QueryRowContext(ctx, "SELECT approval_required FROM tasks WHERE id = ?", taskID).Scan(&approvalReq)
+		if approvalReq == 1 {
+			log.Printf("Task %s: PAUSING FOR HUMAN APPROVAL", taskID)
+			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'WAITING', pending_decision = ? WHERE id = ?", plan, taskID)
+			if logID > 0 {
+				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'AWAITING_APPROVAL' WHERE id = ?", logID)
+			}
+			return nil // Pause execution here
+		}
+	}
+
+	// Phase 3: EXECUTION
+	e.updateProgress(ctx, taskID, "execution", 75, logID)
+	execPrompt := fmt.Sprintf("Phase 3: EXECUTION. Mission: %s. Plan: %s. Implement the task and provide the final output.", mission, plan)
+	result, err = runWithStreaming("execution", execPrompt, llm.Complex, logID)
+	if err != nil {
+		return fmt.Errorf("execution phase failed: %w", err)
+	}
+
+	// Phase 4: VERIFICATION
+	e.updateProgress(ctx, taskID, "verification", 100, logID)
+	verifyPrompt := fmt.Sprintf("Phase 4: VERIFICATION. Original Mission: %s. Result: %s. Review the result for correctness and security.", mission, result)
+	audit, err = runWithStreaming("verification", verifyPrompt, llm.Simple, logID)
+	if err != nil {
+		return fmt.Errorf("verification phase failed: %w", err)
+	}
+
+	// Clear pending decision upon success
+	e.db.ExecContext(ctx, "UPDATE tasks SET pending_decision = '' WHERE id = ?", taskID)
+
+	log.Printf("Task %s: LOCAL AGENTIC PIPELINE COMPLETED", taskID)
+	if logID > 0 {
+		e.db.ExecContext(ctx, "UPDATE task_logs SET output_data = ? WHERE id = ?", fmt.Sprintf("RESULT:\n%s\n\nAUDIT:\n%s", result, audit), logID)
+	}
+
+	return nil
+}
+
+func (e *Engine) updateProgress(ctx context.Context, taskID string, stage string, progress int, logID int64) {
+	e.db.UpdateTaskProgress(ctx, taskID, stage, progress)
+	if logID > 0 {
+		e.db.ExecContext(ctx, "UPDATE task_logs SET status = ? WHERE id = ?", fmt.Sprintf("PHASE: %s", strings.ToUpper(stage)), logID)
+	}
 }

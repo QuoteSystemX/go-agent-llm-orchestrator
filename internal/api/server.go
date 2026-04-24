@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/dto"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/web"
@@ -41,18 +43,26 @@ type PromptChecker interface {
 }
 
 type AdminServer struct {
-	db             *db.DB
-	scheduler      Scheduler
-	gitSyncer      GitSyncer
-	promptChecker  PromptChecker
-	healthMonitor  *monitor.HealthMonitor
-	logBuf         *LogBuffer
+	db              *db.DB
+	scheduler       Scheduler
+	statsAggregator *monitor.StatsAggregator
+	gitSyncer       GitSyncer
+	promptChecker   PromptChecker
+	healthMonitor   *monitor.HealthMonitor
+	logBuf          *LogBuffer
+	dtoMgr          *dto.TemplateManager
+	analyzer        *dto.Analyzer
+	startTime       time.Time
 }
 
-func NewAdminServer(database *db.DB, sched Scheduler) *AdminServer {
+func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManager, analyzer *dto.Analyzer, aggregator *monitor.StatsAggregator) *AdminServer {
 	return &AdminServer{
-		db:        database,
-		scheduler: sched,
+		db:              database,
+		scheduler:       sched,
+		dtoMgr:          dtoMgr,
+		analyzer:        analyzer,
+		statsAggregator: aggregator,
+		startTime:       time.Now(),
 	}
 }
 
@@ -99,6 +109,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/tasks/next-runs", s.handleNextRuns)
 	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
 	mux.HandleFunc("/api/v1/tasks/", s.handleTaskByID)
+	mux.HandleFunc("/api/v1/tasks/approve", s.handleApproveTask)
+	mux.HandleFunc("/api/v1/tasks/reject", s.handleRejectTask)
 
 	// Settings & Audit
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
@@ -110,8 +122,19 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/settings/prompt-library/sync", s.handlePromptLibrarySync)
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	mux.HandleFunc("/api/v1/audit/logs", s.handleListAuditLogs)
+	mux.HandleFunc("/api/v1/audit/logs/details", s.handleGetTaskRunDetails)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
+	mux.HandleFunc("/api/v1/chat/stream", s.handleChatStream)
+	mux.HandleFunc("/api/v1/chat/history", s.handleGetChatHistory)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
+	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
+	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
+	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
+
+	// DTO Templates API
+	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
+	mux.HandleFunc("/api/v1/dto/templates/", s.handleTemplateByID)
+	mux.HandleFunc("/api/v1/dto/analyze", s.handleAnalyze)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -162,6 +185,8 @@ type TaskResponse struct {
 	Schedule    string     `json:"schedule"`
 	Status      string     `json:"status"`
 	PromptReady bool       `json:"prompt_ready"`
+	Importance  int        `json:"importance"`
+	Category    string     `json:"category"`
 	LastRunAt   *time.Time `json:"last_run_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
@@ -179,7 +204,7 @@ func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
 
 func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(),
-		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
+		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, importance, category, last_run_at, created_at FROM tasks ORDER BY created_at DESC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -189,7 +214,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []TaskResponse
 	for rows.Next() {
 		var t TaskResponse
-		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.LastRunAt, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt); err != nil {
 			continue
 		}
 		tasks = append(tasks, t)
@@ -221,8 +246,8 @@ func (s *AdminServer) createTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := s.db.ExecContext(r.Context(), 
-		"INSERT INTO tasks (id, name, mission, pattern, schedule, status) VALUES (?, ?, ?, ?, ?, ?)",
-		t.ID, t.Name, t.Mission, t.Pattern, t.Schedule, "PENDING")
+		"INSERT INTO tasks (id, name, mission, pattern, schedule, status, importance, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		t.ID, t.Name, t.Mission, t.Pattern, t.Schedule, "PENDING", t.Importance, t.Category)
 	
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -279,8 +304,8 @@ func (s *AdminServer) updateTask(w http.ResponseWriter, r *http.Request, id stri
 	}
 
 	_, err := s.db.ExecContext(r.Context(), 
-		"UPDATE tasks SET name = ?, mission = ?, pattern = ?, schedule = ?, status = ? WHERE id = ?",
-		t.Name, t.Mission, t.Pattern, t.Schedule, t.Status, id)
+		"UPDATE tasks SET name = ?, mission = ?, pattern = ?, schedule = ?, status = ?, importance = ?, category = ? WHERE id = ?",
+		t.Name, t.Mission, t.Pattern, t.Schedule, t.Status, t.Importance, t.Category, id)
 	
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -428,17 +453,23 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
-			"local_model":    s.getSetting(r.Context(), "llm_local_model", ""),
-			"remote_model":   s.getSetting(r.Context(), "llm_remote_model", ""),
-			"jules_api_key":  masked,
-			"jules_base_url": s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+			"local_model":             s.getSetting(r.Context(), "llm_local_model", ""),
+			"remote_model":            s.getSetting(r.Context(), "llm_remote_model", ""),
+			"jules_api_key":           masked,
+			"jules_base_url":          s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "4096"),
+			"local_temperature":       s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
+			"system_prompt":           s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
 		})
 	case http.MethodPost:
 		var data struct {
-			LocalModel   string `json:"local_model"`
-			RemoteModel  string `json:"remote_model"`
-			JulesAPIKey  string `json:"jules_api_key"`
-			JulesBaseURL string `json:"jules_base_url"`
+			LocalModel         string `json:"local_model"`
+			RemoteModel        string `json:"remote_model"`
+			JulesAPIKey        string `json:"jules_api_key"`
+			JulesBaseURL       string `json:"jules_base_url"`
+			LocalContextWindow string `json:"local_context_window"`
+			LocalTemperature   string `json:"local_temperature"`
+			SystemPrompt       string `json:"system_prompt"`
 		}
 		json.NewDecoder(r.Body).Decode(&data)
 		if data.LocalModel != "" {
@@ -452,6 +483,15 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		if data.JulesBaseURL != "" {
 			s.saveSetting(r.Context(), "jules_base_url", data.JulesBaseURL)
+		}
+		if data.LocalContextWindow != "" {
+			s.saveSetting(r.Context(), "llm_local_context_window", data.LocalContextWindow)
+		}
+		if data.LocalTemperature != "" {
+			s.saveSetting(r.Context(), "llm_local_temperature", data.LocalTemperature)
+		}
+		if data.SystemPrompt != "" {
+			s.saveSetting(r.Context(), "llm_system_prompt", data.SystemPrompt)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
@@ -702,6 +742,103 @@ func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"response": response})
 }
 
+func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Messages []map[string]string `json:"messages"`
+		Provider string              `json:"provider"`
+		Repo     string              `json:"repo"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Messages) == 0 {
+		http.Error(w, "messages are required", http.StatusBadRequest)
+		return
+	}
+
+	// Save user message (last one)
+	userMsg := req.Messages[len(req.Messages)-1]["content"]
+	s.db.SaveChatMessage(r.Context(), "user", userMsg, req.Provider, req.Repo)
+
+	// If a repository is selected, use RAG to enhance the context
+	if req.Repo != "" && s.analyzer != nil {
+		context := s.analyzer.SearchContext(userMsg, 3)
+		if context != "" {
+			ragMsg := map[string]string{
+				"role":    "system",
+				"content": fmt.Sprintf("Use the following context from repository '%s' to answer the question:\n%s", req.Repo, context),
+			}
+			// Prepend RAG context to help the model
+			req.Messages = append([]map[string]string{ragMsg}, req.Messages...)
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	router := llm.NewRouter(s.db)
+	tokens, err := router.GenerateChatStream(r.Context(), llm.Simple, req.Messages, req.Provider)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var fullResponse strings.Builder
+	for token := range tokens {
+		fullResponse.WriteString(token)
+		fmt.Fprintf(w, "data: %s\n\n", token)
+		flusher.Flush()
+	}
+
+	// Save assistant response
+	if fullResponse.Len() > 0 {
+		s.db.SaveChatMessage(r.Context(), "assistant", fullResponse.String(), req.Provider, req.Repo)
+	}
+
+	fmt.Fprintf(w, "data: [DONE]\n\n")
+	flusher.Flush()
+}
+
+func (s *AdminServer) handleGetTaskRunDetails(w http.ResponseWriter, r *http.Request) {
+	logIDStr := r.URL.Query().Get("log_id")
+	var logID int64
+	fmt.Sscanf(logIDStr, "%d", &logID)
+	
+	details, err := s.db.GetTaskRunDetails(r.Context(), logID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(details)
+}
+
+func (s *AdminServer) handleGetChatHistory(w http.ResponseWriter, r *http.Request) {
+	repo := r.URL.Query().Get("repo")
+	history, err := s.db.GetChatHistory(r.Context(), repo, 50)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
+}
+
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if s.healthMonitor == nil {
 		http.Error(w, "health monitor not initialized", http.StatusInternalServerError)
@@ -723,6 +860,43 @@ func (s *AdminServer) handleRunTask(w http.ResponseWriter, r *http.Request) {
 	}
 	s.scheduler.TriggerTask(taskID)
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *AdminServer) handleApproveTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	taskID := r.URL.Query().Get("id")
+	var req struct {
+		Plan string `json:"plan"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PENDING', pending_decision = ? WHERE id = ?", req.Plan, taskID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.scheduler.TriggerTask(taskID)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *AdminServer) handleRejectTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	taskID := r.URL.Query().Get("id")
+	_, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED', pending_decision = '' WHERE id = ?", taskID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request) {
@@ -773,3 +947,154 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(logs)
 }
 
+func (s *AdminServer) handleSystemStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	// Simple CPU usage approximation for macOS/Linux using /proc/loadavg or sysctl
+	// Since we are on Mac, we can try to use a command if needed, or just return memory for now.
+	// We'll provide Memory in MB.
+	cpuHist, memHist, taskHist := s.statsAggregator.GetHistory()
+
+	stats := map[string]any{
+		"num_goroutine":    runtime.NumGoroutine(),
+		"memory_alloc_mb":  m.Alloc / 1024 / 1024,
+		"memory_sys_mb":    m.Sys / 1024 / 1024,
+		"uptime_seconds":   int(time.Since(s.startTime).Seconds()),
+		"num_cpu":          runtime.NumCPU(),
+		"last_gc_pause_ms": m.PauseNs[(m.NumGC+255)%256] / 1000000,
+		"history": map[string]any{
+			"cpu":    cpuHist,
+			"memory": memHist,
+			"tasks":  taskHist,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		limit, _ := s.db.GetDailyLimit(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"daily_task_limit": limit,
+		})
+	case http.MethodPost:
+		var data struct {
+			DailyTaskLimit int `json:"daily_task_limit"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.db.SetSetting("daily_task_limit", fmt.Sprintf("%d", data.DailyTaskLimit))
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleSystemUsage(w http.ResponseWriter, r *http.Request) {
+	usage, err := s.db.GetDailyUsage(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	limit, _ := s.db.GetDailyLimit(r.Context())
+	upcoming, _ := s.db.GetUpcomingTaskCountToday(r.Context())
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"usage":    usage,
+		"limit":    limit,
+		"forecast": usage + upcoming,
+	})
+}
+
+func (s *AdminServer) handleTemplates(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		templates, err := s.dtoMgr.ListTemplates(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(templates)
+	case http.MethodPost:
+		var t dto.Template
+		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+			http.Error(w, "invalid payload", http.StatusBadRequest)
+			return
+		}
+		if t.Name == "" || t.Content == "" {
+			http.Error(w, "name and content are required", http.StatusBadRequest)
+			return
+		}
+		if err := s.dtoMgr.SaveTemplate(r.Context(), t.Name, t.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleTemplateByID(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/v1/dto/templates/")
+	if name == "" {
+		http.Error(w, "missing template name", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		t, err := s.dtoMgr.GetTemplate(r.Context(), name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if t == nil {
+			http.NotFound(w, r)
+			return
+		}
+		json.NewEncoder(w).Encode(t)
+	case http.MethodDelete:
+		if err := s.dtoMgr.DeleteTemplate(r.Context(), name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *AdminServer) handleAnalyze(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	repoName := r.URL.Query().Get("repo")
+	if repoName == "" {
+		http.Error(w, "missing repo parameter", http.StatusBadRequest)
+		return
+	}
+
+	proposals, err := s.analyzer.AnalyzeRepo(r.Context(), repoName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(proposals)
+}

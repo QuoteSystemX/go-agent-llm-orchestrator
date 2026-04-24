@@ -6,11 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchNextRun();
     fetchLogs();
     fetchActivityLogs();
+    fetchSystemUsage();
     initActivityFilters();
     setInterval(fetchNextRun, 30000);
+    setInterval(fetchSystemUsage, 30000);
+    setInterval(fetchSystemStats, 10000);
     setInterval(tickCountdown, 1000);
     setInterval(fetchLogs, 5000);
     setInterval(fetchActivityLogs, 10000);
+    loadChatHistory();
     lucide.createIcons();
 });
 
@@ -72,6 +76,21 @@ function renderTasks() {
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
                                     </div>
                                     <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    ${task.status === 'WAITING' ? `
+                                        <div class="task-approval-needed">
+                                            <i data-lucide="help-circle" style="width:14px; color:var(--warning)"></i>
+                                            <span style="color:var(--warning); font-weight:700; font-size:0.7rem">ACTION REQUIRED</span>
+                                            <button class="btn-primary btn-sm" onclick="reviewTaskPlan('${task.id}')" style="margin-top:0.5rem; width:100%">Review Plan</button>
+                                        </div>
+                                    ` : ''}
+                                    ${task.status === 'RUNNING' ? `
+                                        <div class="task-stage-info">
+                                            <div class="stage-label">${task.current_stage || 'initializing'}</div>
+                                            <div class="stage-progress-bg">
+                                                <div class="stage-progress-fill" style="width: ${task.progress || 5}%"></div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                     ${noPrompt ? `<span class="task-badge no-prompt-badge" title="Pattern file not found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
                                 </div>
@@ -82,14 +101,22 @@ function renderTasks() {
                                 </div>
 
                                 <div class="task-footer">
-                                    <button class="btn-primary" onclick="runTaskNow('${task.id}')" title="Run Now" ${dis}><i data-lucide="zap"></i></button>
-                                    <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
-                                    <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
-                                    ${task.status === 'PAUSED'
-                                        ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
-                                        : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis}><i data-lucide="pause"></i></button>`
+                                    ${task.status === 'DRAFT'
+                                        ? `
+                                           <button class="btn-success" onclick="approveDraft('${task.id}')" title="Approve"><i data-lucide="check-circle"></i> Approve</button>
+                                           <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Discard"><i data-lucide="x-circle"></i> Discard</button>
+                                        `
+                                        : `
+                                           <button class="btn-primary" onclick="runTaskNow('${task.id}')" title="Run Now" ${dis}><i data-lucide="zap"></i></button>
+                                           <button class="btn-secondary" onclick="viewLogs('${task.id}', '${task.name}')" title="Logs"><i data-lucide="file-text"></i></button>
+                                           <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
+                                           ${task.status === 'PAUSED'
+                                               ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
+                                               : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis}><i data-lucide="pause"></i></button>`
+                                           }
+                                           <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
+                                        `
                                     }
-                                    <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
                                 </div>
                             </div>
                         `}).join('')}
@@ -99,8 +126,24 @@ function renderTasks() {
         `;
     }
     
-    container.innerHTML = html;
+    container.innerHTML = html || '<div class="empty-state">No tasks scheduled. Create one to get started!</div>';
     lucide.createIcons();
+    updateChatRepoSelector(Object.keys(grouped));
+}
+
+function updateChatRepoSelector(repos) {
+    const selector = document.getElementById('chat-repo-context');
+    if (!selector) return;
+    
+    // Add event listener if not already added
+    if (!selector._listenerAttached) {
+        selector.addEventListener('change', loadChatHistory);
+        selector._listenerAttached = true;
+    }
+
+    const current = selector.value;
+    selector.innerHTML = '<option value="">No Context</option>' + 
+        repos.map(r => `<option value="${r}" ${r === current ? 'selected' : ''}>Repo: ${r}</option>`).join('');
 }
 
 function toggleGroup(safeName) {
@@ -171,6 +214,8 @@ function showTaskModal(task = null) {
         document.getElementById('task-mission').value = task.mission || '';
         document.getElementById('task-pattern').value = task.pattern;
         document.getElementById('task-schedule').value = task.schedule;
+        document.getElementById('task-importance').value = task.importance || 1;
+        document.getElementById('task-category').value = task.category || 'worker';
         // Restore agent from task ID: name:agent:pattern
         const parts = task.id.split(':');
         const agent = parts.length >= 3 ? parts[parts.length - 2] : 'analyst';
@@ -182,6 +227,7 @@ function showTaskModal(task = null) {
             const opt = new Option(agent, agent, true, true);
             sel.add(opt);
         }
+        document.getElementById('task-approval-required').checked = task.approval_required === 1;
     } else {
         title.innerText = 'Create New Task';
         document.getElementById('task-id-field').value = '';
@@ -190,6 +236,9 @@ function showTaskModal(task = null) {
         document.getElementById('task-agent').value = 'analyst';
         document.getElementById('task-pattern').value = 'discovery';
         document.getElementById('task-schedule').value = '0 */6 * * *';
+        document.getElementById('task-importance').value = 1;
+        document.getElementById('task-category').value = 'worker';
+        document.getElementById('task-approval-required').checked = false;
     }
 
     modal.style.display = 'flex';
@@ -207,6 +256,9 @@ async function saveTask() {
     const pattern  = document.getElementById('task-pattern').value;
     const schedule = document.getElementById('task-schedule').value.trim();
     const mission  = document.getElementById('task-mission').value.trim();
+    const importance = parseInt(document.getElementById('task-importance').value) || 1;
+    const category   = document.getElementById('task-category').value;
+    const approval_required = document.getElementById('task-approval-required').checked ? 1 : 0;
 
     if (!name || !schedule) {
         alert('Repository and Schedule are required.');
@@ -216,7 +268,7 @@ async function saveTask() {
     // Compose ID the same way the backend does: name:agent:pattern
     const composedId = existingId || `${name}:${agent}:${pattern}`;
 
-    const data = { id: composedId, name, mission, pattern, schedule, status: 'PENDING' };
+    const data = { id: composedId, name, mission, pattern, schedule, importance, category, status: 'PENDING', approval_required };
 
     const method = existingId ? 'PUT' : 'POST';
     const url    = existingId ? `/api/v1/tasks/${encodeURIComponent(existingId)}` : '/api/v1/tasks';
@@ -267,6 +319,11 @@ async function runTaskNow(id) {
 async function toggleTask(id, action) {
     await fetch(`/api/v1/tasks/${id}/${action}`, { method: 'POST' });
     fetchTasks();
+}
+
+async function approveDraft(id) {
+    if (!confirm('Approve this autopilot proposal?')) return;
+    await toggleTask(id, 'resume');
 }
 
 // Logs Logic
@@ -327,6 +384,7 @@ function showSettings() {
     loadSupervisorSettings();
     loadPromptSettings();
     loadPromptLibrarySettings();
+    loadSystemSettings();
 }
 
 async function loadPromptLibrarySettings() {
@@ -366,6 +424,9 @@ async function loadLLMSettings() {
         } else {
             keyField.placeholder = 'AIza... (not set)';
         }
+        if (data.local_context_window) document.getElementById('local-context-window').value = data.local_context_window;
+        if (data.local_temperature) document.getElementById('local-temperature').value = data.local_temperature;
+        if (data.system_prompt) document.getElementById('system-prompt').value = data.system_prompt;
     } catch (e) { /* silent */ }
 }
 
@@ -445,6 +506,9 @@ async function saveSettings() {
     const remoteModel = document.getElementById('remote-model').value.trim();
     const julesApiKey = document.getElementById('jules-api-key').value.trim();
     const julesBaseUrl = document.getElementById('jules-base-url').value.trim();
+    const localContextWindow = document.getElementById('local-context-window').value.trim();
+    const localTemperature = document.getElementById('local-temperature').value.trim();
+    const systemPrompt = document.getElementById('system-prompt').value.trim();
 
     if (token) {
         await fetch('/api/v1/settings/telegram', {
@@ -461,7 +525,10 @@ async function saveSettings() {
             local_model: localModel,
             remote_model: remoteModel,
             jules_api_key: julesApiKey,
-            jules_base_url: julesBaseUrl
+            jules_base_url: julesBaseUrl,
+            local_context_window: localContextWindow,
+            local_temperature: localTemperature,
+            system_prompt: systemPrompt
         })
     });
 
@@ -488,13 +555,6 @@ async function saveSettings() {
         });
     }
 
-    const plGitUrl = document.getElementById('pl-git-url').value.trim();
-    const plGitBranch = document.getElementById('pl-git-branch').value.trim();
-    const plRefreshInterval = document.getElementById('pl-refresh-interval').value.trim();
-    const plPatternsPath = document.getElementById('pl-patterns-path').value.trim();
-    const plAgentsPath = document.getElementById('pl-agents-path').value.trim();
-    const plWorkflowsPath = document.getElementById('pl-workflows-path').value.trim();
-    const plPAT = document.getElementById('pl-pat').value.trim();
     if (plGitUrl || plGitBranch || plRefreshInterval || plPAT || plPatternsPath || plAgentsPath || plWorkflowsPath) {
         await fetch('/api/v1/settings/prompt-library', {
             method: 'POST',
@@ -515,8 +575,16 @@ async function saveSettings() {
         }
     }
 
+    const sysDailyLimit = parseInt(document.getElementById('sys-daily-limit').value) || 0;
+    await fetch('/api/v1/system/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ daily_task_limit: sysDailyLimit })
+    });
+
     hideModal('settings-modal');
     alert('Settings saved successfully!');
+    fetchSystemUsage();
 }
 
 async function syncPromptLibrary() {
@@ -591,8 +659,71 @@ async function fetchLogs() {
     } catch (e) { /* silent */ }
 }
 
+async function updateSystemStats() {
+    try {
+        const resp = await fetch('/api/v1/system/stats');
+        const stats = await resp.json();
+        document.getElementById('stat-cpu').innerText = `${stats.num_goroutine}`;
+        document.getElementById('stat-mem').innerText = `${stats.memory_alloc_mb}MB`;
+        document.getElementById('stat-uptime').innerText = formatUptime(stats.uptime_seconds);
+
+        if (stats.history) {
+            renderSparkline('cpu-sparkline', stats.history.cpu);
+            renderSparkline('mem-sparkline', stats.history.memory);
+        }
+    } catch (e) {
+        console.error('Failed to fetch stats', e);
+    }
+}
+
+function renderSparkline(elementId, data) {
+    const container = document.getElementById(elementId);
+    if (!container || !data || data.length < 2) return;
+
+    const width = 60;
+    const height = 20;
+    const points = data.map(d => d.v);
+    const min = Math.min(...points);
+    const max = Math.max(...points);
+    const range = (max - min) || 1;
+
+    const coords = points.map((v, i) => {
+        const x = (i / (points.length - 1)) * width;
+        const y = height - ((v - min) / range) * height;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+
+    container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <polyline points="${coords}" />
+        </svg>
+    `;
+}
+
 function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function fetchSystemStats() {
+    try {
+        const resp = await fetch('/api/v1/system/stats');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        
+        // Goroutines as load indicator
+        document.getElementById('stat-cpu').textContent = data.num_goroutine; 
+        
+        // Show Sys Memory (Total reserved) instead of just Alloc
+        document.getElementById('stat-mem').textContent = data.memory_sys_mb + 'MB';
+        
+        // If there's an uptime element, update it (we might need to add it to HTML)
+        const uptimeEl = document.getElementById('stat-uptime');
+        if (uptimeEl && data.uptime_seconds) {
+            const h = Math.floor(data.uptime_seconds / 3600);
+            const m = Math.floor((data.uptime_seconds % 3600) / 60);
+            uptimeEl.textContent = `${h}h ${m}m`;
+        }
+    } catch (e) { /* silent */ }
 }
 
 // ── Tabs Logic ────────────────────────────────────────────────
@@ -607,8 +738,201 @@ function switchTab(tabName) {
 
     if (tabName === 'repositories') {
         renderTasks();
+    } else if (tabName === 'dto') {
+        populateRepoSelect();
     }
     lucide.createIcons();
+}
+
+function populateRepoSelect() {
+    const select = document.getElementById('dto-repo-select');
+    if (!select) return;
+    const uniqueRepos = [...new Set(tasks.map(t => t.name))];
+    select.innerHTML = uniqueRepos.map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+let currentProposals = [];
+
+async function createSelectedTasks() {
+    const repo = document.getElementById('dto-repo-select').value;
+    const selected = currentProposals.filter((_, idx) => {
+        const chk = document.getElementById(`prop-check-${idx}`);
+        return chk && chk.checked;
+    });
+    
+    if (selected.length === 0) {
+        showToast('Please select at least one task', 'error');
+        return;
+    }
+
+    for (const p of selected) {
+        try {
+            await fetch('/api/v1/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: repo,
+                    agent: p.agent,
+                    pattern: p.pattern,
+                    mission: p.mission,
+                    schedule: p.schedule || '0 9 * * *',
+                    importance: p.importance,
+                    category: p.category
+                })
+            });
+        } catch (err) {
+            console.error('Failed to create task:', err);
+        }
+    }
+    
+    showToast(`Successfully created ${selected.length} tasks!`, 'success');
+    runAnalysis(); // Refresh
+}
+
+async function runAnalysis() {
+    const repo = document.getElementById('dto-repo-select').value;
+    if (!repo) return;
+
+    const btn = document.getElementById('btn-run-analysis');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Analyzing...';
+    lucide.createIcons();
+
+    try {
+        const resp = await fetch(`/api/v1/dto/analyze?repo=${encodeURIComponent(repo)}`, { method: 'POST' });
+        if (resp.ok) {
+            const proposals = await resp.json();
+            renderProposals(proposals);
+            document.getElementById('dto-last-analysis').textContent = `Last analysis: ${new Date().toLocaleTimeString()}`;
+        } else {
+            alert('Analysis failed: ' + await resp.text());
+        }
+    } catch (e) {
+        alert('Error during analysis: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        lucide.createIcons();
+    }
+}
+
+async function loadChatHistory() {
+    const repo = document.getElementById('chat-repo-context').value;
+    try {
+        const response = await fetch(`/api/v1/chat/history?repo=${repo}`);
+        if (!response.ok) throw new Error('Failed to fetch history');
+        const history = await response.json();
+        
+        chatMessages = history.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at
+        }));
+        renderChat();
+    } catch (err) {
+        console.error('Chat history error:', err);
+    }
+}
+
+function renderProposals(data) {
+    const container = document.getElementById('dto-proposals');
+    const warningContainer = document.getElementById('dto-warnings');
+    const metadataContainer = document.getElementById('dto-metadata');
+    const header = document.getElementById('dto-proposals-header');
+    
+    const proposals = data.proposals || [];
+    const warnings = data.warnings || [];
+    const metadata = data.metadata || {};
+    currentProposals = proposals;
+    
+    // Render Warnings
+    if (warnings.length > 0) {
+        warningContainer.innerHTML = warnings.map(w => `
+            <div class="dto-warning-card glass">
+                <i data-lucide="alert-triangle"></i>
+                <span>${escapeHtml(w)}</span>
+            </div>
+        `).join('');
+    } else {
+        warningContainer.innerHTML = '';
+    }
+
+    // Render Metadata
+    metadataContainer.innerHTML = Object.entries(metadata).map(([key, val]) => `
+        <span class="dto-meta-badge">
+            <i data-lucide="check-circle" style="width:10px; color:var(--success)"></i>
+            ${key.replace('has_', '')}
+        </span>
+    `).join('');
+    
+    // Update Tracker
+    const stages = ['discovery', 'prd', 'architecture', 'stories', 'sprint', 'worker', 'closure'];
+    const currentIdx = stages.indexOf(data.current_stage);
+    
+    document.querySelectorAll('.bmad-stage').forEach((el, idx) => {
+        el.classList.remove('active', 'completed');
+        if (idx < currentIdx) el.classList.add('completed');
+        if (idx === currentIdx) el.classList.add('active');
+    });
+    
+    document.getElementById('bmad-progress-fill').style.width = `${data.progress || 0}%`;
+
+    if (proposals.length === 0) {
+        container.innerHTML = '<div class="empty-state">No proposals found for the current state.</div>';
+        header.style.display = 'none';
+        lucide.createIcons();
+        return;
+    }
+
+    header.style.display = 'flex';
+    container.innerHTML = proposals.map((p, idx) => `
+        <div class="proposal-card glass">
+            <div class="proposal-header">
+                <div class="proposal-check">
+                    <input type="checkbox" id="prop-check-${idx}" checked>
+                </div>
+                <div class="proposal-type">
+                    <span class="badge ${p.category === 'service' ? 'badge-service' : 'badge-worker'}">${p.category}</span>
+                    <span class="proposal-pattern">${p.pattern}</span>
+                </div>
+                <div class="proposal-importance" title="Importance: ${p.importance}/10">
+                    <span class="importance-dot" style="background:${getImportanceColor(p.importance)}; box-shadow: 0 0 8px ${getImportanceColor(p.importance)}"></span>
+                    ${p.importance}
+                </div>
+            </div>
+            <div class="proposal-mission">${escapeHtml(p.mission)}</div>
+            <div class="proposal-reason">
+                <i data-lucide="info" style="width:12px; margin-right:4px"></i>
+                ${escapeHtml(p.reason)}
+            </div>
+            <div class="proposal-actions">
+                <button class="btn-secondary btn-sm" onclick="applyProposal(${idx})">
+                    <i data-lucide="edit-3"></i> Quick Edit
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    window._lastProposals = proposals;
+    lucide.createIcons();
+}
+
+async function applyProposal(index) {
+    const p = window._lastProposals[index];
+    const repo = document.getElementById('dto-repo-select').value;
+    
+    // Show task modal with proposal data
+    showTaskModal({
+        id: '', // New task
+        name: repo,
+        mission: p.mission,
+        pattern: p.pattern,
+        agent: p.agent,
+        schedule: p.schedule,
+        importance: p.importance,
+        category: p.category
+    });
 }
 
 // ── AI Chat Logic ─────────────────────────────────────────────
@@ -644,12 +968,6 @@ async function sendChatMessage() {
     input.value = '';
     renderChat();
 
-    // Prepare messages for API (match OpenAI format expected by backend)
-    const apiMessages = chatMessages.map(m => ({
-        role: m.role === 'bot' ? 'assistant' : 'user',
-        content: m.content
-    }));
-
     const btn = document.getElementById('chat-send-btn');
     btn.disabled = true;
     btn.classList.add('sending');
@@ -657,32 +975,66 @@ async function sendChatMessage() {
     isAITyping = true;
     currentChatTimer = 0;
     const startTime = Date.now();
+    
+    // Add bot message placeholder
+    const botMsgIndex = chatMessages.length;
+    chatMessages.push({ role: 'bot', content: '', typing: true });
+    
     const timerInterval = setInterval(() => {
         currentChatTimer = (Date.now() - startTime) / 1000;
         renderChat();
     }, 100);
 
+    // Prepare messages for API
+    const apiMessages = chatMessages.slice(0, -1).map(m => ({
+        role: m.role === 'bot' ? 'assistant' : 'user',
+        content: m.content
+    }));
+
+    const repoContext = document.getElementById('chat-repo-context')?.value || "";
+
     try {
-        const resp = await fetch('/api/v1/chat', {
+        const response = await fetch('/api/v1/chat/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 messages: apiMessages,
-                provider: currentChatProvider
+                provider: currentChatProvider,
+                repo: repoContext
             })
         });
-        
-        if (resp.ok) {
-            const data = await resp.json();
-            const lastUserMsg = chatMessages[chatMessages.length - 1];
-            lastUserMsg.duration = (Date.now() - startTime) / 1000;
-            chatMessages.push({ role: 'bot', content: data.response });
-        } else {
-            const err = await resp.text();
-            chatMessages.push({ role: 'bot', content: `Error: ${err}` });
+
+        if (!response.ok) throw new Error('Streaming failed');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiContent = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const token = line.slice(6);
+                    if (token === '[DONE]') break;
+                    aiContent += token;
+                    chatMessages[botMsgIndex].content = aiContent;
+                    renderChat();
+                }
+            }
         }
+        
+        const lastUserMsg = chatMessages[botMsgIndex - 1];
+        lastUserMsg.duration = (Date.now() - startTime) / 1000;
+        chatMessages[botMsgIndex].typing = false;
+
     } catch (err) {
-        chatMessages.push({ role: 'bot', content: `Network error: ${err.message}` });
+        chatMessages[botMsgIndex].content = `Error: ${err.message}`;
+        chatMessages[botMsgIndex].typing = false;
     } finally {
         isAITyping = false;
         clearInterval(timerInterval);
@@ -795,6 +1147,150 @@ async function fetchActivityLogs() {
     }
 }
 
+async function fetchSystemUsage() {
+    try {
+        const resp = await fetch('/api/v1/system/usage');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        
+        const text = document.getElementById('limit-text');
+        const fill = document.getElementById('limit-progress-fill');
+        const usageCount = document.getElementById('limit-usage-count');
+        const maxCount = document.getElementById('limit-max-count');
+        const remainingCount = document.getElementById('limit-remaining-count');
+
+        const usage = data.usage || 0;
+        const limit = data.limit || 0;
+        const remaining = limit > 0 ? Math.max(0, limit - usage) : '∞';
+        
+        text.textContent = `${usage} / ${limit || '∞'}`;
+        usageCount.textContent = usage;
+        maxCount.textContent = limit || '∞';
+        remainingCount.textContent = remaining;
+        document.getElementById('limit-forecast-count').textContent = data.forecast || usage;
+
+        if (limit > 0) {
+            const pct = Math.min(100, (usage / limit) * 100);
+            fill.style.width = `${pct}%`;
+            if (pct > 90) fill.style.background = 'var(--danger)';
+            else if (pct > 70) fill.style.background = 'var(--warning)';
+            else fill.style.background = 'linear-gradient(90deg, var(--primary) 0%, #60a5fa 100%)';
+        } else {
+            fill.style.width = '0%';
+        }
+    } catch (e) { /* silent */ }
+}
+
+async function loadSystemSettings() {
+    try {
+        const resp = await fetch('/api/v1/system/settings');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        document.getElementById('sys-daily-limit').value = data.daily_task_limit || 0;
+    } catch (e) { /* silent */ }
+}
+
+let currentTemplates = [];
+let selectedTemplateName = null;
+
+async function showTemplateModal() {
+    document.getElementById('template-modal').style.display = 'flex';
+    lucide.createIcons();
+    await fetchTemplates();
+    if (currentTemplates.length > 0) {
+        selectTemplate(currentTemplates[0].name);
+    } else {
+        createNewTemplate();
+    }
+}
+
+async function fetchTemplates() {
+    try {
+        const resp = await fetch('/api/v1/dto/templates');
+        if (!resp.ok) return;
+        currentTemplates = await resp.json();
+        renderTemplateList();
+    } catch (e) { /* silent */ }
+}
+
+function renderTemplateList() {
+    const sidebar = document.getElementById('template-list-sidebar');
+    if (!sidebar) return;
+    
+    if (currentTemplates.length === 0) {
+        sidebar.innerHTML = '<div class="empty-state" style="font-size:0.7rem">No templates</div>';
+        return;
+    }
+
+    sidebar.innerHTML = currentTemplates.map(t => `
+        <div class="template-item ${selectedTemplateName === t.name ? 'active' : ''}" 
+             onclick="selectTemplate('${t.name}')">
+            ${t.name}
+        </div>
+    `).join('');
+}
+
+function selectTemplate(name) {
+    selectedTemplateName = name;
+    const t = currentTemplates.find(x => x.name === name);
+    if (!t) return;
+
+    document.getElementById('template-name').value = t.name;
+    document.getElementById('template-name').disabled = true;
+    document.getElementById('template-content').value = t.content;
+    document.getElementById('btn-delete-template').style.display = 'block';
+    
+    renderTemplateList();
+}
+
+function createNewTemplate() {
+    selectedTemplateName = null;
+    document.getElementById('template-name').value = '';
+    document.getElementById('template-name').disabled = false;
+    document.getElementById('template-content').value = '# New BMAD Template\n\ntasks:\n  - pattern: discovery\n    agent: analyst\n    importance: 8\n';
+    document.getElementById('btn-delete-template').style.display = 'none';
+    renderTemplateList();
+}
+
+async function saveCurrentTemplate() {
+    const name = document.getElementById('template-name').value.trim();
+    const content = document.getElementById('template-content').value;
+
+    if (!name) { alert('Template name is required'); return; }
+
+    try {
+        const resp = await fetch('/api/v1/dto/templates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, content })
+        });
+        if (resp.ok) {
+            alert('Template saved!');
+            await fetchTemplates();
+            selectTemplate(name);
+        } else {
+            alert('Failed to save template: ' + await resp.text());
+        }
+    } catch (e) {
+        alert('Error saving template: ' + e.message);
+    }
+}
+
+async function deleteCurrentTemplate() {
+    if (!selectedTemplateName) return;
+    if (!confirm(`Delete template "${selectedTemplateName}"?`)) return;
+
+    try {
+        const resp = await fetch(`/api/v1/dto/templates/${selectedTemplateName}`, { method: 'DELETE' });
+        if (resp.ok) {
+            selectedTemplateName = null;
+            await fetchTemplates();
+            if (currentTemplates.length > 0) selectTemplate(currentTemplates[0].name);
+            else createNewTemplate();
+        }
+    } catch (e) { alert('Error deleting template'); }
+}
+
 function renderActivityLogs() {
     const container = document.getElementById('activity-list');
     if (!container) return;
@@ -834,7 +1330,7 @@ function renderActivityLogs() {
         }
         
         return `
-            <div class="activity-item">
+            <div class="activity-item" data-log-id="${log.id}">
                 <div class="activity-header">
                     <div class="activity-repo">
                         <i data-lucide="github" style="width:14px; height:14px; vertical-align:middle; margin-right:4px"></i>
@@ -856,12 +1352,12 @@ function renderActivityLogs() {
                         <i data-lucide="timer" style="width:10px; height:10px"></i>
                         ${log.duration_ms > 0 ? log.duration_ms + 'ms' : '-'}
                     </div>
-                    ${log.error ? `
-                        <div class="detail-item status-failed" style="color:var(--danger); grid-column: span 2">
-                            <i data-lucide="x-circle" style="width:10px; height:10px"></i>
-                            ${log.error}
-                        </div>
-                    ` : ''}
+                    <button class="btn-secondary btn-sm" style="margin-left:auto; padding: 0.1rem 0.5rem" onclick="toggleLogDetails(${log.id}, event)">
+                        <i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect
+                    </button>
+                </div>
+                <div id="log-details-${log.id}" class="log-phase-details" style="display:none">
+                    <!-- Phases injected here -->
                 </div>
             </div>
         `;
@@ -898,4 +1394,99 @@ function downloadActivityJSON() {
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     return d.toLocaleString();
+}
+
+async function toggleLogDetails(logId, event) {
+    const detailDiv = document.getElementById(`log-details-${logId}`);
+    const btn = event.currentTarget;
+    const isDetailsVisible = detailDiv.style.display === 'block';
+
+    if (isDetailsVisible) {
+        detailDiv.style.display = 'none';
+        btn.innerHTML = '<i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect';
+        if (window.inspectInterval) {
+            clearInterval(window.inspectInterval);
+            window.inspectInterval = null;
+        }
+    } else {
+        detailDiv.style.display = 'block';
+        btn.innerHTML = '<i data-lucide="chevron-up" style="width:10px; height:10px; margin-right:4px"></i> Close';
+        
+        const load = async () => {
+            try {
+                const resp = await fetch(`/api/v1/audit/logs/details?log_id=${logId}`);
+                const details = await resp.json();
+                detailDiv.innerHTML = details.map(d => `
+                    <div class="phase-detail">
+                        <div class="phase-detail-header">
+                            <div style="display:flex; gap:0.5rem; align-items:center">
+                                <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                                <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
+                            </div>
+                            <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="phase-content">${escapeHtml(d.content)}</div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+                
+                // Auto-refresh if the log status indicates it's still running
+                const logItem = document.querySelector(`.activity-item[data-log-id="${logId}"]`);
+                if (logItem && logItem.innerText.includes('Executing') && !window.inspectInterval) {
+                    window.inspectInterval = setInterval(load, 3000);
+                } else if (logItem && !logItem.innerText.includes('Executing') && window.inspectInterval) {
+                    clearInterval(window.inspectInterval);
+                    window.inspectInterval = null;
+                }
+            } catch (err) {
+                detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;
+            }
+        };
+        load();
+    }
+}
+
+async function reviewTaskPlan(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const plan = task.pending_decision || "";
+    const newPlan = prompt("Review Agent Plan (Edit if needed):", plan);
+    if (newPlan === null) return;
+
+    if (confirm("Approve this plan and resume execution?")) {
+        await approveTask(taskId, newPlan);
+    } else {
+        if (confirm("Reject this plan and pause task?")) {
+            await rejectTask(taskId);
+        }
+    }
+}
+
+async function approveTask(taskId, plan) {
+    try {
+        const resp = await fetch(`/api/v1/tasks/approve?id=${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan })
+        });
+        if (resp.ok) {
+            fetchTasks();
+            alert('Plan approved! Agent resuming...');
+        }
+    } catch (e) {
+        alert('Failed to approve: ' + e.message);
+    }
+}
+
+async function rejectTask(taskId) {
+    try {
+        const resp = await fetch(`/api/v1/tasks/reject?id=${taskId}`, { method: 'POST' });
+        if (resp.ok) {
+            fetchTasks();
+            alert('Plan rejected. Task paused.');
+        }
+    } catch (e) {
+        alert('Failed to reject: ' + e.message);
+    }
 }

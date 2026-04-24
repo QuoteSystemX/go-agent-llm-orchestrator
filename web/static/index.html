@@ -18,6 +18,11 @@
                 <h1>Jules <span>Orchestrator</span></h1>
             </div>
             <div class="header-actions">
+                <div id="system-stats-widget" class="system-stats-widget glass" title="System Resources (Process-level)">
+                    <div class="stat-item" title="Goroutines (Concurrent Tasks)"><i data-lucide="activity"></i> <span id="stat-cpu">-</span> <div class="sparkline" id="cpu-sparkline"></div></div>
+                    <div class="stat-item" title="Total System Memory Reserved"><i data-lucide="database"></i> <span id="stat-mem">-</span> <div class="sparkline mem" id="mem-sparkline"></div></div>
+                    <div class="stat-item" title="Pod Uptime"><i data-lucide="clock"></i> <span id="stat-uptime">-</span></div>
+                </div>
                 <button class="btn-help" onclick="showHelp()" title="Help"><i data-lucide="circle-help"></i> Help</button>
                 <button class="btn-primary" onclick="showTaskModal()"><i data-lucide="plus"></i> New Task</button>
                 <button class="btn-secondary" onclick="showSettings()"><i data-lucide="settings"></i> Settings</button>
@@ -25,6 +30,27 @@
         </header>
 
         <main>
+            <!-- Daily Limit Bar -->
+            <div id="daily-limit-bar" class="daily-limit-bar glass" title="Daily task usage limit">
+                <div class="limit-info">
+                    <i data-lucide="zap" style="width:14px; color:var(--primary)"></i>
+                    <span class="limit-label">Daily Quota</span>
+                    <span id="limit-text" class="limit-text">0 / 0</span>
+                </div>
+                <div class="limit-progress-bg">
+                    <div id="limit-progress-fill" class="limit-progress-fill"></div>
+                </div>
+                <div id="limit-tooltip" class="limit-tooltip glass">
+                    <div class="tooltip-header">Usage Details</div>
+                    <div class="tooltip-row"><span>Today:</span> <span id="limit-usage-count">0</span></div>
+                    <div class="tooltip-row"><span>Limit:</span> <span id="limit-max-count">0</span></div>
+                    <div class="tooltip-row"><span>Remaining:</span> <span id="limit-remaining-count">0</span></div>
+                    <div class="tooltip-row" style="margin-top:0.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:0.5rem">
+                        <span>Forecast:</span> <span id="limit-forecast-count">0</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Next Run Status Bar -->
             <div id="next-run-bar" class="next-run-bar glass">
                 <div class="next-run-title">
@@ -46,6 +72,9 @@
                 <button id="tab-btn-activity" class="tab-btn" onclick="switchTab('activity')">
                     <i data-lucide="activity"></i> Activity
                 </button>
+                <button id="tab-btn-dto" class="tab-btn" onclick="switchTab('dto')">
+                    <i data-lucide="layers"></i> DTO
+                </button>
             </div>
 
             <div id="tab-repositories" class="tab-pane active">
@@ -64,13 +93,16 @@
                             <span id="ai-status-text">Connecting...</span>
                         </div>
                         <div class="chat-header-actions">
+                            <div class="repo-context-selector glass">
+                                <i data-lucide="folder-search" style="width:14px; color:var(--primary)"></i>
+                                <select id="chat-repo-context" class="glass-select">
+                                    <option value="">Full Workspace</option>
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
                             <div class="provider-switcher glass">
                                 <button class="provider-btn active" id="provider-local" onclick="setChatProvider('local')">Internal</button>
                                 <button class="provider-btn" id="provider-remote" onclick="setChatProvider('remote')">External</button>
-                            </div>
-                            <div id="ai-model-info" class="ai-model-info" style="display:none">
-                                <i data-lucide="cpu" style="width:12px; height:12px; margin-right:4px"></i>
-                                <span id="ai-model-name"></span>
                             </div>
                         </div>
                     </div>
@@ -105,6 +137,69 @@
                     <div id="activity-list" class="activity-list">
                         <!-- Activity logs will be injected here -->
                         <div class="empty-state">No activity in the selected period</div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-dto" class="tab-pane">
+                <section class="dto-section glass">
+                    <div class="dto-header">
+                        <div class="dto-title">
+                            <i data-lucide="brain" style="color:var(--primary)"></i>
+                            <h3>Dynamic Task Orchestration</h3>
+                        </div>
+                        <button class="btn-primary btn-sm" onclick="showTemplateModal()">
+                            <i data-lucide="file-code"></i> Edit Templates
+                        </button>
+                    </div>
+                    <div class="dto-bmad-tracker glass">
+                        <div class="bmad-stages">
+                            <div class="bmad-stage" data-stage="discovery">Discovery</div>
+                            <div class="bmad-stage" data-stage="prd">PRD</div>
+                            <div class="bmad-stage" data-stage="architecture">Arch</div>
+                            <div class="bmad-stage" data-stage="stories">Stories</div>
+                            <div class="bmad-stage" data-stage="sprint">Sprint</div>
+                            <div class="bmad-stage" data-stage="worker">Worker</div>
+                            <div class="bmad-stage" data-stage="closure">Closure</div>
+                        </div>
+                        <div class="bmad-progress-bg">
+                            <div id="bmad-progress-fill" class="bmad-progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="dto-content">
+                        <div class="dto-info-card glass">
+                            <h4>Repository Analysis</h4>
+                            <p>DTO analyzes your repository state (wiki, readme, tasks) and proposes tasks based on BMAD methodology.</p>
+                            
+                            <div class="form-row" style="margin-bottom: 1rem; align-items: flex-end;">
+                                <div class="form-group">
+                                    <label>Select Repository</label>
+                                    <select id="dto-repo-select" class="glass">
+                                        <!-- Repositories injected here -->
+                                    </select>
+                                </div>
+                                <button class="btn-primary" onclick="runAnalysis()" id="btn-run-analysis">
+                                    <i data-lucide="search"></i> Analyze Repository
+                                </button>
+                            </div>
+
+                            <div class="dto-status">
+                                <span class="status-badge active">System Ready</span>
+                                <span id="dto-last-analysis" class="last-analysis">Last analysis: never</span>
+                            </div>
+                            <div id="dto-metadata" class="dto-metadata" style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                        </div>
+                        <div id="dto-warnings" class="dto-warnings" style="margin-bottom: 1.5rem;"></div>
+                        <div id="dto-proposals-header" class="dto-proposals-header" style="display:none">
+                            <h4>Active Proposals</h4>
+                            <button class="btn-success btn-sm" onclick="createSelectedTasks()">
+                                <i data-lucide="plus-circle"></i> Create Selected
+                            </button>
+                        </div>
+                        <div id="dto-proposals" class="dto-proposals">
+                            <!-- Proposals injected here -->
+                            <div class="empty-state">No active proposals. Run analysis to see suggestions.</div>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -164,13 +259,31 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Cron Schedule</label>
-                    <input type="text" id="task-schedule" placeholder="0 */6 * * *">
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem">
-                        min hour day month weekday — e.g. <code>0 9 * * 1</code> = every Monday at 9:00
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cron Schedule</label>
+                        <input type="text" id="task-schedule" placeholder="0 */6 * * *">
+                    </div>
+                    <div class="form-group">
+                        <label>Importance (1-10)</label>
+                        <input type="number" id="task-importance" min="1" max="10" value="1">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="task-category">
+                        <option value="worker">Worker (General Development)</option>
+                        <option value="service">Service (Wiki, Docs, Maintenance)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:0.5rem; margin-top:0.5rem">
+                    <input type="checkbox" id="task-approval-required" style="width:auto">
+                    <label for="task-approval-required" style="margin-bottom:0; font-weight:700; color:var(--warning)">Require Plan Approval (HITL)</label>
+                </div>
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem">
+                    min hour day month weekday — e.g. <code>0 9 * * 1</code> = every Monday at 9:00
+                </div>
+            </div>
 
                 <div class="modal-actions">
                     <button class="btn-success" onclick="saveTask()">Save Task</button>
@@ -230,6 +343,22 @@
                 <div class="form-group">
                     <label>Remote LLM Model</label>
                     <input type="text" id="remote-model" placeholder="gpt-4o">
+                </div>
+
+                <div class="settings-section-title">Local LLM Advanced (Ollama)</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Context Window</label>
+                        <input type="number" id="local-context-window" placeholder="4096">
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature (0-1)</label>
+                        <input type="number" id="local-temperature" placeholder="0.7" step="0.1" min="0" max="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>System Prompt (Base persona)</label>
+                    <textarea id="system-prompt" class="glass" style="min-height: 80px; width: 100%; border-radius: 0.5rem; padding: 0.75rem; border: 1px solid var(--glass-border); background: var(--glass); color: var(--text); font-family: inherit;" placeholder="You are a professional coding assistant..."></textarea>
                 </div>
 
                 <!-- Jules API -->
@@ -340,6 +469,16 @@
                     <textarea id="prompt-supervisor" rows="3" style="font-family:monospace; font-size:0.75rem; resize:vertical"></textarea>
                 </div>
 
+                <!-- Global Quota (System Settings) -->
+                <div class="settings-section-title">Global Quota (System Settings)</div>
+                <div class="form-group">
+                    <label>Daily Task Limit (Jules Quota)</label>
+                    <input type="number" id="sys-daily-limit" placeholder="50" min="0">
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                        Total tasks all agents can run per day. Set to 0 for unlimited.
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button class="btn-success" onclick="saveSettings()">Save Changes</button>
                     <button class="btn-cancel" onclick="hideModal('settings-modal')">Cancel</button>
@@ -347,6 +486,43 @@
             </div>
         </div>
     </div>
+
+        <!-- Template Editor Modal -->
+        <div id="template-modal" class="modal">
+            <div class="modal-content large glass">
+                <div class="modal-header">
+                    <div class="modal-header-title">
+                        <i data-lucide="file-code" style="color:var(--primary)"></i>
+                        <h3>DTO Templates</h3>
+                    </div>
+                    <button class="btn-secondary btn-sm" onclick="createNewTemplate()">
+                        <i data-lucide="plus"></i> New Template
+                    </button>
+                </div>
+                
+                <div class="template-editor-layout">
+                    <div id="template-list-sidebar" class="template-sidebar glass">
+                        <!-- Templates list injected here -->
+                    </div>
+                    <div class="template-main">
+                        <div class="form-group">
+                            <label>Template Name (key)</label>
+                            <input type="text" id="template-name" placeholder="e.g. bmad-skeleton">
+                        </div>
+                        <div class="form-group" style="flex:1; display:flex; flex-direction:column">
+                            <label>Content (YAML/JSON)</label>
+                            <textarea id="template-content" style="flex:1; font-family:monospace; font-size:0.8rem; min-height:300px; resize:vertical"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveCurrentTemplate()">Save Template</button>
+                    <button class="btn-danger-small" id="btn-delete-template" onclick="deleteCurrentTemplate()" style="margin-right:auto">Delete</button>
+                    <button class="btn-cancel" onclick="hideModal('template-modal')">Close</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Help Modal -->
         <div id="help-modal" class="modal">
