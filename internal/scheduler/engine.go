@@ -295,8 +295,6 @@ func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
 
 func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string) error {
 	log.Printf("Task %s: STARTING LOCAL AGENTIC PIPELINE (4 Phases)", taskID)
-	var start time.Time
-	var duration int64
 	var err error
 	var result, audit string
 
@@ -316,6 +314,41 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 		return "", lastErr
 	}
 
+	runWithStreaming := func(phase string, prompt string, modelType llm.Classification, logID int64) (string, error) {
+		if logID == 0 {
+			// Fallback to non-streaming if no logID
+			return runWithRetry(phase, prompt, modelType)
+		}
+
+		var fullContent string
+		start := time.Now()
+		
+		// Create placeholder
+		detailID, err := e.db.AddTaskRunDetail(ctx, logID, phase, "Thinking...", 0)
+		if err != nil {
+			return "", err
+		}
+
+		stream, err := e.router.GenerateChatStream(ctx, modelType, []map[string]string{{"role": "user", "content": prompt}}, "")
+		if err != nil {
+			return "", err
+		}
+
+		lastUpdate := time.Now()
+		for chunk := range stream {
+			fullContent += chunk
+			if time.Since(lastUpdate) > 1*time.Second {
+				e.db.UpdateTaskRunDetailContent(ctx, detailID, fullContent)
+				lastUpdate = time.Now()
+			}
+		}
+
+		duration := time.Since(start).Milliseconds()
+		e.db.ExecContext(ctx, "UPDATE task_run_details SET content = ?, duration_ms = ? WHERE id = ?", fullContent, duration, detailID)
+		
+		return fullContent, nil
+	}
+
 	// Phase 1 & 2: ANALYSIS & PLANNING
 	var analysis, plan string
 	
@@ -331,27 +364,17 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 		// Phase 1: ANALYSIS
 		e.updateProgress(ctx, taskID, "analysis", 25, logID)
 		analysisPrompt := fmt.Sprintf("Phase 1: ANALYSIS. Mission: %s. Repository: %s. Prompt: %s. Analyze the requirements and constraints.", mission, repoName, fullPrompt)
-		start = time.Now()
-		analysis, err = runWithRetry("analysis", analysisPrompt, llm.Simple)
-		duration = time.Since(start).Milliseconds()
+		analysis, err = runWithStreaming("analysis", analysisPrompt, llm.Simple, logID)
 		if err != nil {
-			return fmt.Errorf("analysis phase failed after 3 attempts: %w", err)
-		}
-		if logID > 0 {
-			e.db.AddTaskRunDetail(ctx, logID, "analysis", analysis, duration)
+			return fmt.Errorf("analysis phase failed: %w", err)
 		}
 
 		// Phase 2: PLANNING
 		e.updateProgress(ctx, taskID, "planning", 50, logID)
 		planningPrompt := fmt.Sprintf("Phase 2: PLANNING. Context: %s. Based on the analysis, create a step-by-step plan.", analysis)
-		start = time.Now()
-		plan, err = runWithRetry("planning", planningPrompt, llm.Simple)
-		duration = time.Since(start).Milliseconds()
+		plan, err = runWithStreaming("planning", planningPrompt, llm.Simple, logID)
 		if err != nil {
-			return fmt.Errorf("planning phase failed after 3 attempts: %w", err)
-		}
-		if logID > 0 {
-			e.db.AddTaskRunDetail(ctx, logID, "planning", plan, duration)
+			return fmt.Errorf("planning phase failed: %w", err)
 		}
 
 		// Check if human approval is required
@@ -370,27 +393,17 @@ func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern
 	// Phase 3: EXECUTION
 	e.updateProgress(ctx, taskID, "execution", 75, logID)
 	execPrompt := fmt.Sprintf("Phase 3: EXECUTION. Mission: %s. Plan: %s. Implement the task and provide the final output.", mission, plan)
-	start = time.Now()
-	result, err = runWithRetry("execution", execPrompt, llm.Complex)
-	duration = time.Since(start).Milliseconds()
+	result, err = runWithStreaming("execution", execPrompt, llm.Complex, logID)
 	if err != nil {
-		return fmt.Errorf("execution phase failed after 3 attempts: %w", err)
-	}
-	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "execution", result, duration)
+		return fmt.Errorf("execution phase failed: %w", err)
 	}
 
 	// Phase 4: VERIFICATION
 	e.updateProgress(ctx, taskID, "verification", 100, logID)
 	verifyPrompt := fmt.Sprintf("Phase 4: VERIFICATION. Original Mission: %s. Result: %s. Review the result for correctness and security.", mission, result)
-	start = time.Now()
-	audit, err = runWithRetry("verification", verifyPrompt, llm.Simple)
-	duration = time.Since(start).Milliseconds()
+	audit, err = runWithStreaming("verification", verifyPrompt, llm.Simple, logID)
 	if err != nil {
-		return fmt.Errorf("verification phase failed after 3 attempts: %w", err)
-	}
-	if logID > 0 {
-		e.db.AddTaskRunDetail(ctx, logID, "verification", audit, duration)
+		return fmt.Errorf("verification phase failed: %w", err)
 	}
 
 	// Clear pending decision upon success

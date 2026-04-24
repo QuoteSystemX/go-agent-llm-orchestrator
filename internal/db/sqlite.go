@@ -233,8 +233,16 @@ func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage strin
 	return err
 }
 
-func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string, duration int64) error {
-	_, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
+func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string, duration int64) (int64, error) {
+	res, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (db *DB) UpdateTaskRunDetailContent(ctx context.Context, id int64, content string) error {
+	_, err := db.ExecContext(ctx, "UPDATE task_run_details SET content = ? WHERE id = ?", content, id)
 	return err
 }
 

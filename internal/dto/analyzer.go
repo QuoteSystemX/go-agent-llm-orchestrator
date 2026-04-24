@@ -84,18 +84,29 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		".py": true, ".sql": true, ".yaml": true, ".yml": true, ".json": true,
 	}
 
+	fileCount := 0
+	maxFiles := 500
+	maxFileSize := int64(100 * 1024) // 100 KB
+
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}
-		// Skip common noise directories
-		if strings.Contains(path, "/node_modules/") || strings.Contains(path, "/.git/") || strings.Contains(path, "/vendor/") {
+		if fileCount >= maxFiles {
+			return filepath.SkipDir // Stop walking once we hit the limit
+		}
+
+		// Skip common noise directories and large files
+		if strings.Contains(path, "/node_modules/") || strings.Contains(path, "/.git/") || 
+		   strings.Contains(path, "/vendor/") || strings.Contains(path, "/dist/") ||
+		   strings.Contains(path, "/build/") || info.Size() > maxFileSize {
 			return nil
 		}
 
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
 			a.indexFile(path)
+			fileCount++
 		}
 		return nil
 	})
