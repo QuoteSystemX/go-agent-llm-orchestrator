@@ -14,13 +14,7 @@ import (
 //go:embed session.md
 var sessionTemplate string
 
-var bmadPatterns = map[string]bool{
-	"discovery":      true,
-	"story_writer":   true,
-	"sprint_planner": true,
-	"full_cycle":     true,
-	"sprint_closer":  true,
-}
+// bmadPatterns is deprecated and removed as part of the architecture cleanup.
 
 type Data struct {
 	Agent              string
@@ -30,7 +24,6 @@ type Data struct {
 	AgentProfile       string
 	WorkflowProtocol   string
 	PatternMethodology string
-	IsBMAD             bool
 }
 
 // Builder reads pattern and agent files from a local prompt-library clone.
@@ -52,17 +45,56 @@ func (b *Builder) IsReady() bool {
 	return err == nil
 }
 
-// HasPrompt reports whether the pattern file exists for the given pattern.
-// Agent file is optional in Build(), so only the pattern is required.
-func (b *Builder) HasPrompt(pattern string) bool {
-	if !b.IsReady() || pattern == "" {
+// HasPrompt reports whether a valid prompt can be assembled for the given task.
+// A prompt is considered ready if it has at least one of:
+// 1. A valid agent profile in .agent/agents/
+// 2. A valid methodology in prompt/patterns/
+// 3. A valid workflow protocol for a command in the mission
+func (b *Builder) HasPrompt(agent, pattern, mission string) bool {
+	if !b.IsReady() {
 		return false
 	}
-	if b.cachedPatternsPath == "" {
-		b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
+
+	// 1. Check agent profile
+	if b.cachedAgentsPath == "" {
+		b.cachedAgentsPath = b.db.GetSetting("prompt_library_agents_path", ".agent/agents")
 	}
-	_, err := os.Stat(filepath.Join(b.libraryDir, b.cachedPatternsPath, pattern+".md"))
-	return err == nil
+	if _, err := os.Stat(filepath.Join(b.libraryDir, b.cachedAgentsPath, agent+".md")); err == nil {
+		return true
+	}
+
+	// 2. Check pattern methodology
+	if pattern != "" && pattern != "none" {
+		if b.cachedPatternsPath == "" {
+			b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
+		}
+		if _, err := os.Stat(filepath.Join(b.libraryDir, b.cachedPatternsPath, pattern+".md")); err == nil {
+			return true
+		}
+	}
+
+	// 3. Check workflow command
+	if strings.HasPrefix(mission, "/") {
+		cmd := b.ExtractCommand(mission)
+		if cmd != "" {
+			if b.cachedWorkflowsPath == "" {
+				b.cachedWorkflowsPath = b.db.GetSetting("prompt_library_workflows_path", ".agent/workflows")
+			}
+			if _, err := os.Stat(filepath.Join(b.libraryDir, b.cachedWorkflowsPath, cmd+".md")); err == nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (b *Builder) ExtractCommand(mission string) string {
+	if !strings.HasPrefix(mission, "/") {
+		return ""
+	}
+	parts := strings.SplitN(mission, " ", 2)
+	return strings.TrimPrefix(parts[0], "/")
 }
 
 // Build assembles the full Jules prompt for a task.
@@ -71,7 +103,6 @@ func (b *Builder) Build(agent, pattern, mission string) (string, error) {
 		Agent:   agent,
 		Pattern: pattern,
 		Mission: mission,
-		IsBMAD:  bmadPatterns[pattern],
 	}
 
 	// Agent profile

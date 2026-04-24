@@ -39,7 +39,7 @@ type GitSyncer interface {
 }
 
 type PromptChecker interface {
-	HasPrompt(pattern string) bool
+	HasPrompt(agent, pattern, mission string) bool
 }
 
 type AdminServer struct {
@@ -224,7 +224,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	// Enrich tasks with prompt status outside of the DB iteration
 	for i := range tasks {
 		if s.promptChecker != nil {
-			tasks[i].PromptReady = s.promptChecker.HasPrompt(tasks[i].Pattern)
+			tasks[i].PromptReady = s.promptChecker.HasPrompt(tasks[i].Agent, tasks[i].Pattern, tasks[i].Mission)
 		} else {
 			tasks[i].PromptReady = true
 		}

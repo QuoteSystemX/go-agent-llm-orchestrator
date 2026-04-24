@@ -91,7 +91,7 @@ function renderTasks() {
                                             </div>
                                         </div>
                                     ` : ''}
-                                    ${noPrompt ? `<span class="task-badge no-prompt-badge" title="Pattern file not found in prompt library">no prompt</span>` : ''}
+                                    ${noPrompt ? `<span class="task-badge no-prompt-badge" title="No agent profile, pattern methodology, or workflow protocol found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
                                 </div>
 
