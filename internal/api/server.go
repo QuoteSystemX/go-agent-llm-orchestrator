@@ -576,6 +576,13 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 	case http.MethodGet:
 		pat, patSource := s.effectiveKey(r.Context(), "prompt_library_pat", "PROMPT_LIBRARY_PAT")
 
+		patHint := ""
+		if len(pat) >= 8 {
+			patHint = pat[:4] + strings.Repeat("•", 8) + pat[len(pat)-4:]
+		} else if pat != "" {
+			patHint = strings.Repeat("•", len(pat))
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
 			"git_url":          s.db.GetSetting("prompt_library_git_url", ""),
@@ -585,12 +592,9 @@ func (s *AdminServer) handlePromptLibrarySettings(w http.ResponseWriter, r *http
 			"patterns_path":    s.db.GetSetting("prompt_library_patterns_path", "prompt/patterns"),
 			"agents_path":      s.db.GetSetting("prompt_library_agents_path", ".agent/agents"),
 			"workflows_path":   s.db.GetSetting("prompt_library_workflows_path", ".agent/workflows"),
-			"pat_set": func() string {
-				if pat != "" {
-					return "true (" + patSource + ")"
-				}
-				return "false"
-			}(),
+			"pat_set":    func() string { if pat != "" { return "true" }; return "false" }(),
+			"pat_hint":   patHint,
+			"pat_source": patSource,
 		})
 	case http.MethodPost:
 		var data struct {

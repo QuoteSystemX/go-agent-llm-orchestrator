@@ -459,11 +459,14 @@ async function loadPromptLibrarySettings() {
         if (data.agents_path) document.getElementById('pl-agents-path').value = data.agents_path;
         if (data.workflows_path) document.getElementById('pl-workflows-path').value = data.workflows_path;
         const status = document.getElementById('pl-pat-status');
+        const patInput = document.getElementById('pl-pat');
         if (data.pat_set === 'true') {
-            status.textContent = '✓ token stored';
-            document.getElementById('pl-pat').placeholder = '••••••••••••';
+            const sourceLabel = data.pat_source === 'env' ? ' · env var' : ' · saved';
+            status.innerHTML = `<span style="color:var(--success)">&#10003; set</span> <span style="color:var(--text-muted); font-family:monospace">${data.pat_hint || ''}${sourceLabel}</span>`;
+            patInput.placeholder = 'enter new token to replace';
         } else {
-            status.textContent = '';
+            status.innerHTML = '<span style="color:var(--warning, #f59e0b)">&#9888; not set</span>';
+            patInput.placeholder = 'ghp_xxxxxxxxxxxx';
         }
     } catch (e) { /* silent */ }
 }

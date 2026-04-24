@@ -215,63 +215,75 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		messages = append([]map[string]string{{"role": "system", "content": r.getSystemPrompt()}}, messages...)
 	}
 
-	payload := map[string]interface{}{
-		"model":    model,
-		"messages": messages,
+	tryEndpoint := func(ep, mdl, key, prov string) (string, error) {
+		msgs := messages
+		pl := map[string]interface{}{
+			"model":    mdl,
+			"messages": msgs,
+		}
+		if prov == "local" {
+			pl["temperature"] = r.getLocalTemperature()
+			pl["num_ctx"] = r.getLocalContextWindow()
+		}
+		jd, _ := json.Marshal(pl)
+
+		var lastErr error
+		for i := 0; i < 3; i++ {
+			req, _ := http.NewRequestWithContext(ctx, "POST", ep+"/v1/chat/completions", bytes.NewBuffer(jd))
+			req.Header.Set("Content-Type", "application/json")
+			if key != "" {
+				req.Header.Set("Authorization", "Bearer "+key)
+			}
+
+			client := &http.Client{Timeout: 60 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Printf("LLM Router: [%s] attempt %d failed: %v", prov, i+1, err)
+				lastErr = err
+				time.Sleep(time.Duration(i+1) * time.Second)
+				continue
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				log.Printf("LLM Router: [%s] attempt %d returned status %d", prov, i+1, resp.StatusCode)
+				lastErr = fmt.Errorf("llm api error: status %d", resp.StatusCode)
+				// 401/403 are auth errors — no point retrying
+				if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+					return "", lastErr
+				}
+				time.Sleep(time.Duration(i+1) * time.Second)
+				continue
+			}
+
+			var result struct {
+				Choices []struct {
+					Message struct {
+						Content string `json:"content"`
+					} `json:"message"`
+				} `json:"choices"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+				return "", err
+			}
+			if len(result.Choices) == 0 {
+				return "", fmt.Errorf("no response from LLM")
+			}
+			return result.Choices[0].Message.Content, nil
+		}
+		return "", fmt.Errorf("failed after 3 attempts: %v", lastErr)
 	}
 
-	if provider == "local" {
-		payload["temperature"] = r.getLocalTemperature()
-		payload["num_ctx"] = r.getLocalContextWindow()
+	content, err := tryEndpoint(endpoint, model, apiKey, provider)
+	if err != nil && provider == "remote" && r.LocalEndpoint != "" {
+		log.Printf("LLM Router: remote failed (%v), falling back to LOCAL", err)
+		monitor.LLMCalls.WithLabelValues("local", string(classification)).Inc()
+		content, err = tryEndpoint(r.LocalEndpoint, r.getLocalModel(), "", "local")
 	}
-
-	jsonData, _ := json.Marshal(payload)
-	
-	// Retry logic for 3 attempts
-	var lastErr error
-	for i := 0; i < 3; i++ {
-		req, _ := http.NewRequestWithContext(ctx, "POST", endpoint+"/v1/chat/completions", bytes.NewBuffer(jsonData))
-		req.Header.Set("Content-Type", "application/json")
-		if apiKey != "" {
-			req.Header.Set("Authorization", "Bearer "+apiKey)
-		}
-
-		client := &http.Client{Timeout: 60 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("LLM Router: request attempt %d failed: %v", i+1, err)
-			lastErr = err
-			time.Sleep(time.Duration(i+1) * time.Second)
-			continue
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			log.Printf("LLM Router: request attempt %d returned status %d", i+1, resp.StatusCode)
-			lastErr = fmt.Errorf("llm api error: status %d", resp.StatusCode)
-			time.Sleep(time.Duration(i+1) * time.Second)
-			continue
-		}
-
-		var result struct {
-			Choices []struct {
-				Message struct {
-					Content string `json:"content"`
-				} `json:"message"`
-			} `json:"choices"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			return "", err
-		}
-
-		if len(result.Choices) == 0 {
-			return "", fmt.Errorf("no response from LLM")
-		}
-
-		return result.Choices[0].Message.Content, nil
+	if err != nil {
+		return "", err
 	}
-
-	return "", fmt.Errorf("failed after 3 attempts: %v", lastErr)
+	return content, nil
 }
 
 func (r *Router) GenerateChatStream(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (<-chan string, error) {

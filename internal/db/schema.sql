@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     approval_required INTEGER DEFAULT 0,
     pending_decision TEXT DEFAULT '',
     failure_count INTEGER DEFAULT 0,
+    importance INTEGER DEFAULT 1,
+    category TEXT DEFAULT 'worker',
+    auto_paused INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
