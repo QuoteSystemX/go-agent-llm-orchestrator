@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -44,6 +45,7 @@ func main() {
 	logEnvVar("LLM_REMOTE_MODEL", os.Getenv("LLM_REMOTE_MODEL"), false)
 	logEnvVar("PROMPT_LIBRARY_CACHE_DIR", os.Getenv("PROMPT_LIBRARY_CACHE_DIR"), false)
 	logEnvVar("DISTRIBUTION_CONFIG_PATH", os.Getenv("DISTRIBUTION_CONFIG_PATH"), false)
+	logEnvVar("LLM_WORKER_LIMIT", os.Getenv("LLM_WORKER_LIMIT"), false)
 	log.Println("=================================")
 
 	// 2. Initialize Foundation
@@ -53,7 +55,13 @@ func main() {
 	}
 	defer database.Close()
 
-	tm := traffic.NewTrafficManager(1.0, 5, database)
+	workerLimitStr := os.Getenv("LLM_WORKER_LIMIT")
+	workerLimit := 3
+	if workerLimitStr != "" {
+		fmt.Sscanf(workerLimitStr, "%d", &workerLimit)
+	}
+
+	tm := traffic.NewTrafficManager(1.0, 5, workerLimit, database)
 
 	// 3. Initialize Logic
 	julesClient := api.NewJulesClient(database)

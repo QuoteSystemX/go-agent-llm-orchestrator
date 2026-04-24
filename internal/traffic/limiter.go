@@ -29,13 +29,19 @@ type TrafficManager struct {
 	limiter *rate.Limiter
 	checker UsageChecker
 	mu      sync.Mutex
+	sem     chan struct{} // Semaphore for worker pool
 }
 
-// NewTrafficManager creates a new limiter with given requests per second and burst size
-func NewTrafficManager(rps float64, burst int, checker UsageChecker) *TrafficManager {
+// NewTrafficManager creates a new limiter with given requests per second, burst size and worker limit
+func NewTrafficManager(rps float64, burst int, workers int, checker UsageChecker) *TrafficManager {
+	var sem chan struct{}
+	if workers > 0 {
+		sem = make(chan struct{}, workers)
+	}
 	return &TrafficManager{
 		limiter: rate.NewLimiter(rate.Limit(rps), burst),
 		checker: checker,
+		sem:     sem,
 	}
 }
 
@@ -79,10 +85,20 @@ func (tm *TrafficManager) Wait(ctx context.Context, p Priority, importance int, 
 	return tm.limiter.Wait(ctx)
 }
 
-// Execute wraps a function call with rate limiting
+// Execute wraps a function call with rate limiting and worker pool management
 func (tm *TrafficManager) Execute(ctx context.Context, p Priority, importance int, category string, fn func() error) error {
 	if err := tm.Wait(ctx, p, importance, category); err != nil {
 		return err
 	}
+
+	if tm.sem != nil {
+		select {
+		case tm.sem <- struct{}{}:
+			defer func() { <-tm.sem }()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
 	return fn()
 }

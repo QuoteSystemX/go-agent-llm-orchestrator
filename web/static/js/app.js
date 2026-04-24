@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initActivityFilters();
     setInterval(fetchNextRun, 30000);
     setInterval(fetchSystemUsage, 30000);
+    setInterval(fetchSystemStats, 10000);
     setInterval(tickCountdown, 1000);
     setInterval(fetchLogs, 5000);
     setInterval(fetchActivityLogs, 10000);
@@ -101,8 +102,17 @@ function renderTasks() {
         `;
     }
     
-    container.innerHTML = html;
+    container.innerHTML = html || '<div class="empty-state">No tasks scheduled. Create one to get started!</div>';
     lucide.createIcons();
+    updateChatRepoSelector(Object.keys(grouped));
+}
+
+function updateChatRepoSelector(repos) {
+    const selector = document.getElementById('chat-repo-context');
+    if (!selector) return;
+    const current = selector.value;
+    selector.innerHTML = '<option value="">No Context</option>' + 
+        repos.map(r => `<option value="${r}" ${r === current ? 'selected' : ''}>Repo: ${r}</option>`).join('');
 }
 
 function toggleGroup(safeName) {
@@ -375,6 +385,9 @@ async function loadLLMSettings() {
         } else {
             keyField.placeholder = 'AIza... (not set)';
         }
+        if (data.local_context_window) document.getElementById('local-context-window').value = data.local_context_window;
+        if (data.local_temperature) document.getElementById('local-temperature').value = data.local_temperature;
+        if (data.system_prompt) document.getElementById('system-prompt').value = data.system_prompt;
     } catch (e) { /* silent */ }
 }
 
@@ -454,6 +467,9 @@ async function saveSettings() {
     const remoteModel = document.getElementById('remote-model').value.trim();
     const julesApiKey = document.getElementById('jules-api-key').value.trim();
     const julesBaseUrl = document.getElementById('jules-base-url').value.trim();
+    const localContextWindow = document.getElementById('local-context-window').value.trim();
+    const localTemperature = document.getElementById('local-temperature').value.trim();
+    const systemPrompt = document.getElementById('system-prompt').value.trim();
 
     if (token) {
         await fetch('/api/v1/settings/telegram', {
@@ -470,7 +486,10 @@ async function saveSettings() {
             local_model: localModel,
             remote_model: remoteModel,
             jules_api_key: julesApiKey,
-            jules_base_url: julesBaseUrl
+            jules_base_url: julesBaseUrl,
+            local_context_window: localContextWindow,
+            local_temperature: localTemperature,
+            system_prompt: systemPrompt
         })
     });
 
@@ -603,6 +622,28 @@ async function fetchLogs() {
 
 function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function fetchSystemStats() {
+    try {
+        const resp = await fetch('/api/v1/system/stats');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        
+        // Goroutines as load indicator
+        document.getElementById('stat-cpu').textContent = data.num_goroutine; 
+        
+        // Show Sys Memory (Total reserved) instead of just Alloc
+        document.getElementById('stat-mem').textContent = data.memory_sys_mb + 'MB';
+        
+        // If there's an uptime element, update it (we might need to add it to HTML)
+        const uptimeEl = document.getElementById('stat-uptime');
+        if (uptimeEl && data.uptime_seconds) {
+            const h = Math.floor(data.uptime_seconds / 3600);
+            const m = Math.floor((data.uptime_seconds % 3600) / 60);
+            uptimeEl.textContent = `${h}h ${m}m`;
+        }
+    } catch (e) { /* silent */ }
 }
 
 // ── Tabs Logic ────────────────────────────────────────────────
@@ -829,12 +870,6 @@ async function sendChatMessage() {
     input.value = '';
     renderChat();
 
-    // Prepare messages for API (match OpenAI format expected by backend)
-    const apiMessages = chatMessages.map(m => ({
-        role: m.role === 'bot' ? 'assistant' : 'user',
-        content: m.content
-    }));
-
     const btn = document.getElementById('chat-send-btn');
     btn.disabled = true;
     btn.classList.add('sending');
@@ -842,32 +877,66 @@ async function sendChatMessage() {
     isAITyping = true;
     currentChatTimer = 0;
     const startTime = Date.now();
+    
+    // Add bot message placeholder
+    const botMsgIndex = chatMessages.length;
+    chatMessages.push({ role: 'bot', content: '', typing: true });
+    
     const timerInterval = setInterval(() => {
         currentChatTimer = (Date.now() - startTime) / 1000;
         renderChat();
     }, 100);
 
+    // Prepare messages for API
+    const apiMessages = chatMessages.slice(0, -1).map(m => ({
+        role: m.role === 'bot' ? 'assistant' : 'user',
+        content: m.content
+    }));
+
+    const repoContext = document.getElementById('chat-repo-context')?.value || "";
+
     try {
-        const resp = await fetch('/api/v1/chat', {
+        const response = await fetch('/api/v1/chat/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 messages: apiMessages,
-                provider: currentChatProvider
+                provider: currentChatProvider,
+                repo: repoContext
             })
         });
-        
-        if (resp.ok) {
-            const data = await resp.json();
-            const lastUserMsg = chatMessages[chatMessages.length - 1];
-            lastUserMsg.duration = (Date.now() - startTime) / 1000;
-            chatMessages.push({ role: 'bot', content: data.response });
-        } else {
-            const err = await resp.text();
-            chatMessages.push({ role: 'bot', content: `Error: ${err}` });
+
+        if (!response.ok) throw new Error('Streaming failed');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiContent = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const token = line.slice(6);
+                    if (token === '[DONE]') break;
+                    aiContent += token;
+                    chatMessages[botMsgIndex].content = aiContent;
+                    renderChat();
+                }
+            }
         }
+        
+        const lastUserMsg = chatMessages[botMsgIndex - 1];
+        lastUserMsg.duration = (Date.now() - startTime) / 1000;
+        chatMessages[botMsgIndex].typing = false;
+
     } catch (err) {
-        chatMessages.push({ role: 'bot', content: `Network error: ${err.message}` });
+        chatMessages[botMsgIndex].content = `Error: ${err.message}`;
+        chatMessages[botMsgIndex].typing = false;
     } finally {
         isAITyping = false;
         clearInterval(timerInterval);

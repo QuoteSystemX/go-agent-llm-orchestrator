@@ -50,7 +50,34 @@ header {
 .logo span { color: var(--primary); }
 .logo-icon { color: var(--primary); width: 32px; height: 32px; }
 
-.header-actions { display: flex; gap: 1rem; }
+.header-actions { display: flex; gap: 1rem; align-items: center; }
+
+/* System Stats Widget */
+.system-stats-widget {
+    display: flex;
+    gap: 1rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.stat-item i {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+}
+
+.stat-item span {
+    color: var(--text);
+}
 
 /* Buttons */
 button {
@@ -1236,4 +1263,39 @@ body { padding-bottom: 40px; }
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* RAG Context Selector Styles */
+.repo-context-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    transition: all 0.2s ease;
+}
+
+.repo-context-selector:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.glass-select {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    padding: 0 0.25rem;
+}
+
+.glass-select option {
+    background: var(--bg-dark);
+    color: var(--text);
 }

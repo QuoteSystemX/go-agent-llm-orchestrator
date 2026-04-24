@@ -13,19 +13,22 @@ import (
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/prompt"
+	"go-agent-llm-orchestrator/internal/rag"
 )
 
 type Analyzer struct {
 	db            *db.DB
 	router        *llm.Router
 	promptBuilder *prompt.Builder
+	ragStore      *rag.MemoryStore
 }
 
-func NewAnalyzer(database *db.DB, router *llm.Router, promptBuilder *prompt.Builder) *Analyzer {
+func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder) *Analyzer {
 	return &Analyzer{
 		db:            database,
 		router:        router,
-		promptBuilder: promptBuilder,
+		promptBuilder: pb,
+		ragStore:      rag.NewMemoryStore(),
 	}
 }
 
@@ -72,6 +75,28 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	}
 	
 	// Check for .agent folder (BMAD context)
+	// 3. Index and Search Context (RAG)
+	a.ragStore.Reset()
+	docFiles := []string{filepath.Join(repoPath, "README.md")}
+	// Also index everything in .agent and wiki
+	if files, err := os.ReadDir(filepath.Join(repoPath, "wiki")); err == nil {
+		for _, f := range files {
+			if !f.IsDir() {
+				docFiles = append(docFiles, filepath.Join(repoPath, "wiki", f.Name()))
+			}
+		}
+	}
+	
+	for _, f := range docFiles {
+		if _, err := os.Stat(f); err == nil {
+			a.indexFile(f)
+		}
+	}
+
+	// Search for relevant context for "Dynamic Task Orchestration"
+	docContext := a.SearchContext("task orchestration project structure goals", 5)
+
+	// 4. Get active tasks
 	agentContext := ""
 	if _, err := os.Stat(filepath.Join(repoPath, ".agent")); err == nil {
 		metadata["has_agent"] = "true"
@@ -80,8 +105,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		knowledge, _ := a.readFile(filepath.Join(repoPath, ".agent", "KNOWLEDGE.md"))
 		arch, _ := a.readFile(filepath.Join(repoPath, ".agent", "ARCHITECTURE.md"))
 		
-		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\n", 
-			workflows, skills, knowledge, arch)
+		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\nContext RAG:\n%s\n", 
+			workflows, skills, knowledge, arch, docContext)
 	} else {
 		warnings = append(warnings, "No .agent folder found (BMAD context missing)")
 	}
@@ -247,6 +272,40 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 		
 		if len(result.Proposals) > 0 {
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
+		}
+	}
+}
+
+func (a *Analyzer) SearchContext(query string, topK int) string {
+	relevantDocs := a.ragStore.Search(query, topK)
+	context := ""
+	for _, d := range relevantDocs {
+		context += fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content)
+	}
+	return context
+}
+
+func (a *Analyzer) indexFile(path string) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+
+	text := string(content)
+	chunkSize := 1000
+	overlap := 200
+	for i := 0; i < len(text); i += (chunkSize - overlap) {
+		end := i + chunkSize
+		if end > len(text) {
+			end = len(text)
+		}
+		a.ragStore.AddDocument(rag.Document{
+			ID:      fmt.Sprintf("%s_%d", path, i),
+			Source:  filepath.Base(path),
+			Content: text[i:end],
+		})
+		if end == len(text) {
+			break
 		}
 	}
 }

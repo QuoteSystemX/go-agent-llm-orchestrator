@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -50,6 +51,7 @@ type AdminServer struct {
 	logBuf         *LogBuffer
 	dtoMgr         *dto.TemplateManager
 	analyzer       *dto.Analyzer
+	startTime      time.Time
 }
 
 func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManager, analyzer *dto.Analyzer) *AdminServer {
@@ -58,6 +60,7 @@ func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManage
 		scheduler: sched,
 		dtoMgr:    dtoMgr,
 		analyzer:  analyzer,
+		startTime: time.Now(),
 	}
 }
 
@@ -116,9 +119,11 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/audit", s.handleListAudit)
 	mux.HandleFunc("/api/v1/audit/logs", s.handleListAuditLogs)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
+	mux.HandleFunc("/api/v1/chat/stream", s.handleChatStream)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
 	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
+	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
 
 	// DTO Templates API
 	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
@@ -442,17 +447,23 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
-			"local_model":    s.getSetting(r.Context(), "llm_local_model", ""),
-			"remote_model":   s.getSetting(r.Context(), "llm_remote_model", ""),
-			"jules_api_key":  masked,
-			"jules_base_url": s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+			"local_model":             s.getSetting(r.Context(), "llm_local_model", ""),
+			"remote_model":            s.getSetting(r.Context(), "llm_remote_model", ""),
+			"jules_api_key":           masked,
+			"jules_base_url":          s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "4096"),
+			"local_temperature":       s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
+			"system_prompt":           s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
 		})
 	case http.MethodPost:
 		var data struct {
-			LocalModel   string `json:"local_model"`
-			RemoteModel  string `json:"remote_model"`
-			JulesAPIKey  string `json:"jules_api_key"`
-			JulesBaseURL string `json:"jules_base_url"`
+			LocalModel         string `json:"local_model"`
+			RemoteModel        string `json:"remote_model"`
+			JulesAPIKey        string `json:"jules_api_key"`
+			JulesBaseURL       string `json:"jules_base_url"`
+			LocalContextWindow string `json:"local_context_window"`
+			LocalTemperature   string `json:"local_temperature"`
+			SystemPrompt       string `json:"system_prompt"`
 		}
 		json.NewDecoder(r.Body).Decode(&data)
 		if data.LocalModel != "" {
@@ -466,6 +477,15 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		if data.JulesBaseURL != "" {
 			s.saveSetting(r.Context(), "jules_base_url", data.JulesBaseURL)
+		}
+		if data.LocalContextWindow != "" {
+			s.saveSetting(r.Context(), "llm_local_context_window", data.LocalContextWindow)
+		}
+		if data.LocalTemperature != "" {
+			s.saveSetting(r.Context(), "llm_local_temperature", data.LocalTemperature)
+		}
+		if data.SystemPrompt != "" {
+			s.saveSetting(r.Context(), "llm_system_prompt", data.SystemPrompt)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
@@ -716,6 +736,68 @@ func (s *AdminServer) handleChat(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"response": response})
 }
 
+func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Messages []map[string]string `json:"messages"`
+		Provider string              `json:"provider"`
+		Repo     string              `json:"repo"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Messages) == 0 {
+		http.Error(w, "messages are required", http.StatusBadRequest)
+		return
+	}
+
+	// If a repository is selected, use RAG to enhance the context
+	if req.Repo != "" && s.analyzer != nil {
+		lastMsg := req.Messages[len(req.Messages)-1]["content"]
+		context := s.analyzer.SearchContext(lastMsg, 3)
+		if context != "" {
+			ragMsg := map[string]string{
+				"role":    "system",
+				"content": fmt.Sprintf("Use the following context from repository '%s' to answer the question:\n%s", req.Repo, context),
+			}
+			// Prepend RAG context to help the model
+			req.Messages = append([]map[string]string{ragMsg}, req.Messages...)
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	router := llm.NewRouter(s.db)
+	tokens, err := router.GenerateChatStream(r.Context(), llm.Simple, req.Messages, req.Provider)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for token := range tokens {
+		fmt.Fprintf(w, "data: %s\n\n", token)
+		flusher.Flush()
+	}
+
+	fmt.Fprintf(w, "data: [DONE]\n\n")
+	flusher.Flush()
+}
+
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if s.healthMonitor == nil {
 		http.Error(w, "health monitor not initialized", http.StatusInternalServerError)
@@ -785,6 +867,31 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(logs)
+}
+
+func (s *AdminServer) handleSystemStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	// Simple CPU usage approximation for macOS/Linux using /proc/loadavg or sysctl
+	// Since we are on Mac, we can try to use a command if needed, or just return memory for now.
+	// We'll provide Memory in MB.
+	stats := map[string]any{
+		"num_goroutine":    runtime.NumGoroutine(),
+		"memory_alloc_mb":  m.Alloc / 1024 / 1024,
+		"memory_sys_mb":    m.Sys / 1024 / 1024,
+		"uptime_seconds":   int(time.Since(s.startTime).Seconds()),
+		"num_cpu":          runtime.NumCPU(),
+		"last_gc_pause_ms": m.PauseNs[(m.NumGC+255)%256] / 1000000,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }
 
 func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Request) {

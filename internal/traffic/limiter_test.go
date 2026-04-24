@@ -20,7 +20,7 @@ func (m *mockUsageChecker) GetDailyUsage(ctx context.Context) (int, error) { ret
 func (m *mockUsageChecker) GetDailyLimit(ctx context.Context) (int, error) { return m.limit, nil }
 
 func TestTrafficManager_Wait(t *testing.T) {
-	tm := NewTrafficManager(10, 1, &mockChecker{}) // 10 RPS, burst 1
+	tm := NewTrafficManager(10, 1, 0, &mockChecker{}) // 10 RPS, burst 1, no worker limit
 	ctx := context.Background()
 
 	// First call should be immediate
@@ -48,7 +48,7 @@ func TestTrafficManager_BudgetAware(t *testing.T) {
 		usage: 95,
 		limit: 100,
 	}
-	tm := NewTrafficManager(10, 10, mock)
+	tm := NewTrafficManager(10, 10, 0, mock)
 
 	// 95% usage: Service task with importance 8 should pass
 	err := tm.Wait(ctx, PriorityHigh, 8, "service")
