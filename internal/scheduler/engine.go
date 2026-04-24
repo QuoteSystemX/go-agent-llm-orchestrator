@@ -131,15 +131,11 @@ func (e *Engine) SyncTasks(ctx context.Context) error {
 }
 
 func (e *Engine) printSchedule() {
-	log.Println("┌─────────────────────────────────────────────────────────────────┐")
-	log.Println("│ CURRENT AGENT SCHEDULE                                          │")
-	log.Println("├──────────────────────────┬──────────────────────────────────────┤")
-	log.Println("│ TASK ID                  │ CRON EXPRESSION                      │")
-	log.Println("├──────────────────────────┼──────────────────────────────────────┤")
+	var active []string
 	for id := range e.entries {
-		log.Printf("│ %-24s │ (scheduled)                          │", id)
+		active = append(active, id)
 	}
-	log.Println("└──────────────────────────┴──────────────────────────────────────┘")
+	log.Printf("Scheduler: %d tasks active: [%s]", len(active), strings.Join(active, ", "))
 }
 
 func (e *Engine) addTask(id, schedule string) error {

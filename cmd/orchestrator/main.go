@@ -89,7 +89,7 @@ func main() {
 	dtoMgr := dto.NewTemplateManager(database)
 	analyzer := dto.NewAnalyzer(database, router, promptBuilder)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
-	healthMonitor := monitor.NewHealthMonitor()
+	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
 
 	statsAggregator := monitor.NewStatsAggregator(60)

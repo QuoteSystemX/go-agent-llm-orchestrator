@@ -1151,24 +1151,29 @@ async function fetchHealth() {
         if (!resp.ok) throw new Error('Health check failed');
         const data = await resp.json();
         const ollama = data.components.ollama;
+        const remote = data.components.remote;
         
         const dot = document.getElementById('ai-status-dot');
         const text = document.getElementById('ai-status-text');
         const modelInfo = document.getElementById('ai-model-info');
         const modelName = document.getElementById('ai-model-name');
         const btn = document.getElementById('chat-send-btn');
-        const input = document.getElementById('chat-input');
 
         if (!dot || !text) return;
 
-        dot.className = 'status-dot ' + (ollama.status === 'READY' ? 'ready' : 'loading');
-        if (ollama.status === 'DISCONNECTED') dot.className = 'status-dot disconnected';
-        
-        aiReady = (ollama.status === 'READY');
-        text.innerText = ollama.status === 'READY' ? 'AI Ready' : 'AI Loading...';
-        if (ollama.status === 'DISCONNECTED') text.innerText = 'AI Offline';
+        const isReady = (ollama.status === 'READY' || remote.status === 'READY');
+        aiReady = isReady;
 
-        if (ollama.model) {
+        if (isReady) {
+            dot.className = 'status-dot ready';
+            text.innerText = 'AI Ready';
+        } else {
+            const isOffline = (ollama.status === 'DISCONNECTED' && remote.status === 'NOT_CONFIGURED');
+            dot.className = 'status-dot ' + (isOffline ? 'disconnected' : 'loading');
+            text.innerText = isOffline ? 'AI Offline' : 'AI Loading...';
+        }
+
+        if (ollama.model && ollama.status === 'READY') {
             modelInfo.style.display = 'flex';
             modelName.innerText = ollama.model.name;
         } else {

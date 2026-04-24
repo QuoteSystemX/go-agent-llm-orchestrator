@@ -21,12 +21,15 @@ type OllamaTagsResponse struct {
 }
 
 type HealthStatus struct {
-	Status     string       `json:"status"`
+	Status     string `json:"status"`
 	Components struct {
 		Ollama struct {
-			Status string      `json:"status"`
+			Status string       `json:"status"`
 			Model  *OllamaModel `json:"model,omitempty"`
 		} `json:"ollama"`
+		Remote struct {
+			Status string `json:"status"`
+		} `json:"remote"`
 	} `json:"components"`
 }
 
@@ -34,11 +37,13 @@ type HealthMonitor struct {
 	status HealthStatus
 	mu     sync.RWMutex
 	client *http.Client
+	db     *db.DB
 }
 
-func NewHealthMonitor() *HealthMonitor {
+func NewHealthMonitor(database *db.DB) *HealthMonitor {
 	return &HealthMonitor{
 		client: &http.Client{Timeout: 5 * time.Second},
+		db:     database,
 	}
 }
 
@@ -46,7 +51,7 @@ func (m *HealthMonitor) Start() {
 	go func() {
 		for {
 			m.check()
-			time.Sleep(15 * time.Second)
+			time.Sleep(30 * time.Second)
 		}
 	}()
 }
@@ -58,9 +63,11 @@ func (m *HealthMonitor) GetStatus() HealthStatus {
 }
 
 func (m *HealthMonitor) check() {
-	newStatus := HealthStatus{Status: "OK"}
+	newStatus := HealthStatus{Status: "ERROR"}
 	newStatus.Components.Ollama.Status = "NOT_READY"
+	newStatus.Components.Remote.Status = "NOT_CONFIGURED"
 
+	// 1. Check Local Ollama
 	endpoint := os.Getenv("LLM_LOCAL_ENDPOINT")
 	if endpoint == "" {
 		endpoint = "http://localhost:11434"
@@ -71,14 +78,10 @@ func (m *HealthMonitor) check() {
 	}
 
 	resp, err := m.client.Get(endpoint + "/api/tags")
-	if err != nil {
-		newStatus.Components.Ollama.Status = "DISCONNECTED"
-	} else {
+	if err == nil {
 		defer resp.Body.Close()
 		var tags OllamaTagsResponse
-		if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
-			log.Printf("HealthMonitor: failed to decode ollama tags: %v", err)
-		} else {
+		if err := json.NewDecoder(resp.Body).Decode(&tags); err == nil {
 			for _, model := range tags.Models {
 				if model.Name == targetModel || model.Model == targetModel {
 					newStatus.Components.Ollama.Status = "READY"
@@ -87,6 +90,26 @@ func (m *HealthMonitor) check() {
 				}
 			}
 		}
+	} else {
+		newStatus.Components.Ollama.Status = "DISCONNECTED"
+	}
+
+	// 2. Check Remote LLM
+	remoteEndpoint := ""
+	remoteKey := ""
+	if m.db != nil {
+		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT"))
+		remoteKey = m.db.GetSetting("llm_remote_api_key", os.Getenv("LLM_REMOTE_API_KEY"))
+	}
+
+	if remoteEndpoint != "" {
+		newStatus.Components.Remote.Status = "READY" // Basic assumption if configured
+		// Optional: Perform a dummy request to verify key
+	}
+
+	// Overall Status Logic
+	if newStatus.Components.Ollama.Status == "READY" || newStatus.Components.Remote.Status == "READY" {
+		newStatus.Status = "OK"
 	}
 
 	m.mu.Lock()

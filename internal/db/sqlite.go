@@ -18,10 +18,34 @@ import (
 var schemaSQL string
 
 type DB struct {
-	*sql.DB
+	main    *sql.DB
+	history *sql.DB
 }
 
-// InitDB initializes the SQLite database at the given path
+// Main returns the main database handle (configuration)
+func (db *DB) Main() *sql.DB { return db.main }
+
+// History returns the history database handle (logs)
+func (db *DB) History() *sql.DB { return db.history }
+
+// Proxy methods for compatibility (target main db)
+func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return db.main.QueryContext(ctx, query, args...)
+}
+func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return db.main.ExecContext(ctx, query, args...)
+}
+func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return db.main.QueryRowContext(ctx, query, args...)
+}
+func (db *DB) QueryRow(query string, args ...any) *sql.Row {
+	return db.main.QueryRow(query, args...)
+}
+func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
+	return db.main.Exec(query, args...)
+}
+
+// InitDB initializes the SQLite databases at the given paths
 func InitDB(dbPath string) (*DB, error) {
 	// Ensure directory exists
 	dir := filepath.Dir(dbPath)
@@ -29,131 +53,150 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("creating db directory: %w", err)
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	historyPath := filepath.Join(dir, "history.db")
+
+	main, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("opening sqlite db: %w", err)
+		return nil, fmt.Errorf("opening main db: %w", err)
 	}
 
-	// Limit to 10 concurrent connections to allow multiple readers in WAL mode
-	db.SetMaxOpenConns(10)
-
-	// Set WAL mode for better concurrency
-	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
-		return nil, fmt.Errorf("setting WAL mode: %w", err)
-	}
-
-	// Wait up to 10 s instead of returning SQLITE_BUSY immediately
-	if _, err := db.Exec("PRAGMA busy_timeout=10000;"); err != nil {
-		return nil, fmt.Errorf("setting busy_timeout: %w", err)
-	}
-
-	// Recommended for WAL mode: slightly less safe but much faster
-	if _, err := db.Exec("PRAGMA synchronous=NORMAL;"); err != nil {
-		return nil, fmt.Errorf("setting synchronous mode: %w", err)
-	}
-
-	// Initialize schema and migrations in a transaction
-	tx, err := db.Begin()
+	history, err := sql.Open("sqlite", historyPath)
 	if err != nil {
-		return nil, fmt.Errorf("starting init transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec(schemaSQL); err != nil {
-		return nil, fmt.Errorf("initializing schema: %w", err)
+		return nil, fmt.Errorf("opening history db: %w", err)
 	}
 
-	// Migrations: add columns that may not exist in older databases
-	migrations := []string{
-		`ALTER TABLE tasks ADD COLUMN agent TEXT DEFAULT ''`,
-		`ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0`,
-		`ALTER TABLE task_logs ADD COLUMN session_id TEXT`,
-		`ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1`,
-		`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'`,
-		`ALTER TABLE tasks ADD COLUMN current_stage TEXT DEFAULT 'idle'`,
-		`ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0`,
-		`ALTER TABLE tasks ADD COLUMN approval_required INTEGER DEFAULT 0`,
-		`ALTER TABLE tasks ADD COLUMN pending_decision TEXT DEFAULT ''`,
-		`ALTER TABLE tasks ADD COLUMN failure_count INTEGER DEFAULT 0`,
-		`CREATE TABLE IF NOT EXISTS task_run_details (id INTEGER PRIMARY KEY AUTOINCREMENT, log_id INTEGER NOT NULL, phase TEXT NOT NULL, content TEXT, duration_ms INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-		`CREATE TABLE IF NOT EXISTS web_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, content TEXT NOT NULL, provider TEXT, repo TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-		`CREATE TABLE IF NOT EXISTS templates (name TEXT PRIMARY KEY, content TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-		`INSERT OR IGNORE INTO templates (name, content) VALUES ('bmad-standard', 'description: "Full BMAD lifecycle: from Discovery to Sprint Closure"
-tasks:
-  - mission: "/discovery"
-    pattern: "discovery"
-    agent: "project-planner"
-    importance: 10
-    category: "service"
-  - mission: "/prd"
-    pattern: "prd"
-    agent: "project-planner"
-    importance: 9
-    category: "service"
-  - mission: "/stories"
-    pattern: "stories"
-    agent: "project-planner"
-    importance: 8
-    category: "service"
-  - mission: "/sprint"
-    pattern: "sprint"
-    agent: "project-planner"
-    importance: 7
-    category: "service"
-  - mission: "Execute sprint tasks and implement features"
-    pattern: "implement"
-    agent: "backend-specialist"
-    importance: 6
-    category: "worker"
-  - mission: "/sprint-closer"
-    pattern: "sprint_closer"
-    agent: "project-planner"
-    importance: 8
-    category: "service"
-  - mission: "Actualize Wiki and documentation"
-    pattern: "docs"
-    agent: "analyst"
-    importance: 5
-    category: "service"')`,
-	}
-	for _, m := range migrations {
-		if _, err := tx.Exec(m); err != nil {
-			// SQLite returns an error if the column already exists; ignore it
-			if !isSQLiteColumnExists(err) {
-				log.Printf("Migration warning: %v", err)
-			}
+	setupConn := func(db *sql.DB) error {
+		db.SetMaxOpenConns(10)
+		if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+			return err
 		}
+		if _, err := db.Exec("PRAGMA busy_timeout=30000;"); err != nil {
+			return err
+		}
+		if _, err := db.Exec("PRAGMA synchronous=NORMAL;"); err != nil {
+			return err
+		}
+		if _, err := db.Exec("PRAGMA cache_size=-2000;"); err != nil {
+			return err
+		}
+		if _, err := db.Exec("PRAGMA mmap_size=268435456;"); err != nil {
+			return err
+		}
+		return nil
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("committing init transaction: %w", err)
+	if err := setupConn(main); err != nil {
+		return nil, fmt.Errorf("setting up main db: %w", err)
+	}
+	if err := setupConn(history); err != nil {
+		return nil, fmt.Errorf("setting up history db: %w", err)
 	}
 
-	log.Printf("Database initialized at %s", dbPath)
-	return &DB{db}, nil
+	// Initialize Main Schema
+	mainSchema := `
+	CREATE TABLE IF NOT EXISTS tasks (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		agent TEXT DEFAULT '',
+		mission TEXT,
+		pattern TEXT,
+		schedule TEXT NOT NULL,
+		status TEXT NOT NULL,
+		current_stage TEXT DEFAULT 'idle',
+		progress INTEGER DEFAULT 0,
+		last_run_at DATETIME,
+		approval_required INTEGER DEFAULT 0,
+		pending_decision TEXT DEFAULT '',
+		failure_count INTEGER DEFAULT 0,
+		importance INTEGER DEFAULT 1,
+		category TEXT DEFAULT 'worker',
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS sessions (
+		id TEXT PRIMARY KEY,
+		task_id TEXT,
+		jules_session_id TEXT UNIQUE,
+		status TEXT NOT NULL,
+		last_context_hash TEXT,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS settings (
+		key TEXT PRIMARY KEY,
+		value TEXT
+	);
+	CREATE TABLE IF NOT EXISTS templates (
+		name TEXT PRIMARY KEY,
+		content TEXT NOT NULL,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+	`
+	if _, err := main.Exec(mainSchema); err != nil {
+		return nil, fmt.Errorf("init main schema: %w", err)
+	}
+
+	// Initialize History Schema
+	historySchema := `
+	CREATE TABLE IF NOT EXISTS task_logs (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		task_id TEXT NOT NULL,
+		session_id TEXT,
+		executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		input_data TEXT,
+		output_data TEXT,
+		status TEXT,
+		error TEXT,
+		duration_ms INTEGER
+	);
+	CREATE TABLE IF NOT EXISTS task_run_details (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		log_id INTEGER NOT NULL,
+		phase TEXT NOT NULL,
+		content TEXT,
+		duration_ms INTEGER DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS audit_logs (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		session_id TEXT,
+		action TEXT,
+		details TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS web_chat_history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		role TEXT NOT NULL,
+		content TEXT NOT NULL,
+		provider TEXT,
+		repo TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
+	CREATE INDEX IF NOT EXISTS idx_task_run_details_log_id ON task_run_details(log_id);
+	CREATE INDEX IF NOT EXISTS idx_chat_history_repo ON web_chat_history(repo);
+	`
+	if _, err := history.Exec(historySchema); err != nil {
+		return nil, fmt.Errorf("init history schema: %w", err)
+	}
+
+	log.Printf("Databases initialized: main and history")
+	return &DB{main: main, history: history}, nil
 }
 
-func isSQLiteColumnExists(err error) bool {
-	return err != nil && (contains(err.Error(), "duplicate column name") ||
-		contains(err.Error(), "already exists"))
+// Close closes both database connections
+func (db *DB) Close() error {
+	err1 := db.main.Close()
+	err2 := db.history.Close()
+	if err1 != nil {
+		return err1
+	}
+	return err2
 }
 
-func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || len(s) > 0 &&
-		func() bool {
-			for i := 0; i <= len(s)-len(sub); i++ {
-				if s[i:i+len(sub)] == sub {
-					return true
-				}
-			}
-			return false
-		}())
-}
-
-// GetSetting retrieves a setting from the database or environment variables.
+// GetSetting retrieves a setting from the main database or environment variables.
 func (db *DB) GetSetting(key, def string) string {
 	var val string
-	if err := db.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&val); err == nil && val != "" {
+	if err := db.main.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&val); err == nil && val != "" {
 		return val
 	}
 	// Fallback to environment variables
@@ -164,9 +207,9 @@ func (db *DB) GetSetting(key, def string) string {
 	return def
 }
 
-// SetSetting saves or updates a setting in the database.
+// SetSetting saves or updates a setting in the main database.
 func (db *DB) SetSetting(key, value string) error {
-	_, err := db.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	_, err := db.main.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
 	return err
 }
 
@@ -174,7 +217,7 @@ func (db *DB) SetSetting(key, value string) error {
 func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 	var count int
 	// We count task_logs from the beginning of the current day (UTC)
-	err := db.QueryRowContext(ctx, `
+	err := db.history.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM task_logs 
 		WHERE executed_at >= date('now', 'start of day')
 		AND status NOT IN ('FAILED', 'TRIGGERED') -- Only count those that actually started or finished
@@ -182,7 +225,7 @@ func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 	return count, err
 }
 func (db *DB) GetDistinctRepos(ctx context.Context) ([]string, error) {
-	rows, err := db.QueryContext(ctx, "SELECT DISTINCT name FROM tasks")
+	rows, err := db.main.QueryContext(ctx, "SELECT DISTINCT name FROM tasks")
 	if err != nil {
 		return nil, err
 	}
@@ -198,10 +241,8 @@ func (db *DB) GetDistinctRepos(ctx context.Context) ([]string, error) {
 }
 
 func (db *DB) GetUpcomingTaskCountToday(ctx context.Context) (int, error) {
-	// This is a simple approximation. In a real system, we'd parse the cron schedules.
-	// For now, let's just count all active tasks as a baseline for the forecast.
 	var count int
-	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tasks WHERE status = 'PENDING'").Scan(&count)
+	err := db.main.QueryRowContext(ctx, "SELECT COUNT(*) FROM tasks WHERE status = 'PENDING'").Scan(&count)
 	return count, err
 }
 
@@ -214,7 +255,7 @@ func (db *DB) GetDailyLimit(ctx context.Context) (int, error) {
 }
 
 func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
-	rows, err := db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category, current_stage, progress FROM tasks WHERE name = ?", repoName)
+	rows, err := db.main.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category, current_stage, progress FROM tasks WHERE name = ?", repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -245,12 +286,12 @@ func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string
 }
 
 func (db *DB) UpdateTaskProgress(ctx context.Context, taskID string, stage string, progress int) error {
-	_, err := db.ExecContext(ctx, "UPDATE tasks SET current_stage = ?, progress = ? WHERE id = ?", stage, progress, taskID)
+	_, err := db.main.ExecContext(ctx, "UPDATE tasks SET current_stage = ?, progress = ? WHERE id = ?", stage, progress, taskID)
 	return err
 }
 
 func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, content string, duration int64) (int64, error) {
-	res, err := db.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
+	res, err := db.history.ExecContext(ctx, "INSERT INTO task_run_details (log_id, phase, content, duration_ms) VALUES (?, ?, ?, ?)", logID, phase, content, duration)
 	if err != nil {
 		return 0, err
 	}
@@ -258,12 +299,12 @@ func (db *DB) AddTaskRunDetail(ctx context.Context, logID int64, phase string, c
 }
 
 func (db *DB) UpdateTaskRunDetailContent(ctx context.Context, id int64, content string) error {
-	_, err := db.ExecContext(ctx, "UPDATE task_run_details SET content = ? WHERE id = ?", content, id)
+	_, err := db.history.ExecContext(ctx, "UPDATE task_run_details SET content = ? WHERE id = ?", content, id)
 	return err
 }
 
 func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]any, error) {
-	rows, err := db.QueryContext(ctx, "SELECT phase, content, duration_ms, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
+	rows, err := db.history.QueryContext(ctx, "SELECT phase, content, duration_ms, created_at FROM task_run_details WHERE log_id = ? ORDER BY id ASC", logID)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +327,7 @@ func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]
 }
 
 func (db *DB) SaveChatMessage(ctx context.Context, role, content, provider, repo string) error {
-	_, err := db.ExecContext(ctx, "INSERT INTO web_chat_history (role, content, provider, repo) VALUES (?, ?, ?, ?)", role, content, provider, repo)
+	_, err := db.history.ExecContext(ctx, "INSERT INTO web_chat_history (role, content, provider, repo) VALUES (?, ?, ?, ?)", role, content, provider, repo)
 	return err
 }
 
@@ -300,7 +341,7 @@ func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map
 	query += "ORDER BY created_at DESC LIMIT ?"
 	args = append(args, limit)
 
-	rows, err := db.QueryContext(ctx, query, args...)
+	rows, err := db.history.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

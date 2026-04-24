@@ -338,7 +338,7 @@ type LogResponse struct {
 }
 
 func (s *AdminServer) listTaskLogs(w http.ResponseWriter, r *http.Request, taskID string) {
-	rows, err := s.db.QueryContext(r.Context(), "SELECT id, executed_at, input_data, output_data, status, error, duration_ms FROM task_logs WHERE task_id = ? ORDER BY executed_at DESC LIMIT 50", taskID)
+	rows, err := s.db.History().QueryContext(r.Context(), "SELECT id, executed_at, input_data, output_data, status, error, duration_ms FROM task_logs WHERE task_id = ? ORDER BY executed_at DESC LIMIT 50", taskID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -660,7 +660,7 @@ func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := s.db.QueryContext(r.Context(),
+	rows, err := s.db.Main().QueryContext(r.Context(),
 		`SELECT id, name, schedule, status FROM tasks WHERE status != 'PAUSED' ORDER BY name`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -702,6 +702,8 @@ func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].SecondsUntil < results[j].SecondsUntil
 	})
+	
+	// Keep 5 as requested by user
 	if len(results) > 5 {
 		results = results[:5]
 	}
@@ -906,14 +908,35 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 		fmt.Sscanf(hoursStr, "%d", &hours)
 	}
 
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT 
-			l.id, l.task_id, l.session_id, l.executed_at, l.status, l.error, l.duration_ms,
-			t.name as repo_name, t.agent, t.mission
-		FROM task_logs l
-		JOIN tasks t ON l.task_id = t.id
-		WHERE l.executed_at > datetime('now', '-' || ? || ' hours')
-		ORDER BY l.executed_at DESC
+	// 1. Fetch all tasks to a map for joining in Go (cross-DB JOIN not possible)
+	taskRows, err := s.db.Main().QueryContext(r.Context(), "SELECT id, name, agent, mission FROM tasks")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer taskRows.Close()
+	taskMap := make(map[string]struct {
+		Name    string
+		Agent   string
+		Mission string
+	})
+	for taskRows.Next() {
+		var id, name, agent, mission string
+		if err := taskRows.Scan(&id, &name, &agent, &mission); err == nil {
+			taskMap[id] = struct {
+				Name    string
+				Agent   string
+				Mission string
+			}{name, agent, mission}
+		}
+	}
+
+	// 2. Query logs from History DB
+	rows, err := s.db.History().QueryContext(r.Context(), `
+		SELECT id, task_id, session_id, executed_at, status, error, duration_ms
+		FROM task_logs
+		WHERE executed_at > datetime('now', '-' || ? || ' hours')
+		ORDER BY executed_at DESC
 	`, hours)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -924,11 +947,13 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	var logs []map[string]any
 	for rows.Next() {
 		var id int
-		var taskID, sessionID, executedAt, status, errorMsg, repoName, agent, mission string
+		var taskID, sessionID, executedAt, status, errorMsg string
 		var duration int
-		if err := rows.Scan(&id, &taskID, &sessionID, &executedAt, &status, &errorMsg, &duration, &repoName, &agent, &mission); err != nil {
+		if err := rows.Scan(&id, &taskID, &sessionID, &executedAt, &status, &errorMsg, &duration); err != nil {
 			continue
 		}
+
+		tInfo := taskMap[taskID]
 		logs = append(logs, map[string]any{
 			"id":          id,
 			"task_id":      taskID,
@@ -937,9 +962,9 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 			"status":       status,
 			"error":        errorMsg,
 			"duration_ms":  duration,
-			"repo_name":    repoName,
-			"agent":        agent,
-			"mission":      mission,
+			"repo_name":    tInfo.Name,
+			"agent":        tInfo.Agent,
+			"mission":      tInfo.Mission,
 		})
 	}
 
