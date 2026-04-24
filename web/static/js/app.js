@@ -370,29 +370,55 @@ async function viewLogs(id, name) {
             return;
         }
 
-        list.innerHTML = logs.map(log => `
-            <div class="log-entry">
-                <div class="log-header">
-                    <span style="color: ${log.status === 'SUCCESS' ? 'var(--success)' : 'var(--danger)'}">
-                        ${log.status} ${log.duration_ms}ms
-                    </span>
-                    <span style="color: var(--text-muted)">${new Date(log.executed_at).toLocaleString()}</span>
-                </div>
-                <div class="log-data">
-                    <div>
-                        <div class="payload-label">IN (Request)</div>
-                        <div class="log-payload">${log.input || 'No data'}</div>
+        // Only show last 5
+        const recentLogs = logs.slice(0, 5);
+
+        list.innerHTML = recentLogs.map((log, idx) => `
+            <div class="log-accordion-item ${idx === 0 ? 'active' : ''}">
+                <div class="log-accordion-header" onclick="toggleLogAccordion(this)">
+                    <div class="log-status-group">
+                        <i data-lucide="${log.status === 'SUCCESS' ? 'check-circle' : 'alert-circle'}" 
+                           style="width:16px; height:16px; color: ${log.status === 'SUCCESS' ? 'var(--success)' : 'var(--danger)'}"></i>
+                        <span style="font-weight: 600; font-size: 0.85rem;">${log.status}</span>
+                        <span class="log-time">${new Date(log.executed_at).toLocaleString()}</span>
                     </div>
-                    <div>
-                        <div class="payload-label">OUT (Response)</div>
-                        <div class="log-payload">${log.output || 'No data'}</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted)">${log.duration_ms}ms</span>
+                        <i data-lucide="chevron-down" class="accordion-chevron" style="width:14px; height:14px; color: var(--text-muted)"></i>
                     </div>
                 </div>
-                ${log.error ? `<div style="color:var(--danger); font-size:0.75rem; margin-top:0.5rem">Error: ${log.error}</div>` : ''}
+                <div class="log-accordion-content">
+                    <div class="log-payload-wrapper">
+                        <div class="log-payload-section">
+                            <span class="payload-tag tag-in">In (Prompt)</span>
+                            <div class="log-payload-box">${log.input || 'No input data'}</div>
+                        </div>
+                        <div class="log-payload-section">
+                            <span class="payload-tag tag-out">Out (Agent Response)</span>
+                            <div class="log-payload-box">${log.output || 'No output data'}</div>
+                        </div>
+                    </div>
+                    ${log.error ? `<div class="log-error-box"><strong>Error:</strong> ${log.error}</div>` : ''}
+                </div>
             </div>
         `).join('');
+        lucide.createIcons();
     } catch (err) {
         list.innerHTML = `<p style="color:var(--danger)">Failed to load logs: ${err.message}</p>`;
+    }
+}
+
+function toggleLogAccordion(header) {
+    const item = header.closest('.log-accordion-item');
+    const wasActive = item.classList.contains('active');
+    
+    // Optional: Close others
+    // document.querySelectorAll('.log-accordion-item').forEach(i => i.classList.remove('active'));
+    
+    if (wasActive) {
+        item.classList.remove('active');
+    } else {
+        item.classList.add('active');
     }
 }
 
