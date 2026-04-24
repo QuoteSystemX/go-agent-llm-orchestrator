@@ -146,7 +146,7 @@ func (e *Engine) addTask(id, schedule string) error {
 }
 
 func (e *Engine) runTask(taskID string) {
-	log.Printf("Triggering task %s", taskID)
+	log.Printf("Task %s: TRIGGERED", taskID)
 
 	ctx := context.Background()
 	start := time.Now()
@@ -156,12 +156,12 @@ func (e *Engine) runTask(taskID string) {
 		"SELECT status, mission, pattern, COALESCE(agent,''), name FROM tasks WHERE id = ?", taskID,
 	).Scan(&status, &mission, &pattern, &agent, &repoName)
 	if err != nil {
-		log.Printf("Failed to fetch task %s: %v", taskID, err)
+		log.Printf("Task %s: FAILED to fetch from DB: %v", taskID, err)
 		return
 	}
 
 	if status == "PAUSED" {
-		log.Printf("Task %s is paused, skipping", taskID)
+		log.Printf("Task %s: SKIPPED (status is PAUSED)", taskID)
 		return
 	}
 
@@ -176,6 +176,7 @@ func (e *Engine) runTask(taskID string) {
 			e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
 			return fmt.Errorf("prompt-library not ready, task %s paused: %w", taskID, err)
 		}
+		log.Printf("Task %s: Prompt assembled successfully", taskID)
 
 		_, dbErr := e.db.ExecContext(ctx,
 			"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
@@ -198,6 +199,7 @@ func (e *Engine) runTask(taskID string) {
 		reqJSON, _ := json.Marshal(req)
 		inputPayload = reqJSON
 
+		log.Printf("Task %s: Sending request to Jules API...", taskID)
 		resp, rawOut, err := e.client.StartSession(ctx, req)
 		if err != nil {
 			return err
@@ -209,9 +211,16 @@ func (e *Engine) runTask(taskID string) {
 		}
 		outputPayload = rawOut
 
-		e.db.ExecContext(ctx,
+		log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
+
+		_, sessErr := e.db.ExecContext(ctx,
 			"INSERT INTO sessions (id, task_id, jules_session_id, status) VALUES (?, ?, ?, ?)",
 			sessionID, taskID, sessionID, "RUNNING")
+		if sessErr == nil {
+			log.Printf("Task %s: Session %s registered for monitoring", taskID, sessionID)
+		} else {
+			log.Printf("Task %s: WARNING - failed to register session %s: %v", taskID, sessionID, sessErr)
+		}
 
 		return nil
 	})
@@ -221,12 +230,13 @@ func (e *Engine) runTask(taskID string) {
 	if err != nil {
 		execStatus = "FAILED"
 		execError = err.Error()
-		log.Printf("Failed to run task %s: %v", taskID, err)
+		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
 		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED' WHERE id = ?", taskID)
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
+		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
 		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
 	}
 
@@ -236,7 +246,7 @@ func (e *Engine) runTask(taskID string) {
 	`, taskID, string(inputPayload), string(outputPayload), execStatus, execError, duration.Milliseconds())
 
 	if logErr != nil {
-		log.Printf("Failed to record log for task %s: %v", taskID, logErr)
+		log.Printf("Task %s: FAILED to record task_logs: %v", taskID, logErr)
 	}
 }
 
