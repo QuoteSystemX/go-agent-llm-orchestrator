@@ -646,6 +646,47 @@ async function fetchLogs() {
     } catch (e) { /* silent */ }
 }
 
+async function updateSystemStats() {
+    try {
+        const resp = await fetch('/api/v1/system/stats');
+        const stats = await resp.json();
+        document.getElementById('stat-cpu').innerText = `${stats.num_goroutine}`;
+        document.getElementById('stat-mem').innerText = `${stats.memory_alloc_mb}MB`;
+        document.getElementById('stat-uptime').innerText = formatUptime(stats.uptime_seconds);
+
+        if (stats.history) {
+            renderSparkline('cpu-sparkline', stats.history.cpu);
+            renderSparkline('mem-sparkline', stats.history.memory);
+        }
+    } catch (e) {
+        console.error('Failed to fetch stats', e);
+    }
+}
+
+function renderSparkline(elementId, data) {
+    const container = document.getElementById(elementId);
+    if (!container || !data || data.length < 2) return;
+
+    const width = 60;
+    const height = 20;
+    const points = data.map(d => d.v);
+    const min = Math.min(...points);
+    const max = Math.max(...points);
+    const range = (max - min) || 1;
+
+    const coords = points.map((v, i) => {
+        const x = (i / (points.length - 1)) * width;
+        const y = height - ((v - min) / range) * height;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+
+    container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <polyline points="${coords}" />
+        </svg>
+    `;
+}
+
 function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -1276,7 +1317,7 @@ function renderActivityLogs() {
         }
         
         return `
-            <div class="activity-item">
+            <div class="activity-item" data-log-id="${log.id}">
                 <div class="activity-header">
                     <div class="activity-repo">
                         <i data-lucide="github" style="width:14px; height:14px; vertical-align:middle; margin-right:4px"></i>
@@ -1344,41 +1385,51 @@ function formatDate(dateStr) {
 
 async function toggleLogDetails(logId, event) {
     const detailDiv = document.getElementById(`log-details-${logId}`);
-    if (!detailDiv) return;
+    const btn = event.currentTarget;
+    const isDetailsVisible = detailDiv.style.display === 'block';
 
-    if (detailDiv.style.display === 'block') {
+    if (isDetailsVisible) {
         detailDiv.style.display = 'none';
-        return;
-    }
-
-    // Fetch details
-    detailDiv.innerHTML = '<div class="loading-spinner" style="padding:1rem; text-align:center; opacity:0.5">Loading phase details...</div>';
-    detailDiv.style.display = 'block';
-
-    try {
-        const resp = await fetch(`/api/v1/audit/logs/details?log_id=${logId}`);
-        if (!resp.ok) throw new Error('Failed to fetch');
-        const details = await resp.json();
-
-        if (details.length === 0) {
-            detailDiv.innerHTML = '<div class="empty-state" style="padding:1rem">No phase details recorded.</div>';
-        } else {
-            detailDiv.innerHTML = details.map(d => `
-                <div class="phase-detail">
-                    <div class="phase-detail-header">
-                        <div style="display:flex; gap:0.5rem; align-items:center">
-                            <span class="phase-badge">${d.phase.toUpperCase()}</span>
-                            <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
-                        </div>
-                        <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
-                    </div>
-                    <div class="phase-content">${escapeHtml(d.content)}</div>
-                </div>
-            `).join('');
-            lucide.createIcons();
+        btn.innerHTML = '<i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect';
+        if (window.inspectInterval) {
+            clearInterval(window.inspectInterval);
+            window.inspectInterval = null;
         }
-    } catch (err) {
-        detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;
+    } else {
+        detailDiv.style.display = 'block';
+        btn.innerHTML = '<i data-lucide="chevron-up" style="width:10px; height:10px; margin-right:4px"></i> Close';
+        
+        const load = async () => {
+            try {
+                const resp = await fetch(`/api/v1/audit/logs/details?log_id=${logId}`);
+                const details = await resp.json();
+                detailDiv.innerHTML = details.map(d => `
+                    <div class="phase-detail">
+                        <div class="phase-detail-header">
+                            <div style="display:flex; gap:0.5rem; align-items:center">
+                                <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                                <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
+                            </div>
+                            <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="phase-content">${escapeHtml(d.content)}</div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+                
+                // Auto-refresh if the log status indicates it's still running
+                const logItem = document.querySelector(`.activity-item[data-log-id="${logId}"]`);
+                if (logItem && logItem.innerText.includes('Executing') && !window.inspectInterval) {
+                    window.inspectInterval = setInterval(load, 3000);
+                } else if (logItem && !logItem.innerText.includes('Executing') && window.inspectInterval) {
+                    clearInterval(window.inspectInterval);
+                    window.inspectInterval = null;
+                }
+            } catch (err) {
+                detailDiv.innerHTML = `<div class="status-failed" style="padding:1rem">Error loading details: ${err.message}</div>`;
+            }
+        };
+        load();
     }
 }
 

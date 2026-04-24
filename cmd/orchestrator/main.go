@@ -90,7 +90,10 @@ func main() {
 	healthMonitor := monitor.NewHealthMonitor()
 	healthMonitor.Start()
 
-	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer)
+	statsAggregator := monitor.NewStatsAggregator(60)
+	statsAggregator.Start()
+
+	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer, statsAggregator)
 	adminServer.SetHealthMonitor(healthMonitor)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)

@@ -19,8 +19,8 @@
             </div>
             <div class="header-actions">
                 <div id="system-stats-widget" class="system-stats-widget glass" title="System Resources (Process-level)">
-                    <div class="stat-item" title="Goroutines (Concurrent Tasks)"><i data-lucide="activity"></i> <span id="stat-cpu">-</span></div>
-                    <div class="stat-item" title="Total System Memory Reserved"><i data-lucide="database"></i> <span id="stat-mem">-</span></div>
+                    <div class="stat-item" title="Goroutines (Concurrent Tasks)"><i data-lucide="activity"></i> <span id="stat-cpu">-</span> <div class="sparkline" id="cpu-sparkline"></div></div>
+                    <div class="stat-item" title="Total System Memory Reserved"><i data-lucide="database"></i> <span id="stat-mem">-</span> <div class="sparkline mem" id="mem-sparkline"></div></div>
                     <div class="stat-item" title="Pod Uptime"><i data-lucide="clock"></i> <span id="stat-uptime">-</span></div>
                 </div>
                 <button class="btn-help" onclick="showHelp()" title="Help"><i data-lucide="circle-help"></i> Help</button>

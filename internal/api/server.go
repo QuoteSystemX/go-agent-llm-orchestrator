@@ -43,24 +43,26 @@ type PromptChecker interface {
 }
 
 type AdminServer struct {
-	db             *db.DB
-	scheduler      Scheduler
-	gitSyncer      GitSyncer
-	promptChecker  PromptChecker
-	healthMonitor  *monitor.HealthMonitor
-	logBuf         *LogBuffer
-	dtoMgr         *dto.TemplateManager
-	analyzer       *dto.Analyzer
-	startTime      time.Time
+	db              *db.DB
+	scheduler       Scheduler
+	statsAggregator *monitor.StatsAggregator
+	gitSyncer       GitSyncer
+	promptChecker   PromptChecker
+	healthMonitor   *monitor.HealthMonitor
+	logBuf          *LogBuffer
+	dtoMgr          *dto.TemplateManager
+	analyzer        *dto.Analyzer
+	startTime       time.Time
 }
 
-func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManager, analyzer *dto.Analyzer) *AdminServer {
+func NewAdminServer(database *db.DB, sched Scheduler, dtoMgr *dto.TemplateManager, analyzer *dto.Analyzer, aggregator *monitor.StatsAggregator) *AdminServer {
 	return &AdminServer{
-		db:        database,
-		scheduler: sched,
-		dtoMgr:    dtoMgr,
-		analyzer:  analyzer,
-		startTime: time.Now(),
+		db:              database,
+		scheduler:       sched,
+		dtoMgr:          dtoMgr,
+		analyzer:        analyzer,
+		statsAggregator: aggregator,
+		startTime:       time.Now(),
 	}
 }
 
@@ -957,6 +959,8 @@ func (s *AdminServer) handleSystemStats(w http.ResponseWriter, r *http.Request) 
 	// Simple CPU usage approximation for macOS/Linux using /proc/loadavg or sysctl
 	// Since we are on Mac, we can try to use a command if needed, or just return memory for now.
 	// We'll provide Memory in MB.
+	cpuHist, memHist, taskHist := s.statsAggregator.GetHistory()
+
 	stats := map[string]any{
 		"num_goroutine":    runtime.NumGoroutine(),
 		"memory_alloc_mb":  m.Alloc / 1024 / 1024,
@@ -964,6 +968,11 @@ func (s *AdminServer) handleSystemStats(w http.ResponseWriter, r *http.Request) 
 		"uptime_seconds":   int(time.Since(s.startTime).Seconds()),
 		"num_cpu":          runtime.NumCPU(),
 		"last_gc_pause_ms": m.PauseNs[(m.NumGC+255)%256] / 1000000,
+		"history": map[string]any{
+			"cpu":    cpuHist,
+			"memory": memHist,
+			"tasks":  taskHist,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

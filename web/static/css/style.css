@@ -1334,6 +1334,39 @@ body { padding-bottom: 40px; }
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Sparklines */
+.sparkline {
+    width: 60px;
+    height: 20px;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.sparkline svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.sparkline polyline {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sparkline.mem polyline {
+    stroke: #00e5ff;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Phase Details Styles */
 .log-phase-details {
     margin-top: 1rem;
