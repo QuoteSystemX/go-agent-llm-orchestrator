@@ -101,7 +101,14 @@ function renderTasks() {
                         <span class="service-badge bmad-partial" title="Partial BMAD. Missing: ${missingPatterns.join(', ')}">
                             <i data-lucide="shield-alert" style="width:12px"></i> BMAD
                         </span>
-                    ` : ''}
+                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(missingPatterns)})" title="Install missing BMAD tasks: ${missingPatterns.join(', ')}">
+                            <i data-lucide="plus-circle" style="width:11px"></i> Add missing
+                        </button>
+                    ` : `
+                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(servicePatterns)})" title="Install full BMAD suite (5 service tasks)">
+                            <i data-lucide="shield-plus" style="width:11px"></i> Install BMAD
+                        </button>
+                    `}
 
                     <div class="repo-status-container">
                         ${statusBadgesHtml}
@@ -395,6 +402,41 @@ async function toggleTask(id, action) {
 async function approveDraft(id) {
     if (!confirm('Approve this autopilot proposal?')) return;
     await toggleTask(id, 'resume');
+}
+
+const BMAD_SUITE = [
+    { pattern: 'discovery',      agent: 'analyst',       schedule: '0 8 * * 1',   importance: 8, category: 'service', mission: '/discovery Analyze repository state and sync wiki/BRIEF.md' },
+    { pattern: 'story_writer',   agent: 'analyst',       schedule: '0 9 * * 1',   importance: 8, category: 'service', mission: '/stories Generate story cards from PRD and architecture artifacts' },
+    { pattern: 'sprint_planner', agent: 'analyst',       schedule: '0 10 * * 1',  importance: 8, category: 'service', mission: '/sprint Update sprint board from current story backlog' },
+    { pattern: 'full_cycle',     agent: 'orchestrator',  schedule: '0 */3 * * *', importance: 9, category: 'service', mission: 'Pick one story from tasks/ and implement it end-to-end, then open a PR' },
+    { pattern: 'sprint_closer',  agent: 'analyst',       schedule: '50 23 * * *', importance: 7, category: 'service', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts' },
+];
+
+async function installBMAD(event, repoName, patternsToInstall) {
+    event.stopPropagation();
+
+    const count = patternsToInstall.length;
+    const label = count === 5 ? 'full BMAD suite (5 service tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
+    if (!confirm(`Install ${label} for "${repoName}"?`)) return;
+
+    const toCreate = BMAD_SUITE.filter(t => patternsToInstall.includes(t.pattern));
+    let created = 0;
+
+    for (const t of toCreate) {
+        try {
+            const resp = await fetch('/api/v1/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: repoName, ...t }),
+            });
+            if (resp.ok) created++;
+        } catch (err) {
+            console.error('installBMAD: failed to create', t.pattern, err);
+        }
+    }
+
+    showToast(`BMAD: ${created}/${toCreate.length} tasks installed for ${repoName}`, created === toCreate.length ? 'success' : 'error');
+    fetchTasks();
 }
 
 // Logs Logic
@@ -1769,4 +1811,21 @@ async function rejectTask(taskId) {
     } catch (e) {
         alert('Failed to reject: ' + e.message);
     }
+}
+
+function showToast(message, type = 'success') {
+    const existing = document.getElementById('app-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = `app-toast app-toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('app-toast-visible'));
+    setTimeout(() => {
+        toast.classList.remove('app-toast-visible');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
 }

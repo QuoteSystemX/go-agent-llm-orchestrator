@@ -314,6 +314,28 @@ button {
     filter: brightness(1.1);
 }
 
+.btn-install-bmad {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 1rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px dashed rgba(16, 185, 129, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-install-bmad:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-style: solid;
+    transform: scale(1.05);
+}
+
 /* Task List Layout */
 .task-grid {
     display: flex;
@@ -1596,4 +1618,36 @@ body { padding-bottom: 40px; }
     padding: 0.5rem;
     background: rgba(0, 0, 0, 0.1);
     border-radius: 0.3rem;
+}
+
+/* Toast notifications */
+.app-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    max-width: 360px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+.app-toast-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.app-toast-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.app-toast-error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.35);
 }
