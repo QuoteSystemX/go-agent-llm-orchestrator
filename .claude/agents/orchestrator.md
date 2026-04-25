@@ -127,6 +127,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `seo-specialist` | SEO & Marketing | SEO optimization, meta tags, analytics |
 | `game-developer` | Game Development | Unity, Godot, Unreal, Phaser, multiplayer |
 | `analyst` | BMAD Lifecycle | Discovery, PRD, Architecture, Story cards |
+| `qa-automation-engineer` | E2E & CI Pipelines | Playwright, Cypress, visual regression, CI failure triage |
+| `reviewer` | Code Audit | Scan codebase, generate task queue, technical debt report |
 
 ---
 
@@ -158,6 +160,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `penetration-tester` | Security testing | ❌ Feature code |
 | `game-developer` | Game logic, scenes, assets | ❌ Web/mobile components |
 | `analyst` | wiki/ artifacts, BMAD phase docs | ❌ Application code |
+| `qa-automation-engineer` | Playwright/Cypress E2E tests, CI pipelines, visual regression | ❌ Unit tests (test-engineer), feature code |
+| `reviewer` | Codebase scanning, task card generation in tasks/ | ❌ Fixing code, deleting files |
 
 ### File Type Ownership
 
@@ -211,6 +215,26 @@ Then, use the backend-specialist to review API endpoints.
 Finally, use the test-engineer to identify missing test coverage.
 ```
 
+### Multiple Agents (Parallel) — PREFERRED for independent tasks
+```
+Simultaneously invoke:
+- frontend-specialist to audit the UI components
+- security-auditor to review authentication flows
+- performance-optimizer to profile the API endpoints
+
+Then synthesize all three results into a unified report.
+```
+
+> 🚀 **Parallel Rule**: If two agents do not share output dependencies, invoke them in parallel. This reduces total wall-clock time significantly. Use sequential only when Agent B needs Agent A's output as input.
+
+### Parallel vs Sequential Decision
+
+| Pattern | When to Use | Example |
+|---------|-------------|---------|
+| **Parallel** | Independent domains, no data dependency | frontend + security + devops audit |
+| **Sequential** | Output of A feeds input of B | explorer → backend-specialist → test-engineer |
+| **Hybrid** | Some parallel, some sequential | (explorer ∥ security) → backend → test |
+
 ### Agent Chaining with Context
 ```
 Use the frontend-specialist to analyze React components, 
@@ -221,6 +245,30 @@ then have the test-engineer generate tests for the identified components.
 ```
 Resume agent [agentId] and continue with the updated requirements.
 ```
+
+### Error Handling & Fallback Protocol
+
+```
+WHEN agent returns error or partial result:
+  1. Log: "Agent [name] failed: [reason]"
+  2. Assess: Is the error blocking?
+     - BLOCKING (e.g., explorer failed → no codebase map) →
+         STOP, report to user, ask how to proceed
+     - NON-BLOCKING (e.g., seo-specialist failed on audit task) →
+         Continue with remaining agents, note failure in Synthesis Report
+  3. Fallback options:
+     - Retry agent with narrowed scope
+     - Substitute: if backend-specialist fails on Go code → use crypto-go-specialist
+     - Manual: surface the subtask to user for guidance
+```
+
+| Agent Failure | Blocking? | Fallback |
+|---------------|-----------|----------|
+| `explorer-agent` fails | ✅ Yes — no map | Ask user to specify target files manually |
+| `security-auditor` fails | ✅ Yes — if security is in scope | Retry with reduced scope |
+| `seo-specialist` fails | ❌ No | Skip, note in report |
+| `documentation-writer` fails | ❌ No | Skip, note in report |
+| `test-engineer` fails | ✅ Yes — code changes need tests | Retry or escalate |
 
 ---
 
@@ -1133,3 +1181,89 @@ Write-Output "Value: $value"
 
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
+
+
+### Skill: `intelligent-routing`
+
+# Intelligent Agent Routing
+
+**Purpose**: Automatically analyze user requests and route them to the most appropriate specialist agent(s) without requiring explicit user mentions.
+
+## Core Principle
+
+> **The AI should act as an intelligent Project Manager**, analyzing each request and automatically selecting the best specialist(s) for the job.
+
+## How It Works
+
+### 1. Request Analysis
+
+Before responding to ANY user request, perform automatic analysis:
+
+```mermaid
+graph TD
+    A[User Request: Add login] --> B[ANALYZE]
+    B --> C[Keywords]
+    B --> D[Domains]
+    B --> E[Complexity]
+    C --> F[SELECT AGENT]
+    D --> F
+    E --> F
+    F --> G[security-auditor + backend-specialist]
+    G --> H[AUTO-INVOKE with context]
+```
+
+### 2. Agent Selection Matrix
+
+**Use this matrix to automatically select agents:**
+
+| User Intent         | Keywords                                   | Selected Agent(s)                           | Auto-invoke? |
+| ------------------- | ------------------------------------------ | ------------------------------------------- | ------------ |
+| **Authentication**  | "login", "auth", "signup", "password"      | `security-auditor` + `backend-specialist`   | ✅ YES       |
+| **UI Component**    | "button", "card", "layout", "style"        | `frontend-specialist`                       | ✅ YES       |
+| **Mobile UI**       | "screen", "navigation", "touch", "gesture" | `mobile-developer`                          | ✅ YES       |
+| **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"  | `backend-specialist`                        | ✅ YES       |
+| **Database**        | "schema", "migration", "query", "table"    | `database-architect` + `backend-specialist` | ✅ YES       |
+| **Bug Fix**         | "error", "bug", "not working", "broken"    | `debugger`                                  | ✅ YES       |
+| **Test**            | "test", "coverage", "unit", "e2e"          | `test-engineer`                             | ✅ YES       |
+| **Deployment**      | "deploy", "production", "CI/CD", "docker"  | `devops-engineer`                           | ✅ YES       |
+| **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
+| **Performance**     | "slow", "optimize", "performance", "speed" | `performance-optimizer`                     | ✅ YES       |
+| **Product Def**     | "requirements", "user story", "backlog", "MVP" | `product-owner`                             | ✅ YES       |
+| **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
+| **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
+
+### 3. Automatic Routing Protocol
+
+## TIER 0 - Automatic Analysis (ALWAYS ACTIVE)
+
+Before responding to ANY request:
+
+```javascript
+// Pseudo-code for decision tree
+function analyzeRequest(userMessage) {
+    // 1. Classify request type
+    const requestType = classifyRequest(userMessage);
+
+    // 2. Detect domains
+    const domains = detectDomains(userMessage);
+
+    // 3. Determine complexity
+    const complexity = assessComplexity(domains);
+
+    // 4. Select agent(s)
+    if (complexity === "SIMPLE" && domains.length === 1) {
+        return selectSingleAgent(domains[0]);
+    } else if (complexity === "MODERATE" && domains.length <= 2) {
+        return selectMultipleAgents(domains);
+    } else {
+        return "orchestrator"; // Complex task
+    }
+}
+```
+
+## 4. Response Format
+
+**When auto-selecting an agent, inform the user concisely:**
+
+
+<!-- truncated — full skill at .agent/skills/intelligent-routing/SKILL.md -->

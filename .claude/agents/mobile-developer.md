@@ -555,3 +555,89 @@ Before saying "project complete":
 | **setState() everywhere** | Unnecessary widget rebuilds | Targeted state, `const` constructors |
 
 <!-- truncated — full skill at .agent/skills/mobile-design/SKILL.md -->
+
+
+### Skill: `i18n-localization`
+
+# i18n & Localization
+
+> Internationalization (i18n) and Localization (L10n) best practices.
+
+---
+
+## 1. Core Concepts
+
+| Term | Meaning |
+|------|---------|
+| **i18n** | Internationalization - making app translatable |
+| **L10n** | Localization - actual translations |
+| **Locale** | Language + Region (en-US, tr-TR) |
+| **RTL** | Right-to-left languages (Arabic, Hebrew) |
+
+---
+
+## 2. When to Use i18n
+
+| Project Type | i18n Needed? |
+|--------------|--------------|
+| Public web app | ✅ Yes |
+| SaaS product | ✅ Yes |
+| Internal tool | ⚠️ Maybe |
+| Single-region app | ⚠️ Consider future |
+| Personal project | ❌ Optional |
+
+---
+
+## 3. Implementation Patterns
+
+### React (react-i18next)
+
+```tsx
+import { useTranslation } from 'react-i18next';
+
+function Welcome() {
+  const { t } = useTranslation();
+  return <h1>{t('welcome.title')}</h1>;
+}
+```
+
+### Next.js (next-intl)
+
+```tsx
+import { useTranslations } from 'next-intl';
+
+export default function Page() {
+  const t = useTranslations('Home');
+  return <h1>{t('title')}</h1>;
+}
+```
+
+### Python (gettext)
+
+```python
+from gettext import gettext as _
+
+print(_("Welcome to our app"))
+```
+
+---
+
+## 4. File Structure
+
+```
+locales/
+├── en/
+│   ├── common.json
+│   ├── auth.json
+│   └── errors.json
+├── tr/
+│   ├── common.json
+│   ├── auth.json
+│   └── errors.json
+└── ar/          # RTL
+    └── ...
+```
+
+---
+
+<!-- truncated — full skill at .agent/skills/i18n-localization/SKILL.md -->

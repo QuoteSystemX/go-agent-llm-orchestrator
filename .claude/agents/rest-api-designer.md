@@ -258,7 +258,88 @@ Before designing an API:
 
 ### Skill: `typescript-expert`
 
-<!-- skill 'typescript-expert' not found -->
+# TypeScript Expert
+
+> TypeScript is not just "JavaScript with types." It is a design language. The type system encodes your domain model — if the types are wrong, the code is wrong.
+
+---
+
+## 1. Strict Mode (Non-Negotiable)
+
+Always enable in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+| Flag | Why It Matters |
+|------|---------------|
+| `strict` | Enables all strict checks as a bundle |
+| `noUncheckedIndexedAccess` | `arr[0]` is `T \| undefined`, not `T` |
+| `exactOptionalPropertyTypes` | `{a?: string}` ≠ `{a: string \| undefined}` |
+| `noImplicitReturns` | Every code path must return a value |
+
+---
+
+## 2. Type System Patterns
+
+### Branded Types (Domain Primitives)
+
+```typescript
+type UserId = string & { readonly __brand: 'UserId' };
+type OrderId = string & { readonly __brand: 'OrderId' };
+
+function createUserId(raw: string): UserId {
+  return raw as UserId;
+}
+
+// Compiler prevents mixing up IDs:
+function getOrder(id: OrderId): Order { ... }
+getOrder(userId); // ❌ Type error — caught at compile time
+```
+
+### Discriminated Unions (Exhaustive Matching)
+
+```typescript
+type Result<T, E = Error> =
+  | { readonly ok: true;  readonly value: T }
+  | { readonly ok: false; readonly error: E };
+
+function handleResult<T>(result: Result<T>): T {
+  if (result.ok) {
+    return result.value;
+  }
+  throw result.error;
+}
+```
+
+### Template Literal Types (API Routes)
+
+```typescript
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type ApiVersion = 'v1' | 'v2';
+type Route = `/${ApiVersion}/${string}`;
+type EndpointKey = `${HttpMethod} ${Route}`;
+```
+
+### `satisfies` Operator (Validate Without Widening)
+
+```typescript
+const config = {
+  baseUrl: 'https://api.example.com',
+  timeout: 5000,
+} satisfies ApiConfig; // Validates shape, keeps literal types
+```
+
+<!-- truncated — full skill at .agent/skills/typescript-expert/SKILL.md -->
 
 
 ### Skill: `documentation-templates`

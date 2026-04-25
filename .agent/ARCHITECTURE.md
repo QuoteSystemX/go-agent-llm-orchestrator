@@ -34,36 +34,37 @@ Antigravity Kit is a modular system consisting of:
 
 ---
 
-## 🤖 Agents (24)
+## 🤖 Agents (26)
 
 Specialist AI personas for different domains.
 
-| Agent                    | Focus                      | Skills Used                                              |
-| ------------------------ | -------------------------- | -------------------------------------------------------- |
-| `orchestrator`           | Multi-agent coordination   | parallel-agents, behavioral-modes                        |
-| `project-planner`        | Discovery, task planning   | brainstorming, plan-writing, architecture                |
-| `frontend-specialist`    | Web UI/UX                  | frontend-design, nextjs-react-expert, tailwind-patterns  |
-| `backend-specialist`     | API, business logic        | api-patterns, nodejs-best-practices, database-design     |
-| `database-architect`     | Schema, SQL                | database-design                                          |
-| `mobile-developer`       | iOS, Android, RN           | mobile-design                                            |
-| `game-developer`         | Game logic, mechanics      | game-development                                         |
-| `crypto-go-specialist`   | Go, Microservices, Perf    | go-patterns, api-patterns, architecture                  |
-| `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                 |
-| `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                  |
-| `penetration-tester`     | Offensive security         | red-team-tactics                                         |
-| `test-engineer`          | Testing strategies         | testing-patterns, tdd-workflow, webapp-testing           |
-| `debugger`               | Root cause analysis        | systematic-debugging                                     |
-| `performance-optimizer`  | Speed, Web Vitals          | performance-profiling                                    |
-| `seo-specialist`         | Ranking, visibility        | seo-fundamentals, geo-fundamentals                       |
-| `documentation-writer`   | Manuals, docs              | documentation-templates                                  |
-| `product-manager`        | Requirements, user stories | plan-writing, brainstorming                              |
-| `product-owner`          | Strategy, backlog, MVP     | plan-writing, brainstorming                              |
-| `qa-automation-engineer` | E2E testing, CI pipelines  | webapp-testing, testing-patterns                         |
-| `code-archaeologist`     | Legacy code, refactoring   | clean-code, code-review-checklist                        |
-| `rest-api-designer`      | REST / OpenAPI design      | api-patterns, documentation-templates                    |
-| `grpc-architect`         | gRPC / Protobuf design     | go-patterns, api-patterns, architecture                  |
-| `explorer-agent`         | Codebase analysis          | -                                                        |
-| `reviewer`               | Automated code auditing    | -                                                        |
+| Agent                    | Focus                      | Skills Used                                                       |
+| ------------------------ | -------------------------- | ----------------------------------------------------------------- |
+| `orchestrator`           | Multi-agent coordination   | parallel-agents, behavioral-modes, intelligent-routing            |
+| `analyst`                | BMAD lifecycle driver      | bmad-lifecycle, plan-writing, brainstorming, architecture         |
+| `project-planner`        | Discovery, task planning   | brainstorming, plan-writing, architecture                         |
+| `frontend-specialist`    | Web UI/UX                  | frontend-design, nextjs-react-expert, tailwind-patterns, i18n-localization |
+| `backend-specialist`     | API, business logic        | api-patterns, nodejs-best-practices, database-design              |
+| `database-architect`     | Schema, SQL                | database-design                                                   |
+| `mobile-developer`       | iOS, Android, RN           | mobile-design, i18n-localization                                  |
+| `game-developer`         | Game logic, mechanics      | game-development                                                  |
+| `crypto-go-specialist`   | Go, Microservices, Perf    | go-patterns, api-patterns, architecture                           |
+| `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                          |
+| `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                           |
+| `penetration-tester`     | Offensive security         | red-team-tactics                                                  |
+| `test-engineer`          | Testing strategies         | testing-patterns, tdd-workflow, webapp-testing                    |
+| `debugger`               | Root cause analysis        | systematic-debugging                                              |
+| `performance-optimizer`  | Speed, Web Vitals          | performance-profiling                                             |
+| `seo-specialist`         | Ranking, visibility        | seo-fundamentals, geo-fundamentals                                |
+| `documentation-writer`   | Manuals, docs              | documentation-templates, i18n-localization                        |
+| `product-manager`        | Requirements, user stories | plan-writing, brainstorming                                       |
+| `product-owner`          | Strategy, backlog, MVP     | plan-writing, brainstorming                                       |
+| `qa-automation-engineer` | E2E testing, CI pipelines  | webapp-testing, testing-patterns                                  |
+| `code-archaeologist`     | Legacy code, refactoring   | clean-code, code-review-checklist                                 |
+| `rest-api-designer`      | REST / OpenAPI design      | api-patterns, typescript-expert, documentation-templates          |
+| `grpc-architect`         | gRPC / Protobuf design     | go-patterns, api-patterns, architecture                           |
+| `explorer-agent`         | Codebase analysis          | -                                                                 |
+| `reviewer`               | Automated code auditing    | code-review-checklist, vulnerability-scanner, systematic-debugging |
 
 ---
 
@@ -83,13 +84,14 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 ### Backend & API
 
-| Skill                   | Description                    |
-| ----------------------- | ------------------------------ |
-| `api-patterns`          | REST, GraphQL, tRPC            |
-| `nodejs-best-practices` | Node.js async, modules         |
-| `python-patterns`       | Python standards, FastAPI      |
-| `go-patterns`           | Go frameworks, gRPC, buf       |
-| `rust-pro`              | Rust patterns, systems         |
+| Skill                   | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `api-patterns`          | REST, GraphQL, tRPC                                         |
+| `nodejs-best-practices` | Node.js async, modules                                      |
+| `python-patterns`       | Python standards, FastAPI                                   |
+| `go-patterns`           | Go frameworks, gRPC, buf                                    |
+| `rust-pro`              | Rust patterns, systems                                      |
+| `typescript-expert`     | Strict-mode TS, OpenAPI→TS generation, SDK type design, Zod |
 
 ### Database
 
@@ -355,8 +357,8 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 
 | Metric              | Value                         |
 | ------------------- | ----------------------------- |
-| **Total Agents**    | 24                            |
-| **Total Skills**    | 41                            |
+| **Total Agents**    | 26                            |
+| **Total Skills**    | 42                            |
 | **Total Workflows** | 18                            |
 | **Total Scripts**   | 2 (master) + 18 (skill-level) |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)      |
