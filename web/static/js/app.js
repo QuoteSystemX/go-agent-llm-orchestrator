@@ -116,6 +116,7 @@ function renderTasks() {
                     </div>
 
                     <span class="task-count ${promptBadgeClass}">${promptCount}/${allProjectTasks.length} prompts</span>
+                    ${allProjectTasks[0].jules_tasks > 0 ? `<span class="jules-badge">${allProjectTasks[0].jules_tasks} Jules</span>` : ''}
                     <div class="project-line"></div>
                 </div>
                 <div class="project-content">

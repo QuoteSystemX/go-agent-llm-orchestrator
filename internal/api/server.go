@@ -194,6 +194,7 @@ type TaskResponse struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	FailureCount int        `json:"failure_count"`
 	LastError    string     `json:"last_error"`
+	JulesTasks   int        `json:"jules_tasks"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -208,6 +209,25 @@ func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
+	// Fetch Jules session counts per task repository (name)
+	julesCounts := map[string]int{}
+	countRows, err := s.db.Main().QueryContext(r.Context(), `
+		SELECT t.name, COUNT(s.id) 
+		FROM tasks t
+		JOIN sessions s ON t.id = s.task_id
+		WHERE s.jules_session_id != ''
+		GROUP BY t.name`)
+	if err == nil {
+		defer countRows.Close()
+		for countRows.Next() {
+			var name string
+			var count int
+			if countRows.Scan(&name, &count) == nil {
+				julesCounts[name] = count
+			}
+		}
+	}
+
 	rows, err := s.db.QueryContext(r.Context(),
 		"SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, importance, category, last_run_at, created_at, failure_count FROM tasks ORDER BY created_at DESC")
 	if err != nil {
@@ -222,6 +242,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount); err != nil {
 			continue
 		}
+		t.JulesTasks = julesCounts[t.Name]
 		tasks = append(tasks, t)
 	}
 	rows.Close() // Close rows immediately to release the DB connection
