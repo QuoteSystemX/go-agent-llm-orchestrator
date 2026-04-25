@@ -31,6 +31,13 @@ func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemorySt
 		db = chromem.NewDB()
 	}
 
+	if ollamaUrl != "" && !strings.HasSuffix(ollamaUrl, "/api") {
+		// Ensure it doesn't end with a slash before adding /api
+		for strings.HasSuffix(ollamaUrl, "/") {
+			ollamaUrl = strings.TrimSuffix(ollamaUrl, "/")
+		}
+		ollamaUrl = ollamaUrl + "/api"
+	}
 	embedFunc := chromem.NewEmbeddingFuncOllama(modelName, ollamaUrl)
 
 	// Create or get collection
