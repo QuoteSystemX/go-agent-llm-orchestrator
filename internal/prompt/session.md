@@ -11,6 +11,11 @@ Follow instructions in: `.agent/agents/{{.Agent}}.md`.
 1. Read `wiki/_index.md` and the `wiki/` folder for system specifications. This is your GROUND TRUTH.
 2. Read `.agent/KNOWLEDGE.md` for technical patterns and repository knowledge.
 3. Historical context is in `.agent/history/`.
+{{if .RagContext}}
+## 🔍 REPOSITORY CONTEXT (RAG — most relevant chunks):
+
+{{.RagContext}}
+{{end}}
 {{if .WorkflowProtocol}}
 ## 🔄 WORKFLOW PROTOCOL (/{{.Command}}):
 

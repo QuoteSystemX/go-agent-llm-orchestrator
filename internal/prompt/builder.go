@@ -24,6 +24,7 @@ type Data struct {
 	AgentProfile       string
 	WorkflowProtocol   string
 	PatternMethodology string
+	RagContext         string
 }
 
 // Builder reads pattern and agent files from a local prompt-library clone.
@@ -98,11 +99,12 @@ func (b *Builder) ExtractCommand(mission string) string {
 }
 
 // Build assembles the full Jules prompt for a task.
-func (b *Builder) Build(agent, pattern, mission string) (string, error) {
+func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, error) {
 	d := &Data{
-		Agent:   agent,
-		Pattern: pattern,
-		Mission: mission,
+		Agent:      agent,
+		Pattern:    pattern,
+		Mission:    mission,
+		RagContext: ragContext,
 	}
 
 	// Agent profile

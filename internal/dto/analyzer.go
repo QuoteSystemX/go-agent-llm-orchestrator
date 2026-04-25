@@ -455,6 +455,17 @@ func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) st
 	return context
 }
 
+func chunkParams(ext string) (chunkSize, overlap int) {
+	switch ext {
+	case ".go", ".js", ".ts", ".jsx", ".tsx", ".py":
+		return 300, 60
+	case ".json", ".yaml", ".yml", ".sql":
+		return 250, 50
+	default: // .md, .txt and others
+		return 700, 140
+	}
+}
+
 func (a *Analyzer) indexFile(ctx context.Context, path string) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -463,9 +474,8 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) error {
 
 	text := string(content)
 	runes := []rune(text)
-	chunkSize := 1000
-	overlap := 200
-	
+	chunkSize, overlap := chunkParams(filepath.Ext(path))
+
 	chunksCount := len(runes) / (chunkSize - overlap)
 	if chunksCount == 0 { chunksCount = 1 }
 	log.Printf("DTO: Generating embeddings for %s (%d chunks)...", filepath.Base(path), chunksCount)

@@ -18,6 +18,9 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+// ContextSearchFunc queries the RAG vector store for semantically relevant chunks.
+type ContextSearchFunc func(ctx context.Context, query string, topK int) string
+
 type Engine struct {
 	cron          *cron.Cron
 	db            *db.DB
@@ -26,6 +29,7 @@ type Engine struct {
 	notifier      *notifier.TelegramNotifier
 	promptBuilder *prompt.Builder
 	router        *llm.Router
+	contextSearch ContextSearchFunc
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 }
@@ -41,6 +45,12 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 		router:        router,
 		entries:       make(map[string]cron.EntryID),
 	}
+}
+
+// SetContextSearcher injects the RAG search function so the engine can enrich
+// Jules prompts with semantically relevant repository context at dispatch time.
+func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
+	e.contextSearch = fn
 }
 
 func (e *Engine) Start() {
@@ -199,7 +209,7 @@ func (e *Engine) runTask(taskID string) {
 		}
 
 		// Build the full Jules prompt — pause the task if library is not ready yet
-		fullPrompt, err := e.buildPrompt(agent, pattern, mission)
+		fullPrompt, err := e.buildPrompt(ctx, agent, pattern, mission, repoName)
 		if err != nil {
 			// Do not auto-pause service tasks
 			servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
@@ -305,11 +315,19 @@ func (e *Engine) runTask(taskID string) {
 
 // buildPrompt builds the Jules prompt from the prompt-library clone.
 // Returns an error (and causes the task to be paused) if the library is not ready.
-func (e *Engine) buildPrompt(agent, pattern, mission string) (string, error) {
-	if e.promptBuilder != nil && e.promptBuilder.IsReady() {
-		return e.promptBuilder.Build(agent, pattern, mission)
+func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName string) (string, error) {
+	if e.promptBuilder == nil || !e.promptBuilder.IsReady() {
+		return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
 	}
-	return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
+	ragContext := ""
+	if e.contextSearch != nil {
+		query := fmt.Sprintf("%s %s %s", repoName, agent, mission)
+		ragContext = e.contextSearch(ctx, query, 5)
+		if ragContext != "" {
+			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
+		}
+	}
+	return e.promptBuilder.Build(agent, pattern, mission, ragContext)
 }
 
 func (e *Engine) runAgenticLocalTask(ctx context.Context, taskID, agent, pattern, mission, repoName string, importance int, category string, logID int64, fullPrompt string, forceComplex bool) error {

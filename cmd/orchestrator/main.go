@@ -96,6 +96,7 @@ func main() {
 		}
 	}
 	analyzer := dto.NewAnalyzer(database, router, promptBuilder, gitSyncer)
+	engine.SetContextSearcher(analyzer.SearchContext)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
