@@ -95,7 +95,12 @@ func main() {
 			log.Printf("Initial Template Sync Error: %v", err)
 		}
 	}
-	analyzer := dto.NewAnalyzer(database, router, promptBuilder, gitSyncer)
+	
+	// 4. Start Background Processes Context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	analyzer := dto.NewAnalyzer(ctx, database, router, promptBuilder, gitSyncer)
 	analyzer.SetInferencePriority(router)
 	engine.SetContextSearcher(analyzer.SearchContext)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
@@ -114,8 +119,6 @@ func main() {
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 
 	// 4. Start Background Processes
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	engine.Start()
 

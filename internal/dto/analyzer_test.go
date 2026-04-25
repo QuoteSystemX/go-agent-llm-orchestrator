@@ -13,7 +13,7 @@ import (
 
 func TestAnalyzer_IndexFile_UTF8(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	a := NewAnalyzer(database, nil, nil, nil)
+	a := NewAnalyzer(context.Background(), database, nil, nil, nil)
 	
 	tempDir, _ := os.MkdirTemp("", "rag-test")
 	defer os.RemoveAll(tempDir)
@@ -68,7 +68,7 @@ func TestAnalyzer_ParseProposals(t *testing.T) {
 
 func TestAnalyzer_BuildPrompt(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	a := NewAnalyzer(database, nil, nil, nil)
+	a := NewAnalyzer(context.Background(), database, nil, nil, nil)
 	
 	prompt := a.buildAnalysisPrompt("test-repo", "README content", nil, nil, 1000)
 	
@@ -79,7 +79,7 @@ func TestAnalyzer_BuildPrompt(t *testing.T) {
 
 func TestAnalyzer_BuildPrompt_Truncation(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	a := NewAnalyzer(database, nil, nil, nil)
+	a := NewAnalyzer(context.Background(), database, nil, nil, nil)
 	
 	largeReadme := strings.Repeat("A", 5000)
 	maxChars := 4000
@@ -124,7 +124,7 @@ func TestAnalyzer_ParseAnalysisResult_Robust(t *testing.T) {
 
 func TestAnalyzer_BuildPrompt_TemplateFiltering(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
-	a := NewAnalyzer(database, nil, nil, nil)
+	a := NewAnalyzer(context.Background(), database, nil, nil, nil)
 	
 	templates := []Template{
 		{Name: "T1", Content: "C1"},

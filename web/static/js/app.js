@@ -1042,6 +1042,16 @@ function updateAnalysisProgress(status) {
         btn.innerHTML = '<i data-lucide="search" style="width:14px;height:14px"></i> Analyze Repository';
         if (container) container.style.display = 'none';
         
+        // If we just finished or already have results, show them
+        if (status.proposals) {
+            renderProposals(status.proposals);
+            updateLastAnalysisDisplay(status.proposals.last_analysis);
+        }
+
+        if (status.error) {
+            showToast('Analysis Error: ' + status.error, 'error');
+        }
+
         if (badge) {
             badge.className = 'status-badge active';
             badge.style.background = 'rgba(34, 197, 94, 0.2)'; // Green success color
@@ -1099,23 +1109,16 @@ async function runAnalysis() {
     const repo = document.getElementById('dto-repo-select').value;
     if (!repo) return;
 
-    // We don't disable the button manually here anymore, because loadRepoStatus polling will do it.
-    // But we trigger one status load immediately to start the polling UI faster.
-    setTimeout(loadRepoStatus, 500);
+    // Trigger one status load immediately to start the polling UI faster.
+    setTimeout(loadRepoStatus, 100);
 
     try {
         const resp = await fetch(`/api/v1/dto/analyze?repo=${encodeURIComponent(repo)}`, { method: 'POST' });
-        if (resp.ok) {
-            const proposals = await resp.json();
-            renderProposals(proposals);
-            updateLastAnalysisDisplay(proposals.last_analysis);
-        } else {
-            alert('Analysis failed: ' + await resp.text());
+        if (!resp.ok) {
+            alert('Failed to start analysis: ' + await resp.text());
         }
     } catch (e) {
-        alert('Error during analysis: ' + e.message);
-    } finally {
-        loadRepoStatus(); // Final status check to stop polling and reset UI
+        alert('Error starting analysis: ' + e.message);
     }
 }
 

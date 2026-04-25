@@ -1287,17 +1287,15 @@ func (s *AdminServer) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("DTO: Starting manual analysis for repo: %s", repoName)
-	proposals, err := s.analyzer.AnalyzeRepo(r.Context(), repoName, false)
-	if err != nil {
-		log.Printf("DTO Error: Analysis failed for %s: %v", repoName, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	log.Printf("DTO: Triggering manual analysis for repo: %s", repoName)
+	s.analyzer.TriggerManualAnalysis(r.Context(), repoName)
 
-	log.Printf("DTO: Analysis complete for %s. Found %d proposals.", repoName, len(proposals.Proposals))
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(proposals)
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "analysis_started",
+		"message": "Repository analysis is running in the background",
+	})
 }
 
 func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {

@@ -20,12 +20,14 @@ import (
 )
 
 type RepoAnalysisState struct {
-	IsRunning    bool   `json:"is_running"`
-	Type         string `json:"type"` // "MANUAL" or "BACKGROUND"
-	Phase        string `json:"phase"`
-	CurrentFile  string `json:"current_file"`
-	FilesIndexed int    `json:"files_indexed"`
-	TotalFiles   int    `json:"total_files"`
+	IsRunning    bool            `json:"is_running"`
+	Type         string          `json:"type"` // "MANUAL" or "BACKGROUND"
+	Phase        string          `json:"phase"`
+	CurrentFile  string          `json:"current_file"`
+	FilesIndexed int             `json:"files_indexed"`
+	TotalFiles   int             `json:"total_files"`
+	Proposals    *AnalysisResult `json:"proposals,omitempty"`
+	Error        string          `json:"error,omitempty"`
 }
 
 type Analyzer struct {
@@ -39,9 +41,12 @@ type Analyzer struct {
 
 	stateMutex sync.RWMutex
 	state      map[string]*RepoAnalysisState
+
+	appCtx context.Context
+	sem    chan struct{}
 }
 
-func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
+func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
 	return &Analyzer{
 		db:            database,
 		router:        router,
@@ -49,6 +54,8 @@ func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer
 		ragStores:     make(map[string]*rag.MemoryStore),
 		syncer:        syncer,
 		state:         make(map[string]*RepoAnalysisState),
+		appCtx:        appCtx,
+		sem:           make(chan struct{}, 1), // Only 1 manual analysis at a time
 	}
 }
 
@@ -95,9 +102,75 @@ func (a *Analyzer) GetStatus(repoName string) *RepoAnalysisState {
 			CurrentFile:  s.CurrentFile,
 			FilesIndexed: s.FilesIndexed,
 			TotalFiles:   s.TotalFiles,
+			Proposals:    s.Proposals,
+			Error:        s.Error,
 		}
 	}
 	return &RepoAnalysisState{IsRunning: false}
+}
+
+// TriggerManualAnalysis starts a background repository analysis.
+// It uses the application context for cancellation but detaches from the request context.
+func (a *Analyzer) TriggerManualAnalysis(requestCtx context.Context, repoName string) {
+	a.stateMutex.Lock()
+	state, exists := a.state[repoName]
+	if !exists {
+		state = &RepoAnalysisState{}
+		a.state[repoName] = state
+	}
+	if state.IsRunning {
+		a.stateMutex.Unlock()
+		return
+	}
+	a.stateMutex.Unlock()
+
+	// Use context.WithoutCancel to preserve values (tracing, etc) but ignore request disconnects.
+	// However, we also wrap it with a cancellation that listens to appCtx.
+	detachedCtx := context.WithoutCancel(requestCtx)
+	
+	go func() {
+		// Respect the global concurrency limit for manual analysis
+		select {
+		case a.sem <- struct{}{}:
+			defer func() { <-a.sem }()
+		case <-a.appCtx.Done():
+			return
+		}
+
+		// Double check if app is shutting down
+		if a.appCtx.Err() != nil {
+			return
+		}
+
+		// We use a context that combines the detached request context with the app lifecycle.
+		// Since Go doesn't have a built-in "merge" context that cancels when EITHER parent cancels,
+		// we manually monitor appCtx.
+		workCtx, cancel := context.WithCancel(detachedCtx)
+		defer cancel()
+
+		go func() {
+			select {
+			case <-a.appCtx.Done():
+				cancel()
+			case <-workCtx.Done():
+			}
+		}()
+
+		proposals, err := a.AnalyzeRepo(workCtx, repoName, false)
+		
+		a.stateMutex.Lock()
+		defer a.stateMutex.Unlock()
+		if s, ok := a.state[repoName]; ok {
+			if err != nil {
+				s.Error = err.Error()
+				log.Printf("DTO Error: Background manual analysis failed for %s: %v", repoName, err)
+			} else {
+				s.Error = ""
+				s.Proposals = proposals
+				log.Printf("DTO Success: Background manual analysis finished for %s", repoName)
+			}
+		}
+	}()
 }
 
 type Proposal struct {
