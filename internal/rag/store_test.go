@@ -25,8 +25,8 @@ func TestMemoryStore_Basic(t *testing.T) {
 
 	s.Reset(ctx)
 
-	s.MarkIndexed("test.txt")
-	if !s.IsIndexed("test.txt") {
-		t.Error("expected test.txt to be indexed")
+	s.MarkIndexed("test.txt", 100)
+	if !s.IsIndexed("test.txt", 100) {
+		t.Error("expected test.txt to be indexed with modTime 100")
 	}
 }

@@ -2,7 +2,10 @@ package rag
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -21,7 +24,8 @@ type MemoryStore struct {
 	mu         sync.RWMutex
 	db         *chromem.DB
 	collection *chromem.Collection
-	indexed    map[string]bool
+	indexed    map[string]int64
+	indexPath  string
 }
 
 // NewMemoryStore initializes a persistent chromem DB for RAG
@@ -47,10 +51,28 @@ func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemorySt
 		log.Printf("RAG Error: Failed to create collection: %v", err)
 	}
 
+	indexPath := filepath.Join(dbPath, "rag_index.json")
+	indexed := make(map[string]int64)
+	if data, err := os.ReadFile(indexPath); err == nil {
+		if err := json.Unmarshal(data, &indexed); err != nil {
+			log.Printf("RAG Warning: Failed to parse %s (corrupted JSON). Resetting index cache.", indexPath)
+			indexed = make(map[string]int64)
+			os.Remove(indexPath)
+		}
+	}
+
+	// Protection against out-of-sync states: if DB is empty but we think files are indexed
+	if collection != nil && len(indexed) > 0 && collection.Count() == 0 {
+		log.Printf("RAG Warning: Vector DB is empty but index cache exists. Forcing full reindex.")
+		indexed = make(map[string]int64)
+		os.Remove(indexPath)
+	}
+
 	return &MemoryStore{
 		db:         db,
 		collection: collection,
-		indexed:    make(map[string]bool),
+		indexed:    indexed,
+		indexPath:  indexPath,
 	}
 }
 
@@ -73,7 +95,11 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) {
 		},
 	}, 1) // 1 thread for local
 	if err != nil {
-		log.Printf("RAG Error: failed to add doc %s: %v", doc.ID, err)
+		if strings.Contains(err.Error(), "connection refused") {
+			log.Printf("RAG Critical Error: Ollama is not accessible. Ensure it's running and 'nomic-embed-text' model is pulled. Error: %v", err)
+		} else {
+			log.Printf("RAG Error: failed to add doc %s: %v", doc.ID, err)
+		}
 	}
 }
 
@@ -112,24 +138,39 @@ func (s *MemoryStore) Search(ctx context.Context, query string, topK int) []Docu
 func (s *MemoryStore) Reset(ctx context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.indexed = make(map[string]bool)
+	s.indexed = make(map[string]int64)
 	if s.db != nil {
 		s.db.DeleteCollection("repo_context")
-		// EmbedFunc would need to be passed again, so usually we don't hard reset
-		// in this basic implementation, we just clear the indexed map and rely on AddDocument overwriting.
 	}
+	os.Remove(s.indexPath)
 }
 
-// IsIndexed checks if a source file is already indexed
-func (s *MemoryStore) IsIndexed(source string) bool {
+// IsIndexed checks if a source file is already indexed and up-to-date
+func (s *MemoryStore) IsIndexed(source string, modTime int64) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.indexed[source]
+	return s.indexed[source] >= modTime
 }
 
-// MarkIndexed marks a source file as indexed
-func (s *MemoryStore) MarkIndexed(source string) {
+// MarkIndexed marks a source file as indexed with a specific modification time
+func (s *MemoryStore) MarkIndexed(source string, modTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.indexed[source] = true
+	s.indexed[source] = modTime
+}
+
+// SaveIndex saves the indexing state to disk safely
+func (s *MemoryStore) SaveIndex() {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	data, err := json.Marshal(s.indexed)
+	if err == nil {
+		os.MkdirAll(filepath.Dir(s.indexPath), 0755)
+		tmpPath := s.indexPath + ".tmp"
+		if err := os.WriteFile(tmpPath, data, 0644); err == nil {
+			os.Rename(tmpPath, s.indexPath) // Atomic replacement
+		} else {
+			log.Printf("RAG Error: Failed to write temp index file: %v", err)
+		}
+	}
 }

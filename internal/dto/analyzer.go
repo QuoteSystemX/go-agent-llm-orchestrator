@@ -131,16 +131,18 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
-			if !a.ragStore.IsIndexed(path) {
+			modTime := info.ModTime().Unix()
+			if !a.ragStore.IsIndexed(path, modTime) {
 				a.indexFile(ctx, path)
-				a.ragStore.MarkIndexed(path)
+				a.ragStore.MarkIndexed(path, modTime)
 				fileCount++
 			}
 		}
 		return nil
 	})
 
-	log.Printf("DTO [%s]: Indexed %d files. Searching for project context...", repoName, fileCount)
+	a.ragStore.SaveIndex()
+	log.Printf("DTO [%s]: Indexed %d new/modified files. Searching for project context...", repoName, fileCount)
 
 
 	// 4. Get active tasks
@@ -394,6 +396,7 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) {
 	if chunksCount == 0 { chunksCount = 1 }
 	log.Printf("DTO: Generating embeddings for %s (%d chunks)...", filepath.Base(path), chunksCount)
 
+	startTime := time.Now()
 	for i := 0; i < len(runes); i += (chunkSize - overlap) {
 		end := i + chunkSize
 		if end > len(runes) {
@@ -407,5 +410,10 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) {
 		if end == len(runes) {
 			break
 		}
+	}
+	
+	duration := time.Since(startTime)
+	if duration > 1*time.Second {
+		log.Printf("DTO: Embedding generation for %s took %v", filepath.Base(path), duration)
 	}
 }
