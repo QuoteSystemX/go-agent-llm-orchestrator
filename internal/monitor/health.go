@@ -123,13 +123,35 @@ func (m *HealthMonitor) check() {
 
 	// 2. Check Remote LLM
 	remoteEndpoint := os.Getenv("LLM_REMOTE_ENDPOINT")
+	remoteAPIKey := os.Getenv("LLM_REMOTE_API_KEY")
+	
 	if m.db != nil {
 		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", remoteEndpoint)
+		remoteAPIKey = m.db.GetSetting("llm_remote_api_key", remoteAPIKey)
 	}
 
 	if remoteEndpoint != "" {
-		newStatus.Components.Remote.Status = "READY" // Basic assumption if configured
-		// Optional: Perform a dummy request to verify key
+		req, err := http.NewRequest("GET", remoteEndpoint+"/models", nil)
+		if err == nil {
+			if remoteAPIKey != "" {
+				req.Header.Set("Authorization", "Bearer "+remoteAPIKey)
+			}
+			resp, err := m.client.Do(req)
+			if err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					newStatus.Components.Remote.Status = "READY"
+				} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+					newStatus.Components.Remote.Status = "UNAUTHORIZED"
+				} else {
+					newStatus.Components.Remote.Status = "ERROR"
+				}
+			} else {
+				newStatus.Components.Remote.Status = "UNREACHABLE"
+			}
+		} else {
+			newStatus.Components.Remote.Status = "INVALID_URL"
+		}
 	}
 
 	// Overall Status Logic

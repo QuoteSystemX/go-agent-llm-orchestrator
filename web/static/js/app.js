@@ -1164,6 +1164,7 @@ function setChatProvider(provider) {
     currentChatProvider = provider;
     document.querySelectorAll('.provider-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`provider-${provider}`).classList.add('active');
+    fetchHealth(); // Update status indicator immediately
 }
 
 function handleChatKey(e) {
@@ -1319,21 +1320,42 @@ async function fetchHealth() {
 
         if (!dot || !text) return;
 
-        const isReady = (ollama.status === 'READY' || remote.status === 'READY');
+        // Determine which component we care about based on currentChatProvider
+        let currentStatus = '';
+        let isReady = false;
+        let isOffline = false;
+        let missingReason = '';
+
+        if (currentChatProvider === 'local') {
+            currentStatus = ollama.status;
+            isReady = (ollama.status === 'READY');
+            isOffline = (ollama.status === 'DISCONNECTED');
+            missingReason = `Ollama: ${ollama.status.replace(/_/g, ' ')}`;
+            text.innerText = isReady ? 'Internal AI Ready' : 'Internal AI Error';
+        } else {
+            currentStatus = remote.status;
+            isReady = (remote.status === 'READY');
+            isOffline = (remote.status === 'NOT_CONFIGURED' || remote.status === 'DISCONNECTED');
+            missingReason = `Remote: ${remote.status.replace(/_/g, ' ')}`;
+            text.innerText = isReady ? 'External AI Ready' : 'External AI Error';
+        }
+
         aiReady = isReady;
 
         if (isReady) {
             dot.className = 'status-dot ready';
-            text.innerText = 'AI Ready';
+            text.title = 'Ready';
         } else {
-            const isOffline = (ollama.status === 'DISCONNECTED' && remote.status === 'NOT_CONFIGURED');
             dot.className = 'status-dot ' + (isOffline ? 'disconnected' : 'loading');
-            text.innerText = isOffline ? 'AI Offline' : 'AI Loading...';
+            text.title = missingReason;
         }
 
-        if (ollama.model && ollama.status === 'READY') {
+        if (currentChatProvider === 'local' && ollama.model && ollama.status === 'READY') {
             modelInfo.style.display = 'flex';
             modelName.innerText = ollama.model.name;
+        } else if (currentChatProvider === 'remote' && remote.status === 'READY') {
+            modelInfo.style.display = 'flex';
+            modelName.innerText = 'Remote API'; // Optionally show remote model here if backend supports it
         } else {
             modelInfo.style.display = 'none';
         }
