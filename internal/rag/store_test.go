@@ -8,7 +8,7 @@ import (
 func TestMemoryStore_Basic(t *testing.T) {
 	// For CI or environments without Ollama, we just test the initialization
 	// and fallback mechanisms.
-	s := NewMemoryStore("", "http://invalid-url:9999", "test-model")
+	s := NewMemoryStore("", "test-repo", "http://invalid-url:9999", "test-model")
 	if s == nil {
 		t.Fatal("expected MemoryStore, got nil")
 	}

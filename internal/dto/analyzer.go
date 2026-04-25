@@ -52,9 +52,6 @@ func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer
 	}
 }
 
-func (a *Analyzer) SetInferencePriority(mu *sync.RWMutex) {
-	a.inferMu = mu
-}
 
 func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
 	a.ragMu.Lock()
@@ -392,7 +389,7 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme string, currentTasks []m
 	if tasksStr == "" {
 		ragQuery = repoName + " README project description rules"
 	}
-	ragContext := a.SearchContext(context.Background(), ragQuery, 15) // Fetch up to 15 relevant chunks
+	ragContext := a.SearchContext(context.Background(), repoName, ragQuery, 15) // Fetch up to 15 relevant chunks
 	ragOrig := len(ragContext)
 	
 	ragLimit := ctxBudget - len(readme) - len(tasksStr)

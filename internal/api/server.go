@@ -868,7 +868,7 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 
 	// If a repository is selected, use RAG to enhance the context
 	if req.Repo != "" && s.analyzer != nil {
-		ragContext := s.analyzer.SearchContext(r.Context(), userMsg, 3)
+		ragContext := s.analyzer.SearchContext(r.Context(), req.Repo, userMsg, 3)
 		if ragContext != "" {
 			// Check total context size to respect Context Window settings
 			windowStr := s.db.GetSetting("llm_local_context_window", "4096")
