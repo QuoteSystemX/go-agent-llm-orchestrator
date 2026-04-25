@@ -551,6 +551,25 @@ async function loadPromptLibrarySettings() {
     } catch (e) { /* silent */ }
 }
 
+// Renders a ✓ set / ⚠ not set badge for API key fields.
+// maskedValue format from backend: "[env] sk-p...c4d5" | "[db] sk-p...c4d5" | ""
+function renderKeyStatus(elId, maskedValue, inputId, emptyPlaceholder) {
+    const el = document.getElementById(elId);
+    const input = inputId ? document.getElementById(inputId) : null;
+    if (!el) return;
+    if (!maskedValue) {
+        el.innerHTML = '<span style="color:var(--warning)">&#9888; not set</span>';
+        if (input) input.placeholder = emptyPlaceholder || '';
+    } else {
+        const sourceMatch = maskedValue.match(/^\[(\w+)\]\s*/);
+        const source = sourceMatch ? sourceMatch[1] : '';
+        const hint = maskedValue.replace(/^\[\w+\]\s*/, '');
+        const sourceLabel = source === 'env' ? ' · env var' : ' · saved';
+        el.innerHTML = `<span style="color:var(--success)">&#10003; set</span> <span style="color:var(--text-muted); font-family:monospace">${hint}${sourceLabel}</span>`;
+        if (input) { input.placeholder = 'enter new key to replace'; input.value = ''; }
+    }
+}
+
 async function loadLLMSettings() {
     try {
         const resp = await fetch('/api/v1/settings/llm');
@@ -558,21 +577,10 @@ async function loadLLMSettings() {
         const data = await resp.json();
         if (data.local_model) document.getElementById('local-model').value = data.local_model;
         if (data.remote_model) document.getElementById('remote-model').value = data.remote_model;
-        if (data.remote_api_key) {
-            const remoteKeyField = document.getElementById('remote-api-key');
-            remoteKeyField.placeholder = data.remote_api_key;
-            remoteKeyField.value = '';
-        }
+        renderKeyStatus('remote-api-key-status', data.remote_api_key, 'remote-api-key', 'sk-...');
         if (data.remote_endpoint_url) document.getElementById('remote-endpoint-url').value = data.remote_endpoint_url;
         if (data.jules_base_url) document.getElementById('jules-base-url').value = data.jules_base_url;
-        // Show masked key (e.g. "[env] AIza...abc4") as placeholder so the user knows it's set
-        const keyField = document.getElementById('jules-api-key');
-        if (data.jules_api_key) {
-            keyField.placeholder = data.jules_api_key;
-            keyField.value = '';
-        } else {
-            keyField.placeholder = 'AIza... (not set)';
-        }
+        renderKeyStatus('jules-api-key-status', data.jules_api_key, 'jules-api-key', 'AIza...');
         if (data.local_context_window) document.getElementById('local-context-window').value = data.local_context_window;
         if (data.local_temperature) document.getElementById('local-temperature').value = data.local_temperature;
         if (data.local_timeout) document.getElementById('local-timeout').value = data.local_timeout;
@@ -692,6 +700,16 @@ async function saveSettings() {
             system_prompt: systemPrompt
         })
     });
+    if (remoteApiKey) {
+        document.getElementById('remote-api-key').value = '';
+        document.getElementById('remote-api-key').placeholder = 'enter new key to replace';
+        document.getElementById('remote-api-key-status').innerHTML = '<span style="color:var(--success)">&#10003; key stored</span>';
+    }
+    if (julesApiKey) {
+        document.getElementById('jules-api-key').value = '';
+        document.getElementById('jules-api-key').placeholder = 'enter new key to replace';
+        document.getElementById('jules-api-key-status').innerHTML = '<span style="color:var(--success)">&#10003; key stored</span>';
+    }
 
     const triggerStatuses = [];
     if (document.getElementById('trigger-awaiting-feedback').checked) triggerStatuses.push('AWAITING_USER_FEEDBACK');
