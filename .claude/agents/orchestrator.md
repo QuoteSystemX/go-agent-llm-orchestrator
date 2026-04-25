@@ -1229,6 +1229,8 @@ graph TD
 | **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed" | `performance-optimizer`                     | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP" | `product-owner`                             | ✅ YES       |
+| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`           | ✅ YES       |
+| **Code Audit**      | "audit", "scan code", "tech debt", "generate tasks" | `reviewer`                          | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 
@@ -1262,8 +1264,6 @@ function analyzeRequest(userMessage) {
 ```
 
 ## 4. Response Format
-
-**When auto-selecting an agent, inform the user concisely:**
 
 
 <!-- truncated — full skill at .agent/skills/intelligent-routing/SKILL.md -->

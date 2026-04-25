@@ -48,6 +48,8 @@ graph TD
 | **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed" | `performance-optimizer`                     | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP" | `product-owner`                             | ✅ YES       |
+| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`           | ✅ YES       |
+| **Code Audit**      | "audit", "scan code", "tech debt", "generate tasks" | `reviewer`                          | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 
@@ -113,6 +115,8 @@ function analyzeRequest(userMessage) {
 | **Performance** | slow, lag, optimize, cache, performance    | `performance-optimizer` |
 | **SEO**         | seo, meta, analytics, sitemap, robots      | `seo-specialist`        |
 | **Game**        | unity, godot, phaser, game, multiplayer    | `game-developer`        |
+| **E2E / QA**    | playwright, cypress, e2e, regression, pipeline | `qa-automation-engineer` |
+| **Audit**       | audit, scan, tech debt, task queue         | `reviewer`              |
 
 ### Multi-Domain Tasks (Auto-invoke Orchestrator)
 
@@ -233,10 +237,10 @@ User: "Add mobile support to the web app"
 - If task is unclear, still ask questions first
 - Then route to appropriate agent
 
-### With GEMINI.md Rules
+### With CLAUDE.md / GEMINI.md Rules
 
-- **Priority**: GEMINI.md rules > intelligent-routing
-- If GEMINI.md specifies explicit routing, follow it
+- **Priority**: CLAUDE.md / GEMINI.md rules > intelligent-routing
+- If CLAUDE.md (Claude Code) or GEMINI.md (Antigravity) specifies explicit routing, follow it
 - Intelligent routing is the DEFAULT when no explicit rule exists
 
 ## Testing the System
@@ -305,7 +309,8 @@ still mention agents explicitly with `@agent-name` if you prefer.
 
 ### Enable Debug Mode (for development)
 
-Add to GEMINI.md temporarily:
+**Antigravity (Gemini):** Add to `GEMINI.md` temporarily.
+**Claude Code:** Add to `CLAUDE.md` or `.claude/settings.json` temporarily.
 
 ```markdown
 ## DEBUG: Intelligent Routing
@@ -332,4 +337,6 @@ Show selection reasoning:
 
 ---
 
-**Next Steps**: Integrate this skill into GEMINI.md TIER 0 rules.
+**Next Steps**:
+- **Antigravity (Gemini)**: Integrate this skill into `GEMINI.md` TIER 0 rules.
+- **Claude Code**: This skill is loaded by the `orchestrator` agent. No manual integration needed — the orchestrator applies intelligent routing automatically before any agent delegation.
