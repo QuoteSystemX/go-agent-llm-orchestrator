@@ -135,8 +135,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	})
 
 	log.Printf("DTO [%s]: Indexed %d files. Searching for project context...", repoName, fileCount)
-	// Search for relevant context for "Dynamic Task Orchestration"
-	docContext := a.SearchContext("task orchestration project structure goals", 5)
+
 
 	// 4. Get active tasks
 	agentContext := ""
@@ -313,9 +312,16 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
 	// Simple JSON extraction from markdown (handle both { } and [ ])
 	jsonStr := response
-	if start := strings.Index(response, "{"); start != -1 {
+	startObj := strings.Index(response, "{")
+	startArr := strings.Index(response, "[")
+
+	if startArr != -1 && (startObj == -1 || startArr < startObj) {
+		if end := strings.LastIndex(response, "]"); end != -1 {
+			jsonStr = response[startArr : end+1]
+		}
+	} else if startObj != -1 {
 		if end := strings.LastIndex(response, "}"); end != -1 {
-			jsonStr = response[start : end+1]
+			jsonStr = response[startObj : end+1]
 		}
 	}
 

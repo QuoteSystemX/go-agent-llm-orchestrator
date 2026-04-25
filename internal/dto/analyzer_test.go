@@ -136,13 +136,13 @@ func TestAnalyzer_BuildPrompt_TemplateFiltering(t *testing.T) {
 	
 	prompt := a.buildAnalysisPrompt("test", "", "", "", nil, templates, 10000)
 	
-	if !strings.Contains(prompt, "Template: T1") {
+	if !strings.Contains(prompt, "- T1:") {
 		t.Error("should contain T1")
 	}
-	if !strings.Contains(prompt, "Template: T3") {
-		t.Error("should contain T3")
+	if strings.Contains(prompt, "- T3:") {
+		t.Error("should NOT contain T3 (limit is 2)")
 	}
-	if strings.Contains(prompt, "Template: T4") {
-		t.Error("should NOT contain T4 (limit is 3)")
+	if strings.Contains(prompt, "- T4:") {
+		t.Error("should NOT contain T4")
 	}
 }
