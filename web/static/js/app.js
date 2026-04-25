@@ -902,9 +902,59 @@ async function loadRepoStatus() {
         if (resp.ok) {
             const status = await resp.json();
             updateLastAnalysisDisplay(status.last_analysis);
+            updateAnalysisProgress(status);
         }
     } catch (e) {
         console.error('Failed to load repo status:', e);
+    }
+}
+
+let analysisPollInterval = null;
+
+function updateAnalysisProgress(status) {
+    const btn = document.getElementById('btn-run-analysis');
+    const container = document.getElementById('dto-status-container');
+    
+    if (status.is_running) {
+        btn.disabled = true;
+        const btnText = status.type === 'BACKGROUND' ? 'Auto-Analyzing...' : 'Analyzing...';
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:14px;height:14px"></i> ${btnText}`;
+        
+        if (container) {
+            container.style.display = 'block';
+            let html = `
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem">
+                    <i data-lucide="activity" style="color:var(--primary); width:16px; height:16px"></i>
+                    <strong style="color:var(--text)">${status.phase || 'Working...'}</strong>
+                </div>
+            `;
+            if (status.current_file) {
+                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem; word-break:break-all">
+                            <i data-lucide="file" style="width:12px;height:12px;margin-right:2px"></i> ${status.current_file}
+                         </div>`;
+            }
+            if (status.files_indexed > 0) {
+                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem">
+                            <i data-lucide="database" style="width:12px;height:12px;margin-right:2px"></i> Processed: ${status.files_indexed} chunks
+                         </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        if (!analysisPollInterval) {
+            analysisPollInterval = setInterval(loadRepoStatus, 1000);
+        }
+        lucide.createIcons();
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="search" style="width:14px;height:14px"></i> Analyze Repository';
+        if (container) container.style.display = 'none';
+        
+        if (analysisPollInterval) {
+            clearInterval(analysisPollInterval);
+            analysisPollInterval = null;
+        }
+        lucide.createIcons();
     }
 }
 
@@ -950,11 +1000,9 @@ async function runAnalysis() {
     const repo = document.getElementById('dto-repo-select').value;
     if (!repo) return;
 
-    const btn = document.getElementById('btn-run-analysis');
-    const orig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Analyzing...';
-    lucide.createIcons();
+    // We don't disable the button manually here anymore, because loadRepoStatus polling will do it.
+    // But we trigger one status load immediately to start the polling UI faster.
+    setTimeout(loadRepoStatus, 500);
 
     try {
         const resp = await fetch(`/api/v1/dto/analyze?repo=${encodeURIComponent(repo)}`, { method: 'POST' });
@@ -968,9 +1016,7 @@ async function runAnalysis() {
     } catch (e) {
         alert('Error during analysis: ' + e.message);
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = orig;
-        lucide.createIcons();
+        loadRepoStatus(); // Final status check to stop polling and reset UI
     }
 }
 

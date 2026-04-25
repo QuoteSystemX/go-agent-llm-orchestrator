@@ -1216,7 +1216,7 @@ func (s *AdminServer) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("DTO: Starting manual analysis for repo: %s", repoName)
-	proposals, err := s.analyzer.AnalyzeRepo(r.Context(), repoName)
+	proposals, err := s.analyzer.AnalyzeRepo(r.Context(), repoName, false)
 	if err != nil {
 		log.Printf("DTO Error: Analysis failed for %s: %v", repoName, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1236,9 +1236,15 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lastAnalysis := s.db.GetSetting("dto_last_analysis_"+repoName, "")
+	currentStatus := s.analyzer.GetStatus(repoName)
 	
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]any{
 		"last_analysis": lastAnalysis,
+		"is_running":    currentStatus.IsRunning,
+		"type":          currentStatus.Type,
+		"phase":         currentStatus.Phase,
+		"current_file":  currentStatus.CurrentFile,
+		"files_indexed": currentStatus.FilesIndexed,
 	})
 }

@@ -16,7 +16,16 @@ import (
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/rag"
+	"sync"
 )
+
+type RepoAnalysisState struct {
+	IsRunning    bool   `json:"is_running"`
+	Type         string `json:"type"` // "MANUAL" or "BACKGROUND"
+	Phase        string `json:"phase"`
+	CurrentFile  string `json:"current_file"`
+	FilesIndexed int    `json:"files_indexed"`
+}
 
 type Analyzer struct {
 	db            *db.DB
@@ -24,6 +33,9 @@ type Analyzer struct {
 	promptBuilder *prompt.Builder
 	ragStore      *rag.MemoryStore
 	syncer        *git.Syncer
+
+	stateMutex sync.RWMutex
+	state      map[string]*RepoAnalysisState
 }
 
 func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
@@ -37,7 +49,33 @@ func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer
 		promptBuilder: pb,
 		ragStore:      rag.NewMemoryStore(dbPath, ollamaUrl, modelName),
 		syncer:        syncer,
+		state:         make(map[string]*RepoAnalysisState),
 	}
+}
+
+func (a *Analyzer) updateState(repoName, phase, file string, indexed int) {
+	a.stateMutex.Lock()
+	defer a.stateMutex.Unlock()
+	if s, ok := a.state[repoName]; ok {
+		if phase != "" { s.Phase = phase }
+		if file != "" { s.CurrentFile = file }
+		if indexed >= 0 { s.FilesIndexed = indexed }
+	}
+}
+
+func (a *Analyzer) GetStatus(repoName string) *RepoAnalysisState {
+	a.stateMutex.RLock()
+	defer a.stateMutex.RUnlock()
+	if s, ok := a.state[repoName]; ok {
+		return &RepoAnalysisState{
+			IsRunning:    s.IsRunning,
+			Type:         s.Type,
+			Phase:        s.Phase,
+			CurrentFile:  s.CurrentFile,
+			FilesIndexed: s.FilesIndexed,
+		}
+	}
+	return &RepoAnalysisState{IsRunning: false}
 }
 
 type Proposal struct {
@@ -59,12 +97,42 @@ type AnalysisResult struct {
 	LastAnalysis string            `json:"last_analysis"`
 }
 
-func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisResult, error) {
+func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackground bool) (*AnalysisResult, error) {
+	a.stateMutex.Lock()
+	state, exists := a.state[repoName]
+	if !exists {
+		state = &RepoAnalysisState{}
+		a.state[repoName] = state
+	}
+	if state.IsRunning {
+		a.stateMutex.Unlock()
+		return nil, fmt.Errorf("analysis already running for this repository (%s)", state.Type)
+	}
+	state.IsRunning = true
+	state.Type = "MANUAL"
+	if isBackground {
+		state.Type = "BACKGROUND"
+	}
+	state.Phase = "Initializing"
+	state.FilesIndexed = 0
+	state.CurrentFile = ""
+	a.stateMutex.Unlock()
+
+	defer func() {
+		a.stateMutex.Lock()
+		if s, ok := a.state[repoName]; ok {
+			s.IsRunning = false
+			s.Phase = ""
+		}
+		a.stateMutex.Unlock()
+	}()
+
 	basePath := a.db.GetSetting("repo_base_path", "./data/repos")
 	repoPath := filepath.Join(basePath, repoName)
 
 	// Ensure repo is synced on PVC
 	if a.syncer != nil {
+		a.updateState(repoName, "Syncing Repository", "", -1)
 		log.Printf("DTO [%s]: Syncing repository to %s...", repoName, repoPath)
 		rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
 		if err := a.syncer.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
@@ -133,9 +201,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
 			if !a.ragStore.IsIndexed(path, modTime) {
+				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount)
 				if err := a.indexFile(ctx, path); err == nil {
 					a.ragStore.MarkIndexed(path, modTime)
 					fileCount++
+					a.updateState(repoName, "", "", fileCount)
 				} else {
 					log.Printf("DTO [%s]: Skipping marking %s as indexed due to error", repoName, path)
 				}
@@ -174,6 +244,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	prompt := a.buildAnalysisPrompt(repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
+	a.updateState(repoName, "Analyzing with LLM", "", -1)
 	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
 	response, err := a.router.GenerateResponse(ctx, llm.DTO, prompt)
 	if err != nil {
@@ -360,7 +431,7 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 	}
 	for _, repo := range repos {
 		fmt.Printf("DTO: Running scheduled analysis for %s\n", repo)
-		result, err := a.AnalyzeRepo(ctx, repo)
+		result, err := a.AnalyzeRepo(ctx, repo, true)
 		if err != nil {
 			fmt.Printf("DTO: Scheduled analysis failed for %s: %v\n", repo, err)
 			continue
