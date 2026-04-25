@@ -27,11 +27,15 @@ type Analyzer struct {
 }
 
 func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
+	dbPath := filepath.Join(database.GetSetting("repo_base_path", "./data/repos"), "../chromem_db")
+	ollamaUrl := database.GetSetting("llm_local_endpoint", "http://localhost:11434")
+	modelName := database.GetSetting("llm_embedding_model", "nomic-embed-text")
+
 	return &Analyzer{
 		db:            database,
 		router:        router,
 		promptBuilder: pb,
-		ragStore:      rag.NewMemoryStore(),
+		ragStore:      rag.NewMemoryStore(dbPath, ollamaUrl, modelName),
 		syncer:        syncer,
 	}
 }
@@ -90,7 +94,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 	// Check for .agent folder (BMAD context)
 	// 3. Index and Search Context (RAG)
-	a.ragStore.Reset()
+	// a.ragStore.Reset() is removed to allow incremental/persistent RAG
 
 	// Extensions to index
 	targetExts := map[string]bool{
@@ -128,8 +132,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
-			a.indexFile(path)
-			fileCount++
+			if !a.ragStore.IsIndexed(path) {
+				a.indexFile(ctx, path)
+				a.ragStore.MarkIndexed(path)
+				fileCount++
+			}
 		}
 		return nil
 	})
@@ -263,7 +270,7 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	aLimit := ctxBudget * 25 / 100
 	if len(agentContext) > aLimit { agentContext = agentContext[:aLimit] + "... [truncated]" }
 
-	ragContext := a.SearchContext(repoName, 5)
+	ragContext := a.SearchContext(context.Background(), repoName, 5)
 	ragOrig := len(ragContext)
 	ragLimit := ctxBudget - len(readme) - len(wiki) - len(tasksStr) - len(agentContext)
 	if ragLimit < 0 { ragLimit = 0 }
@@ -375,8 +382,8 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 	}
 }
 
-func (a *Analyzer) SearchContext(query string, topK int) string {
-	relevantDocs := a.ragStore.Search(query, topK)
+func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) string {
+	relevantDocs := a.ragStore.Search(ctx, query, topK)
 	context := ""
 	for _, d := range relevantDocs {
 		context += fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content)
@@ -384,7 +391,7 @@ func (a *Analyzer) SearchContext(query string, topK int) string {
 	return context
 }
 
-func (a *Analyzer) indexFile(path string) {
+func (a *Analyzer) indexFile(ctx context.Context, path string) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return
@@ -399,7 +406,7 @@ func (a *Analyzer) indexFile(path string) {
 		if end > len(runes) {
 			end = len(runes)
 		}
-		a.ragStore.AddDocument(rag.Document{
+		a.ragStore.AddDocument(ctx, rag.Document{
 			ID:      fmt.Sprintf("%s_%d", path, i),
 			Source:  filepath.Base(path),
 			Content: string(runes[i:end]),

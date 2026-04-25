@@ -1,8 +1,11 @@
 package rag
 
 import (
-	"strings"
+	"context"
+	"log"
 	"sync"
+
+	"github.com/philippgille/chromem-go"
 )
 
 // Document represents a piece of text (chunk) indexed for search
@@ -12,105 +15,113 @@ type Document struct {
 	Source  string
 }
 
-// MemoryStore is a simple in-memory storage for RAG
+// MemoryStore is an in-memory/persistent storage for RAG using chromem-go
 type MemoryStore struct {
-	mu    sync.RWMutex
-	docs  []Document
+	mu         sync.RWMutex
+	db         *chromem.DB
+	collection *chromem.Collection
+	indexed    map[string]bool
 }
 
-func NewMemoryStore() *MemoryStore {
+// NewMemoryStore initializes a persistent chromem DB for RAG
+func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemoryStore {
+	db, err := chromem.NewPersistentDB(dbPath, false)
+	if err != nil {
+		log.Printf("RAG Error: Failed to init chromem DB: %v. Falling back to in-memory.", err)
+		db = chromem.NewDB()
+	}
+
+	embedFunc := chromem.NewEmbeddingFuncOllama(modelName, ollamaUrl)
+
+	// Create or get collection
+	collection, err := db.GetOrCreateCollection("repo_context", nil, embedFunc)
+	if err != nil {
+		log.Printf("RAG Error: Failed to create collection: %v", err)
+	}
+
 	return &MemoryStore{
-		docs: []Document{},
+		db:         db,
+		collection: collection,
+		indexed:    make(map[string]bool),
 	}
 }
 
-// AddDocument adds and indexes a new document
-func (s *MemoryStore) AddDocument(doc Document) {
+// AddDocument adds and indexes a new document using embeddings
+func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.docs = append(s.docs, doc)
+
+	if s.collection == nil {
+		return
+	}
+
+	err := s.collection.AddDocuments(ctx, []chromem.Document{
+		{
+			ID:      doc.ID,
+			Content: doc.Content,
+			Metadata: map[string]string{
+				"source": doc.Source,
+			},
+		},
+	}, 1) // 1 thread for local
+	if err != nil {
+		log.Printf("RAG Error: failed to add doc %s: %v", doc.ID, err)
+	}
 }
 
-// Search performs a simple keyword-based search with stop-word filtering and improved scoring
-func (s *MemoryStore) Search(query string, topK int) []Document {
+// Search performs semantic search
+func (s *MemoryStore) Search(ctx context.Context, query string, topK int) []Document {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if len(s.docs) == 0 {
+	if s.collection == nil {
 		return nil
 	}
 
-	stopWords := map[string]bool{
-		"the": true, "and": true, "for": true, "with": true, "this": true,
-		"that": true, "from": true, "your": true, "have": true, "will": true,
-		"package": true, "import": true, "func": true, "type": true, "struct": true,
+	results, err := s.collection.Query(ctx, query, topK, nil, nil)
+	if err != nil {
+		log.Printf("RAG Error: query failed: %v", err)
+		return nil
 	}
 
-	type scoredDoc struct {
-		doc   Document
-		score float64
-	}
-
-	queryTerms := strings.Fields(strings.ToLower(query))
-	filteredTerms := []string{}
-	for _, term := range queryTerms {
-		if len(term) > 2 && !stopWords[term] {
-			filteredTerms = append(filteredTerms, term)
+	var docs []Document
+	for _, res := range results {
+		source := ""
+		if src, ok := res.Metadata["source"]; ok {
+			source = src
 		}
+		docs = append(docs, Document{
+			ID:      res.ID,
+			Content: res.Content,
+			Source:  source,
+		})
 	}
 
-	if len(filteredTerms) == 0 {
-		filteredTerms = queryTerms // fallback if all were filtered
-	}
-
-	var scored []scoredDoc
-
-	for _, doc := range s.docs {
-		score := 0.0
-		contentLower := strings.ToLower(doc.Content)
-		
-		uniqueMatches := 0
-		for _, term := range filteredTerms {
-			count := strings.Count(contentLower, term)
-			if count > 0 {
-				// Score = log(count+1) to dampen high frequency + bonus for unique term match
-				score += 1.0 + float64(count)*0.1
-				uniqueMatches++
-			}
-		}
-
-		if score > 0 {
-			// Boost documents that match more unique terms from the query
-			score *= float64(uniqueMatches)
-			scored = append(scored, scoredDoc{doc, score})
-		}
-	}
-
-	// Sort by score (descending)
-	for i := 0; i < len(scored); i++ {
-		for j := i + 1; j < len(scored); j++ {
-			if scored[j].score > scored[i].score {
-				scored[i], scored[j] = scored[j], scored[i]
-			}
-		}
-	}
-
-	resultLimit := topK
-	if len(scored) < topK {
-		resultLimit = len(scored)
-	}
-
-	results := make([]Document, resultLimit)
-	for i := 0; i < resultLimit; i++ {
-		results[i] = scored[i].doc
-	}
-
-	return results
+	return docs
 }
 
 // Reset clears all documents
-func (s *MemoryStore) Reset() {
+func (s *MemoryStore) Reset(ctx context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.docs = []Document{}
+	s.indexed = make(map[string]bool)
+	if s.db != nil {
+		s.db.DeleteCollection("repo_context")
+		// EmbedFunc would need to be passed again, so usually we don't hard reset
+		// in this basic implementation, we just clear the indexed map and rely on AddDocument overwriting.
+	}
+}
+
+// IsIndexed checks if a source file is already indexed
+func (s *MemoryStore) IsIndexed(source string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.indexed[source]
+}
+
+// MarkIndexed marks a source file as indexed
+func (s *MemoryStore) MarkIndexed(source string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.indexed[source] = true
 }
