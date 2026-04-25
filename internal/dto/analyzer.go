@@ -206,6 +206,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 					a.ragStore.MarkIndexed(path, modTime)
 					fileCount++
 					a.updateState(repoName, "", "", fileCount)
+					
+					// Save index incrementally every 20 files to persist progress
+					if fileCount % 20 == 0 {
+						a.ragStore.SaveIndex()
+					}
 				} else {
 					log.Printf("DTO [%s]: Skipping marking %s as indexed due to error", repoName, path)
 				}
