@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLogs();
     fetchActivityLogs();
     fetchSystemUsage();
+    fetchSystemStats();
     initActivityFilters();
     setInterval(fetchNextRun, 30000);
     setInterval(fetchSystemUsage, 30000);
