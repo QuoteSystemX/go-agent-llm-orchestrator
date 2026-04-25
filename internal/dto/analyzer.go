@@ -248,20 +248,31 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	tasksStr := tasksSb.String()
 
 	// 3. Trim sections
+	rOrig := len(readme)
 	rLimit := ctxBudget * 20 / 100
 	if len(readme) > rLimit { readme = readme[:rLimit] + "... [truncated]" }
 	
+	wOrig := len(wiki)
 	wLimit := ctxBudget * 20 / 100
 	if len(wiki) > wLimit { wiki = wiki[:wLimit] + "... [truncated]" }
 
+	tOrig := len(tasksStr)
 	tLimit := ctxBudget * 15 / 100
 	if len(tasksStr) > tLimit { tasksStr = tasksStr[:tLimit] + "... [truncated]" }
 
 	ragContext := a.SearchContext(repoName, 5)
+	ragOrig := len(ragContext)
 	ragLimit := ctxBudget - len(readme) - len(wiki) - len(tasksStr) - len(agentContext)
 	if len(ragContext) > ragLimit && ragLimit > 0 {
 		ragContext = ragContext[:ragLimit] + "... [truncated]"
 	}
+
+	log.Printf("DTO [%s] Context Budgeting:\n"+
+		"  - README: %d -> %d chars\n"+
+		"  - Wiki:   %d -> %d chars\n"+
+		"  - Tasks:  %d -> %d chars\n"+
+		"  - RAG:    %d -> %d chars\n",
+		repoName, rOrig, len(readme), wOrig, len(wiki), tOrig, len(tasksStr), ragOrig, len(ragContext))
 
 	// 4. Assemble
 	var sb strings.Builder
@@ -283,7 +294,9 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	sb.WriteString("=== Instructions ===\n")
 	sb.WriteString(instructions)
 
-	return sb.String()
+	finalPrompt := sb.String()
+	log.Printf("DTO [%s]: Final prompt size: %d chars", repoName, len(finalPrompt))
+	return finalPrompt
 }
 
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
