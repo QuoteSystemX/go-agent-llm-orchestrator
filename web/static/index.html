@@ -494,19 +494,26 @@
 
                 <!-- Global Quota (System Settings) -->
                 <div class="settings-section-title">Global Quota (System Settings)</div>
-                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-row" style="grid-template-columns: repeat(3, 1fr); gap: 1rem;">
                     <div class="form-group">
-                        <label>Daily Task Limit (Jules Quota)</label>
+                        <label>Daily Task Limit</label>
                         <input type="number" id="sys-daily-limit" placeholder="50" min="0">
                         <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
-                            Total tasks per day. 0 = unlimited.
+                            Total tasks per day.
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Log Retention (Days)</label>
                         <input type="number" id="sys-retention-days" placeholder="7" min="1">
                         <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
-                            History cleanup period. Default is 7.
+                            Cleanup period.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Indexing Batch Size</label>
+                        <input type="number" id="sys-dto-batch-size" placeholder="500" min="10">
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                            DTO files per run.
                         </div>
                     </div>
                 </div>

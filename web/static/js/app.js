@@ -768,6 +768,7 @@ async function saveSettings() {
 
     const sysDailyLimit = parseInt(document.getElementById('sys-daily-limit').value) || 0;
     const sysRetentionDays = parseInt(document.getElementById('sys-retention-days').value) || 7;
+    const sysDtoBatchSize = parseInt(document.getElementById('sys-dto-batch-size').value) || 500;
     const saveBtn = document.querySelector('#settings-modal .btn-success');
     const origText = saveBtn.innerText;
     saveBtn.disabled = true;
@@ -779,7 +780,8 @@ async function saveSettings() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 daily_task_limit: sysDailyLimit,
-                retention_days: sysRetentionDays
+                retention_days: sysRetentionDays,
+                dto_batch_size: sysDtoBatchSize
             })
         });
 
@@ -1538,6 +1540,7 @@ async function loadSystemSettings() {
         const data = await resp.json();
         document.getElementById('sys-daily-limit').value = data.daily_task_limit || 0;
         document.getElementById('sys-retention-days').value = data.retention_days || 7;
+        document.getElementById('sys-dto-batch-size').value = data.dto_batch_size || 500;
     } catch (e) { /* silent */ }
 }
 

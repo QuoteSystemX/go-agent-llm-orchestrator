@@ -32,7 +32,9 @@ type Analyzer struct {
 	db            *db.DB
 	router        *llm.Router
 	promptBuilder *prompt.Builder
-	ragStore      *rag.MemoryStore
+	ragStores     map[string]*rag.MemoryStore
+	ragMu         sync.RWMutex
+	inferMu       *sync.RWMutex
 	syncer        *git.Syncer
 
 	stateMutex sync.RWMutex
@@ -40,18 +42,38 @@ type Analyzer struct {
 }
 
 func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
-	dbPath := filepath.Join(database.GetSetting("repo_base_path", "./data/repos"), "../chromem_db")
-	ollamaUrl := database.GetSetting("llm_local_endpoint", "http://localhost:11434")
-	modelName := database.GetSetting("llm_embedding_model", "nomic-embed-text")
-
 	return &Analyzer{
 		db:            database,
 		router:        router,
 		promptBuilder: pb,
-		ragStore:      rag.NewMemoryStore(dbPath, ollamaUrl, modelName),
+		ragStores:     make(map[string]*rag.MemoryStore),
 		syncer:        syncer,
 		state:         make(map[string]*RepoAnalysisState),
 	}
+}
+
+func (a *Analyzer) SetInferencePriority(mu *sync.RWMutex) {
+	a.inferMu = mu
+}
+
+func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
+	a.ragMu.Lock()
+	defer a.ragMu.Unlock()
+
+	if s, ok := a.ragStores[repoID]; ok {
+		return s
+	}
+
+	basePath := filepath.Join(a.db.GetSetting("repo_base_path", "./data/repos"), "../chromem_db")
+	ollamaUrl := a.db.GetSetting("llm_local_endpoint", "http://localhost:11434")
+	modelName := a.db.GetSetting("llm_embedding_model", "nomic-embed-text")
+
+	s := rag.NewMemoryStore(basePath, repoID, ollamaUrl, modelName)
+	if a.inferMu != nil {
+		s.SetInferencePriority(a.inferMu)
+	}
+	a.ragStores[repoID] = s
+	return s
 }
 
 func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total int) {
@@ -174,7 +196,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	}
 
 	fileCount := 0
+	ragStore := a.getRagStore(repoName)
+	batchSizeStr := a.db.GetSetting("dto_batch_size", "500")
 	maxFiles := 500
+	fmt.Sscanf(batchSizeStr, "%d", &maxFiles)
+
 	maxFileSize := int64(100 * 1024) // 100 KB
 
 	log.Printf("DTO [%s]: Pre-scanning files...", repoName)
@@ -192,7 +218,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
-			if !a.ragStore.IsIndexed(path, modTime) {
+			if !ragStore.IsIndexed(path, modTime) {
 				totalToIndex++
 			}
 		}
@@ -227,16 +253,16 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
-			if !a.ragStore.IsIndexed(path, modTime) {
+			if !ragStore.IsIndexed(path, modTime) {
 				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount, -1)
-				if err := a.indexFile(ctx, path); err == nil {
-					a.ragStore.MarkIndexed(path, modTime)
+				if err := a.indexFile(ctx, path, ragStore); err == nil {
+					ragStore.MarkIndexed(path, modTime)
 					fileCount++
 					a.updateState(repoName, "", "", fileCount, -1)
 					
 					// Save index incrementally every 20 files to persist progress
 					if fileCount % 20 == 0 {
-						a.ragStore.SaveIndex()
+						ragStore.SaveIndex()
 					}
 				} else {
 					log.Printf("DTO [%s]: Skipping marking %s as indexed due to error", repoName, path)
@@ -246,7 +272,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		return nil
 	})
 
-	a.ragStore.SaveIndex()
+	ragStore.SaveIndex()
 	log.Printf("DTO [%s]: Indexed %d new/modified files. Searching for project context...", repoName, fileCount)
 
 
@@ -478,12 +504,13 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 // SetInferencePriority wires up the Ollama priority gate from llm.Router so
 // embedding calls yield to inference requests on the shared local model.
 func (a *Analyzer) SetInferencePriority(router *llm.Router) {
-	a.ragStore.SetInferencePriority(router.InferenceMutex())
+	a.inferMu = router.InferenceMutex()
 }
 
-func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) string {
-	log.Printf("DTO: Querying RAG for top %d chunks matching semantic query: '%s'", topK, query)
-	relevantDocs := a.ragStore.Search(ctx, query, topK)
+func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, topK int) string {
+	ragStore := a.getRagStore(repoName)
+	log.Printf("DTO [%s]: Querying RAG for top %d chunks matching semantic query: '%s'", repoName, topK, query)
+	relevantDocs := ragStore.Search(ctx, query, topK)
 	log.Printf("DTO: RAG found %d relevant chunks for query", len(relevantDocs))
 	
 	context := ""
@@ -504,7 +531,7 @@ func chunkParams(ext string) (chunkSize, overlap int) {
 	}
 }
 
-func (a *Analyzer) indexFile(ctx context.Context, path string) error {
+func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.MemoryStore) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -524,9 +551,9 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) error {
 		if end > len(runes) {
 			end = len(runes)
 		}
-		err := a.ragStore.AddDocument(ctx, rag.Document{
+		err := store.AddDocument(ctx, rag.Document{
 			ID:      fmt.Sprintf("%s_%d", path, i),
-			Source:  filepath.Base(path),
+			Source:  path,
 			Content: string(runes[i:end]),
 		})
 		if err != nil {

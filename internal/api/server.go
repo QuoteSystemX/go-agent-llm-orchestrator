@@ -1166,15 +1166,21 @@ func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Reques
 		var retention int
 		fmt.Sscanf(retentionStr, "%d", &retention)
 
+		dtoBatchSizeStr := s.db.GetSetting("dto_batch_size", "500")
+		var dtoBatchSize int
+		fmt.Sscanf(dtoBatchSizeStr, "%d", &dtoBatchSize)
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
 			"daily_task_limit": limit,
 			"retention_days":   retention,
+			"dto_batch_size":   dtoBatchSize,
 		})
 	case http.MethodPost:
 		var data struct {
 			DailyTaskLimit int `json:"daily_task_limit"`
 			RetentionDays  int `json:"retention_days"`
+			DtoBatchSize   int `json:"dto_batch_size"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1183,6 +1189,9 @@ func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Reques
 		s.db.SetSetting("daily_task_limit", fmt.Sprintf("%d", data.DailyTaskLimit))
 		if data.RetentionDays > 0 {
 			s.db.SetSetting("retention_days", fmt.Sprintf("%d", data.RetentionDays))
+		}
+		if data.DtoBatchSize > 0 {
+			s.db.SetSetting("dto_batch_size", fmt.Sprintf("%d", data.DtoBatchSize))
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:

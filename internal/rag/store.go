@@ -27,27 +27,25 @@ type MemoryStore struct {
 	collection *chromem.Collection
 	indexed    map[string]int64
 	indexPath  string
+	repoID     string
 	// inferMu is the shared Ollama priority gate owned by llm.Router.
-	// Each embedding call holds a read-lock so an inference request can
-	// preempt by acquiring the write-lock (waits for the current chunk).
 	inferMu *sync.RWMutex
 }
 
-// SetInferencePriority wires up the Ollama priority gate from llm.Router.
-func (s *MemoryStore) SetInferencePriority(mu *sync.RWMutex) {
-	s.inferMu = mu
-}
+// NewMemoryStore initializes a persistent chromem DB for a specific repository
+func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName string) *MemoryStore {
+	// sanitize repoID for filesystem
+	safeRepoID := strings.ReplaceAll(repoID, "/", "_")
+	dbPath := filepath.Join(basePath, safeRepoID)
+	os.MkdirAll(dbPath, 0755)
 
-// NewMemoryStore initializes a persistent chromem DB for RAG
-func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemoryStore {
 	db, err := chromem.NewPersistentDB(dbPath, false)
 	if err != nil {
-		log.Printf("RAG Error: Failed to init chromem DB: %v. Falling back to in-memory.", err)
+		log.Printf("RAG Error: Failed to init chromem DB for %s: %v. Falling back to in-memory.", repoID, err)
 		db = chromem.NewDB()
 	}
 
 	if ollamaUrl != "" && !strings.HasSuffix(ollamaUrl, "/api") {
-		// Ensure it doesn't end with a slash before adding /api
 		for strings.HasSuffix(ollamaUrl, "/") {
 			ollamaUrl = strings.TrimSuffix(ollamaUrl, "/")
 		}
@@ -55,25 +53,23 @@ func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemorySt
 	}
 	embedFunc := chromem.NewEmbeddingFuncOllama(modelName, ollamaUrl)
 
-	// Create or get collection
 	collection, err := db.GetOrCreateCollection("repo_context", nil, embedFunc)
 	if err != nil {
-		log.Printf("RAG Error: Failed to create collection: %v", err)
+		log.Printf("RAG Error: Failed to create collection for %s: %v", repoID, err)
 	}
 
 	indexPath := filepath.Join(dbPath, "rag_index.json")
 	indexed := make(map[string]int64)
 	if data, err := os.ReadFile(indexPath); err == nil {
 		if err := json.Unmarshal(data, &indexed); err != nil {
-			log.Printf("RAG Warning: Failed to parse %s (corrupted JSON). Resetting index cache.", indexPath)
+			log.Printf("RAG Warning: Failed to parse %s. Resetting index cache.", indexPath)
 			indexed = make(map[string]int64)
 			os.Remove(indexPath)
 		}
 	}
 
-	// Protection against out-of-sync states: if DB is empty but we think files are indexed
 	if collection != nil && len(indexed) > 0 && collection.Count() == 0 {
-		log.Printf("RAG Warning: Vector DB is empty but index cache exists. Forcing full reindex.")
+		log.Printf("RAG Warning: Vector DB for %s is empty but index cache exists. Forcing full reindex.", repoID)
 		indexed = make(map[string]int64)
 		os.Remove(indexPath)
 	}
@@ -83,7 +79,13 @@ func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemorySt
 		collection: collection,
 		indexed:    indexed,
 		indexPath:  indexPath,
+		repoID:     repoID,
 	}
+}
+
+// SetInferencePriority wires up the Ollama priority gate from llm.Router.
+func (s *MemoryStore) SetInferencePriority(mu *sync.RWMutex) {
+	s.inferMu = mu
 }
 
 // AddDocument adds and indexes a new document using embeddings

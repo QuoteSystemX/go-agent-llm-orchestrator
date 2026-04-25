@@ -19,7 +19,7 @@ import (
 )
 
 // ContextSearchFunc queries the RAG vector store for semantically relevant chunks.
-type ContextSearchFunc func(ctx context.Context, query string, topK int) string
+type ContextSearchFunc func(ctx context.Context, repoName, query string, topK int) string
 
 type Engine struct {
 	cron          *cron.Cron
@@ -355,7 +355,7 @@ func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoN
 	ragContext := ""
 	if e.contextSearch != nil {
 		query := fmt.Sprintf("%s %s %s", repoName, agent, mission)
-		ragContext = e.contextSearch(ctx, query, 5)
+		ragContext = e.contextSearch(ctx, repoName, query, 5)
 		if ragContext != "" {
 			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
 		}
