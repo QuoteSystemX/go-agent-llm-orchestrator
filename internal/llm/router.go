@@ -59,7 +59,7 @@ func (r *Router) getRemoteModel() string {
 }
 
 func (r *Router) getLocalContextWindow() int {
-	valStr := r.getModel("llm_local_context_window", "32768")
+	valStr := r.getModel("llm_local_context_window", "4096")
 	var val int
 	fmt.Sscanf(valStr, "%d", &val)
 	return val
@@ -73,7 +73,7 @@ func (r *Router) getLocalTemperature() float64 {
 }
 
 func (r *Router) getLocalTimeout() time.Duration {
-	valStr := r.getModel("llm_local_timeout", "300")
+	valStr := r.getModel("llm_local_timeout", "600")
 	var val int
 	fmt.Sscanf(valStr, "%d", &val)
 	if val <= 0 {
