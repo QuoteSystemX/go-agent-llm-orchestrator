@@ -322,6 +322,66 @@ Show selection reasoning:
 - Reasoning: [why]
 ```
 
+## Regression Guard (MANDATORY for Code-Change Routing)
+
+Any routing decision that results in **code being written or modified** MUST automatically append `test-engineer` as a mandatory final step. This is non-negotiable — code without tests is not done.
+
+### Code-Change Detection
+
+A routing is a **code-change** if the selected agent is any of:
+`backend-specialist`, `frontend-specialist`, `crypto-go-specialist`, `mobile-developer`,
+`database-architect`, `devops-engineer`, `debugger`, `performance-optimizer`,
+`code-archaeologist`, `rest-api-designer`, `grpc-architect`, `game-developer`
+
+### Regression Guard Protocol
+
+```
+WHEN routing_agent IN code_change_agents:
+
+  STEP 1 — Capture baseline BEFORE invoking the agent:
+    run: go test ./... -race 2>&1 | grep "^ok\|^FAIL" > /tmp/baseline.txt
+    (or equivalent for Node.js / Python)
+
+  STEP 2 — Invoke the selected domain agent (implement the change)
+
+  STEP 3 — MANDATORY: invoke test-engineer AFTER domain agent:
+    IF no tests exist for modified files:
+      → test-engineer writes missing tests FIRST
+    THEN test-engineer runs full suite and compares to baseline:
+      → Any new FAIL = REGRESSION → domain agent must fix before PR
+
+  STEP 4 — Only after test-engineer confirms green baseline:
+    → Proceed to PR creation
+```
+
+### No-Tests-Found Rule
+
+```
+IF coverage audit shows 0% on modified file:
+  → test-engineer must write tests before PR is created
+  → "I changed it, it compiles" is NOT done
+  → Minimum: happy path + one error path per changed function
+```
+
+### Regression Gate Output
+
+After every code-change routing session, test-engineer produces:
+
+```markdown
+## Regression Gate Report
+
+**Baseline**: N packages green, M tests passing
+**After change**: N packages green, M+K tests passing
+**New failures**: 0  ✅ (or list regressions)
+**Coverage delta**: pkg/foo: 45% → 72%  ✅
+**Race detector**: clean  ✅
+**New regression tests**: [list guarded bugs]
+```
+
+> 🔴 **A PR that decreases coverage or introduces test failures is BLOCKED until fixed.**
+
+---
+
 ## Summary
 
 **intelligent-routing skill enables:**
@@ -331,9 +391,10 @@ Show selection reasoning:
 ✅ Transparent communication of which expertise is being applied  
 ✅ Seamless integration with existing workflows  
 ✅ Override capability for explicit agent mentions  
-✅ Fallback to orchestrator for complex tasks
+✅ Fallback to orchestrator for complex tasks  
+✅ **Regression Guard**: test-engineer automatically appended to all code-change routing
 
-**Result**: User gets specialist-level responses without needing to know the system architecture.
+**Result**: User gets specialist-level responses without needing to know the system architecture. Every code change is automatically guarded by a regression gate.
 
 ---
 

@@ -310,19 +310,51 @@ What domains does this task touch?
 ```
 
 ### Step 2: Agent Selection
-Select 2-5 agents based on task requirements. Prioritize:
-1. **Always include** if modifying code: test-engineer
-2. **Always include** if touching auth: security-auditor
-3. **Include** based on affected layers
+Select 2-5 agents based on task requirements. Follow this mandatory order:
 
-### Step 3: Sequential Invocation
-Invoke agents in logical order:
+**🔴 REGRESSION GATE — MANDATORY for any code-change task:**
+
 ```
-1. explorer-agent → Map affected areas
-2. [domain-agents] → Analyze/implement
-3. test-engineer → Verify changes
-4. security-auditor → Final security check (if applicable)
+BEFORE invoking domain agents:
+  → Capture test baseline:
+     go test ./... -race 2>&1 | grep "^ok\|^FAIL" > /tmp/orch-baseline.txt
+
+AFTER domain agents complete:
+  → ALWAYS invoke test-engineer (non-negotiable)
+  → test-engineer checks: no new failures vs baseline
+  → test-engineer checks: coverage not decreased on modified files
+  → If 0% coverage on modified file → test-engineer writes tests FIRST
+
+ONLY after test-engineer confirms green → proceed to PR
 ```
+
+| Priority | Rule | Why |
+|----------|------|-----|
+| **1** | Capture baseline before any agent | Can't detect regression without a before state |
+| **2** | Always include `test-engineer` last if code was modified | Regression gate is non-negotiable |
+| **3** | Always include `security-auditor` if touching auth/payments | Security is non-negotiable |
+| **4** | Include domain agents based on affected layers | Core implementation |
+
+### Step 3: Invocation Order (Sequential or Parallel)
+
+**Standard code-change order:**
+```
+0. Capture baseline  → go test ./... > /tmp/orch-baseline.txt
+1. explorer-agent    → Map affected areas (parallel with baseline capture)
+2. [domain-agents]  → Implement (sequential or parallel if independent)
+3. test-engineer    → 🔴 MANDATORY: regression gate + write missing tests
+4. security-auditor → Final security check (if auth/payments touched)
+```
+
+**Audit-only order (no code changes):**
+```
+1. explorer-agent   → Discover
+2. reviewer         → Audit and generate task cards
+3. security-auditor → Security posture (if requested)
+(no test-engineer needed — no code was modified)
+```
+
+> 🔴 **test-engineer is NEVER optional when code was modified. Skipping it = failed orchestration.**
 
 ### Step 4: Synthesis
 Combine findings into structured report:
@@ -372,8 +404,11 @@ Combine findings into structured report:
 | **Project type valid** | WEB/MOBILE/BACKEND identified | Ask user or analyze request |
 | **Agent routing correct** | Mobile → mobile-developer only | Reassign agents |
 | **Socratic Gate passed** | 3 questions asked & answered | Ask questions first |
+| **Baseline captured** | `/tmp/orch-baseline.txt` written before first agent | Re-capture immediately |
+| **Regression Gate passed** | test-engineer confirmed green vs baseline | Block PR until fixed |
 
 > 🔴 **Remember:** NO specialist agents without verified PLAN.md.
+> 🔴 **Remember:** NO PR creation without test-engineer regression gate confirmation.
 
 ---
 
