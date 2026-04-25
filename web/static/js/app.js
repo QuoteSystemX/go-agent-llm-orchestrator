@@ -1155,7 +1155,7 @@ async function applyProposal(index) {
 
 // ── AI Chat Logic ─────────────────────────────────────────────
 let chatMessages = [
-    { role: 'bot', content: "Hello! I'm your AI assistant. How can I help you with your repositories today?" }
+    { role: 'assistant', content: "Hello! I'm your AI assistant. How can I help you with your repositories today?" }
 ];
 
 let currentChatProvider = 'local';
@@ -1195,9 +1195,9 @@ async function sendChatMessage() {
     currentChatTimer = 0;
     const startTime = Date.now();
     
-    // Add bot message placeholder
-    const botMsgIndex = chatMessages.length;
-    chatMessages.push({ role: 'bot', content: '', typing: true });
+    // Add assistant message placeholder
+    const assistantMsgIndex = chatMessages.length;
+    chatMessages.push({ role: 'assistant', content: '', typing: true });
     
     const timerInterval = setInterval(() => {
         currentChatTimer = (Date.now() - startTime) / 1000;
@@ -1206,7 +1206,7 @@ async function sendChatMessage() {
 
     // Prepare messages for API
     const apiMessages = chatMessages.slice(0, -1).map(m => ({
-        role: m.role === 'bot' ? 'assistant' : 'user',
+        role: m.role, // roles are now normalized to 'assistant' or 'user'
         content: m.content
     }));
 

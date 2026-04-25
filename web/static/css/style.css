@@ -837,7 +837,7 @@ body { padding-bottom: 40px; }
     align-self: flex-end;
 }
 
-.chat-message-wrapper.bot {
+.chat-message-wrapper.assistant {
     align-self: flex-start;
 }
 
@@ -855,8 +855,8 @@ body { padding-bottom: 40px; }
     border-bottom-right-radius: 0.3rem;
 }
 
-.bot .chat-message {
-    background: rgba(255, 255, 255, 0.05);
+.assistant .chat-message {
+    background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
     color: var(--text);
     border-bottom-left-radius: 0.3rem;
