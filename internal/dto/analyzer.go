@@ -228,73 +228,62 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 	return content.String(), nil
 }
 
-func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki string, agentContext string, currentTasks []map[string]any, templates []Template, maxChars int) string {
+func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext string, currentTasks []map[string]any, templates []Template, maxChars int) string {
+	// 1. Define Instructions
+	instructions := "Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n" +
+		"1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n" +
+		"2. Execution: Worker tasks (implementing features/fixes)\n" +
+		"3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n" +
+		"Return ONLY a JSON object with fields: current_stage, progress, proposals.\n"
+
+	// 2. Budgeting
+	ctxBudget := maxChars - 2000
+	if ctxBudget < 2000 { ctxBudget = 2000 }
+
+	// Format Tasks first to see their size
+	var tasksSb strings.Builder
+	for _, t := range currentTasks {
+		tasksSb.WriteString(fmt.Sprintf("- %v: %v (Pattern: %v)\n", t["id"], t["mission"], t["pattern"]))
+	}
+	tasksStr := tasksSb.String()
+
+	// 3. Trim sections
+	rLimit := ctxBudget * 20 / 100
+	if len(readme) > rLimit { readme = readme[:rLimit] + "... [truncated]" }
+	
+	wLimit := ctxBudget * 20 / 100
+	if len(wiki) > wLimit { wiki = wiki[:wLimit] + "... [truncated]" }
+
+	tLimit := ctxBudget * 15 / 100
+	if len(tasksStr) > tLimit { tasksStr = tasksStr[:tLimit] + "... [truncated]" }
+
+	ragContext := a.SearchContext(repoName, 5)
+	ragLimit := ctxBudget - len(readme) - len(wiki) - len(tasksStr) - len(agentContext)
+	if len(ragContext) > ragLimit && ragLimit > 0 {
+		ragContext = ragContext[:ragLimit] + "... [truncated]"
+	}
+
+	// 4. Assemble
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Analyze the repository '%s' and propose tasks following the BMAD (Build, Monitor, Analyze, Deploy) methodology.\n\n", repoName))
+	sb.WriteString(fmt.Sprintf("Repository Analysis: %s\n\n", repoName))
+	if readme != "" { sb.WriteString("=== README ===\n" + readme + "\n\n") }
+	if wiki != "" { sb.WriteString("=== Wiki ===\n" + wiki + "\n\n") }
+	if tasksStr != "" { sb.WriteString("=== Tasks ===\n" + tasksStr + "\n\n") }
+	if ragContext != "" { sb.WriteString("=== Code ===\n" + ragContext + "\n\n") }
 
-	if readme != "" {
-		sb.WriteString("### README.md\n")
-		sb.WriteString(readme)
-		sb.WriteString("\n\n")
-	}
-
-	if wiki != "" {
-		sb.WriteString("### Wiki Content\n")
-		sb.WriteString(wiki)
-		sb.WriteString("\n\n")
-	}
-
-	if agentContext != "" {
-		sb.WriteString(agentContext)
+	if len(templates) > 0 {
+		sb.WriteString("=== Templates ===\n")
+		for i, t := range templates {
+			if i >= 2 { break } // Limit to 2 templates
+			sb.WriteString(fmt.Sprintf("- %s: %s\n", t.Name, t.Content))
+		}
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString("### Current Tasks\n")
-	for _, t := range currentTasks {
-		sb.WriteString(fmt.Sprintf("- %s: %s (Pattern: %s)\n", t["id"], t["mission"], t["pattern"]))
-	}
-	sb.WriteString("\n")
+	sb.WriteString("=== Instructions ===\n")
+	sb.WriteString(instructions)
 
-	sb.WriteString("### Available Templates (Relevant)\n")
-	// Limit to top 3 templates to save context
-	count := 0
-	for _, t := range templates {
-		if count >= 3 {
-			break
-		}
-		sb.WriteString(fmt.Sprintf("- Template: %s\n%s\n---\n", t.Name, t.Content))
-		count++
-	}
-	sb.WriteString("\n")
-
-	sb.WriteString("Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n")
-	sb.WriteString("1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n")
-	sb.WriteString("2. Execution: Worker tasks (implementing features/fixes)\n")
-	sb.WriteString("3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n")
-	sb.WriteString("Critical priority: Service tasks (Wiki updates, Docs) MUST have high importance if they are lagging behind the worker tasks.\n\n")
-	sb.WriteString("Return ONLY a JSON object with fields:\n")
-	sb.WriteString("- current_stage: string (one of: discovery, prd, architecture, stories, sprint, worker, closure)\n")
-	sb.WriteString("- progress: number (0-100)\n")
-	sb.WriteString("- proposals: array of objects (pattern, agent, mission, schedule, importance, category, reason)\n")
-
-	fullPrompt := sb.String()
-	if len(fullPrompt) > maxChars {
-		log.Printf("DTO [%s]: Prompt too large (%d chars), applying pinpoint truncation to %d", repoName, len(fullPrompt), maxChars)
-		
-		// Keep instructions at the end (approx 2000 chars)
-		footerSize := 2000
-		if footerSize > maxChars/2 {
-			footerSize = maxChars / 2
-		}
-		
-		headerSize := maxChars - footerSize
-		header := fullPrompt[:headerSize]
-		footer := fullPrompt[len(fullPrompt)-footerSize:]
-		
-		return header + "\n\n... [TRUNCATED] ...\n\n" + footer
-	}
-
-	return fullPrompt
+	return sb.String()
 }
 
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
