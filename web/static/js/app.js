@@ -767,6 +767,7 @@ async function saveSettings() {
     }
 
     const sysDailyLimit = parseInt(document.getElementById('sys-daily-limit').value) || 0;
+    const sysRetentionDays = parseInt(document.getElementById('sys-retention-days').value) || 7;
     const saveBtn = document.querySelector('#settings-modal .btn-success');
     const origText = saveBtn.innerText;
     saveBtn.disabled = true;
@@ -776,7 +777,10 @@ async function saveSettings() {
         await fetch('/api/v1/system/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ daily_task_limit: sysDailyLimit })
+            body: JSON.stringify({ 
+                daily_task_limit: sysDailyLimit,
+                retention_days: sysRetentionDays
+            })
         });
 
         alert('Settings saved successfully!');
@@ -1529,6 +1533,7 @@ async function loadSystemSettings() {
         if (!resp.ok) return;
         const data = await resp.json();
         document.getElementById('sys-daily-limit').value = data.daily_task_limit || 0;
+        document.getElementById('sys-retention-days').value = data.retention_days || 7;
     } catch (e) { /* silent */ }
 }
 

@@ -494,11 +494,20 @@
 
                 <!-- Global Quota (System Settings) -->
                 <div class="settings-section-title">Global Quota (System Settings)</div>
-                <div class="form-group">
-                    <label>Daily Task Limit (Jules Quota)</label>
-                    <input type="number" id="sys-daily-limit" placeholder="50" min="0">
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
-                        Total tasks all agents can run per day. Set to 0 for unlimited.
+                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Daily Task Limit (Jules Quota)</label>
+                        <input type="number" id="sys-daily-limit" placeholder="50" min="0">
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                            Total tasks per day. 0 = unlimited.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Log Retention (Days)</label>
+                        <input type="number" id="sys-retention-days" placeholder="7" min="1">
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                            History cleanup period. Default is 7.
+                        </div>
                     </div>
                 </div>
 

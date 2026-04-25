@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +53,56 @@ func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
 
 func (e *Engine) Start() {
 	e.cron.Start()
+
+	// Register daily cleanup task (default 02:00 AM, configurable via env)
+	cleanupSchedule := os.Getenv("CLEANUP_SCHEDULE")
+	if cleanupSchedule == "" {
+		cleanupSchedule = "0 2 * * *"
+	}
+
+	_, err := e.cron.AddFunc(cleanupSchedule, func() {
+		e.Cleanup(context.Background())
+	})
+	if err != nil {
+		log.Printf("scheduler: failed to register cleanup task with schedule %s: %v", cleanupSchedule, err)
+	}
+
 	log.Println("Scheduler engine started")
+}
+
+func (e *Engine) Cleanup(ctx context.Context) {
+	daysStr := e.db.GetSetting("retention_days", "7")
+	var days int
+	fmt.Sscanf(daysStr, "%d", &days)
+
+	if days <= 0 {
+		log.Printf("cleanup: retention disabled (days=%d)", days)
+		return
+	}
+
+	log.Printf("cleanup: removing data older than %d days", days)
+
+	// 1. Clean up sessions (completed or failed)
+	res, err := e.db.ExecContext(ctx, "DELETE FROM sessions WHERE status IN ('COMPLETED', 'FAILED') AND updated_at < datetime('now', '-' || ? || ' days')", days)
+	if err != nil {
+		log.Printf("cleanup: failed to clean sessions: %v", err)
+	} else {
+		n, _ := res.RowsAffected()
+		if n > 0 {
+			log.Printf("cleanup: removed %d old sessions", n)
+		}
+	}
+
+	// 2. Clean up task logs
+	res, err = e.db.History().ExecContext(ctx, "DELETE FROM task_logs WHERE executed_at < datetime('now', '-' || ? || ' days')", days)
+	if err != nil {
+		log.Printf("cleanup: failed to clean task logs: %v", err)
+	} else {
+		n, _ := res.RowsAffected()
+		if n > 0 {
+			log.Printf("cleanup: removed %d old task logs", n)
+		}
+	}
 }
 
 func (e *Engine) Stop() {

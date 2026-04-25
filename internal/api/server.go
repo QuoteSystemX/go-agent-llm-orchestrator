@@ -1162,19 +1162,28 @@ func (s *AdminServer) handleSystemSettings(w http.ResponseWriter, r *http.Reques
 	switch r.Method {
 	case http.MethodGet:
 		limit, _ := s.db.GetDailyLimit(r.Context())
+		retentionStr := s.db.GetSetting("retention_days", "7")
+		var retention int
+		fmt.Sscanf(retentionStr, "%d", &retention)
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
 			"daily_task_limit": limit,
+			"retention_days":   retention,
 		})
 	case http.MethodPost:
 		var data struct {
 			DailyTaskLimit int `json:"daily_task_limit"`
+			RetentionDays  int `json:"retention_days"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		s.db.SetSetting("daily_task_limit", fmt.Sprintf("%d", data.DailyTaskLimit))
+		if data.RetentionDays > 0 {
+			s.db.SetSetting("retention_days", fmt.Sprintf("%d", data.RetentionDays))
+		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
