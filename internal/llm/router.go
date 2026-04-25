@@ -228,8 +228,15 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 			"messages": msgs,
 		}
 		if prov == "local" {
-			pl["temperature"] = r.getLocalTemperature()
-			pl["num_ctx"] = r.getLocalContextWindow()
+			temp := r.getLocalTemperature()
+			ctxWin := r.getLocalContextWindow()
+			pl["temperature"] = temp
+			pl["num_ctx"] = ctxWin
+			// Ollama specific options block for extra compatibility
+			pl["options"] = map[string]interface{}{
+				"temperature": temp,
+				"num_ctx":     ctxWin,
+			}
 		}
 		jd, _ := json.Marshal(pl)
 
