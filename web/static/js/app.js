@@ -1035,6 +1035,18 @@ async function runAnalysis() {
     }
 }
 
+async function clearChatHistory() {
+    if (!confirm('Clear all chat history? This cannot be undone.')) return;
+    const repo = document.getElementById('chat-repo-context').value;
+    try {
+        await fetch(`/api/v1/chat/history?repo=${repo}`, { method: 'DELETE' });
+        chatMessages = [];
+        renderChat();
+    } catch (err) {
+        console.error('Clear chat history error:', err);
+    }
+}
+
 async function loadChatHistory() {
     const repo = document.getElementById('chat-repo-context').value;
     try {

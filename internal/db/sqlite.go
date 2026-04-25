@@ -359,6 +359,16 @@ func (db *DB) SaveChatMessage(ctx context.Context, role, content, provider, repo
 	return err
 }
 
+func (db *DB) ClearChatHistory(ctx context.Context, repo string) error {
+	var err error
+	if repo != "" {
+		_, err = db.history.ExecContext(ctx, "DELETE FROM web_chat_history WHERE repo = ? OR repo = ''", repo)
+	} else {
+		_, err = db.history.ExecContext(ctx, "DELETE FROM web_chat_history")
+	}
+	return err
+}
+
 func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map[string]any, error) {
 	query := "SELECT role, content, provider, repo, created_at FROM web_chat_history "
 	var args []any

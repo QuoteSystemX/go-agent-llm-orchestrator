@@ -127,7 +127,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/audit/logs/details", s.handleGetTaskRunDetails)
 	mux.HandleFunc("/api/v1/chat", s.handleChat)
 	mux.HandleFunc("/api/v1/chat/stream", s.handleChatStream)
-	mux.HandleFunc("/api/v1/chat/history", s.handleGetChatHistory)
+	mux.HandleFunc("/api/v1/chat/history", s.handleChatHistory)
 	mux.HandleFunc("/api/v1/health", s.handleHealth)
 	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
@@ -914,15 +914,26 @@ func (s *AdminServer) handleGetTaskRunDetails(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(details)
 }
 
-func (s *AdminServer) handleGetChatHistory(w http.ResponseWriter, r *http.Request) {
+func (s *AdminServer) handleChatHistory(w http.ResponseWriter, r *http.Request) {
 	repo := r.URL.Query().Get("repo")
-	history, err := s.db.GetChatHistory(r.Context(), repo, 50)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	switch r.Method {
+	case http.MethodGet:
+		history, err := s.db.GetChatHistory(r.Context(), repo, 50)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(history)
+	case http.MethodDelete:
+		if err := s.db.ClearChatHistory(r.Context(), repo); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(history)
 }
 
 func (s *AdminServer) handleHealth(w http.ResponseWriter, r *http.Request) {
