@@ -81,7 +81,12 @@ func InitDB(dbPath string) (*DB, error) {
 	}
 
 	setupConn := func(db *sql.DB) error {
-		db.SetMaxOpenConns(10)
+		// Single connection ensures PRAGMA busy_timeout applies to every query.
+		// SQLite allows only one writer at a time regardless of pool size, so
+		// queuing at the connection-pool level is equivalent and avoids SQLITE_BUSY.
+		db.SetMaxOpenConns(1)
+		db.SetMaxIdleConns(1)
+		db.SetConnMaxLifetime(0)
 		if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 			return err
 		}

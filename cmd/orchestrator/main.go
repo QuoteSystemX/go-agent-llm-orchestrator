@@ -141,9 +141,6 @@ func main() {
 		}
 	}()
 
-	// Start Autopilot Engine (decision loop)
-	go autopilotEngine.Start(ctx)
-
 	// When the prompt-library syncs successfully for the first time, auto-resume
 	// any tasks that were paused at startup due to a missing SSH key.
 	gitSyncer.OnSyncSuccess = func() {
@@ -191,6 +188,10 @@ func main() {
 	if err := engine.SyncTasks(ctx); err != nil {
 		log.Printf("Failed to sync initial tasks: %v", err)
 	}
+
+	// Start Autopilot Engine after DB is fully initialised (ImportDistribution +
+	// SyncTasks complete), so the initial Run() doesn't race with open transactions.
+	go autopilotEngine.Start(ctx)
 
 	go statMonitor.Start(ctx, 30*time.Second)
 
