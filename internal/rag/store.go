@@ -3,6 +3,7 @@ package rag
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -77,12 +78,12 @@ func NewMemoryStore(dbPath string, ollamaUrl string, modelName string) *MemorySt
 }
 
 // AddDocument adds and indexes a new document using embeddings
-func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if s.collection == nil {
-		return
+		return fmt.Errorf("collection is nil")
 	}
 
 	err := s.collection.AddDocuments(ctx, []chromem.Document{
@@ -100,7 +101,9 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) {
 		} else {
 			log.Printf("RAG Error: failed to add doc %s: %v", doc.ID, err)
 		}
+		return err
 	}
+	return nil
 }
 
 // Search performs semantic search

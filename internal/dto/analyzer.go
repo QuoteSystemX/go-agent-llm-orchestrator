@@ -133,9 +133,12 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
 			if !a.ragStore.IsIndexed(path, modTime) {
-				a.indexFile(ctx, path)
-				a.ragStore.MarkIndexed(path, modTime)
-				fileCount++
+				if err := a.indexFile(ctx, path); err == nil {
+					a.ragStore.MarkIndexed(path, modTime)
+					fileCount++
+				} else {
+					log.Printf("DTO [%s]: Skipping marking %s as indexed due to error", repoName, path)
+				}
 			}
 		}
 		return nil
@@ -381,10 +384,10 @@ func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) st
 	return context
 }
 
-func (a *Analyzer) indexFile(ctx context.Context, path string) {
+func (a *Analyzer) indexFile(ctx context.Context, path string) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return
+		return err
 	}
 
 	text := string(content)
@@ -402,11 +405,14 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) {
 		if end > len(runes) {
 			end = len(runes)
 		}
-		a.ragStore.AddDocument(ctx, rag.Document{
+		err := a.ragStore.AddDocument(ctx, rag.Document{
 			ID:      fmt.Sprintf("%s_%d", path, i),
 			Source:  filepath.Base(path),
 			Content: string(runes[i:end]),
 		})
+		if err != nil {
+			return err
+		}
 		if end == len(runes) {
 			break
 		}
@@ -416,4 +422,5 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) {
 	if duration > 1*time.Second {
 		log.Printf("DTO: Embedding generation for %s took %v", filepath.Base(path), duration)
 	}
+	return nil
 }

@@ -173,6 +173,10 @@ func (s *Syncer) prepareSyncURL(rawUrl, pat string) string {
 		finalUrl = "https://github.com/" + repoPath
 	}
 
+	if pat == "" {
+		return finalUrl
+	}
+
 	if strings.HasPrefix(finalUrl, "https://") {
 		pureUrl := strings.TrimPrefix(finalUrl, "https://")
 		if idx := strings.Index(pureUrl, "@"); idx != -1 {
@@ -207,10 +211,12 @@ func (s *Syncer) runGit(ctx context.Context, dir string, args ...string) error {
 	if err != nil {
 		errMsg := string(out)
 		pat := s.db.GetSetting("prompt_library_pat", "")
+		safeArgs := strings.Join(args, " ")
 		if pat != "" {
 			errMsg = strings.ReplaceAll(errMsg, pat, "***")
+			safeArgs = strings.ReplaceAll(safeArgs, pat, "***")
 		}
-		return fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, errMsg)
+		return fmt.Errorf("git %s: %w\n%s", safeArgs, err, errMsg)
 	}
 	return nil
 }

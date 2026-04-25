@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -78,15 +79,32 @@ type SessionResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
-// GetSession satisfies llm.JulesClientIface
-func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*llm.SessionInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.getBaseURL()+"/sessions/"+sessionID, nil)
+// doRequest is a helper for making authenticated HTTP requests to the Jules API
+func (c *JulesClient) doRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
+	baseURL := c.getBaseURL()
+	if baseURL == "" {
+		return nil, fmt.Errorf("Jules base URL is not configured — set it in Settings → Jules API")
+	}
+	apiKey := c.getAPIKey()
+	if apiKey == "" {
+		return nil, fmt.Errorf("Jules API key is not configured — set it in Settings → Jules API")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, baseURL+path, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Goog-Api-Key", c.getAPIKey())
+	req.Header.Set("X-Goog-Api-Key", apiKey)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
-	resp, err := c.client.Do(req)
+	return c.client.Do(req)
+}
+
+// GetSession satisfies llm.JulesClientIface
+func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*llm.SessionInfo, error) {
+	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions/"+sessionID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,28 +128,12 @@ func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*llm.Se
 // StartSession creates a Jules session with the full prompt and source context.
 // repoName should be e.g. "QuoteSystemX/RecipientOFQuotes".
 func (c *JulesClient) StartSession(ctx context.Context, req SessionRequest) (*SessionResponse, []byte, error) {
-	baseURL := c.getBaseURL()
-	if baseURL == "" {
-		return nil, nil, fmt.Errorf("Jules base URL is not configured — set it in Settings → Jules API")
-	}
-	apiKey := c.getAPIKey()
-	if apiKey == "" {
-		return nil, nil, fmt.Errorf("Jules API key is not configured — set it in Settings → Jules API")
-	}
-
 	data, err := json.Marshal(req)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/sessions", bytes.NewBuffer(data))
-	if err != nil {
-		return nil, data, err
-	}
-	httpReq.Header.Set("X-Goog-Api-Key", apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(httpReq)
+	resp, err := c.doRequest(ctx, http.MethodPost, "/sessions", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, data, err
 	}
@@ -158,42 +160,18 @@ func (c *JulesClient) StartSession(ctx context.Context, req SessionRequest) (*Se
 }
 
 func (c *JulesClient) GetStatus(ctx context.Context, sessionID string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.getBaseURL()+"/sessions/"+sessionID, nil)
+	session, err := c.GetSession(ctx, sessionID)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("X-Goog-Api-Key", c.getAPIKey())
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("jules API error: status %d", resp.StatusCode)
-	}
-
-	var sr SessionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
-		return "", err
-	}
-	return sr.Status, nil
+	return session.Status, nil
 }
 
 func (c *JulesClient) SendMessage(ctx context.Context, sessionID, prompt string) error {
 	payload := map[string]string{"prompt": prompt}
 	data, _ := json.Marshal(payload)
 
-	req, err := http.NewRequestWithContext(ctx, "POST",
-		c.getBaseURL()+"/sessions/"+sessionID+":sendMessage", bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("X-Goog-Api-Key", c.getAPIKey())
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(ctx, http.MethodPost, "/sessions/"+sessionID+":sendMessage", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -206,15 +184,7 @@ func (c *JulesClient) SendMessage(ctx context.Context, sessionID, prompt string)
 }
 
 func (c *JulesClient) ApprovePlan(ctx context.Context, sessionID string) error {
-	req, err := http.NewRequestWithContext(ctx, "POST",
-		c.getBaseURL()+"/sessions/"+sessionID+":approvePlan", bytes.NewBuffer([]byte("{}")))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("X-Goog-Api-Key", c.getAPIKey())
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(ctx, http.MethodPost, "/sessions/"+sessionID+":approvePlan", bytes.NewBuffer([]byte("{}")))
 	if err != nil {
 		return err
 	}
@@ -227,13 +197,7 @@ func (c *JulesClient) ApprovePlan(ctx context.Context, sessionID string) error {
 }
 
 func (c *JulesClient) ListSessions(ctx context.Context) ([]SessionResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.getBaseURL()+"/sessions", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("X-Goog-Api-Key", c.getAPIKey())
-
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions", nil)
 	if err != nil {
 		return nil, err
 	}

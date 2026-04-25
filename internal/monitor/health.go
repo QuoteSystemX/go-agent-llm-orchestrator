@@ -25,8 +25,9 @@ type HealthStatus struct {
 	Status     string `json:"status"`
 	Components struct {
 		Ollama struct {
-			Status string       `json:"status"`
-			Model  *OllamaModel `json:"model,omitempty"`
+			Status          string       `json:"status"`
+			Model           *OllamaModel `json:"model,omitempty"`
+			EmbeddingModel  *OllamaModel `json:"embedding_model,omitempty"`
 		} `json:"ollama"`
 		Remote struct {
 			Status string `json:"status"`
@@ -78,17 +79,42 @@ func (m *HealthMonitor) check() {
 		targetModel = "phi3:mini"
 	}
 
+	embeddingModel := os.Getenv("LLM_EMBEDDING_MODEL")
+	if m.db != nil {
+		embeddingModel = m.db.GetSetting("llm_embedding_model", embeddingModel)
+	}
+	if embeddingModel == "" {
+		embeddingModel = "nomic-embed-text"
+	}
+
 	resp, err := m.client.Get(endpoint + "/api/tags")
 	if err == nil {
 		defer resp.Body.Close()
 		var tags OllamaTagsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&tags); err == nil {
+			hasMain := false
+			hasEmbed := false
 			for _, model := range tags.Models {
-				if model.Name == targetModel || model.Model == targetModel {
-					newStatus.Components.Ollama.Status = "READY"
-					newStatus.Components.Ollama.Model = &model
-					break
+				// We need a local copy for safe pointer reference
+				mCopy := model
+				if mCopy.Name == targetModel || mCopy.Model == targetModel {
+					hasMain = true
+					newStatus.Components.Ollama.Model = &mCopy
 				}
+				if mCopy.Name == embeddingModel || mCopy.Model == embeddingModel {
+					hasEmbed = true
+					newStatus.Components.Ollama.EmbeddingModel = &mCopy
+				}
+			}
+			
+			if hasMain && hasEmbed {
+				newStatus.Components.Ollama.Status = "READY"
+			} else if hasMain {
+				newStatus.Components.Ollama.Status = "MISSING_EMBEDDING_MODEL"
+			} else if hasEmbed {
+				newStatus.Components.Ollama.Status = "MISSING_MAIN_MODEL"
+			} else {
+				newStatus.Components.Ollama.Status = "MISSING_ALL_MODELS"
 			}
 		}
 	} else {
@@ -96,9 +122,9 @@ func (m *HealthMonitor) check() {
 	}
 
 	// 2. Check Remote LLM
-	remoteEndpoint := ""
+	remoteEndpoint := os.Getenv("LLM_REMOTE_ENDPOINT")
 	if m.db != nil {
-		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT"))
+		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", remoteEndpoint)
 	}
 
 	if remoteEndpoint != "" {

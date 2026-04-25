@@ -18,6 +18,7 @@ func TestJulesClient_GetStatus(t *testing.T) {
 
 	client := NewJulesClient(nil)
 	client.BaseURL = server.URL
+	client.APIKey = "mock-key"
 
 	status, err := client.GetStatus(context.Background(), "session-123")
 	if err != nil {

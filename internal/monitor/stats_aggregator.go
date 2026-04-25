@@ -28,8 +28,10 @@ func NewStatsAggregator(maxSamples int) *StatsAggregator {
 	}
 }
 
+const collectInterval = 10 * time.Second
+
 func (s *StatsAggregator) Start() {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(collectInterval)
 	go func() {
 		for range ticker.C {
 			s.collect()
@@ -46,7 +48,8 @@ func (s *StatsAggregator) collect() {
 	// Memory usage
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	memVal := float64(m.Alloc) / 1024 / 1024
+	const megabyte = 1024 * 1024
+	memVal := float64(m.Alloc) / megabyte
 
 	// CPU usage (approximation via Goroutines for now)
 	cpuVal := float64(runtime.NumGoroutine())
