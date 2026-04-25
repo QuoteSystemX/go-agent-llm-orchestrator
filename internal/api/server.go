@@ -1309,5 +1309,6 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 		"phase":         currentStatus.Phase,
 		"current_file":  currentStatus.CurrentFile,
 		"files_indexed": currentStatus.FilesIndexed,
+		"total_files":   currentStatus.TotalFiles,
 	})
 }

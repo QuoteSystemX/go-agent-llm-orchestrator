@@ -25,6 +25,7 @@ type RepoAnalysisState struct {
 	Phase        string `json:"phase"`
 	CurrentFile  string `json:"current_file"`
 	FilesIndexed int    `json:"files_indexed"`
+	TotalFiles   int    `json:"total_files"`
 }
 
 type Analyzer struct {
@@ -53,13 +54,14 @@ func NewAnalyzer(database *db.DB, router *llm.Router, pb *prompt.Builder, syncer
 	}
 }
 
-func (a *Analyzer) updateState(repoName, phase, file string, indexed int) {
+func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total int) {
 	a.stateMutex.Lock()
 	defer a.stateMutex.Unlock()
 	if s, ok := a.state[repoName]; ok {
 		if phase != "" { s.Phase = phase }
 		if file != "" { s.CurrentFile = file }
 		if indexed >= 0 { s.FilesIndexed = indexed }
+		if total >= 0 { s.TotalFiles = total }
 	}
 }
 
@@ -73,6 +75,7 @@ func (a *Analyzer) GetStatus(repoName string) *RepoAnalysisState {
 			Phase:        s.Phase,
 			CurrentFile:  s.CurrentFile,
 			FilesIndexed: s.FilesIndexed,
+			TotalFiles:   s.TotalFiles,
 		}
 	}
 	return &RepoAnalysisState{IsRunning: false}
@@ -115,6 +118,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	}
 	state.Phase = "Initializing"
 	state.FilesIndexed = 0
+	state.TotalFiles = 0
 	state.CurrentFile = ""
 	a.stateMutex.Unlock()
 
@@ -132,7 +136,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 
 	// Ensure repo is synced on PVC
 	if a.syncer != nil {
-		a.updateState(repoName, "Syncing Repository", "", -1)
+		a.updateState(repoName, "Syncing Repository", "", -1, -1)
 		log.Printf("DTO [%s]: Syncing repository to %s...", repoName, repoPath)
 		rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
 		if err := a.syncer.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
@@ -173,7 +177,30 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	maxFiles := 500
 	maxFileSize := int64(100 * 1024) // 100 KB
 
-	log.Printf("DTO [%s]: Scanning repository files...", repoName)
+	log.Printf("DTO [%s]: Pre-scanning files...", repoName)
+	totalToIndex := 0
+	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() { return nil }
+		if info.Size() > maxFileSize { return nil }
+		
+		// Use same ignore list
+		ignoredDirs := []string{"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", "/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", "/.venv/", "/__pycache__/", "/pkg/"}
+		for _, dir := range ignoredDirs {
+			if strings.Contains(path, dir) { return nil }
+		}
+
+		ext := filepath.Ext(path)
+		if targetExts[ext] {
+			modTime := info.ModTime().Unix()
+			if !a.ragStore.IsIndexed(path, modTime) {
+				totalToIndex++
+			}
+		}
+		return nil
+	})
+	a.updateState(repoName, "", "", -1, totalToIndex)
+
+	log.Printf("DTO [%s]: Scanning repository files (%d new files to index)...", repoName, totalToIndex)
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -201,11 +228,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
 			if !a.ragStore.IsIndexed(path, modTime) {
-				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount)
+				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount, -1)
 				if err := a.indexFile(ctx, path); err == nil {
 					a.ragStore.MarkIndexed(path, modTime)
 					fileCount++
-					a.updateState(repoName, "", "", fileCount)
+					a.updateState(repoName, "", "", fileCount, -1)
 					
 					// Save index incrementally every 20 files to persist progress
 					if fileCount % 20 == 0 {
@@ -249,7 +276,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	prompt := a.buildAnalysisPrompt(repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
-	a.updateState(repoName, "Analyzing with LLM", "", -1)
+	a.updateState(repoName, "Analyzing with LLM", "", -1, -1)
 	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
 	response, err := a.router.GenerateResponse(ctx, llm.DTO, prompt)
 	if err != nil {
