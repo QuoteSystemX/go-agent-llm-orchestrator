@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
@@ -16,7 +17,6 @@ import (
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/rag"
-	"sync"
 )
 
 type RepoAnalysisState struct {
@@ -441,6 +441,12 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
 		}
 	}
+}
+
+// SetInferencePriority wires up the Ollama priority gate from llm.Router so
+// embedding calls yield to inference requests on the shared local model.
+func (a *Analyzer) SetInferencePriority(router *llm.Router) {
+	a.ragStore.SetInferencePriority(router.InferenceMutex())
 }
 
 func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) string {

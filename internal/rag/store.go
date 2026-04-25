@@ -27,6 +27,15 @@ type MemoryStore struct {
 	collection *chromem.Collection
 	indexed    map[string]int64
 	indexPath  string
+	// inferMu is the shared Ollama priority gate owned by llm.Router.
+	// Each embedding call holds a read-lock so an inference request can
+	// preempt by acquiring the write-lock (waits for the current chunk).
+	inferMu *sync.RWMutex
+}
+
+// SetInferencePriority wires up the Ollama priority gate from llm.Router.
+func (s *MemoryStore) SetInferencePriority(mu *sync.RWMutex) {
+	s.inferMu = mu
 }
 
 // NewMemoryStore initializes a persistent chromem DB for RAG
@@ -84,6 +93,14 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) error {
 
 	if s.collection == nil {
 		return fmt.Errorf("collection is nil")
+	}
+
+	// Hold a read-lock on the inference gate while the Ollama embedding call is
+	// in-flight. A concurrent inference request (write-lock) waits for this
+	// chunk to finish before taking the Ollama slot.
+	if s.inferMu != nil {
+		s.inferMu.RLock()
+		defer s.inferMu.RUnlock()
 	}
 
 	err := s.collection.AddDocuments(ctx, []chromem.Document{

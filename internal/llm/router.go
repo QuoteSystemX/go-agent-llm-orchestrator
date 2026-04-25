@@ -1,8 +1,8 @@
 package llm
 
 import (
-	"bytes"
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"go-agent-llm-orchestrator/internal/db"
@@ -21,7 +22,15 @@ type Router struct {
 	LocalEndpoint  string
 	RemoteEndpoint string
 	RemoteAPIKey   string
+	// inferMu gates access to the local Ollama instance.
+	// Embeddings hold RLock; inference holds Lock so it waits for the
+	// current embedding chunk to finish before taking over.
+	inferMu sync.RWMutex
 }
+
+// InferenceMutex returns the Ollama priority gate so the embedding pipeline
+// can register itself as a reader.
+func (r *Router) InferenceMutex() *sync.RWMutex { return &r.inferMu }
 
 func NewRouter(database *db.DB) *Router {
 	return &Router{
@@ -332,9 +341,34 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		return "", fmt.Errorf("failed after %d attempts: %v", maxRetries, lastErr)
 	}
 
+	// For local Ollama calls: pause the embedding pipeline so inference is not
+	// starved by an in-progress DTO indexing run. The lock is acquired here
+	// (after routing decision) so remote-only calls are unaffected.
+	localLockHeld := false
+	acquireLocalLock := func() {
+		if !localLockHeld {
+			log.Printf("LLM Router: waiting for embedding pause before local inference")
+			r.inferMu.Lock()
+			localLockHeld = true
+			log.Printf("LLM Router: embedding paused, proceeding with local inference")
+		}
+	}
+	releaseLocalLock := func() {
+		if localLockHeld {
+			r.inferMu.Unlock()
+			localLockHeld = false
+		}
+	}
+	defer releaseLocalLock()
+
+	if provider == "local" {
+		acquireLocalLock()
+	}
+
 	content, err := tryEndpoint(endpoint, model, apiKey, provider)
 	if err != nil && provider == "remote" && r.LocalEndpoint != "" {
 		log.Printf("LLM Router: remote failed (%v), falling back to LOCAL", err)
+		acquireLocalLock()
 		monitor.LLMCalls.WithLabelValues("local", string(classification)).Inc()
 		content, err = tryEndpoint(r.LocalEndpoint, r.getLocalModel(), "", "local")
 	}
