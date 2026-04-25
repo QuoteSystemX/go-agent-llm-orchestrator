@@ -3,6 +3,7 @@ package rag
 import (
 	"context"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/philippgille/chromem-go"

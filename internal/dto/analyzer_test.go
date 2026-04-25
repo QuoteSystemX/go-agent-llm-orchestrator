@@ -69,13 +69,10 @@ func TestAnalyzer_BuildPrompt(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
 	a := NewAnalyzer(database, nil, nil, nil)
 	
-	prompt := a.buildAnalysisPrompt("test-repo", "README content", "Wiki content", "Agent context", nil, nil, 1000)
+	prompt := a.buildAnalysisPrompt("test-repo", "README content", nil, nil, 1000)
 	
 	if !strings.Contains(prompt, "README content") {
 		t.Error("prompt should contain README content")
-	}
-	if !strings.Contains(prompt, "Agent context") {
-		t.Error("prompt should contain agent context")
 	}
 }
 
@@ -84,8 +81,8 @@ func TestAnalyzer_BuildPrompt_Truncation(t *testing.T) {
 	a := NewAnalyzer(database, nil, nil, nil)
 	
 	largeReadme := strings.Repeat("A", 5000)
-	maxChars := 1000
-	prompt := a.buildAnalysisPrompt("test-repo", largeReadme, "", "", nil, nil, maxChars)
+	maxChars := 4000
+	prompt := a.buildAnalysisPrompt("test-repo", largeReadme, nil, nil, maxChars)
 	
 	if len(prompt) > maxChars {
 		t.Errorf("prompt exceeds maxChars: %d > %d", len(prompt), maxChars)
@@ -136,7 +133,7 @@ func TestAnalyzer_BuildPrompt_TemplateFiltering(t *testing.T) {
 		{Name: "T5", Content: "C5"},
 	}
 	
-	prompt := a.buildAnalysisPrompt("test", "", "", "", nil, templates, 10000)
+	prompt := a.buildAnalysisPrompt("test", "", nil, templates, 10000)
 	
 	if !strings.Contains(prompt, "- T1:") {
 		t.Error("should contain T1")

@@ -87,8 +87,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		metadata["has_readme"] = "true"
 	}
 
-	wiki, _ := a.readDir(filepath.Join(repoPath, "wiki"), ".md")
-	if wiki == "" {
+	if _, err := os.Stat(filepath.Join(repoPath, "wiki")); os.IsNotExist(err) {
 		warnings = append(warnings, "No wiki pages found in 'wiki/' directory")
 	}
 
@@ -145,16 +144,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 
 	// 4. Get active tasks
-	agentContext := ""
 	if _, err := os.Stat(filepath.Join(repoPath, ".agent")); err == nil {
 		metadata["has_agent"] = "true"
-		workflows, _ := a.readDir(filepath.Join(repoPath, ".agent", "workflows"), ".md")
-		skills, _ := a.readDir(filepath.Join(repoPath, ".agent", "skills"), ".md")
-		knowledge, _ := a.readFile(filepath.Join(repoPath, ".agent", "KNOWLEDGE.md"))
-		arch, _ := a.readFile(filepath.Join(repoPath, ".agent", "ARCHITECTURE.md"))
-
-		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\n",
-			workflows, skills, knowledge, arch)
 	} else {
 		warnings = append(warnings, "No .agent folder found (BMAD context missing)")
 	}
@@ -175,7 +166,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	maxChars := window * 3 // Conservative estimate: 3 chars per token
 
 	// 2. Build prompt with dynamic truncation
-	prompt := a.buildAnalysisPrompt(repoName, readme, wiki, agentContext, currentTasks, templates, maxChars)
+	prompt := a.buildAnalysisPrompt(repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
 	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
@@ -234,7 +225,7 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 	return content.String(), nil
 }
 
-func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext string, currentTasks []map[string]any, templates []Template, maxChars int) string {
+func (a *Analyzer) buildAnalysisPrompt(repoName, readme string, currentTasks []map[string]any, templates []Template, maxChars int) string {
 	// 1. Define Instructions
 	instructions := "Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n" +
 		"1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n" +
@@ -253,26 +244,24 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	}
 	tasksStr := tasksSb.String()
 
-	// 3. Trim sections
+	// 3. Trim sections (Phase 4: Reduce hard limits, rely on RAG)
 	rOrig := len(readme)
-	rLimit := ctxBudget * 20 / 100
-	if len(readme) > rLimit { readme = readme[:rLimit] + "... [truncated]" }
-	
-	wOrig := len(wiki)
-	wLimit := ctxBudget * 20 / 100
-	if len(wiki) > wLimit { wiki = wiki[:wLimit] + "... [truncated]" }
+	rLimit := 1000 // Just a brief overview
+	if len(readme) > rLimit { readme = readme[:rLimit] + "... [truncated, RAG handles the rest]" }
 
 	tOrig := len(tasksStr)
 	tLimit := ctxBudget * 15 / 100
 	if len(tasksStr) > tLimit { tasksStr = tasksStr[:tLimit] + "... [truncated]" }
 
-	aOrig := len(agentContext)
-	aLimit := ctxBudget * 25 / 100
-	if len(agentContext) > aLimit { agentContext = agentContext[:aLimit] + "... [truncated]" }
-
-	ragContext := a.SearchContext(context.Background(), repoName, 5)
+	// Semantic query based on active tasks
+	ragQuery := repoName + " overview architecture " + tasksStr
+	if tasksStr == "" {
+		ragQuery = repoName + " README project description rules"
+	}
+	ragContext := a.SearchContext(context.Background(), ragQuery, 15) // Fetch up to 15 relevant chunks
 	ragOrig := len(ragContext)
-	ragLimit := ctxBudget - len(readme) - len(wiki) - len(tasksStr) - len(agentContext)
+	
+	ragLimit := ctxBudget - len(readme) - len(tasksStr)
 	if ragLimit < 0 { ragLimit = 0 }
 	if len(ragContext) > ragLimit {
 		if ragLimit > 15 {
@@ -284,20 +273,16 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 
 	log.Printf("DTO [%s] Context Budgeting:\n"+
 		"  - README: %d -> %d chars\n"+
-		"  - Wiki:   %d -> %d chars\n"+
 		"  - Tasks:  %d -> %d chars\n"+
-		"  - Agent:  %d -> %d chars\n"+
 		"  - RAG:    %d -> %d chars\n",
-		repoName, rOrig, len(readme), wOrig, len(wiki), tOrig, len(tasksStr), aOrig, len(agentContext), ragOrig, len(ragContext))
+		repoName, rOrig, len(readme), tOrig, len(tasksStr), ragOrig, len(ragContext))
 
 	// 4. Assemble
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Repository Analysis: %s\n\n", repoName))
 	if readme != "" { sb.WriteString("=== README ===\n" + readme + "\n\n") }
-	if wiki != "" { sb.WriteString("=== Wiki ===\n" + wiki + "\n\n") }
 	if tasksStr != "" { sb.WriteString("=== Tasks ===\n" + tasksStr + "\n\n") }
-	if agentContext != "" { sb.WriteString(agentContext + "\n\n") }
-	if ragContext != "" { sb.WriteString("=== Code ===\n" + ragContext + "\n\n") }
+	if ragContext != "" { sb.WriteString("=== RAG Context ===\n" + ragContext + "\n\n") }
 
 	if len(templates) > 0 {
 		sb.WriteString("=== Templates ===\n")
