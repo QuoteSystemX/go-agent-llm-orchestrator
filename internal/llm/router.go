@@ -72,6 +72,7 @@ type Classification string
 const (
 	Simple  Classification = "SIMPLE"
 	Complex Classification = "COMPLEX"
+	DTO     Classification = "DTO"
 )
 
 const defaultClassifyPrompt = `Classify the following task as either SIMPLE or COMPLEX.
@@ -80,21 +81,26 @@ COMPLEX: Tasks involving code, large data volumes, multiple steps, or deep reaso
 
 Task: %s
 
-Respond with ONLY the word SIMPLE or COMPLEX.`
+Respond with ONLY the word SIMPLE, COMPLEX, or DTO.`
 
 func (r *Router) getClassifyPrompt() string {
 	return r.getModel("prompt_classify", defaultClassifyPrompt)
 }
 
-// getRoutingTarget reads routing_simple / routing_complex from settings.
+// getRoutingTarget reads routing_simple / routing_complex / routing_dto from settings.
 // Returns "local" or "remote".
 func (r *Router) getRoutingTarget(classification Classification) string {
 	key := "routing_simple"
 	def := "local"
+	
 	if classification == Complex {
 		key = "routing_complex"
 		def = "remote"
+	} else if classification == DTO {
+		key = "routing_dto"
+		def = "local" // DTO always defaults to local for reliability
 	}
+	
 	return r.getModel(key, def)
 }
 

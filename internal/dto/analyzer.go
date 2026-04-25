@@ -173,7 +173,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 	// 3. Call LLM
 	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
-	response, err := a.router.GenerateResponse(ctx, llm.Complex, prompt)
+	response, err := a.router.GenerateResponse(ctx, llm.DTO, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("LLM analysis failed: %w", err)
 	}
@@ -279,9 +279,19 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 
 	fullPrompt := sb.String()
 	if len(fullPrompt) > maxChars {
-		log.Printf("DTO [%s]: Prompt too large (%d chars), truncating to %d", repoName, len(fullPrompt), maxChars)
-		// Truncate from the middle or just end, but keep instructions
-		return fullPrompt[:maxChars]
+		log.Printf("DTO [%s]: Prompt too large (%d chars), applying pinpoint truncation to %d", repoName, len(fullPrompt), maxChars)
+		
+		// Keep instructions at the end (approx 2000 chars)
+		footerSize := 2000
+		if footerSize > maxChars/2 {
+			footerSize = maxChars / 2
+		}
+		
+		headerSize := maxChars - footerSize
+		header := fullPrompt[:headerSize]
+		footer := fullPrompt[len(fullPrompt)-footerSize:]
+		
+		return header + "\n\n... [TRUNCATED] ...\n\n" + footer
 	}
 
 	return fullPrompt
@@ -290,18 +300,9 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
 	// Simple JSON extraction from markdown (handle both { } and [ ])
 	jsonStr := response
-	startIdx := strings.IndexAny(response, "{[")
-	if startIdx != -1 {
-		var endChar string
-		if response[startIdx] == '{' {
-			endChar = "}"
-		} else {
-			endChar = "]"
-		}
-		
-		endIdx := strings.LastIndex(response, endChar)
-		if endIdx != -1 && endIdx > startIdx {
-			jsonStr = response[startIdx : endIdx+1]
+	if start := strings.Index(response, "{"); start != -1 {
+		if end := strings.LastIndex(response, "}"); end != -1 {
+			jsonStr = response[start : end+1]
 		}
 	}
 
