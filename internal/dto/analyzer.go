@@ -87,14 +87,14 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 	if wiki == "" {
 		warnings = append(warnings, "No wiki pages found in 'wiki/' directory")
 	}
-	
+
 	// Check for .agent folder (BMAD context)
 	// 3. Index and Search Context (RAG)
 	a.ragStore.Reset()
-	
+
 	// Extensions to index
 	targetExts := map[string]bool{
-		".md": true, ".go": true, ".js": true, ".ts": true, 
+		".md": true, ".go": true, ".js": true, ".ts": true,
 		".py": true, ".sql": true, ".yaml": true, ".yml": true, ".json": true,
 	}
 
@@ -113,8 +113,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 		// Skip common noise directories and large files
 		ignoredDirs := []string{
-			"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", 
-			"/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", 
+			"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/",
+			"/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/",
 			"/.venv/", "/__pycache__/", "/pkg/",
 		}
 		for _, dir := range ignoredDirs {
@@ -146,8 +146,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		skills, _ := a.readDir(filepath.Join(repoPath, ".agent", "skills"), ".md")
 		knowledge, _ := a.readFile(filepath.Join(repoPath, ".agent", "KNOWLEDGE.md"))
 		arch, _ := a.readFile(filepath.Join(repoPath, ".agent", "ARCHITECTURE.md"))
-		
-		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\nContext RAG:\n%s\n", 
+
+		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\nContext RAG:\n%s\n",
 			workflows, skills, knowledge, arch, docContext)
 	} else {
 		warnings = append(warnings, "No .agent folder found (BMAD context missing)")
@@ -155,26 +155,35 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 
 	// Get current tasks for this repo
 	currentTasks, _ := a.db.GetTasksByRepo(ctx, repoName)
-	
+
 	// Get templates (ConfigMap/DB workflows)
 	templates, _ := NewTemplateManager(a.db).ListTemplates(ctx)
-	
-	// 2. Build prompt
-	prompt := a.buildAnalysisPrompt(repoName, readme, wiki, agentContext, currentTasks, templates)
-	
+
+	// Get context window for truncation
+	windowStr := a.db.GetSetting("llm_local_context_window", "4096")
+	var window int
+	fmt.Sscanf(windowStr, "%d", &window)
+	if window <= 0 {
+		window = 4096
+	}
+	maxChars := window * 3 // Conservative estimate: 3 chars per token
+
+	// 2. Build prompt with dynamic truncation
+	prompt := a.buildAnalysisPrompt(repoName, readme, wiki, agentContext, currentTasks, templates, maxChars)
+
 	// 3. Call LLM
 	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
 	response, err := a.router.GenerateResponse(ctx, llm.Complex, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("LLM analysis failed: %w", err)
 	}
-	
+
 	// 4. Parse response
 	result, err := a.parseAnalysisResult(response)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result.Warnings = append(result.Warnings, warnings...)
 	result.Metadata = metadata
 	result.LastAnalysis = time.Now().Format(time.RFC3339)
@@ -219,16 +228,16 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 	return content.String(), nil
 }
 
-func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki string, agentContext string, currentTasks []map[string]any, templates []Template) string {
+func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki string, agentContext string, currentTasks []map[string]any, templates []Template, maxChars int) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Analyze the repository '%s' and propose tasks following the BMAD (Build, Monitor, Analyze, Deploy) methodology.\n\n", repoName))
-	
+
 	if readme != "" {
 		sb.WriteString("### README.md\n")
 		sb.WriteString(readme)
 		sb.WriteString("\n\n")
 	}
-	
+
 	if wiki != "" {
 		sb.WriteString("### Wiki Content\n")
 		sb.WriteString(wiki)
@@ -239,19 +248,25 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 		sb.WriteString(agentContext)
 		sb.WriteString("\n")
 	}
-	
+
 	sb.WriteString("### Current Tasks\n")
 	for _, t := range currentTasks {
 		sb.WriteString(fmt.Sprintf("- %s: %s (Pattern: %s)\n", t["id"], t["mission"], t["pattern"]))
 	}
 	sb.WriteString("\n")
-	
-	sb.WriteString("### Available Templates\n")
+
+	sb.WriteString("### Available Templates (Relevant)\n")
+	// Limit to top 3 templates to save context
+	count := 0
 	for _, t := range templates {
+		if count >= 3 {
+			break
+		}
 		sb.WriteString(fmt.Sprintf("- Template: %s\n%s\n---\n", t.Name, t.Content))
+		count++
 	}
 	sb.WriteString("\n")
-	
+
 	sb.WriteString("Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n")
 	sb.WriteString("1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n")
 	sb.WriteString("2. Execution: Worker tasks (implementing features/fixes)\n")
@@ -261,8 +276,15 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 	sb.WriteString("- current_stage: string (one of: discovery, prd, architecture, stories, sprint, worker, closure)\n")
 	sb.WriteString("- progress: number (0-100)\n")
 	sb.WriteString("- proposals: array of objects (pattern, agent, mission, schedule, importance, category, reason)\n")
-	
-	return sb.String()
+
+	fullPrompt := sb.String()
+	if len(fullPrompt) > maxChars {
+		log.Printf("DTO [%s]: Prompt too large (%d chars), truncating to %d", repoName, len(fullPrompt), maxChars)
+		// Truncate from the middle or just end, but keep instructions
+		return fullPrompt[:maxChars]
+	}
+
+	return fullPrompt
 }
 
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
@@ -273,7 +295,7 @@ func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error)
 			jsonStr = response[start : end+1]
 		}
 	}
-	
+
 	var result AnalysisResult
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 		// Fallback to array parsing for backward compatibility with old prompts
@@ -317,7 +339,7 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 			fmt.Printf("DTO: Scheduled analysis failed for %s: %v\n", repo, err)
 			continue
 		}
-		
+
 		if len(result.Proposals) > 0 {
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
 		}
@@ -340,19 +362,20 @@ func (a *Analyzer) indexFile(path string) {
 	}
 
 	text := string(content)
+	runes := []rune(text)
 	chunkSize := 1000
 	overlap := 200
-	for i := 0; i < len(text); i += (chunkSize - overlap) {
+	for i := 0; i < len(runes); i += (chunkSize - overlap) {
 		end := i + chunkSize
-		if end > len(text) {
-			end = len(text)
+		if end > len(runes) {
+			end = len(runes)
 		}
 		a.ragStore.AddDocument(rag.Document{
 			ID:      fmt.Sprintf("%s_%d", path, i),
 			Source:  filepath.Base(path),
-			Content: text[i:end],
+			Content: string(runes[i:end]),
 		})
-		if end == len(text) {
+		if end == len(runes) {
 			break
 		}
 	}

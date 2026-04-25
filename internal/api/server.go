@@ -790,14 +790,42 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 
 	// If a repository is selected, use RAG to enhance the context
 	if req.Repo != "" && s.analyzer != nil {
-		context := s.analyzer.SearchContext(userMsg, 3)
-		if context != "" {
-			ragMsg := map[string]string{
-				"role":    "system",
-				"content": fmt.Sprintf("Use the following context from repository '%s' to answer the question:\n%s", req.Repo, context),
+		ragContext := s.analyzer.SearchContext(userMsg, 3)
+		if ragContext != "" {
+			// Check total context size to respect Context Window settings
+			windowStr := s.db.GetSetting("llm_local_context_window", "4096")
+			var window int
+			fmt.Sscanf(windowStr, "%d", &window)
+			if window <= 0 { window = 4096 }
+			maxChars := window * 3 // Conservative estimate
+
+			currentChars := 0
+			for _, m := range req.Messages {
+				currentChars += len(m["content"])
 			}
-			// Prepend RAG context to help the model
-			req.Messages = append([]map[string]string{ragMsg}, req.Messages...)
+
+			ragMsgContent := fmt.Sprintf("Use the following context from repository '%s' to answer the question:\n%s", req.Repo, ragContext)
+			
+			// If adding RAG exceeds maxChars, truncate RAG context
+			if currentChars + len(ragMsgContent) > maxChars {
+				allowedRAG := maxChars - currentChars - 100 // leave some buffer
+				if allowedRAG > 100 {
+					log.Printf("Chat: RAG context too large (%d), truncating to %d", len(ragMsgContent), allowedRAG)
+					ragMsgContent = ragMsgContent[:allowedRAG] + "... [truncated to fit context window]"
+				} else {
+					log.Printf("Chat: Context window full (%d), skipping RAG", currentChars)
+					ragMsgContent = "" // Skip RAG if no space left
+				}
+			}
+
+			if ragMsgContent != "" {
+				ragMsg := map[string]string{
+					"role":    "system",
+					"content": ragMsgContent,
+				}
+				// Prepend RAG context to help the model
+				req.Messages = append([]map[string]string{ragMsg}, req.Messages...)
+			}
 		}
 	}
 

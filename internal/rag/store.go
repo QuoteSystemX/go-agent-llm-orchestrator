@@ -31,7 +31,7 @@ func (s *MemoryStore) AddDocument(doc Document) {
 	s.docs = append(s.docs, doc)
 }
 
-// Search performs a simple keyword-based search (TF-IDF style) to find relevant chunks
+// Search performs a simple keyword-based search with stop-word filtering and improved scoring
 func (s *MemoryStore) Search(query string, topK int) []Document {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -40,27 +40,48 @@ func (s *MemoryStore) Search(query string, topK int) []Document {
 		return nil
 	}
 
+	stopWords := map[string]bool{
+		"the": true, "and": true, "for": true, "with": true, "this": true,
+		"that": true, "from": true, "your": true, "have": true, "will": true,
+		"package": true, "import": true, "func": true, "type": true, "struct": true,
+	}
+
 	type scoredDoc struct {
 		doc   Document
 		score float64
 	}
 
 	queryTerms := strings.Fields(strings.ToLower(query))
+	filteredTerms := []string{}
+	for _, term := range queryTerms {
+		if len(term) > 2 && !stopWords[term] {
+			filteredTerms = append(filteredTerms, term)
+		}
+	}
+
+	if len(filteredTerms) == 0 {
+		filteredTerms = queryTerms // fallback if all were filtered
+	}
+
 	var scored []scoredDoc
 
 	for _, doc := range s.docs {
 		score := 0.0
 		contentLower := strings.ToLower(doc.Content)
 		
-		for _, term := range queryTerms {
+		uniqueMatches := 0
+		for _, term := range filteredTerms {
 			count := strings.Count(contentLower, term)
 			if count > 0 {
-				// Simple term frequency
-				score += float64(count)
+				// Score = log(count+1) to dampen high frequency + bonus for unique term match
+				score += 1.0 + float64(count)*0.1
+				uniqueMatches++
 			}
 		}
 
 		if score > 0 {
+			// Boost documents that match more unique terms from the query
+			score *= float64(uniqueMatches)
 			scored = append(scored, scoredDoc{doc, score})
 		}
 	}
