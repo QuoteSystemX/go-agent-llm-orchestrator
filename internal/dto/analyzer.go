@@ -366,9 +366,11 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	if window <= 0 {
 		window = 4096
 	}
-	maxChars := window * 3 // Conservative estimate: 3 chars per token
-
-	// 2. Build prompt with dynamic truncation
+	// Budgeting: Leave 1024 tokens for the response. 
+	// Use 2.5 chars per token for code (more conservative than 3).
+	maxChars := int(float64(window-1024) * 2.5)
+	if maxChars < 3000 { maxChars = 3000 }
+	
 	prompt := a.buildAnalysisPrompt(repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
@@ -437,71 +439,84 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme string, currentTasks []m
 		"3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n" +
 		"Return ONLY a JSON object with fields: current_stage, progress, proposals.\n"
 
-	// 2. Budgeting
-	ctxBudget := maxChars - 2000
-	if ctxBudget < 2000 { ctxBudget = 2000 }
+	// 2. Fixed content overhead
+	header := fmt.Sprintf("Repository Analysis: %s\n\n", repoName)
+	overhead := len(header) + len(instructions) + 500 // Extra 500 for section headers
 
-	// Format Tasks first to see their size
+	// 3. Templates budget (max 2 templates, max 1000 chars each)
+	var tplSb strings.Builder
+	if len(templates) > 0 {
+		tplSb.WriteString("=== Templates ===\n")
+		for i, t := range templates {
+			if i >= 2 { break }
+			content := t.Content
+			if len(content) > 1000 { content = content[:1000] + "... [truncated template]" }
+			tplSb.WriteString(fmt.Sprintf("- %s: %s\n", t.Name, content))
+		}
+		tplSb.WriteString("\n")
+	}
+	templateStr := tplSb.String()
+
+	// 4. Budgeting variable parts
+	variableBudget := maxChars - overhead - len(templateStr)
+	if variableBudget < 1500 { variableBudget = 1500 }
+
+	// README: 15% of variable budget
+	rLimit := variableBudget * 15 / 100
+	rOrig := len(readme)
+	if len(readme) > rLimit {
+		readme = readme[:rLimit] + "... [truncated readme]"
+	}
+
+	// Tasks: 20% of variable budget
 	var tasksSb strings.Builder
 	for _, t := range currentTasks {
 		tasksSb.WriteString(fmt.Sprintf("- %v: %v (Pattern: %v)\n", t["id"], t["mission"], t["pattern"]))
 	}
 	tasksStr := tasksSb.String()
-
-	// 3. Trim sections (Phase 4: Reduce hard limits, rely on RAG)
-	rOrig := len(readme)
-	rLimit := 1000 // Just a brief overview
-	if len(readme) > rLimit { readme = readme[:rLimit] + "... [truncated, RAG handles the rest]" }
-
 	tOrig := len(tasksStr)
-	tLimit := ctxBudget * 15 / 100
-	if len(tasksStr) > tLimit { tasksStr = tasksStr[:tLimit] + "... [truncated]" }
+	tLimit := variableBudget * 20 / 100
+	if len(tasksStr) > tLimit {
+		tasksStr = tasksStr[:tLimit] + "... [truncated tasks]"
+	}
 
-	// Semantic query based on active tasks
+	// 5. RAG Context: Remaining variable budget
+	ragLimit := variableBudget - len(readme) - len(tasksStr)
+	if ragLimit < 500 { ragLimit = 500 }
+
 	ragQuery := repoName + " overview architecture " + tasksStr
 	if tasksStr == "" {
 		ragQuery = repoName + " README project description rules"
 	}
-	ragContext := a.SearchContext(context.Background(), repoName, ragQuery, 15) // Fetch up to 15 relevant chunks
+	ragContext := a.SearchContext(context.Background(), repoName, ragQuery, 30)
 	ragOrig := len(ragContext)
-	
-	ragLimit := ctxBudget - len(readme) - len(tasksStr)
-	if ragLimit < 0 { ragLimit = 0 }
+
 	if len(ragContext) > ragLimit {
-		if ragLimit > 15 {
-			ragContext = ragContext[:ragLimit] + "... [truncated]"
-		} else {
-			ragContext = ""
-		}
+		ragContext = ragContext[:ragLimit] + "... [truncated RAG context]"
 	}
 
-	log.Printf("DTO [%s] Context Budgeting:\n"+
-		"  - README: %d -> %d chars\n"+
-		"  - Tasks:  %d -> %d chars\n"+
-		"  - RAG:    %d -> %d chars\n",
-		repoName, rOrig, len(readme), tOrig, len(tasksStr), ragOrig, len(ragContext))
+	log.Printf("DTO [%s] Context Budgeting (maxChars=%d):\n"+
+		"  - Header/Instr: %d chars\n"+
+		"  - Templates:    %d chars\n"+
+		"  - README:       %d -> %d chars\n"+
+		"  - Tasks:        %d -> %d chars\n"+
+		"  - RAG:          %d -> %d chars\n",
+		repoName, maxChars, overhead, len(templateStr), rOrig, len(readme), tOrig, len(tasksStr), ragOrig, len(ragContext))
 
-	// 4. Assemble
+	// 6. Assemble
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Repository Analysis: %s\n\n", repoName))
+	sb.WriteString(header)
 	if readme != "" { sb.WriteString("=== README ===\n" + readme + "\n\n") }
 	if tasksStr != "" { sb.WriteString("=== Tasks ===\n" + tasksStr + "\n\n") }
+	if templateStr != "" { sb.WriteString(templateStr) }
 	if ragContext != "" { sb.WriteString("=== RAG Context ===\n" + ragContext + "\n\n") }
-
-	if len(templates) > 0 {
-		sb.WriteString("=== Templates ===\n")
-		for i, t := range templates {
-			if i >= 2 { break } // Limit to 2 templates
-			sb.WriteString(fmt.Sprintf("- %s: %s\n", t.Name, t.Content))
-		}
-		sb.WriteString("\n")
-	}
-
 	sb.WriteString("=== Instructions ===\n")
 	sb.WriteString(instructions)
 
 	finalPrompt := sb.String()
-	log.Printf("DTO [%s]: Final prompt size: %d chars", repoName, len(finalPrompt))
+	log.Printf("DTO [%s]: Final prompt size: %d chars (estimated %.0f tokens)", 
+		repoName, len(finalPrompt), float64(len(finalPrompt))/2.5)
+	
 	return finalPrompt
 }
 
