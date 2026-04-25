@@ -368,7 +368,10 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 }
 
 func (a *Analyzer) SearchContext(ctx context.Context, query string, topK int) string {
+	log.Printf("DTO: Querying RAG for top %d chunks matching semantic query: '%s'", topK, query)
 	relevantDocs := a.ragStore.Search(ctx, query, topK)
+	log.Printf("DTO: RAG found %d relevant chunks for query", len(relevantDocs))
+	
 	context := ""
 	for _, d := range relevantDocs {
 		context += fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content)
@@ -386,6 +389,11 @@ func (a *Analyzer) indexFile(ctx context.Context, path string) {
 	runes := []rune(text)
 	chunkSize := 1000
 	overlap := 200
+	
+	chunksCount := len(runes) / (chunkSize - overlap)
+	if chunksCount == 0 { chunksCount = 1 }
+	log.Printf("DTO: Generating embeddings for %s (%d chunks)...", filepath.Base(path), chunksCount)
+
 	for i := 0; i < len(runes); i += (chunkSize - overlap) {
 		end := i + chunkSize
 		if end > len(runes) {
