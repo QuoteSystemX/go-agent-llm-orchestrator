@@ -288,11 +288,20 @@ func (a *Analyzer) buildAnalysisPrompt(repoName string, readme string, wiki stri
 }
 
 func (a *Analyzer) parseAnalysisResult(response string) (*AnalysisResult, error) {
-	// Simple JSON extraction from markdown
+	// Simple JSON extraction from markdown (handle both { } and [ ])
 	jsonStr := response
-	if start := strings.Index(response, "{"); start != -1 {
-		if end := strings.LastIndex(response, "}"); end != -1 {
-			jsonStr = response[start : end+1]
+	startIdx := strings.IndexAny(response, "{[")
+	if startIdx != -1 {
+		var endChar string
+		if response[startIdx] == '{' {
+			endChar = "}"
+		} else {
+			endChar = "]"
+		}
+		
+		endIdx := strings.LastIndex(response, endChar)
+		if endIdx != -1 && endIdx > startIdx {
+			jsonStr = response[startIdx : endIdx+1]
 		}
 	}
 

@@ -92,3 +92,57 @@ func TestAnalyzer_BuildPrompt_Truncation(t *testing.T) {
 		t.Error("prompt should still contain repository name")
 	}
 }
+
+func TestAnalyzer_ParseAnalysisResult_Robust(t *testing.T) {
+	a := &Analyzer{}
+	
+	// Case 1: JSON inside markdown block
+	resp1 := "Here is the result:\n```json\n{\"current_stage\": \"prd\", \"proposals\": []}\n```\nHope this helps."
+	res1, err := a.parseAnalysisResult(resp1)
+	if err != nil || res1.CurrentStage != "prd" {
+		t.Errorf("failed to parse markdown JSON: %v", err)
+	}
+
+	// Case 2: Old format (direct array)
+	resp2 := "[{\"pattern\": \"worker\", \"mission\": \"fix bug\"}]"
+	res2, err := a.parseAnalysisResult(resp2)
+	if err != nil {
+		t.Errorf("failed to parse old format: %v", err)
+	} else if len(res2.Proposals) != 1 {
+		t.Errorf("expected 1 proposal in old format, got %d. Result: %+v", len(res2.Proposals), res2)
+	} else if res2.Proposals[0].Mission != "fix bug" {
+		t.Errorf("expected mission 'fix bug', got '%s'", res2.Proposals[0].Mission)
+	}
+
+	// Case 3: Noisy text
+	resp3 := "I analyzed it. { \"current_stage\": \"stories\" } is my answer."
+	res3, err := a.parseAnalysisResult(resp3)
+	if err != nil || res3.CurrentStage != "stories" {
+		t.Errorf("failed to parse noisy JSON: %v", err)
+	}
+}
+
+func TestAnalyzer_BuildPrompt_TemplateFiltering(t *testing.T) {
+	database, _ := db.InitDB(":memory:")
+	a := NewAnalyzer(database, nil, nil, nil)
+	
+	templates := []Template{
+		{Name: "T1", Content: "C1"},
+		{Name: "T2", Content: "C2"},
+		{Name: "T3", Content: "C3"},
+		{Name: "T4", Content: "C4"},
+		{Name: "T5", Content: "C5"},
+	}
+	
+	prompt := a.buildAnalysisPrompt("test", "", "", "", nil, templates, 10000)
+	
+	if !strings.Contains(prompt, "Template: T1") {
+		t.Error("should contain T1")
+	}
+	if !strings.Contains(prompt, "Template: T3") {
+		t.Error("should contain T3")
+	}
+	if strings.Contains(prompt, "Template: T4") {
+		t.Error("should NOT contain T4 (limit is 3)")
+	}
+}
