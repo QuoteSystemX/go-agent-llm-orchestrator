@@ -64,10 +64,12 @@ go build -o orchestrator ./cmd/orchestrator/main.go
 | :--- | :--- | :--- |
 | `LLM_LOCAL_ENDPOINT` | URL for Ollama | `http://localhost:11434` |
 | `LLM_REMOTE_ENDPOINT` | URL for Cloud LLM (OpenAI compatible) | - |
+| `LLM_REMOTE_API_KEY` | API Key for Cloud LLM | - |
 | `LLM_LOCAL_MODEL` | Model for local tasks | `phi3:mini` |
 | `LLM_REMOTE_MODEL` | Model for complex tasks | `gpt-4o` |
-| `PROMPT_LIBRARY_CACHE_DIR`| Cache for agent prompts | `./data/prompt-lib` |
+| `CLEANUP_SCHEDULE` | Cron schedule for DB cleanup | `0 2 * * *` |
 | `DB_PATH` | Path to SQLite database | `/app/data/tasks.db` |
+| `PROMPT_LIBRARY_CACHE_DIR`| Cache for agent prompts | `./data/prompt-lib` |
 
 ### Indexer Guardrails (Hardcoded)
 - **Max Files**: 500 per repository.

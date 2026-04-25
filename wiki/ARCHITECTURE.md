@@ -28,61 +28,99 @@ graph TD
 | **Admin API** | REST API for task management (CRUD) and log retrieval. | Go (Standard Net/HTTP) | `internal/api` |
 | **Web UI** | Premium management dashboard (Glassmorphism). | HTML/CSS/JS (Vanilla) | `web/static` |
 | **Scheduler** | Watches task schedules and triggers executions. | Go (robfig/cron) | `internal/scheduler` |
-| **Log Recorder** | Captures "In/Out" payloads for every task execution. | Go / SQL | `internal/scheduler` |
-| **LLM Router** | Classifies tasks and generates auto-responses for blocked sessions. | Go (LangChain-Go style) | `internal/llm` |
-| **Storage Engine** | Manages persistent task, session, and audit data. | SQLite3 (modernc.org/sqlite) | `internal/db` |
+| **Monitor** | Polls Jules API for status updates and triggers supervisor. | Go | `internal/monitor` |
+| **Supervisor** | Generates automated responses for blocked agent sessions. | Go | `internal/llm` |
+| **Storage Engine** | Manages persistent data in SQLite (Main & History). | SQLite3 | `internal/db` |
 
 ## 3. Data Flow
 
-1. **Boot Sync (Cold Start)**: `main.go` reads `/app/config/distribution.yml` (mounted from K8s ConfigMap) → Calls `engine.ImportDistribution()` → UPSERTs tasks into SQLite.
-2. **Management**: User edits/adds tasks via Web UI → `Admin API` updates SQLite → Triggers `engine.SyncTasks()` to update cron schedule in-memory.
-3. **Execution**: Scheduler triggers task → Captures "In" payload → Calls Jules API → Captures "Out" payload.
-4. **Auditing**: `Log Recorder` writes execution results, payloads, and duration to `task_logs`.
-5. **Supervision**: `internal/monitor` polls Jules API → If blocked, `internal/llm` generates response → Calls Jules API to resume.
+1. **Boot Sync**: `main.go` reads `distribution.yml` → UPSERTs tasks into SQLite.
+2. **Management**: User interacts via Web UI → Admin API updates SQLite → Scheduler syncs in-memory cron.
+3. **Execution**: Scheduler triggers task → Captures In/Out payloads → Calls Jules API.
+4. **Monitoring**: `internal/monitor` polls Jules API → Updates session statuses.
+5. **Supervision**: If session is in a trigger status (e.g., `AWAITING_USER_FEEDBACK`), `internal/llm` generates response.
+6. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions based on `retention_days` setting.
 
 ## 4. Architecture Decision Records (ADRs)
 
 ### ADR-001: SQLite for State Management
 
 - **Status:** Accepted
-- **Decision:** Use SQLite3 stored on a K8s Persistent Volume (PVC).
+- **Decision:** Use SQLite3 on PVC. Split into `main.db` (config) and `history.db` (logs) for performance.
 
-### ADR-004: Centralized Helm-First Configuration
-
-- **Status:** Accepted
-- **Context:** Multiple environments (dev/prod) require different default task schedules.
-- **Decision:** Store the master task schedule in Helm `values.yaml`, mount it via ConfigMap, and reconcile SQLite on every boot.
-- **Consequences:** Single source of truth in Git (Charts), but allows runtime overrides via Web UI.
-
-### ADR-005: Detailed In/Out Execution Logging
+### ADR-006: Dedicated Status Monitor
 
 - **Status:** Accepted
-- **Context:** Debugging autonomous agent failures is difficult without seeing exactly what they were asked and what they did.
-- **Decision:** Record the full request/response payload for every Jules session in a dedicated `task_logs` table.
+- **Decision:** Use a separate background poller to sync Jules API statuses into local SQLite, decoupling execution from monitoring.
 
 ## 5. Database Schema
+
+### Main Database (`main.db`)
 
 ```sql
 CREATE TABLE tasks (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    agent TEXT DEFAULT '',
     mission TEXT,
     pattern TEXT,
     schedule TEXT NOT NULL,
     status TEXT NOT NULL,
+    current_stage TEXT DEFAULT 'idle',
+    progress INTEGER DEFAULT 0,
     last_run_at DATETIME,
+    approval_required INTEGER DEFAULT 0,
+    pending_decision TEXT DEFAULT '',
+    failure_count INTEGER DEFAULT 0,
+    importance INTEGER DEFAULT 1,
+    category TEXT DEFAULT 'worker',
+    auto_paused INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY,
+    task_id TEXT,
+    jules_session_id TEXT UNIQUE,
+    status TEXT NOT NULL,
+    last_context_hash TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
+CREATE TABLE templates (
+    name TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### History Database (`history.db`)
+
+```sql
 CREATE TABLE task_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    task_id TEXT NOT NULL,
+    session_id TEXT,
     executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     input_data TEXT,
     output_data TEXT,
     status TEXT,
     error TEXT,
     duration_ms INTEGER
+);
+
+CREATE TABLE web_chat_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    provider TEXT,
+    repo TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
