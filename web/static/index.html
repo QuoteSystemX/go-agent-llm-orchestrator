@@ -325,9 +325,20 @@
                     <label>Remote LLM Model</label>
                     <input type="text" id="remote-model" placeholder="gpt-4o">
                 </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; justify-content:space-between">
+                        <span>Remote API Key</span>
+                        <span id="remote-api-key-status" style="font-size:0.75rem; font-weight:400"></span>
+                    </label>
+                    <input type="password" id="remote-api-key" placeholder="sk-...">
+                </div>
+                <div class="form-group">
+                    <label>Remote Endpoint URL</label>
+                    <input type="text" id="remote-endpoint-url" placeholder="https://api.openai.com">
+                </div>
 
                 <div class="settings-section-title">Local LLM Advanced (Ollama)</div>
-                <div class="form-row">
+                <div class="form-row" style="grid-template-columns:repeat(4, 1fr)">
                     <div class="form-group">
                         <label>Context Window</label>
                         <input type="number" id="local-context-window" placeholder="32768">
@@ -335,6 +346,14 @@
                     <div class="form-group">
                         <label>Temperature (0-1)</label>
                         <input type="number" id="local-temperature" placeholder="0.7" step="0.1" min="0" max="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Request Timeout (s)</label>
+                        <input type="number" id="local-timeout" placeholder="300" min="10" max="3600">
+                    </div>
+                    <div class="form-group">
+                        <label>Retry Count</label>
+                        <input type="number" id="local-retries" placeholder="3" min="1" max="10">
                     </div>
                 </div>
                 <div class="form-group">
@@ -372,7 +391,16 @@
                 <!-- LLM Routing -->
                 <div class="form-group">
                     <label>LLM Routing</label>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.4rem">
+                    <div class="form-row" style="margin-bottom:0.75rem">
+                        <div class="form-group" style="flex:0 0 50%">
+                            <label style="font-size:0.75rem">Context Window for COMPLEX tasks</label>
+                            <input type="number" id="complex-context-window" placeholder="131072" min="1024">
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.2rem">
+                                Overrides the local context window for COMPLEX task calls. Leave blank to use the default.
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-top:0.4rem">
                         <div>
                             <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem">SIMPLE tasks</div>
                             <select id="routing-simple" style="width:100%">
@@ -385,6 +413,13 @@
                             <select id="routing-complex" style="width:100%">
                                 <option value="remote">Remote LLM</option>
                                 <option value="local">Local (Ollama)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem">DTO tasks</div>
+                            <select id="routing-dto" style="width:100%">
+                                <option value="local">Local (Ollama)</option>
+                                <option value="remote">Remote LLM</option>
                             </select>
                         </div>
                     </div>

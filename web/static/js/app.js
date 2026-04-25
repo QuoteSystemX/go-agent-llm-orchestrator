@@ -503,6 +503,12 @@ async function loadLLMSettings() {
         const data = await resp.json();
         if (data.local_model) document.getElementById('local-model').value = data.local_model;
         if (data.remote_model) document.getElementById('remote-model').value = data.remote_model;
+        if (data.remote_api_key) {
+            const remoteKeyField = document.getElementById('remote-api-key');
+            remoteKeyField.placeholder = data.remote_api_key;
+            remoteKeyField.value = '';
+        }
+        if (data.remote_endpoint_url) document.getElementById('remote-endpoint-url').value = data.remote_endpoint_url;
         if (data.jules_base_url) document.getElementById('jules-base-url').value = data.jules_base_url;
         // Show masked key (e.g. "[env] AIza...abc4") as placeholder so the user knows it's set
         const keyField = document.getElementById('jules-api-key');
@@ -514,6 +520,8 @@ async function loadLLMSettings() {
         }
         if (data.local_context_window) document.getElementById('local-context-window').value = data.local_context_window;
         if (data.local_temperature) document.getElementById('local-temperature').value = data.local_temperature;
+        if (data.local_timeout) document.getElementById('local-timeout').value = data.local_timeout;
+        if (data.local_retries) document.getElementById('local-retries').value = data.local_retries;
         if (data.system_prompt) document.getElementById('system-prompt').value = data.system_prompt;
     } catch (e) { /* silent */ }
 }
@@ -530,6 +538,8 @@ async function loadSupervisorSettings() {
         const routingComplex = document.getElementById('routing-complex');
         if (data.routing_simple) routingSimple.value = data.routing_simple;
         if (data.routing_complex) routingComplex.value = data.routing_complex;
+        if (data.routing_dto) document.getElementById('routing-dto').value = data.routing_dto;
+        if (data.complex_context_window) document.getElementById('complex-context-window').value = data.complex_context_window;
     } catch (e) { /* silent */ }
 }
 
@@ -606,16 +616,24 @@ async function saveSettings() {
         });
     }
 
+    const remoteApiKey = document.getElementById('remote-api-key').value.trim();
+    const remoteEndpointUrl = document.getElementById('remote-endpoint-url').value.trim();
+    const localTimeout = document.getElementById('local-timeout').value.trim();
+    const localRetries = document.getElementById('local-retries').value.trim();
     await fetch('/api/v1/settings/llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             local_model: localModel,
             remote_model: remoteModel,
+            remote_api_key: remoteApiKey,
+            remote_endpoint_url: remoteEndpointUrl,
             jules_api_key: julesApiKey,
             jules_base_url: julesBaseUrl,
             local_context_window: localContextWindow,
             local_temperature: localTemperature,
+            local_timeout: localTimeout,
+            local_retries: localRetries,
             system_prompt: systemPrompt
         })
     });
@@ -623,13 +641,16 @@ async function saveSettings() {
     const triggerStatuses = [];
     if (document.getElementById('trigger-awaiting-feedback').checked) triggerStatuses.push('AWAITING_USER_FEEDBACK');
     if (document.getElementById('trigger-awaiting-plan').checked) triggerStatuses.push('AWAITING_PLAN_APPROVAL');
+    const complexContextWindow = document.getElementById('complex-context-window').value.trim();
     await fetch('/api/v1/settings/supervisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             trigger_statuses: triggerStatuses,
             routing_simple: document.getElementById('routing-simple').value,
-            routing_complex: document.getElementById('routing-complex').value
+            routing_complex: document.getElementById('routing-complex').value,
+            routing_dto: document.getElementById('routing-dto').value,
+            complex_context_window: complexContextWindow
         })
     });
 

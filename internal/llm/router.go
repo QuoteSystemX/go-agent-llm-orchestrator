@@ -63,6 +63,47 @@ func (r *Router) getLocalTemperature() float64 {
 	return val
 }
 
+func (r *Router) getLocalTimeout() time.Duration {
+	valStr := r.getModel("llm_local_timeout", "300")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	if val <= 0 {
+		val = 300
+	}
+	return time.Duration(val) * time.Second
+}
+
+func (r *Router) getLocalRetries() int {
+	valStr := r.getModel("llm_local_retries", "3")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	if val <= 0 {
+		val = 3
+	}
+	return val
+}
+
+func (r *Router) getRemoteEndpoint() string {
+	return r.getModel("llm_remote_endpoint", r.RemoteEndpoint)
+}
+
+func (r *Router) getRemoteAPIKey() string {
+	return r.getModel("llm_remote_api_key", r.RemoteAPIKey)
+}
+
+func (r *Router) getComplexContextWindow() int {
+	valStr := r.getModel("llm_complex_context_window", "")
+	if valStr == "" {
+		return r.getLocalContextWindow()
+	}
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	if val <= 0 {
+		return r.getLocalContextWindow()
+	}
+	return val
+}
+
 func (r *Router) getSystemPrompt() string {
 	return r.getModel("llm_system_prompt", "You are a professional coding assistant and project orchestrator.")
 }
@@ -186,14 +227,14 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		target = "local"
 	}
 
-	if target == "remote" && r.RemoteEndpoint != "" {
-		endpoint = r.RemoteEndpoint
+	if target == "remote" && r.getRemoteEndpoint() != "" {
+		endpoint = r.getRemoteEndpoint()
 		model = r.getRemoteModel()
-		apiKey = r.RemoteAPIKey
+		apiKey = r.getRemoteAPIKey()
 		provider = "remote"
 		log.Printf("LLM Router: Routing %s task to REMOTE provider (%s)", classification, model)
 	} else {
-		if target == "remote" && r.RemoteEndpoint == "" {
+		if target == "remote" && r.getRemoteEndpoint() == "" {
 			log.Printf("LLM Router: Remote LLM not configured, falling back to LOCAL for %s task", classification)
 		} else {
 			log.Printf("LLM Router: Routing %s task to LOCAL provider", classification)
@@ -230,6 +271,9 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		if prov == "local" {
 			temp := r.getLocalTemperature()
 			ctxWin := r.getLocalContextWindow()
+			if classification == Complex {
+				ctxWin = r.getComplexContextWindow()
+			}
 			pl["temperature"] = temp
 			pl["num_ctx"] = ctxWin
 			// Ollama specific options block for extra compatibility
@@ -241,14 +285,15 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		jd, _ := json.Marshal(pl)
 
 		var lastErr error
-		for i := 0; i < 3; i++ {
+		maxRetries := r.getLocalRetries()
+		for i := 0; i < maxRetries; i++ {
 			req, _ := http.NewRequestWithContext(ctx, "POST", ep+"/v1/chat/completions", bytes.NewBuffer(jd))
 			req.Header.Set("Content-Type", "application/json")
 			if key != "" {
 				req.Header.Set("Authorization", "Bearer "+key)
 			}
 
-			client := &http.Client{Timeout: 300 * time.Second}
+			client := &http.Client{Timeout: r.getLocalTimeout()}
 			resp, err := client.Do(req)
 			if err != nil {
 				log.Printf("LLM Router: [%s] attempt %d failed: %v", prov, i+1, err)
@@ -284,7 +329,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 			}
 			return result.Choices[0].Message.Content, nil
 		}
-		return "", fmt.Errorf("failed after 3 attempts: %v", lastErr)
+		return "", fmt.Errorf("failed after %d attempts: %v", maxRetries, lastErr)
 	}
 
 	content, err := tryEndpoint(endpoint, model, apiKey, provider)
@@ -309,10 +354,10 @@ func (r *Router) GenerateChatStream(ctx context.Context, classification Classifi
 		target = "local"
 	}
 
-	if target == "remote" && r.RemoteEndpoint != "" {
-		endpoint = r.RemoteEndpoint
+	if target == "remote" && r.getRemoteEndpoint() != "" {
+		endpoint = r.getRemoteEndpoint()
 		model = r.getRemoteModel()
-		apiKey = r.RemoteAPIKey
+		apiKey = r.getRemoteAPIKey()
 		provider = "remote"
 	} else {
 		endpoint = r.LocalEndpoint
@@ -339,8 +384,12 @@ func (r *Router) GenerateChatStream(ctx context.Context, classification Classifi
 	}
 
 	if provider == "local" {
+		ctxWin := r.getLocalContextWindow()
+		if classification == Complex {
+			ctxWin = r.getComplexContextWindow()
+		}
 		payload["temperature"] = r.getLocalTemperature()
-		payload["num_ctx"] = r.getLocalContextWindow()
+		payload["num_ctx"] = ctxWin
 	}
 
 	jsonData, _ := json.Marshal(payload)

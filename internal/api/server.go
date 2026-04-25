@@ -466,24 +466,37 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 			masked = "[" + julesKeySource + "] " + masked
 		}
 		w.Header().Set("Content-Type", "application/json")
+		remoteKey, remoteKeySource := s.effectiveKey(r.Context(), "llm_remote_api_key", "LLM_REMOTE_API_KEY")
+		maskedRemote := maskSecret(remoteKey)
+		if maskedRemote != "" {
+			maskedRemote = "[" + remoteKeySource + "] " + maskedRemote
+		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"local_model":             s.getSetting(r.Context(), "llm_local_model", ""),
 			"remote_model":            s.getSetting(r.Context(), "llm_remote_model", ""),
+			"remote_api_key":          maskedRemote,
+			"remote_endpoint_url":     s.getSetting(r.Context(), "llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT")),
 			"jules_api_key":           masked,
 			"jules_base_url":          s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
 			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "32768"),
 			"local_temperature":       s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
+			"local_timeout":           s.getSetting(r.Context(), "llm_local_timeout", "300"),
+			"local_retries":           s.getSetting(r.Context(), "llm_local_retries", "3"),
 			"system_prompt":           s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
 		})
 	case http.MethodPost:
 		var data struct {
-			LocalModel         string `json:"local_model"`
-			RemoteModel        string `json:"remote_model"`
-			JulesAPIKey        string `json:"jules_api_key"`
-			JulesBaseURL       string `json:"jules_base_url"`
-			LocalContextWindow string `json:"local_context_window"`
-			LocalTemperature   string `json:"local_temperature"`
-			SystemPrompt       string `json:"system_prompt"`
+			LocalModel          string `json:"local_model"`
+			RemoteModel         string `json:"remote_model"`
+			RemoteAPIKey        string `json:"remote_api_key"`
+			RemoteEndpointURL   string `json:"remote_endpoint_url"`
+			JulesAPIKey         string `json:"jules_api_key"`
+			JulesBaseURL        string `json:"jules_base_url"`
+			LocalContextWindow  string `json:"local_context_window"`
+			LocalTemperature    string `json:"local_temperature"`
+			LocalTimeout        string `json:"local_timeout"`
+			LocalRetries        string `json:"local_retries"`
+			SystemPrompt        string `json:"system_prompt"`
 		}
 		json.NewDecoder(r.Body).Decode(&data)
 		if data.LocalModel != "" {
@@ -507,6 +520,18 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		if data.SystemPrompt != "" {
 			s.saveSetting(r.Context(), "llm_system_prompt", data.SystemPrompt)
 		}
+		if data.RemoteAPIKey != "" {
+			s.saveSetting(r.Context(), "llm_remote_api_key", data.RemoteAPIKey)
+		}
+		if data.RemoteEndpointURL != "" {
+			s.saveSetting(r.Context(), "llm_remote_endpoint", data.RemoteEndpointURL)
+		}
+		if data.LocalTimeout != "" {
+			s.saveSetting(r.Context(), "llm_local_timeout", data.LocalTimeout)
+		}
+		if data.LocalRetries != "" {
+			s.saveSetting(r.Context(), "llm_local_retries", data.LocalRetries)
+		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -525,15 +550,19 @@ func (s *AdminServer) handleSupervisorSettings(w http.ResponseWriter, r *http.Re
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"trigger_statuses": statuses,
-			"routing_simple":   s.getSetting(r.Context(), "routing_simple", "local"),
-			"routing_complex":  s.getSetting(r.Context(), "routing_complex", "remote"),
+			"trigger_statuses":     statuses,
+			"routing_simple":       s.getSetting(r.Context(), "routing_simple", "local"),
+			"routing_complex":      s.getSetting(r.Context(), "routing_complex", "remote"),
+			"routing_dto":          s.getSetting(r.Context(), "routing_dto", "local"),
+			"complex_context_window": s.getSetting(r.Context(), "llm_complex_context_window", ""),
 		})
 	case http.MethodPost:
 		var data struct {
-			TriggerStatuses []string `json:"trigger_statuses"`
-			RoutingSimple   string   `json:"routing_simple"`
-			RoutingComplex  string   `json:"routing_complex"`
+			TriggerStatuses      []string `json:"trigger_statuses"`
+			RoutingSimple        string   `json:"routing_simple"`
+			RoutingComplex       string   `json:"routing_complex"`
+			RoutingDTO           string   `json:"routing_dto"`
+			ComplexContextWindow string   `json:"complex_context_window"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -547,6 +576,12 @@ func (s *AdminServer) handleSupervisorSettings(w http.ResponseWriter, r *http.Re
 		}
 		if data.RoutingComplex != "" {
 			s.saveSetting(r.Context(), "routing_complex", data.RoutingComplex)
+		}
+		if data.RoutingDTO != "" {
+			s.saveSetting(r.Context(), "routing_dto", data.RoutingDTO)
+		}
+		if data.ComplexContextWindow != "" {
+			s.saveSetting(r.Context(), "llm_complex_context_window", data.ComplexContextWindow)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:
