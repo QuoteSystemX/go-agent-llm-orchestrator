@@ -85,7 +85,7 @@ func InitDB(dbPath string) (*DB, error) {
 		if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 			return err
 		}
-		if _, err := db.Exec("PRAGMA busy_timeout=30000;"); err != nil {
+		if _, err := db.Exec("PRAGMA busy_timeout=60000;"); err != nil {
 			return err
 		}
 		if _, err := db.Exec("PRAGMA synchronous=NORMAL;"); err != nil {
