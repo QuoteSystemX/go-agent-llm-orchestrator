@@ -147,8 +147,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string) (*AnalysisR
 		knowledge, _ := a.readFile(filepath.Join(repoPath, ".agent", "KNOWLEDGE.md"))
 		arch, _ := a.readFile(filepath.Join(repoPath, ".agent", "ARCHITECTURE.md"))
 
-		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\nContext RAG:\n%s\n",
-			workflows, skills, knowledge, arch, docContext)
+		agentContext = fmt.Sprintf("### Repository .agent Context\nWorkflows:\n%s\nSkills:\n%s\nKnowledge:\n%s\nArchitecture:\n%s\n",
+			workflows, skills, knowledge, arch)
 	} else {
 		warnings = append(warnings, "No .agent folder found (BMAD context missing)")
 	}
@@ -260,19 +260,29 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	tLimit := ctxBudget * 15 / 100
 	if len(tasksStr) > tLimit { tasksStr = tasksStr[:tLimit] + "... [truncated]" }
 
+	aOrig := len(agentContext)
+	aLimit := ctxBudget * 25 / 100
+	if len(agentContext) > aLimit { agentContext = agentContext[:aLimit] + "... [truncated]" }
+
 	ragContext := a.SearchContext(repoName, 5)
 	ragOrig := len(ragContext)
 	ragLimit := ctxBudget - len(readme) - len(wiki) - len(tasksStr) - len(agentContext)
-	if len(ragContext) > ragLimit && ragLimit > 0 {
-		ragContext = ragContext[:ragLimit] + "... [truncated]"
+	if ragLimit < 0 { ragLimit = 0 }
+	if len(ragContext) > ragLimit {
+		if ragLimit > 15 {
+			ragContext = ragContext[:ragLimit] + "... [truncated]"
+		} else {
+			ragContext = ""
+		}
 	}
 
 	log.Printf("DTO [%s] Context Budgeting:\n"+
 		"  - README: %d -> %d chars\n"+
 		"  - Wiki:   %d -> %d chars\n"+
 		"  - Tasks:  %d -> %d chars\n"+
+		"  - Agent:  %d -> %d chars\n"+
 		"  - RAG:    %d -> %d chars\n",
-		repoName, rOrig, len(readme), wOrig, len(wiki), tOrig, len(tasksStr), ragOrig, len(ragContext))
+		repoName, rOrig, len(readme), wOrig, len(wiki), tOrig, len(tasksStr), aOrig, len(agentContext), ragOrig, len(ragContext))
 
 	// 4. Assemble
 	var sb strings.Builder
@@ -280,6 +290,7 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme, wiki, agentContext stri
 	if readme != "" { sb.WriteString("=== README ===\n" + readme + "\n\n") }
 	if wiki != "" { sb.WriteString("=== Wiki ===\n" + wiki + "\n\n") }
 	if tasksStr != "" { sb.WriteString("=== Tasks ===\n" + tasksStr + "\n\n") }
+	if agentContext != "" { sb.WriteString(agentContext + "\n\n") }
 	if ragContext != "" { sb.WriteString("=== Code ===\n" + ragContext + "\n\n") }
 
 	if len(templates) > 0 {
