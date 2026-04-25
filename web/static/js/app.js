@@ -914,12 +914,20 @@ let analysisPollInterval = null;
 function updateAnalysisProgress(status) {
     const btn = document.getElementById('btn-run-analysis');
     const container = document.getElementById('dto-status-container');
+    const badge = document.getElementById('dto-system-status');
     
     if (status.is_running) {
         btn.disabled = true;
         const btnText = status.type === 'BACKGROUND' ? 'Auto-Analyzing...' : 'Analyzing...';
         btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:14px;height:14px"></i> ${btnText}`;
         
+        if (badge) {
+            badge.className = 'status-badge running';
+            badge.style.background = 'rgba(234, 179, 8, 0.2)'; // Yellow warning color
+            badge.style.color = '#eab308';
+            badge.innerText = status.type === 'BACKGROUND' ? 'Background Analysis' : 'Manual Analysis';
+        }
+
         if (container) {
             container.style.display = 'block';
             let html = `
@@ -949,6 +957,13 @@ function updateAnalysisProgress(status) {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="search" style="width:14px;height:14px"></i> Analyze Repository';
         if (container) container.style.display = 'none';
+        
+        if (badge) {
+            badge.className = 'status-badge active';
+            badge.style.background = 'rgba(34, 197, 94, 0.2)'; // Green success color
+            badge.style.color = '#22c55e';
+            badge.innerText = 'System Ready';
+        }
         
         if (analysisPollInterval) {
             clearInterval(analysisPollInterval);
