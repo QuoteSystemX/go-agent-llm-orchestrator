@@ -646,6 +646,58 @@ body { padding-bottom: 40px; }
     box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
 }
 
+.failure-badge-wrap {
+    position: relative;
+    display: inline-block;
+}
+.failure-badge-wrap .bg-failed {
+    cursor: help;
+}
+.failure-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 200;
+    width: 280px;
+    background: var(--surface);
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 0.5rem;
+    padding: 0.7rem 0.85rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    pointer-events: none;
+}
+.failure-badge-wrap:hover .failure-tooltip {
+    display: block;
+}
+.failure-tooltip-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--danger);
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+.failure-tooltip-error {
+    color: var(--text);
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-height: 120px;
+    overflow-y: auto;
+    background: rgba(239,68,68,0.07);
+    border-radius: 0.3rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.4rem;
+    font-family: monospace;
+    font-size: 0.7rem;
+}
+.failure-tooltip-meta {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+}
+
 /* Help Modal */
 .help-section { margin-bottom: 1.5rem; }
 .help-section-title {

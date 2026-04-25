@@ -122,7 +122,19 @@ function renderTasks() {
                                         <div class="task-title">${task.id.split(':').pop()}</div>
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
                                     </div>
-                                    <span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>
+                                    ${task.status === 'FAILED' ? `
+                                        <span class="failure-badge-wrap">
+                                            <span class="task-badge bg-failed">FAILED</span>
+                                            <div class="failure-tooltip">
+                                                <div class="failure-tooltip-title">&#9888; Failure details</div>
+                                                ${task.last_error ? `<div class="failure-tooltip-error">${task.last_error.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '<div class="failure-tooltip-error" style="color:var(--text-muted)">No error message recorded.</div>'}
+                                                <div class="failure-tooltip-meta">
+                                                    Attempts: <strong>${task.failure_count}</strong>
+                                                    ${task.last_run_at ? ` &nbsp;|&nbsp; Last run: <strong>${new Date(task.last_run_at).toLocaleString()}</strong>` : ''}
+                                                </div>
+                                            </div>
+                                        </span>
+                                    ` : `<span class="task-badge bg-${task.status.toLowerCase()}">${task.status}</span>`}
                                     ${task.status === 'WAITING' ? `
                                         <div class="task-approval-needed">
                                             <i data-lucide="help-circle" style="width:14px; color:var(--warning)"></i>
