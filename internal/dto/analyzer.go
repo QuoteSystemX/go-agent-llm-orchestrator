@@ -302,7 +302,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		if info.Size() > maxFileSize { return nil }
 
 		// Use same ignore list
-		ignoredDirs := []string{"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", "/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", "/.venv/", "/__pycache__/", "/pkg/"}
+		ignoredDirs := []string{"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", "/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", "/.venv/", "/__pycache__/", "/pkg/", "/.agent/"}
 		for _, dir := range ignoredDirs {
 			if strings.Contains(path, dir) { return nil }
 		}
@@ -332,7 +332,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		ignoredDirs := []string{
 			"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/",
 			"/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/",
-			"/.venv/", "/__pycache__/", "/pkg/",
+			"/.venv/", "/__pycache__/", "/pkg/", "/.agent/",
 		}
 		for _, dir := range ignoredDirs {
 			if strings.Contains(path, dir) {

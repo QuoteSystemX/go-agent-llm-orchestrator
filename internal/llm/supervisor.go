@@ -53,19 +53,20 @@ func (s *Supervisor) getSupervisorPrompt() string {
 func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error {
 	log.Printf("Supervising blocked session %s", sessionID)
 
-	// 1. Fetch real session context from Jules
-	var session *SessionInfo
+	// 1. Look up task context from local DB — no Jules API call needed.
 	taskDesc := "unknown task"
-	if s.julesClient != nil {
-		var err error
-		session, err = s.julesClient.GetSession(ctx, sessionID)
-		if err != nil {
-			log.Printf("Could not fetch session context for %s: %v (using fallback)", sessionID, err)
-		} else if session.Message != "" {
-			taskDesc = session.Message
-		} else if session.Result != "" {
-			taskDesc = session.Result
-		}
+	sessionStatus := ""
+	var mission string
+	err := s.db.QueryRowContext(ctx, `
+		SELECT s.status, COALESCE(t.mission, '')
+		FROM sessions s
+		LEFT JOIN tasks t ON t.id = s.task_id
+		WHERE s.jules_session_id = ?`, sessionID).Scan(&sessionStatus, &mission)
+	if err != nil {
+		log.Printf("Supervisor: could not find session %s in local DB: %v", sessionID, err)
+	} else if mission != "" {
+		taskDesc = mission
+		log.Printf("Supervisor: session %s task=%q status=%s", sessionID, taskDesc, sessionStatus)
 	}
 
 	// 2. Classify task
@@ -83,7 +84,7 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 
 	// 4. Post response to Jules API
 	err = s.tm.Execute(ctx, traffic.PriorityHigh, 5, "service", func() error {
-		if session != nil && session.Status == "AWAITING_PLAN_APPROVAL" {
+		if sessionStatus == "AWAITING_PLAN_APPROVAL" {
 			log.Printf("Approving plan for session %s", sessionID)
 			return s.julesClient.ApprovePlan(ctx, sessionID)
 		}
@@ -95,11 +96,7 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 	}
 
 	// 5. Audit log
-	status := ""
-	if session != nil {
-		status = session.Status
-	}
-	details := fmt.Sprintf("Class: %s | Status: %s | Response: %s", class, status, response)
+	details := fmt.Sprintf("Class: %s | Status: %s | Response: %s", class, sessionStatus, response)
 	_, err = s.db.History().ExecContext(ctx,
 		"INSERT INTO audit_logs (session_id, action, details) VALUES (?, ?, ?)",
 		sessionID, "AUTO_RESPONDED", details)
