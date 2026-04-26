@@ -26,12 +26,12 @@ repositories:
       - agent: analyst
         pattern: discovery
         mission: "📋 BMAD PRD Refinement from Brief"
-        schedule: "0 8 * * 1"     # Monday 08:00
+        schedule: "0 8 * * *"     # Daily 08:00
 
       - agent: analyst
         pattern: story_writer
         mission: "📖 BMAD Story Card Generation"
-        schedule: "0 9 * * 1"     # Monday 09:00
+        schedule: "0 9 * * *"     # Daily 09:00
 
       # Full cycle implementation
       - agent: orchestrator
