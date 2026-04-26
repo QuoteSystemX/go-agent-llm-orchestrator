@@ -25,26 +25,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     lucide.createIcons();
 
-    // Position failure tooltips via fixed positioning to escape backdrop-filter stacking contexts
+    // Position failure tooltips via fixed positioning to escape backdrop-filter stacking contexts.
+    // We move the tooltip to document.body the first time it is hovered to jump out of the card's stacking context.
     document.addEventListener('mouseover', e => {
         const badge = e.target.closest('.failure-badge-wrap .bg-failed');
         if (!badge) return;
-        const tooltip = badge.closest('.failure-badge-wrap').querySelector('.failure-tooltip');
+        
+        const wrap = badge.closest('.failure-badge-wrap');
+        const tooltip = wrap ? wrap.querySelector('.failure-tooltip') : badge._tooltip;
         if (!tooltip) return;
-        const rect = badge.getBoundingClientRect();
-        const tipWidth = 320;
-        let left = rect.left;
-        if (left + tipWidth > window.innerWidth - 8) {
-            left = window.innerWidth - tipWidth - 8;
+        
+        // Ensure tooltip is at body level to bypass parent stacking contexts (z-index isolation)
+        if (tooltip.parentElement !== document.body) {
+            document.body.appendChild(tooltip);
+            badge._tooltip = tooltip; // Keep reference since it's no longer a child of the wrap
         }
-        tooltip.style.top = (rect.bottom + 8) + 'px';
+
+        const rect = badge.getBoundingClientRect();
+        const tipWidth = 360; // Match CSS
+        let left = rect.left;
+        
+        // Horizontal clamping
+        if (left + tipWidth > window.innerWidth - 12) {
+            left = window.innerWidth - tipWidth - 12;
+        }
+        if (left < 12) left = 12;
+
+        // Vertical positioning
+        let top = rect.bottom + 8;
+        // If it overflows the bottom, show it above the badge (using 250px as safe estimate)
+        if (top + 250 > window.innerHeight) {
+            top = rect.top - 200 - 8; // Simple fallback height estimate
+        }
+
+        tooltip.style.top = top + 'px';
         tooltip.style.left = left + 'px';
         tooltip.classList.add('visible');
     });
+
     document.addEventListener('mouseout', e => {
         const badge = e.target.closest('.failure-badge-wrap .bg-failed');
         if (!badge) return;
-        const tooltip = badge.closest('.failure-badge-wrap').querySelector('.failure-tooltip');
+        const tooltip = badge._tooltip || badge.closest('.failure-badge-wrap')?.querySelector('.failure-tooltip');
         if (tooltip) tooltip.classList.remove('visible');
     });
 });
@@ -68,6 +90,9 @@ function renderTasks() {
     const container = document.getElementById('task-list');
     if (!container) return;
 
+    // Cleanup any detached failure tooltips from the body to prevent DOM leaks
+    document.querySelectorAll('body > .failure-tooltip').forEach(el => el.remove());
+
     // Remember which groups are currently expanded
     const openGroups = new Set(
         [...container.querySelectorAll('.project-group:not(.collapsed)')]
@@ -78,6 +103,7 @@ function renderTasks() {
     const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer'];
 
     // Group tasks by name (repository)
+    if (!tasks) tasks = [];
     const grouped = tasks.reduce((acc, task) => {
         const key = task.name || 'Other';
         if (!acc[key]) acc[key] = { all: [], filtered: [] };
