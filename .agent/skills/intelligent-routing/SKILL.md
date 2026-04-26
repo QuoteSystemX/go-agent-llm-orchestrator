@@ -35,23 +35,24 @@ graph TD
 
 **Use this matrix to automatically select agents:**
 
-| User Intent         | Keywords                                   | Selected Agent(s)                           | Auto-invoke? |
-| ------------------- | ------------------------------------------ | ------------------------------------------- | ------------ |
-| **Authentication**  | "login", "auth", "signup", "password"      | `security-auditor` + `backend-specialist`   | ✅ YES       |
-| **UI Component**    | "button", "card", "layout", "style"        | `frontend-specialist`                       | ✅ YES       |
-| **Mobile UI**       | "screen", "navigation", "touch", "gesture" | `mobile-developer`                          | ✅ YES       |
-| **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"  | `backend-specialist`                        | ✅ YES       |
-| **Database**        | "schema", "migration", "query", "table"    | `database-architect` + `backend-specialist` | ✅ YES       |
-| **Bug Fix**         | "error", "bug", "not working", "broken"    | `debugger`                                  | ✅ YES       |
-| **Test**            | "test", "coverage", "unit", "e2e"          | `test-engineer`                             | ✅ YES       |
-| **Deployment**      | "deploy", "production", "CI/CD", "docker"  | `devops-engineer`                           | ✅ YES       |
-| **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
-| **Performance**     | "slow", "optimize", "performance", "speed" | `performance-optimizer`                     | ✅ YES       |
-| **Product Def**     | "requirements", "user story", "backlog", "MVP" | `product-owner`                             | ✅ YES       |
-| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`           | ✅ YES       |
-| **Code Audit**      | "audit", "scan code", "tech debt", "generate tasks" | `reviewer`                          | ✅ YES       |
-| **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
-| **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
+| User Intent         | Keywords                                                 | Selected Agent(s)                         | Auto-invoke? |
+| ------------------- | -------------------------------------------------------- | ----------------------------------------- | ------------ |
+| **Authentication**  | "login", "auth", "signup", "password"                    | `security-auditor` + `backend-specialist` | ✅ YES       |
+| **UI Component**    | "button", "card", "layout", "style"                      | `frontend-specialist`                     | ✅ YES       |
+| **Mobile UI**       | "screen", "navigation", "touch", "gesture"               | `mobile-developer`                        | ✅ YES       |
+| **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"                | `backend-specialist`                      | ✅ YES       |
+| **Database**        | "schema", "migration", "query", "table"                  | `database-architect` + `backend-specialist` | ✅ YES       |
+| **Bug Fix**         | "error", "bug", "not working", "broken"                  | `debugger`                                | ✅ YES       |
+| **Test**            | "test", "coverage", "unit", "e2e"                        | `test-engineer`                           | ✅ YES       |
+| **Deployment**      | "deploy", "production", "CI/CD", "docker"                | `devops-engineer`                         | ✅ YES       |
+| **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
+| **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
+| **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
+| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`                  | ✅ YES       |
+| **Audit**           | "audit", "scan code", "tech debt", "generate tasks"      | `reviewer`                                | ✅ YES       |
+| **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
+| **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
+| **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 
 ### 3. Automatic Routing Protocol
 
@@ -102,21 +103,21 @@ function analyzeRequest(userMessage) {
 
 ### Single-Domain Tasks (Auto-invoke Single Agent)
 
-| Domain          | Patterns                                   | Agent                   |
-| --------------- | ------------------------------------------ | ----------------------- |
-| **Security**    | auth, login, jwt, password, hash, token    | `security-auditor`      |
-| **Frontend**    | component, react, vue, css, html, tailwind | `frontend-specialist`   |
-| **Backend**     | api, server, express, fastapi, node        | `backend-specialist`    |
-| **Mobile**      | react native, flutter, ios, android, expo  | `mobile-developer`      |
-| **Database**    | prisma, sql, mongodb, schema, migration    | `database-architect`    |
-| **Testing**     | test, jest, vitest, playwright, cypress    | `test-engineer`         |
-| **DevOps**      | docker, kubernetes, ci/cd, pm2, nginx      | `devops-engineer`       |
-| **Debug**       | error, bug, crash, not working, issue      | `debugger`              |
-| **Performance** | slow, lag, optimize, cache, performance    | `performance-optimizer` |
-| **SEO**         | seo, meta, analytics, sitemap, robots      | `seo-specialist`        |
-| **Game**        | unity, godot, phaser, game, multiplayer    | `game-developer`        |
+| Domain          | Patterns                                       | Agent                   |
+| --------------- | ---------------------------------------------- | ----------------------- |
+| **Security**    | auth, login, jwt, password, hash, token        | `security-auditor`      |
+| **Frontend**    | component, react, vue, css, html, tailwind     | `frontend-specialist`   |
+| **Backend**     | api, server, express, fastapi, node            | `backend-specialist`    |
+| **Mobile**      | react native, flutter, ios, android, expo      | `mobile-developer`      |
+| **Database**    | prisma, sql, mongodb, schema, migration        | `database-architect`    |
+| **Testing**     | test, jest, vitest, playwright, cypress        | `test-engineer`         |
+| **DevOps**      | docker, kubernetes, ci/cd, pm2, nginx          | `devops-engineer`       |
+| **Debug**       | error, bug, crash, not working, issue          | `debugger`              |
+| **Performance** | slow, lag, optimize, cache, performance        | `performance-optimizer` |
+| **SEO**         | seo, meta, analytics, sitemap, robots          | `seo-specialist`        |
+| **Game**        | unity, godot, phaser, game, multiplayer        | `game-developer`        |
 | **E2E / QA**    | playwright, cypress, e2e, regression, pipeline | `qa-automation-engineer` |
-| **Audit**       | audit, scan, tech debt, task queue         | `reviewer`              |
+| **Audit**       | audit, scan, tech debt, task queue             | `reviewer`              |
 
 ### Multi-Domain Tasks (Auto-invoke Orchestrator)
 
@@ -370,6 +371,18 @@ After every code-change routing session, test-engineer produces:
 ```markdown
 ## Regression Gate Report
 
+### 1. Stash Uncommitted Changes
+
+- `git stash save "Git Master: Pre-op stash"`
+
+### 2. Create Recovery Branch
+
+- `git branch recovery/$(date +%Y%m%d-%H%M%S)`
+
+### 3. Verify Clean Slate
+
+- `git status --short` should be empty (except for stashed items).
+
 **Baseline**: N packages green, M tests passing
 **After change**: N packages green, M+K tests passing
 **New failures**: 0  ✅ (or list regressions)
@@ -399,5 +412,6 @@ After every code-change routing session, test-engineer produces:
 ---
 
 **Next Steps**:
+
 - **Antigravity (Gemini)**: Integrate this skill into `GEMINI.md` TIER 0 rules.
 - **Claude Code**: This skill is loaded by the `orchestrator` agent. No manual integration needed — the orchestrator applies intelligent routing automatically before any agent delegation.

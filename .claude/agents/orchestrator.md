@@ -1251,23 +1251,24 @@ graph TD
 
 **Use this matrix to automatically select agents:**
 
-| User Intent         | Keywords                                   | Selected Agent(s)                           | Auto-invoke? |
-| ------------------- | ------------------------------------------ | ------------------------------------------- | ------------ |
-| **Authentication**  | "login", "auth", "signup", "password"      | `security-auditor` + `backend-specialist`   | ✅ YES       |
-| **UI Component**    | "button", "card", "layout", "style"        | `frontend-specialist`                       | ✅ YES       |
-| **Mobile UI**       | "screen", "navigation", "touch", "gesture" | `mobile-developer`                          | ✅ YES       |
-| **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"  | `backend-specialist`                        | ✅ YES       |
-| **Database**        | "schema", "migration", "query", "table"    | `database-architect` + `backend-specialist` | ✅ YES       |
-| **Bug Fix**         | "error", "bug", "not working", "broken"    | `debugger`                                  | ✅ YES       |
-| **Test**            | "test", "coverage", "unit", "e2e"          | `test-engineer`                             | ✅ YES       |
-| **Deployment**      | "deploy", "production", "CI/CD", "docker"  | `devops-engineer`                           | ✅ YES       |
-| **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
-| **Performance**     | "slow", "optimize", "performance", "speed" | `performance-optimizer`                     | ✅ YES       |
-| **Product Def**     | "requirements", "user story", "backlog", "MVP" | `product-owner`                             | ✅ YES       |
-| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`           | ✅ YES       |
-| **Code Audit**      | "audit", "scan code", "tech debt", "generate tasks" | `reviewer`                          | ✅ YES       |
-| **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
-| **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
+| User Intent         | Keywords                                                 | Selected Agent(s)                         | Auto-invoke? |
+| ------------------- | -------------------------------------------------------- | ----------------------------------------- | ------------ |
+| **Authentication**  | "login", "auth", "signup", "password"                    | `security-auditor` + `backend-specialist` | ✅ YES       |
+| **UI Component**    | "button", "card", "layout", "style"                      | `frontend-specialist`                     | ✅ YES       |
+| **Mobile UI**       | "screen", "navigation", "touch", "gesture"               | `mobile-developer`                        | ✅ YES       |
+| **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"                | `backend-specialist`                      | ✅ YES       |
+| **Database**        | "schema", "migration", "query", "table"                  | `database-architect` + `backend-specialist` | ✅ YES       |
+| **Bug Fix**         | "error", "bug", "not working", "broken"                  | `debugger`                                | ✅ YES       |
+| **Test**            | "test", "coverage", "unit", "e2e"                        | `test-engineer`                           | ✅ YES       |
+| **Deployment**      | "deploy", "production", "CI/CD", "docker"                | `devops-engineer`                         | ✅ YES       |
+| **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
+| **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
+| **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
+| **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`                  | ✅ YES       |
+| **Audit**           | "audit", "scan code", "tech debt", "generate tasks"      | `reviewer`                                | ✅ YES       |
+| **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
+| **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
+| **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 
 ### 3. Automatic Routing Protocol
 
@@ -1299,6 +1300,5 @@ function analyzeRequest(userMessage) {
 ```
 
 ## 4. Response Format
-
 
 <!-- truncated — full skill at .agent/skills/intelligent-routing/SKILL.md -->
