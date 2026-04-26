@@ -587,6 +587,16 @@ async function loadLLMSettings() {
         if (data.local_timeout) document.getElementById('local-timeout').value = data.local_timeout;
         if (data.local_retries) document.getElementById('local-retries').value = data.local_retries;
         if (data.system_prompt) document.getElementById('system-prompt').value = data.system_prompt;
+        // dto_prompt_budget_tokens: empty = auto-detected from Ollama
+        if (data.dto_prompt_budget_tokens) {
+            document.getElementById('dto-prompt-budget').value = data.dto_prompt_budget_tokens;
+        }
+        const effectiveEl = document.getElementById('dto-budget-effective');
+        if (effectiveEl && data.dto_prompt_budget_effective) {
+            effectiveEl.textContent = data.dto_prompt_budget_tokens
+                ? ''
+                : `(auto: ${data.dto_prompt_budget_effective} tokens)`;
+        }
     } catch (e) { /* silent */ }
 }
 
@@ -684,6 +694,7 @@ async function saveSettings() {
     const remoteEndpointUrl = document.getElementById('remote-endpoint-url').value.trim();
     const localTimeout = document.getElementById('local-timeout').value.trim();
     const localRetries = document.getElementById('local-retries').value.trim();
+    const dtoBudget = document.getElementById('dto-prompt-budget').value.trim();
     await fetch('/api/v1/settings/llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -698,7 +709,8 @@ async function saveSettings() {
             local_temperature: localTemperature,
             local_timeout: localTimeout,
             local_retries: localRetries,
-            system_prompt: systemPrompt
+            system_prompt: systemPrompt,
+            dto_prompt_budget_tokens: dtoBudget
         })
     });
     if (remoteApiKey) {

@@ -514,36 +514,52 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		if maskedRemote != "" {
 			maskedRemote = "[" + remoteKeySource + "] " + maskedRemote
 		}
+		// dto_prompt_budget_effective shows the actual value the DTO will use:
+		// either the explicit override stored in dto_prompt_budget_tokens, or the
+		// value auto-detected from Ollama /api/show for the current local model.
+		dtoBudgetOverride := s.getSetting(r.Context(), "dto_prompt_budget_tokens", "")
+		dtoBudgetEffective := dtoBudgetOverride
+		if dtoBudgetEffective == "" && s.analyzer != nil {
+			dtoBudgetEffective = fmt.Sprintf("%d", s.analyzer.GetModelContextWindow())
+		}
 		json.NewEncoder(w).Encode(map[string]string{
-			"local_model":             s.getSetting(r.Context(), "llm_local_model", ""),
-			"remote_model":            s.getSetting(r.Context(), "llm_remote_model", ""),
-			"remote_api_key":          maskedRemote,
-			"remote_endpoint_url":     s.getSetting(r.Context(), "llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT")),
-			"jules_api_key":           masked,
-			"jules_base_url":          s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
-			"local_context_window":    s.getSetting(r.Context(), "llm_local_context_window", "32768"),
-			"local_temperature":       s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
-			"local_timeout":           s.getSetting(r.Context(), "llm_local_timeout", "300"),
-			"local_retries":           s.getSetting(r.Context(), "llm_local_retries", "3"),
-			"system_prompt":           s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
+			"local_model":                    s.getSetting(r.Context(), "llm_local_model", ""),
+			"remote_model":                   s.getSetting(r.Context(), "llm_remote_model", ""),
+			"remote_api_key":                 maskedRemote,
+			"remote_endpoint_url":            s.getSetting(r.Context(), "llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT")),
+			"jules_api_key":                  masked,
+			"jules_base_url":                 s.getSetting(r.Context(), "jules_base_url", "https://jules.googleapis.com/v1alpha"),
+			"local_context_window":           s.getSetting(r.Context(), "llm_local_context_window", "32768"),
+			"local_temperature":              s.getSetting(r.Context(), "llm_local_temperature", "0.7"),
+			"local_timeout":                  s.getSetting(r.Context(), "llm_local_timeout", "300"),
+			"local_retries":                  s.getSetting(r.Context(), "llm_local_retries", "3"),
+			"system_prompt":                  s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
+			"dto_prompt_budget_tokens":       dtoBudgetOverride,    // "" = auto-detected
+			"dto_prompt_budget_effective":    dtoBudgetEffective,   // always the resolved value
 		})
 	case http.MethodPost:
 		var data struct {
-			LocalModel          string `json:"local_model"`
-			RemoteModel         string `json:"remote_model"`
-			RemoteAPIKey        string `json:"remote_api_key"`
-			RemoteEndpointURL   string `json:"remote_endpoint_url"`
-			JulesAPIKey         string `json:"jules_api_key"`
-			JulesBaseURL        string `json:"jules_base_url"`
-			LocalContextWindow  string `json:"local_context_window"`
-			LocalTemperature    string `json:"local_temperature"`
-			LocalTimeout        string `json:"local_timeout"`
-			LocalRetries        string `json:"local_retries"`
-			SystemPrompt        string `json:"system_prompt"`
+			LocalModel              string  `json:"local_model"`
+			RemoteModel             string  `json:"remote_model"`
+			RemoteAPIKey            string  `json:"remote_api_key"`
+			RemoteEndpointURL       string  `json:"remote_endpoint_url"`
+			JulesAPIKey             string  `json:"jules_api_key"`
+			JulesBaseURL            string  `json:"jules_base_url"`
+			LocalContextWindow      string  `json:"local_context_window"`
+			LocalTemperature        string  `json:"local_temperature"`
+			LocalTimeout            string  `json:"local_timeout"`
+			LocalRetries            string  `json:"local_retries"`
+			SystemPrompt            string  `json:"system_prompt"`
+			// Pointer: nil = field absent (no change); "" = clear override; "N" = set override.
+			DtoPromptBudgetTokens   *string `json:"dto_prompt_budget_tokens"`
 		}
 		json.NewDecoder(r.Body).Decode(&data)
 		if data.LocalModel != "" {
 			s.saveSetting(r.Context(), "llm_local_model", data.LocalModel)
+			// Invalidate cached context-window so the next DTO run re-probes Ollama.
+			if s.analyzer != nil {
+				s.analyzer.InvalidateModelContextCache()
+			}
 		}
 		if data.RemoteModel != "" {
 			s.saveSetting(r.Context(), "llm_remote_model", data.RemoteModel)
@@ -574,6 +590,10 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		if data.LocalRetries != "" {
 			s.saveSetting(r.Context(), "llm_local_retries", data.LocalRetries)
+		}
+		// nil = field absent (no change); "" = clear override; "N" = set override.
+		if data.DtoPromptBudgetTokens != nil {
+			s.saveSetting(r.Context(), "dto_prompt_budget_tokens", *data.DtoPromptBudgetTokens)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:

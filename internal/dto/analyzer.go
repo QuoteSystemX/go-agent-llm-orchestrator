@@ -241,6 +241,16 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		return nil, fmt.Errorf("repository directory not found: %s", repoPath)
 	}
 
+	// S4: skip the LLM call for background runs when nothing changed since the last
+	// successful analysis. The check intentionally happens AFTER sync so that freshly
+	// pulled commits are included in the comparison.
+	if isBackground {
+		if head := gitHead(repoPath); head != "" && head == a.db.GetSetting("dto_last_commit_"+repoName, "") {
+			log.Printf("DTO [%s]: repo unchanged since last analysis (%s), skipping LLM call", repoName, head[:8])
+			return &AnalysisResult{LastAnalysis: a.db.GetSetting("dto_last_analysis_"+repoName, "")}, nil
+		}
+	}
+
 	var warnings []string
 	metadata := make(map[string]string)
 
@@ -325,8 +335,9 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		if targetExts[ext] {
 			modTime := info.ModTime().Unix()
 			if !ragStore.IsIndexed(path, modTime) {
+				category := categorizePath(repoPath, path)
 				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount, -1)
-				if err := a.indexFile(ctx, path, ragStore); err == nil {
+				if err := a.indexFile(ctx, path, ragStore, category); err == nil {
 					ragStore.MarkIndexed(path, modTime)
 					fileCount++
 					a.updateState(repoName, "", "", fileCount, -1)
@@ -403,8 +414,8 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	// Persist last analysis time and commit hash so the next scheduled run can
 	// skip the repo if nothing has changed since this successful analysis.
 	a.db.SetSetting("dto_last_analysis_"+repoName, result.LastAnalysis)
-	if headOut, err := exec.Command("git", "-C", repoPath, "rev-parse", "HEAD").Output(); err == nil {
-		a.db.SetSetting("dto_last_commit_"+repoName, strings.TrimSpace(string(headOut)))
+	if head := gitHead(repoPath); head != "" {
+		a.db.SetSetting("dto_last_commit_"+repoName, head)
 	}
 
 	return result, nil
@@ -493,28 +504,45 @@ func (a *Analyzer) buildAnalysisPrompt(ctx context.Context, repoName, readme str
 		tasksStr = tasksStr[:tLimit] + "... [truncated tasks]"
 	}
 
-	// 5. RAG Context: Remaining variable budget
+	// 5. RAG Context: two-phase search — meta first (wiki/tasks/README/.agent),
+	// then code files for the remainder. Meta files are the highest-signal source
+	// for BMAD stage detection and task proposals.
 	ragLimit := variableBudget - len(readme) - len(tasksStr)
-	if ragLimit < 500 { ragLimit = 500 }
+	if ragLimit < 500 {
+		ragLimit = 500
+	}
+	metaLimit := ragLimit * 70 / 100
+	codeLimit := ragLimit - metaLimit
 
 	ragQuery := repoName + " overview architecture " + tasksStr
 	if tasksStr == "" {
 		ragQuery = repoName + " README project description rules"
 	}
-	ragContext := a.SearchContext(ctx, repoName, ragQuery, 10)
-	ragOrig := len(ragContext)
 
-	if len(ragContext) > ragLimit {
-		ragContext = ragContext[:ragLimit] + "... [truncated RAG context]"
+	metaContext := a.SearchContextFiltered(ctx, repoName, ragQuery, 7, "meta")
+	if len(metaContext) > metaLimit {
+		metaContext = metaContext[:metaLimit] + "... [truncated meta RAG]"
 	}
+	codeContext := a.SearchContextFiltered(ctx, repoName, ragQuery, 3, "code")
+	if len(codeContext) > codeLimit {
+		codeContext = codeContext[:codeLimit] + "... [truncated code RAG]"
+	}
+	ragContext := metaContext + codeContext
+	ragOrig := len(metaContext) + len(codeContext)
 
 	log.Printf("DTO [%s] Context Budgeting (maxChars=%d):\n"+
 		"  - Header/Instr: %d chars\n"+
 		"  - Templates:    %d chars\n"+
 		"  - README:       %d -> %d chars\n"+
 		"  - Tasks:        %d -> %d chars\n"+
-		"  - RAG:          %d -> %d chars\n",
-		repoName, maxChars, overhead, len(templateStr), rOrig, len(readme), tOrig, len(tasksStr), ragOrig, len(ragContext))
+		"  - RAG meta:     -> %d chars (budget %d)\n"+
+		"  - RAG code:     -> %d chars (budget %d)\n"+
+		"  - RAG total:    %d -> %d chars\n",
+		repoName, maxChars, overhead, len(templateStr),
+		rOrig, len(readme), tOrig, len(tasksStr),
+		len(metaContext), metaLimit,
+		len(codeContext), codeLimit,
+		ragOrig, len(ragContext))
 
 	// 6. Assemble
 	var sb strings.Builder
@@ -586,42 +614,17 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 		return
 	}
 	for _, repo := range repos {
-		if a.isRepoUnchanged(repo) {
-			log.Printf("DTO: Skipping %s — no commits since last analysis", repo)
-			continue
-		}
-
 		fmt.Printf("DTO: Running scheduled analysis for %s\n", repo)
+		// AnalyzeRepo handles the unchanged-repo skip internally (after sync).
 		result, err := a.AnalyzeRepo(ctx, repo, true)
 		if err != nil {
 			fmt.Printf("DTO: Scheduled analysis failed for %s: %v\n", repo, err)
 			continue
 		}
-
 		if len(result.Proposals) > 0 {
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
 		}
 	}
-}
-
-// isRepoUnchanged returns true when the repo's HEAD commit hash matches the hash
-// recorded after the previous successful analysis, meaning there is nothing new to analyse.
-func (a *Analyzer) isRepoUnchanged(repoName string) bool {
-	basePath := a.db.GetSetting("repo_base_path", "./data/repos")
-	repoPath := filepath.Join(basePath, repoName)
-
-	cmd := exec.Command("git", "-C", repoPath, "rev-parse", "HEAD")
-	out, err := cmd.Output()
-	if err != nil {
-		return false
-	}
-	currentHash := strings.TrimSpace(string(out))
-	if currentHash == "" {
-		return false
-	}
-
-	cachedHash := a.db.GetSetting("dto_last_commit_"+repoName, "")
-	return currentHash == cachedHash
 }
 
 // SetInferencePriority wires up the Ollama priority gate from llm.Router so
@@ -630,17 +633,66 @@ func (a *Analyzer) SetInferencePriority(router *llm.Router) {
 	a.inferMu = router.InferenceMutex()
 }
 
+// GetModelContextWindow returns the effective context window for the current local
+// model as detected from Ollama /api/show.
+func (a *Analyzer) GetModelContextWindow() int {
+	return a.router.GetModelContextWindow()
+}
+
+// InvalidateModelContextCache clears the cached model context window so the next
+// analysis re-queries Ollama. Call this whenever the local model setting changes.
+func (a *Analyzer) InvalidateModelContextCache() {
+	a.router.InvalidateModelContextCache()
+}
+
 func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, topK int) string {
+	return a.SearchContextFiltered(ctx, repoName, query, topK, "")
+}
+
+// SearchContextFiltered queries the RAG store filtered by category ("meta", "code", or "" for all).
+func (a *Analyzer) SearchContextFiltered(ctx context.Context, repoName, query string, topK int, category string) string {
 	ragStore := a.getRagStore(repoName)
-	log.Printf("DTO [%s]: Querying RAG for top %d chunks matching semantic query: '%s'", repoName, topK, query)
-	relevantDocs := ragStore.Search(ctx, query, topK)
-	log.Printf("DTO: RAG found %d relevant chunks for query", len(relevantDocs))
-	
-	context := ""
-	for _, d := range relevantDocs {
-		context += fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content)
+	log.Printf("DTO [%s]: Querying RAG (category=%q) for top %d chunks: '%s'", repoName, category, topK, query)
+	docs := ragStore.SearchFiltered(ctx, query, topK, category)
+	log.Printf("DTO [%s]: RAG found %d chunks (category=%q)", repoName, len(docs), category)
+
+	var sb strings.Builder
+	for _, d := range docs {
+		sb.WriteString(fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content))
 	}
-	return context
+	return sb.String()
+}
+
+// categorizePath classifies a repository file as "meta" or "code".
+// "meta" covers wiki, tasks, README, .agent and similar high-signal BMAD files.
+// "code" covers all other source files.
+func categorizePath(repoPath, filePath string) string {
+	rel, err := filepath.Rel(repoPath, filePath)
+	if err != nil {
+		return "code"
+	}
+	rel = filepath.ToSlash(rel)
+	switch {
+	case strings.HasPrefix(rel, "wiki/"),
+		strings.HasPrefix(rel, "tasks/"),
+		strings.HasPrefix(rel, ".agent/"),
+		rel == "README.md",
+		rel == "CLAUDE.md",
+		rel == "GEMINI.md":
+		return "meta"
+	default:
+		return "code"
+	}
+}
+
+// gitHead returns the current HEAD commit hash of a git repository directory,
+// or an empty string when the directory is not a git repo or git is unavailable.
+func gitHead(dir string) string {
+	out, err := exec.Command("git", "-C", dir, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 func chunkParams(ext string) (chunkSize, overlap int) {
@@ -654,7 +706,7 @@ func chunkParams(ext string) (chunkSize, overlap int) {
 	}
 }
 
-func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.MemoryStore) error {
+func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.MemoryStore, category string) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -665,8 +717,10 @@ func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.Memory
 	chunkSize, overlap := chunkParams(filepath.Ext(path))
 
 	chunksCount := len(runes) / (chunkSize - overlap)
-	if chunksCount == 0 { chunksCount = 1 }
-	log.Printf("DTO: Generating embeddings for %s (%d chunks)...", filepath.Base(path), chunksCount)
+	if chunksCount == 0 {
+		chunksCount = 1
+	}
+	log.Printf("DTO: Generating embeddings for %s (%d chunks, category=%s)...", filepath.Base(path), chunksCount, category)
 
 	startTime := time.Now()
 	for i := 0; i < len(runes); i += (chunkSize - overlap) {
@@ -675,9 +729,10 @@ func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.Memory
 			end = len(runes)
 		}
 		err := store.AddDocument(ctx, rag.Document{
-			ID:      fmt.Sprintf("%s_%d", path, i),
-			Source:  path,
-			Content: string(runes[i:end]),
+			ID:       fmt.Sprintf("%s_%d", path, i),
+			Source:   path,
+			Content:  string(runes[i:end]),
+			Category: category,
 		})
 		if err != nil {
 			return err

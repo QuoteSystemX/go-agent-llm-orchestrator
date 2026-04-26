@@ -17,11 +17,14 @@ import (
 	"github.com/philippgille/chromem-go"
 )
 
-// Document represents a piece of text (chunk) indexed for search
+// Document represents a piece of text (chunk) indexed for search.
+// Category classifies the origin: "meta" for wiki/tasks/README/.agent files
+// (high-value for BMAD stage detection) and "code" for all other source files.
 type Document struct {
-	ID      string
-	Content string
-	Source  string
+	ID       string
+	Content  string
+	Source   string
+	Category string
 }
 
 // MemoryStore is an in-memory/persistent storage for RAG using chromem-go
@@ -160,7 +163,8 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) error {
 			ID:      doc.ID,
 			Content: doc.Content,
 			Metadata: map[string]string{
-				"source": doc.Source,
+				"source":   doc.Source,
+				"category": doc.Category,
 			},
 		},
 	}, 1) // 1 thread for local
@@ -175,8 +179,14 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) error {
 	return nil
 }
 
-// Search performs semantic search
+// Search performs semantic search across all documents.
 func (s *MemoryStore) Search(ctx context.Context, query string, topK int) []Document {
+	return s.SearchFiltered(ctx, query, topK, "")
+}
+
+// SearchFiltered performs semantic search restricted to a specific category.
+// Pass an empty category to search all documents (equivalent to Search).
+func (s *MemoryStore) SearchFiltered(ctx context.Context, query string, topK int, category string) []Document {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -184,25 +194,26 @@ func (s *MemoryStore) Search(ctx context.Context, query string, topK int) []Docu
 		return nil
 	}
 
-	results, err := s.collection.Query(ctx, query, topK, nil, nil)
+	var where map[string]string
+	if category != "" {
+		where = map[string]string{"category": category}
+	}
+
+	results, err := s.collection.Query(ctx, query, topK, where, nil)
 	if err != nil {
-		log.Printf("RAG Error: query failed: %v", err)
+		log.Printf("RAG Error: query failed (category=%q): %v", category, err)
 		return nil
 	}
 
 	var docs []Document
 	for _, res := range results {
-		source := ""
-		if src, ok := res.Metadata["source"]; ok {
-			source = src
-		}
 		docs = append(docs, Document{
-			ID:      res.ID,
-			Content: res.Content,
-			Source:  source,
+			ID:       res.ID,
+			Content:  res.Content,
+			Source:   res.Metadata["source"],
+			Category: res.Metadata["category"],
 		})
 	}
-
 	return docs
 }
 
