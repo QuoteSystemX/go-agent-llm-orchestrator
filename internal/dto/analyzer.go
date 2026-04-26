@@ -795,7 +795,7 @@ func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.Memory
 	if chunksCount == 0 {
 		chunksCount = 1
 	}
-	log.Printf("DTO: Generating embeddings for %s (%d chunks, category=%s)...", filepath.Base(path), chunksCount, category)
+	log.Printf("DTO [%s]: Generating embeddings for %s (%d chunks, category=%s)...", store.RepoID(), filepath.Base(path), chunksCount, category)
 
 	startTime := time.Now()
 	for i := 0; i < len(runes); i += (chunkSize - overlap) {
@@ -819,7 +819,7 @@ func (a *Analyzer) indexFile(ctx context.Context, path string, store *rag.Memory
 	
 	duration := time.Since(startTime)
 	if duration > 1*time.Second {
-		log.Printf("DTO: Embedding generation for %s took %v", filepath.Base(path), duration)
+		log.Printf("DTO [%s]: Embedding generation for %s took %v", store.RepoID(), filepath.Base(path), duration)
 	}
 	return nil
 }

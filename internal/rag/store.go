@@ -151,6 +151,13 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 	}
 }
 
+// RepoID returns the repository identifier for this store
+func (s *MemoryStore) RepoID() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.repoID
+}
+
 // SetInferencePriority wires up the Ollama priority gate from llm.Router.
 func (s *MemoryStore) SetInferencePriority(mu *sync.RWMutex) {
 	s.inferMu = mu
