@@ -86,6 +86,11 @@ function toggleServiceTasks(checked) {
     renderTasks();
 }
 
+function getJulesSessionUrl(sessionId) {
+    const id = sessionId.split('/').pop();
+    return `https://jules.google.com/session/${id}`;
+}
+
 function renderTasks() {
     const container = document.getElementById('task-list');
     if (!container) return;
@@ -189,7 +194,7 @@ function renderTasks() {
                                         ${task.last_session_id ? `
                                             <div class="last-session-link">
                                                 <i data-lucide="external-link" style="width:10px; height:10px; color:var(--primary)"></i>
-                                                <a href="https://console.cloud.google.com/genai/jules/sessions/${task.last_session_id.split('/').pop()}" target="_blank" title="View last session in Jules Console">
+                                                <a href="${getJulesSessionUrl(task.last_session_id)}" target="_blank" title="View last session in Jules">
                                                     Session: ${task.last_session_id.split('/').pop()}
                                                 </a>
                                             </div>
