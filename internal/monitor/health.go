@@ -75,8 +75,8 @@ func (m *HealthMonitor) check() {
 		endpoint = "http://localhost:11434"
 	}
 	targetModel := os.Getenv("LLM_LOCAL_MODEL")
-	if targetModel == "" {
-		targetModel = "phi3:mini"
+	if m.db != nil {
+		targetModel = m.db.GetSetting("llm_local_model", targetModel)
 	}
 
 	embeddingModel := os.Getenv("LLM_EMBEDDING_MODEL")

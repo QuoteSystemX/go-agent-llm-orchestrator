@@ -51,7 +51,7 @@ func NewRouter(database *db.DB) *Router {
 // model by querying Ollama /api/show. Priority order:
 //  1. parameters.num_ctx  — explicit value set in the model's Modelfile
 //  2. model_info.<arch>.rope.scaling.original_context_length  — training sweet-spot
-//     for RoPE-scaled models (e.g. phi3:mini=4096, llama3.1=8192)
+//     for RoPE-scaled models (e.g. qwen2.5-coder:1.5b=32768, llama3.1=128000)
 //  3. model_info.<arch>.context_length  — capped at 32768 to avoid OOM on small machines
 //  4. llm_local_context_window DB setting  — last-resort fallback
 //
@@ -167,7 +167,31 @@ func (r *Router) getModel(key, defaultValue string) string {
 }
 
 func (r *Router) getLocalModel() string {
-	return r.getModel("llm_local_model", os.Getenv("LLM_LOCAL_MODEL"))
+	val, source := r.getModelWithSource("llm_local_model", os.Getenv("LLM_LOCAL_MODEL"))
+	if val == "" {
+		val = "phi3:mini"
+		source = "hardcoded-fallback"
+	}
+	log.Printf("LLM Router: selected local model %q (source: %s)", val, source)
+	return val
+}
+
+func (r *Router) getModelWithSource(key, defaultValue string) (string, string) {
+	if r.db == nil {
+		return defaultValue, "env-no-db"
+	}
+	
+	// Try DB
+	val := r.db.GetSetting(key, "")
+	if val != "" {
+		// Check if it was from Env via GetSetting's internal fallback
+		if val == os.Getenv(strings.ToUpper(key)) {
+			return val, "env"
+		}
+		return val, "database"
+	}
+
+	return defaultValue, "default"
 }
 
 func (r *Router) getRemoteModel() string {

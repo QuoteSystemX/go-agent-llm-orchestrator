@@ -186,13 +186,41 @@ type Proposal struct {
 	Reason     string `json:"reason"`
 }
 
+type FlexibleProgress int
+
+func (p *FlexibleProgress) UnmarshalJSON(data []byte) error {
+	// Try int first
+	var n int
+	if err := json.Unmarshal(data, &n); err == nil {
+		*p = FlexibleProgress(n)
+		return nil
+	}
+	// Try object { "steps_completed": X, "total_steps": Y }
+	var obj struct {
+		Completed int `json:"steps_completed"`
+		Total     int `json:"total_steps"`
+		Progress  int `json:"progress"`
+	}
+	if err := json.Unmarshal(data, &obj); err == nil {
+		if obj.Total > 0 {
+			*p = FlexibleProgress((obj.Completed * 100) / obj.Total)
+		} else if obj.Progress > 0 {
+			*p = FlexibleProgress(obj.Progress)
+		}
+		return nil
+	}
+	// Default to 0 instead of failing
+	*p = 0
+	return nil
+}
+
 type AnalysisResult struct {
-	Proposals    []Proposal        `json:"proposals"`
-	CurrentStage string            `json:"current_stage"` // discovery, prd, architecture, stories, sprint, worker, closure
-	Progress     int               `json:"progress"`      // 0-100%
-	Warnings     []string          `json:"warnings"`      // Warnings about missing data
+	Proposals    []Proposal       `json:"proposals"`
+	CurrentStage string           `json:"current_stage"` // discovery, prd, architecture, stories, sprint, worker, closure
+	Progress     FlexibleProgress `json:"progress"`      // 0-100%
+	Warnings     []string         `json:"warnings"`      // Warnings about missing data
 	Metadata     map[string]string `json:"metadata"`      // Project metadata (language, etc)
-	LastAnalysis string            `json:"last_analysis"`
+	LastAnalysis string           `json:"last_analysis"`
 }
 
 func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackground bool) (*AnalysisResult, error) {
@@ -486,7 +514,22 @@ func (a *Analyzer) buildAnalysisPrompt(ctx context.Context, repoName, readme str
 		"1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n" +
 		"2. Execution: Worker tasks (implementing features/fixes)\n" +
 		"3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n" +
-		"Return ONLY a JSON object with fields: current_stage, progress, proposals.\n"
+		"Return ONLY a JSON object with this EXACT schema:\n" +
+		"{\n" +
+		"  \"current_stage\": \"string (discovery|prd|architecture|stories|sprint|worker|closure)\",\n" +
+		"  \"progress\": \"integer (0-100)\",\n" +
+		"  \"proposals\": [\n" +
+		"    {\n" +
+		"      \"pattern\": \"string (name of the workflow/pattern)\",\n" +
+		"      \"agent\": \"string (name of the agent, e.g. backend-specialist)\",\n" +
+		"      \"mission\": \"string (detailed task description)\",\n" +
+		"      \"schedule\": \"string (CRON or frequency, e.g. '@daily')\",\n" +
+		"      \"importance\": \"integer (1-10)\",\n" +
+		"      \"category\": \"string (code|docs|test|infra)\",\n" +
+		"      \"reason\": \"string (why this task is needed)\"\n" +
+		"    }\n" +
+		"  ]\n" +
+		"}\n"
 
 	// 2. Fixed content overhead
 	header := fmt.Sprintf("Repository Analysis: %s\n\n", repoName)
