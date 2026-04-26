@@ -26,6 +26,10 @@ type Router struct {
 	// Embeddings hold RLock; inference holds Lock so it waits for the
 	// current embedding chunk to finish before taking over.
 	inferMu sync.RWMutex
+
+	// modelCtxMu protects modelCtxCache across goroutines.
+	modelCtxMu    sync.Mutex
+	modelCtxCache map[string]int // model name → detected context window
 }
 
 // InferenceMutex returns the Ollama priority gate so the embedding pipeline
@@ -38,7 +42,118 @@ func NewRouter(database *db.DB) *Router {
 		LocalEndpoint:  os.Getenv("LLM_LOCAL_ENDPOINT"),
 		RemoteEndpoint: os.Getenv("LLM_REMOTE_ENDPOINT"),
 		RemoteAPIKey:   os.Getenv("LLM_REMOTE_API_KEY"),
+		modelCtxCache:  make(map[string]int),
 	}
+}
+
+// GetModelContextWindow returns the practical context window for the current local
+// model by querying Ollama /api/show. Priority order:
+//  1. parameters.num_ctx  — explicit value set in the model's Modelfile
+//  2. model_info.<arch>.rope.scaling.original_context_length  — training sweet-spot
+//     for RoPE-scaled models (e.g. phi3:mini=4096, llama3.1=8192)
+//  3. model_info.<arch>.context_length  — capped at 32768 to avoid OOM on small machines
+//  4. llm_local_context_window DB setting  — last-resort fallback
+//
+// Results are cached per model name so /api/show is only called once per unique model.
+func (r *Router) GetModelContextWindow() int {
+	model := r.getLocalModel()
+
+	r.modelCtxMu.Lock()
+	if n, ok := r.modelCtxCache[model]; ok {
+		r.modelCtxMu.Unlock()
+		return n
+	}
+	r.modelCtxMu.Unlock()
+
+	n := r.probeModelContext(model)
+
+	r.modelCtxMu.Lock()
+	r.modelCtxCache[model] = n
+	r.modelCtxMu.Unlock()
+
+	return n
+}
+
+// InvalidateModelContextCache clears the cached context window so the next call to
+// GetModelContextWindow re-queries Ollama. Call this after changing the local model.
+func (r *Router) InvalidateModelContextCache() {
+	r.modelCtxMu.Lock()
+	r.modelCtxCache = make(map[string]int)
+	r.modelCtxMu.Unlock()
+}
+
+func (r *Router) probeModelContext(model string) int {
+	fallback := r.getLocalContextWindow()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Ollama native API lives at /api/, not /v1/
+	baseURL := strings.TrimSuffix(strings.TrimSuffix(r.LocalEndpoint, "/v1"), "/")
+	payload, _ := json.Marshal(map[string]string{"name": model})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/api/show", bytes.NewReader(payload))
+	if err != nil {
+		return fallback
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		log.Printf("LLM Router: /api/show probe failed for %q, using DB fallback %d: %v", model, fallback, err)
+		return fallback
+	}
+	defer resp.Body.Close()
+
+	var show struct {
+		Parameters string                 `json:"parameters"`
+		ModelInfo  map[string]interface{} `json:"model_info"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&show); err != nil {
+		return fallback
+	}
+
+	// 1. Explicit num_ctx in Modelfile parameters (highest authority)
+	for _, line := range strings.Split(show.Parameters, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[0] == "num_ctx" {
+			var n int
+			if count, _ := fmt.Sscanf(fields[1], "%d", &n); count == 1 && n > 0 {
+				log.Printf("LLM Router: model %q context window from Modelfile: %d", model, n)
+				return n
+			}
+		}
+	}
+
+	// 2. RoPE scaling original context — practical sweet-spot before the extension
+	for key, val := range show.ModelInfo {
+		if strings.HasSuffix(key, ".rope.scaling.original_context_length") {
+			if n, ok := val.(float64); ok && n > 0 {
+				log.Printf("LLM Router: model %q context window from rope.scaling: %d", model, int(n))
+				return int(n)
+			}
+		}
+	}
+
+	// 3. Architecture max context — cap to avoid OOM on memory-constrained nodes
+	const practicalMaxCtx = 32768
+	for key, val := range show.ModelInfo {
+		if strings.HasSuffix(key, ".context_length") {
+			if n, ok := val.(float64); ok && n > 0 {
+				detected := int(n)
+				if detected > practicalMaxCtx {
+					detected = practicalMaxCtx
+				}
+				log.Printf("LLM Router: model %q context window from context_length (capped): %d", model, detected)
+				return detected
+			}
+		}
+	}
+
+	return fallback
 }
 
 func (r *Router) getModel(key, defaultValue string) string {

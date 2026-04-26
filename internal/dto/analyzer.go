@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -359,19 +360,27 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	// Get templates (ConfigMap/DB workflows)
 	templates, _ := NewTemplateManager(a.db).ListTemplates(ctx)
 
-	// Get context window for truncation
-	windowStr := a.db.GetSetting("llm_local_context_window", "4096")
-	var window int
-	fmt.Sscanf(windowStr, "%d", &window)
+	// Determine prompt budget from Ollama /api/show so it tracks the actual model.
+	// dto_prompt_budget_tokens in DB allows an explicit override (useful when Ollama
+	// is unreachable or the operator wants a smaller budget for faster analysis).
+	window := a.router.GetModelContextWindow()
+	if override := a.db.GetSetting("dto_prompt_budget_tokens", ""); override != "" {
+		var ov int
+		if fmt.Sscanf(override, "%d", &ov); ov > 0 {
+			window = ov
+		}
+	}
 	if window <= 0 {
 		window = 4096
 	}
-	// Budgeting: Leave 1024 tokens for the response. 
-	// Use 2.5 chars per token for code (more conservative than 3).
+	// Budgeting: leave 1024 tokens for the response.
+	// 2.5 chars/token is conservative for mixed code+prose.
 	maxChars := int(float64(window-1024) * 2.5)
-	if maxChars < 3000 { maxChars = 3000 }
+	if maxChars < 3000 {
+		maxChars = 3000
+	}
 	
-	prompt := a.buildAnalysisPrompt(repoName, readme, currentTasks, templates, maxChars)
+	prompt := a.buildAnalysisPrompt(ctx, repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
 	a.updateState(repoName, "Analyzing with LLM", "", -1, -1)
@@ -391,8 +400,12 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	result.Metadata = metadata
 	result.LastAnalysis = time.Now().Format(time.RFC3339)
 
-	// Persist last analysis time
+	// Persist last analysis time and commit hash so the next scheduled run can
+	// skip the repo if nothing has changed since this successful analysis.
 	a.db.SetSetting("dto_last_analysis_"+repoName, result.LastAnalysis)
+	if headOut, err := exec.Command("git", "-C", repoPath, "rev-parse", "HEAD").Output(); err == nil {
+		a.db.SetSetting("dto_last_commit_"+repoName, strings.TrimSpace(string(headOut)))
+	}
 
 	return result, nil
 }
@@ -431,7 +444,7 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 	return content.String(), nil
 }
 
-func (a *Analyzer) buildAnalysisPrompt(repoName, readme string, currentTasks []map[string]any, templates []Template, maxChars int) string {
+func (a *Analyzer) buildAnalysisPrompt(ctx context.Context, repoName, readme string, currentTasks []map[string]any, templates []Template, maxChars int) string {
 	// 1. Define Instructions
 	instructions := "Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n" +
 		"1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n" +
@@ -488,7 +501,7 @@ func (a *Analyzer) buildAnalysisPrompt(repoName, readme string, currentTasks []m
 	if tasksStr == "" {
 		ragQuery = repoName + " README project description rules"
 	}
-	ragContext := a.SearchContext(context.Background(), repoName, ragQuery, 30)
+	ragContext := a.SearchContext(ctx, repoName, ragQuery, 10)
 	ragOrig := len(ragContext)
 
 	if len(ragContext) > ragLimit {
@@ -573,6 +586,11 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 		return
 	}
 	for _, repo := range repos {
+		if a.isRepoUnchanged(repo) {
+			log.Printf("DTO: Skipping %s — no commits since last analysis", repo)
+			continue
+		}
+
 		fmt.Printf("DTO: Running scheduled analysis for %s\n", repo)
 		result, err := a.AnalyzeRepo(ctx, repo, true)
 		if err != nil {
@@ -584,6 +602,26 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
 		}
 	}
+}
+
+// isRepoUnchanged returns true when the repo's HEAD commit hash matches the hash
+// recorded after the previous successful analysis, meaning there is nothing new to analyse.
+func (a *Analyzer) isRepoUnchanged(repoName string) bool {
+	basePath := a.db.GetSetting("repo_base_path", "./data/repos")
+	repoPath := filepath.Join(basePath, repoName)
+
+	cmd := exec.Command("git", "-C", repoPath, "rev-parse", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	currentHash := strings.TrimSpace(string(out))
+	if currentHash == "" {
+		return false
+	}
+
+	cachedHash := a.db.GetSetting("dto_last_commit_"+repoName, "")
+	return currentHash == cachedHash
 }
 
 // SetInferencePriority wires up the Ollama priority gate from llm.Router so
