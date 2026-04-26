@@ -736,12 +736,10 @@ body { padding-bottom: 40px; }
 }
 .failure-tooltip {
     display: none;
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    z-index: 500;
+    position: fixed;
+    z-index: 9999;
     width: 320px;
-    background: #111827; /* Solid deep dark background */
+    background: #111827;
     border: 1px solid rgba(239, 68, 68, 0.5);
     border-radius: 0.6rem;
     padding: 1rem;
@@ -749,9 +747,9 @@ body { padding-bottom: 40px; }
     font-size: 0.75rem;
     line-height: 1.6;
     pointer-events: none;
-    backdrop-filter: none; /* Disable glassmorphism for tooltips to ensure max readability */
+    backdrop-filter: none;
 }
-.failure-badge-wrap:hover .failure-tooltip {
+.failure-tooltip.visible {
     display: block;
 }
 .failure-tooltip-title {

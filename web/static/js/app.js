@@ -24,6 +24,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     lucide.createIcons();
+
+    // Position failure tooltips via fixed positioning to escape backdrop-filter stacking contexts
+    document.addEventListener('mouseover', e => {
+        const badge = e.target.closest('.failure-badge-wrap .bg-failed');
+        if (!badge) return;
+        const tooltip = badge.closest('.failure-badge-wrap').querySelector('.failure-tooltip');
+        if (!tooltip) return;
+        const rect = badge.getBoundingClientRect();
+        const tipWidth = 320;
+        let left = rect.left;
+        if (left + tipWidth > window.innerWidth - 8) {
+            left = window.innerWidth - tipWidth - 8;
+        }
+        tooltip.style.top = (rect.bottom + 8) + 'px';
+        tooltip.style.left = left + 'px';
+        tooltip.classList.add('visible');
+    });
+    document.addEventListener('mouseout', e => {
+        const badge = e.target.closest('.failure-badge-wrap .bg-failed');
+        if (!badge) return;
+        const tooltip = badge.closest('.failure-badge-wrap').querySelector('.failure-tooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+    });
 });
 
 async function fetchTasks() {
