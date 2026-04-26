@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/rag.css">
 </head>
 <body>
     <div class="app-container">
@@ -55,6 +56,9 @@
                 </button>
                 <button id="tab-btn-dto" class="tab-btn" onclick="switchTab('dto')">
                     <i data-lucide="layers"></i> DTO
+                </button>
+                <button id="tab-btn-rag" class="tab-btn" onclick="switchTab('rag')">
+                    <i data-lucide="database"></i> RAG
                 </button>
             </div>
 
@@ -194,6 +198,29 @@
                         <div id="dto-proposals" class="dto-proposals">
                             <!-- Proposals injected here -->
                             <div class="empty-state">No active proposals. Run analysis to see suggestions.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-rag" class="tab-pane">
+                <section class="rag-section glass">
+                    <div class="rag-header">
+                        <div class="rag-title">
+                            <i data-lucide="database" style="color:var(--primary)"></i>
+                            <h3>Vector Database Management</h3>
+                        </div>
+                        <div class="rag-header-actions">
+                            <button class="btn-help" onclick="scrubAllRAG()" title="Scrub all repositories">
+                                <i data-lucide="broom"></i> Scrub All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="rag-content">
+                        <div id="rag-stats-container" class="rag-stats-grid">
+                            <!-- RAG stats cards will be injected here -->
+                            <div class="empty-state">No repositories indexed in RAG yet.</div>
                         </div>
                     </div>
                 </section>

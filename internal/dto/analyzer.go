@@ -36,8 +36,7 @@ type Analyzer struct {
 	db            *db.DB
 	router        *llm.Router
 	promptBuilder *prompt.Builder
-	ragStores     map[string]*rag.MemoryStore
-	ragMu         sync.RWMutex
+	ragManager    *rag.Manager
 	inferMu       *sync.RWMutex
 	syncer        *git.Syncer
 
@@ -53,7 +52,7 @@ func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb
 		db:            database,
 		router:        router,
 		promptBuilder: pb,
-		ragStores:     make(map[string]*rag.MemoryStore),
+		ragManager:    rag.NewManager(),
 		syncer:        syncer,
 		state:         make(map[string]*RepoAnalysisState),
 		appCtx:        appCtx,
@@ -63,10 +62,7 @@ func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb
 
 
 func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
-	a.ragMu.Lock()
-	defer a.ragMu.Unlock()
-
-	if s, ok := a.ragStores[repoID]; ok {
+	if s := a.ragManager.GetStore(repoID); s != nil {
 		return s
 	}
 
@@ -78,7 +74,7 @@ func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
 	if a.inferMu != nil {
 		s.SetInferencePriority(a.inferMu)
 	}
-	a.ragStores[repoID] = s
+	a.ragManager.RegisterStore(repoID, s)
 	return s
 }
 
@@ -711,6 +707,17 @@ func (a *Analyzer) GetModelContextWindow() int {
 // analysis re-queries Ollama. Call this whenever the local model setting changes.
 func (a *Analyzer) InvalidateModelContextCache() {
 	a.router.InvalidateModelContextCache()
+}
+
+// GetRagManager returns the underlying RAG manager.
+func (a *Analyzer) GetRagManager() *rag.Manager {
+	return a.ragManager
+}
+
+// ScrubAllRepos triggers background cleanup for all pro-actively indexed repos.
+func (a *Analyzer) ScrubAllRepos(ctx context.Context) (int, error) {
+	log.Println("DTO: Starting global RAG scrubbing cycle...")
+	return a.ragManager.ScrubAll(ctx)
 }
 
 func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, topK int) string {

@@ -1042,6 +1042,8 @@ function switchTab(tabName) {
         renderTasks();
     } else if (tabName === 'dto') {
         populateRepoSelect();
+    } else if (tabName === 'rag') {
+        fetchRAGStats();
     }
     lucide.createIcons();
 }
@@ -1957,4 +1959,101 @@ function showToast(message, type = 'success') {
         toast.classList.remove('app-toast-visible');
         setTimeout(() => toast.remove(), 300);
     }, 3500);
+}
+// ── RAG Management ─────────────────────────────────────────────
+async function fetchRAGStats() {
+    const container = document.getElementById('rag-stats-container');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/api/v1/rag/stats');
+        const stats = await response.json();
+        
+        if (!stats || stats.length === 0) {
+            container.innerHTML = '<div class="empty-state">No repositories indexed in RAG yet.</div>';
+            return;
+        }
+
+        container.innerHTML = stats.map(s => `
+            <div class="rag-card glass">
+                <div class="rag-card-header">
+                    <div class="rag-repo-id">${s.repo_id}</div>
+                    <div class="rag-last-scrub">
+                        <i data-lucide="clock"></i>
+                        Last scrub: ${s.last_scrub_at ? new Date(s.last_scrub_at).toLocaleString() : 'never'}
+                    </div>
+                </div>
+                
+                <div class="rag-metrics">
+                    <div class="rag-metric-item">
+                        <span class="rag-metric-label">Chunks</span>
+                        <span class="rag-metric-value">${s.chunk_count.toLocaleString()}</span>
+                    </div>
+                    <div class="rag-metric-item">
+                        <span class="rag-metric-label">Files</span>
+                        <span class="rag-metric-value">${s.indexed_files.toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div class="rag-actions">
+                    <button class="btn-primary" onclick="runRAGAction('scrub', '${s.repo_id}')" title="Remove chunks for deleted files">
+                        <i data-lucide="broom"></i> Scrub
+                    </button>
+                    <button class="btn-danger-small" onclick="runRAGAction('reset', '${s.repo_id}')" title="Wipe index for this repository">
+                        <i data-lucide="trash-2"></i> Reset
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    } catch (err) {
+        console.error('Failed to fetch RAG stats:', err);
+        container.innerHTML = `<div class="empty-state" style="color:var(--danger)">Error loading RAG stats.</div>`;
+    }
+}
+
+async function runRAGAction(action, repoID) {
+    if (action === 'reset' && !confirm(`Are you sure you want to WIPE the index for ${repoID}? All vector data for this repo will be lost.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/v1/rag/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, repo_id: repoID })
+        });
+        
+        if (response.ok) {
+            showToast(`RAG: ${action} triggered for ${repoID}`, 'success');
+            setTimeout(fetchRAGStats, 500); // Give backend a moment to start processing
+        } else {
+            const err = await response.text();
+            showToast(`RAG Error: ${err}`, 'error');
+        }
+    } catch (err) {
+        showToast(`RAG Error: ${err.message}`, 'error');
+    }
+}
+
+async function scrubAllRAG() {
+    if (!confirm('Run scrubbing for all repositories?')) return;
+
+    try {
+        const response = await fetch('/api/v1/rag/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'scrub_all' })
+        });
+        
+        if (response.ok) {
+            showToast('RAG: Scrubbing triggered for all repositories', 'success');
+            setTimeout(fetchRAGStats, 1000);
+        } else {
+            const err = await response.text();
+            showToast(`RAG Error: ${err}`, 'error');
+        }
+    } catch (err) {
+        showToast(`RAG Error: ${err.message}`, 'error');
+    }
 }

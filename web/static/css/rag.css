@@ -1,0 +1,107 @@
+.failure-tooltip-error {
+    color: #fca5a5;
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+}
+
+/* RAG Tab Styles */
+.rag-section {
+    padding: 2rem;
+}
+
+.rag-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.rag-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.rag-title h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.rag-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.rag-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rag-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.rag-repo-id {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+.rag-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.rag-metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.rag-metric-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rag-metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.rag-last-scrub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.rag-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.rag-actions button {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 0.5rem;
+}

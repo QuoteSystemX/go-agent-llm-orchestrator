@@ -170,6 +170,9 @@ func main() {
 	// Start DTO background analyzer
 	go analyzer.StartBackgroundLoop(ctx)
 
+	// Start RAG background scrubbing (once per day by default)
+	go scheduler.StartRAGScrubbingJob(ctx, analyzer, 24*time.Hour)
+
 	// Proactively pause all PENDING tasks if PAT is not yet configured —
 	// they would fail anyway when the cron fires and buildPrompt() returns an error.
 	if !gitSyncer.IsPATConfigured() {

@@ -2,31 +2,54 @@ package rag
 
 import (
 	"context"
+	"os"
 	"testing"
 )
 
 func TestMemoryStore_Basic(t *testing.T) {
-	// For CI or environments without Ollama, we just test the initialization
-	// and fallback mechanisms.
-	s := NewMemoryStore("", "test-repo", "http://invalid-url:9999", "test-model")
-	if s == nil {
-		t.Fatal("expected MemoryStore, got nil")
+	tempDir, err := os.MkdirTemp("", "rag_test_*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	store := NewMemoryStore(tempDir, "test-repo", "", "dummy-model")
+	if store == nil {
+		t.Fatal("failed to create store")
 	}
 
-	ctx := context.Background()
-	// Adding document will likely fail inside chromem due to invalid embed URL,
-	// but the application should not panic.
-	s.AddDocument(ctx, Document{ID: "1", Content: "test content", Source: "test.txt"})
-
-	results := s.Search(ctx, "test query", 10)
-	if len(results) > 0 {
-		t.Logf("Got %d results, expected 0 due to invalid URL", len(results))
+	store.MarkIndexed("test.txt", 100)
+	if !store.IsIndexed("test.txt", 100) {
+		t.Error("expected test.txt to be indexed")
 	}
 
-	s.Reset(ctx)
+	if store.IndexedCount() != 1 {
+		t.Errorf("expected 1 indexed file, got %d", store.IndexedCount())
+	}
 
-	s.MarkIndexed("test.txt", 100)
-	if !s.IsIndexed("test.txt", 100) {
-		t.Error("expected test.txt to be indexed with modTime 100")
+	stats := store.GetStats()
+	if stats.RepoID != "test-repo" {
+		t.Errorf("expected repo-id test-repo, got %s", stats.RepoID)
+	}
+}
+
+func TestMemoryStore_Reset(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "rag_reset_test_*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	store := NewMemoryStore(tempDir, "test-repo", "", "dummy-model")
+	
+	store.mu.Lock()
+	store.indexed["some-file.txt"] = 123
+	store.mu.Unlock()
+
+	store.Reset(context.Background())
+
+	stats := store.GetStats()
+	if stats.FilesIndexed != 0 {
+		t.Errorf("expected 0 indexed files after reset, got %d", stats.FilesIndexed)
 	}
 }

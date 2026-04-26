@@ -138,6 +138,10 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/dto/templates/", s.handleTemplateByID)
 	mux.HandleFunc("/api/v1/dto/analyze", s.handleAnalyze)
 	mux.HandleFunc("/api/v1/dto/status", s.handleDTOStatus)
+	
+	// RAG API
+	mux.HandleFunc("/api/v1/rag/stats", s.handleRAGStats)
+	mux.HandleFunc("/api/v1/rag/action", s.handleRAGAction)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -1343,4 +1347,83 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 		"already_indexed": currentStatus.AlreadyIndexed,
 		"total_files":     currentStatus.TotalFiles,
 	})
+}
+
+func (s *AdminServer) handleRAGStats(w http.ResponseWriter, r *http.Request) {
+	if s.analyzer == nil || s.analyzer.GetRagManager() == nil {
+		http.Error(w, "RAG system not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	stats := s.analyzer.GetRagManager().GetAllStats()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func (s *AdminServer) handleRAGAction(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var data struct {
+		Action string `json:"action"`
+		RepoID string `json:"repo_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	if s.analyzer == nil || s.analyzer.GetRagManager() == nil {
+		http.Error(w, "RAG system not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	mgr := s.analyzer.GetRagManager()
+
+	switch data.Action {
+	case "scrub_all":
+		go func() {
+			removed, err := mgr.ScrubAll(context.Background())
+			if err != nil {
+				log.Printf("API: Global RAG scrub failed: %v", err)
+			} else {
+				log.Printf("API: Global RAG scrub completed: removed %d orphaned chunks", removed)
+			}
+		}()
+		w.WriteHeader(http.StatusAccepted)
+	case "scrub":
+		if data.RepoID == "" {
+			http.Error(w, "repo_id required", http.StatusBadRequest)
+			return
+		}
+		store := mgr.GetStore(data.RepoID)
+		if store == nil {
+			http.Error(w, "repo not found in RAG index", http.StatusNotFound)
+			return
+		}
+		go func() {
+			removed, err := store.Scrub(context.Background())
+			if err != nil {
+				log.Printf("API: RAG scrub failed for %s: %v", data.RepoID, err)
+			} else {
+				log.Printf("API: RAG scrub completed for %s: removed %d orphaned chunks", data.RepoID, removed)
+			}
+		}()
+		w.WriteHeader(http.StatusAccepted)
+	case "reset":
+		if data.RepoID == "" {
+			http.Error(w, "repo_id required", http.StatusBadRequest)
+			return
+		}
+		store := mgr.GetStore(data.RepoID)
+		if store == nil {
+			http.Error(w, "repo not found in RAG index", http.StatusNotFound)
+			return
+		}
+		store.Reset(context.Background())
+		log.Printf("API: RAG index reset for %s", data.RepoID)
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "unknown action", http.StatusBadRequest)
+	}
 }

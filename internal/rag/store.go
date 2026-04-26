@@ -27,6 +27,17 @@ type Document struct {
 	Category string
 }
 
+// RAGStats provides insights into the vector database state.
+type RAGStats struct {
+	RepoID          string    `json:"repo_id"`
+	FilesIndexed    int       `json:"files_indexed"`
+	ChunkCount      int       `json:"chunk_count"`
+	LastScrubbedAt  time.Time `json:"last_scrubbed_at"`
+	IndexPath       string    `json:"index_path"`
+	OllamaEndpoint  string    `json:"ollama_endpoint"`
+	EmbeddingModel  string    `json:"embedding_model"`
+}
+
 // MemoryStore is an in-memory/persistent storage for RAG using chromem-go
 type MemoryStore struct {
 	mu         sync.RWMutex
@@ -35,6 +46,8 @@ type MemoryStore struct {
 	indexed    map[string]int64
 	indexPath  string
 	repoID     string
+	ollamaUrl  string
+	modelName  string
 	// inferMu is the shared Ollama priority gate owned by llm.Router.
 	inferMu *sync.RWMutex
 }
@@ -133,6 +146,8 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 		indexed:    indexed,
 		indexPath:  indexPath,
 		repoID:     repoID,
+		ollamaUrl:  ollamaUrl,
+		modelName:  modelName,
 	}
 }
 
@@ -230,12 +245,80 @@ func (s *MemoryStore) Reset(ctx context.Context) {
 
 // RemoveDocumentsBySource deletes all chunks for a given source file from the vector DB.
 func (s *MemoryStore) RemoveDocumentsBySource(ctx context.Context, source string) error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.collection == nil {
 		return nil
 	}
-	return s.collection.Delete(ctx, map[string]string{"source": source}, nil)
+	err := s.collection.Delete(ctx, map[string]string{"source": source}, nil)
+	if err == nil {
+		delete(s.indexed, source)
+	}
+	return err
+}
+
+// Scrub checks all indexed files and removes those that no longer exist on disk.
+func (s *MemoryStore) Scrub(ctx context.Context) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.collection == nil {
+		return 0, fmt.Errorf("collection not initialized")
+	}
+
+	removed := 0
+	var missingSources []string
+
+	// 1. Identify missing files
+	for source := range s.indexed {
+		if _, err := os.Stat(source); os.IsNotExist(err) {
+			missingSources = append(missingSources, source)
+		}
+	}
+
+	// 2. Remove from vector DB and local cache
+	for _, source := range missingSources {
+		log.Printf("RAG Scrub [%s]: Removing deleted file from index: %s", s.repoID, source)
+		err := s.collection.Delete(ctx, map[string]string{"source": source}, nil)
+		if err != nil {
+			log.Printf("RAG Scrub [%s] Error: failed to delete %s: %v", s.repoID, source, err)
+			continue
+		}
+		delete(s.indexed, source)
+		removed++
+	}
+
+	if removed > 0 {
+		s.SaveIndex()
+	}
+
+	return removed, nil
+}
+
+// GetStats returns current metrics for this repository's vector store.
+func (s *MemoryStore) GetStats() RAGStats {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var lastScrubbed time.Time
+	if info, err := os.Stat(s.indexPath); err == nil {
+		lastScrubbed = info.ModTime()
+	}
+
+	chunkCount := 0
+	if s.collection != nil {
+		chunkCount = s.collection.Count()
+	}
+
+	return RAGStats{
+		RepoID:         s.repoID,
+		FilesIndexed:   len(s.indexed),
+		ChunkCount:     chunkCount,
+		LastScrubbedAt: lastScrubbed,
+		IndexPath:      s.indexPath,
+		OllamaEndpoint: s.ollamaUrl,
+		EmbeddingModel: s.modelName,
+	}
 }
 
 // IsIndexed checks if a source file is already indexed and up-to-date
