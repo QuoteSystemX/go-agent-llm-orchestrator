@@ -171,6 +171,8 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `seo-specialist` | `[CHORE]` (SEO) | Core Web Vitals, GEO, AI search |
   | `rest-api-designer` | `[FEAT]` (API) | REST / OpenAPI design, spec-first development |
   | `grpc-architect` | `[FEAT]` (API) | gRPC / Protobuf design, streaming patterns |
+  | `git-master` | `[INFRA]` (git) | Merge conflict resolution, repository recovery, history archaeology |
+  | `k8s-engineer` | `[INFRA]` (k8s) | Helm, Operators, RBAC, HPA/VPA, Ingress, namespace isolation |
 
 - **Execution Protocol**:
   - At the start of a session, agents MUST check the `tasks/` directory for cards matching their domain.

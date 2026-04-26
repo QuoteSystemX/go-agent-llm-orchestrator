@@ -65,6 +65,8 @@ Specialist AI personas for different domains.
 | `grpc-architect`         | gRPC / Protobuf design     | go-patterns, api-patterns, architecture                           |
 | `explorer-agent`         | Codebase analysis          | -                                                                 |
 | `reviewer`               | Automated code auditing    | code-review-checklist, vulnerability-scanner, systematic-debugging |
+| `git-master`             | Git internals & recovery   | git-master, bash-linux, systematic-debugging, clean-code           |
+| `k8s-engineer`           | Kubernetes platform        | k8s-patterns, deployment-procedures, server-management, bash-linux |
 
 ---
 
@@ -357,8 +359,8 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 
 | Metric              | Value                         |
 | ------------------- | ----------------------------- |
-| **Total Agents**    | 26                            |
-| **Total Skills**    | 42                            |
+| **Total Agents**    | 28                            |
+| **Total Skills**    | 43                            |
 | **Total Workflows** | 18                            |
 | **Total Scripts**   | 2 (master) + 18 (skill-level) |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)      |
@@ -384,6 +386,8 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 | Game               | `game-developer`         | game-development                                         |
 | Database           | `database-architect`     | database-design, prisma-expert                           |
 | DevOps / CI/CD     | `devops-engineer`        | deployment-procedures, docker-expert                     |
+| Kubernetes / K8s   | `k8s-engineer`           | k8s-patterns, deployment-procedures                      |
+| Git / Conflicts    | `git-master`             | git-master, bash-linux                                   |
 | Security Audit     | `security-auditor`       | vulnerability-scanner, red-team-tactics                  |
 | Pentesting         | `penetration-tester`     | red-team-tactics                                         |
 | Testing            | `test-engineer`          | testing-patterns, tdd-workflow, webapp-testing           |

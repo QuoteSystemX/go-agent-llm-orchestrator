@@ -116,6 +116,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `frontend-specialist` | Frontend & UI | React, Next.js, Tailwind, components |
 | `test-engineer` | Testing & QA | Unit tests, E2E, coverage, TDD |
 | `devops-engineer` | DevOps & Infra | Deployment, CI/CD, PM2, monitoring |
+| `k8s-engineer` | Kubernetes | Helm, Operators, RBAC, HPA/VPA, Ingress, namespace isolation |
+| `git-master` | Git Operations | Merge conflicts, rebase, history archaeology, repository recovery |
 | `database-architect` | Database & Schema | Prisma, migrations, ClickHouse, PostgreSQL optimization |
 | `mobile-developer` | Mobile Apps | React Native, Flutter, Expo |
 | `debugger` | Debugging | Root cause analysis, systematic debugging |
@@ -150,6 +152,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `rest-api-designer` | OpenAPI specs, HTTP endpoint design | ❌ Route implementation, UI code |
 | `grpc-architect` | `.proto` files, buf config, service contracts | ❌ Go handlers, generated files |
 | `devops-engineer` | CI/CD, deployment, infra config | ❌ Application code |
+| `k8s-engineer` | Helm charts, K8s manifests, RBAC, Operators, HPA/VPA, Ingress, NetworkPolicy | ❌ Application code, CI pipelines |
+| `git-master` | Conflict resolution, rebase, reflog, worktree, bisect | ❌ Feature code, application logic |
 | `performance-optimizer` | Profiling, optimization, caching | ❌ New features |
 | `seo-specialist` | Meta tags, SEO config, analytics | ❌ Business logic |
 | `documentation-writer` | Docs, README, comments | ❌ Code logic, **auto-invoke without explicit request** |

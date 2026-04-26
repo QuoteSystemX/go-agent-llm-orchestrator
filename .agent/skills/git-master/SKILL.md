@@ -1,31 +1,37 @@
 ---
 name: git-master
-description: Expert-level Git operations, conflict resolution, and repository state management.
+description: Expert-level Git operations, conflict resolution, and repository state management. Universal — works in Antigravity (Gemini) and Claude Code.
 ---
 
 # Git Master Skill
 
-This skill provides a systematic approach to complex Git operations, with a heavy emphasis on safety and conflict resolution.
+Systematic approach to complex Git operations with heavy emphasis on safety, conflict resolution, and history archaeology.
 
 ## 🛡️ Safety Protocol (MANDATORY)
 
-Before any destructive or complex Git operation (merge, rebase, reset):
+Before any destructive or complex Git operation (merge, rebase, reset, cherry-pick):
 
 ### 1. Stash Uncommitted Changes
 
-- `git stash save "Git Master: Pre-op stash"`
+```bash
+git stash save "Git Master: Pre-op stash $(date +%Y%m%d-%H%M%S)"
+```
 
 ### 2. Create Recovery Branch
 
-- `git branch recovery/$(date +%Y%m%d-%H%M%S)`
+```bash
+git branch recovery/$(date +%Y%m%d-%H%M%S)
+```
 
 ### 3. Verify Clean Slate
 
-- `git status --short` should be empty (except for stashed items).
+```bash
+git status --short  # must be empty (except stashed items)
+```
+
+---
 
 ## ⚔️ Conflict Resolution Protocol
-
-When a merge or rebase results in conflicts:
 
 ### 1. Discovery
 
@@ -44,35 +50,137 @@ For each conflicting file:
   - `HEAD` (Current/Ours): Changes already in your branch.
   - `Incoming` (Theirs): Changes being merged/rebased in.
 - **Resolution Strategy**:
-  - **Semantic Merge**: If changes are in different parts of the file or address different concerns, combine them.
+  - **Semantic Merge**: If changes address different concerns, combine them.
   - **Prefer Ours**: If incoming changes are stale or redundant.
-  - **Prefer Theirs**: If incoming changes are the "ground truth" (e.g., from a master branch update).
-  - **Ask**: If the logic is too complex to determine safely.
+  - **Prefer Theirs**: If incoming changes are ground truth (e.g., from main).
+  - **Ask**: If logic is too complex to determine safely.
 
 ### 3. Execution
 
-- Use the `replace_file_content` or `multi_replace_file_content` tool to write the resolved version.
-- **CRITICAL**: Ensure NO conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) remain in the final output.
+Use the `Edit` or `Write` tool to write the resolved version.
+
+**CRITICAL**: Ensure NO conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) remain in the final output.
 
 ### 4. Verification
 
-- **Lint**: Run `python .agent/scripts/lint_runner.py` to ensure no syntax errors were introduced.
-- **Test**: Run relevant tests if available.
+```bash
+# Check no markers remain
+grep -rn "^<<<<<<< \|^=======$\|^>>>>>>> " . --include="*.go" --include="*.ts" --include="*.py" --include="*.md"
+
+# Run relevant tests
+go test ./... -race   # Go projects
+npm test              # Node.js projects
+```
+
+---
 
 ## 🔍 History Archaeology
 
-To understand why a conflict exists or who owns a piece of code:
+Understanding why a conflict exists or who owns a piece of code:
 
-- **Blame**: `git blame -L <start>,<end> <file>`
-- **Log Search**: `git log -S "<string>" --oneline`
-- **Branch Point**: `git merge-base <branch1> <branch2>`
+```bash
+# Who changed this line and when
+git blame -L <start>,<end> <file>
 
-## 🧹 Cleanup
+# Find when a string was introduced or removed
+git log -S "<string>" --oneline --all
 
-After successful resolution:
+# Find branch divergence point
+git merge-base <branch1> <branch2>
 
-1. `git add <files>`
-2. `git commit -m "chore(git): resolve merge conflicts in <files>"`
-3. `git stash pop` (if a stash was created)
+# Full diff since divergence
+git diff $(git merge-base main HEAD)..HEAD
+
+# Search commit messages
+git log --grep="<keyword>" --oneline
+```
+
+---
+
+## 🚨 Advanced Operations
+
+### Bisect (find which commit introduced a bug)
+
+```bash
+git bisect start
+git bisect bad HEAD          # current commit is broken
+git bisect good <known-good> # last known working commit
+# Git checks out midpoints; test each, then:
+git bisect good  # or git bisect bad
+# Until git identifies the culprit commit
+git bisect reset  # restore HEAD when done
+```
+
+### Reflog (recover from disasters)
+
+```bash
+# See every HEAD movement (your safety net)
+git reflog --date=iso | head -30
+
+# Recover a deleted branch
+git checkout -b recovered-branch <sha-from-reflog>
+
+# Undo a bad rebase
+git reset --hard HEAD@{N}  # N = position before rebase in reflog
+```
+
+### Worktree (work on multiple branches simultaneously)
+
+```bash
+# Create a worktree for a hotfix without disturbing current work
+git worktree add ../hotfix-tree hotfix/critical-bug
+
+# List active worktrees
+git worktree list
+
+# Remove when done
+git worktree remove ../hotfix-tree
+```
+
+### Cherry-pick (apply specific commits)
+
+```bash
+# Apply single commit
+git cherry-pick <sha>
+
+# Apply range
+git cherry-pick <sha1>..<sha2>
+
+# If conflict during cherry-pick
+git cherry-pick --continue  # after resolving
+git cherry-pick --abort     # to cancel
+```
+
+### Interactive Rebase (clean history before PR)
+
+```bash
+# Squash last N commits
+git rebase -i HEAD~N
+
+# Reword, squash, fixup, drop — edit the pick lines
+# Then: git push --force-with-lease (safer than --force)
+```
+
+---
+
+## 🧹 Cleanup After Resolution
+
+```bash
+git add <resolved-files>
+git commit -m "chore(git): resolve merge conflicts in <files>"
+git stash pop  # restore stashed changes if any
+git branch -d recovery/<timestamp>  # delete recovery branch if all good
+```
+
+---
+
+## 🤝 Handoff Matrix
+
+| Situation | Next Agent | What to pass |
+|-----------|------------|--------------|
+| Resolution introduced a regression | `debugger` | Conflicting file + resolution logic |
+| PR needs final audit after merge | `reviewer` | Resolved branch name |
+| Conflict is architectural (e.g., schema + API changed together) | `orchestrator` | Summary of both sides' intent |
+| Conflict in test files | `test-engineer` | Conflicting test file + context |
 
 <!-- EMBED_END -->
