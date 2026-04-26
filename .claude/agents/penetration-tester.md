@@ -280,6 +280,26 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -366,6 +386,26 @@ Before scanning, ask:
 |--------|------|-----------------|
 | **Dependencies** | Malicious packages | Do we audit new deps? |
 | **Lock files** | Integrity attacks | Are they committed? |
+| **Build pipeline** | CI/CD compromise | Who can modify? |
+| **Registry** | Typosquatting | Verified sources? |
+
+### Defense Principles
+
+- Verify package integrity (checksums)
+- Pin versions, audit updates
+- Use private registries for critical deps
+- Sign and verify artifacts
+
+---
+
+## 4. Attack Surface Mapping
+
+### What to Map
+
+| Category | Elements |
+|----------|----------|
+| **Entry Points** | APIs, forms, file uploads |
+| **Data Flows** | Input → Process → Output |
 
 <!-- truncated — full skill at .agent/skills/vulnerability-scanner/SKILL.md -->
 
@@ -453,6 +493,26 @@ LATERAL MOVEMENT → COLLECTION → C2 → EXFILTRATION → IMPACT
 | Weak service permissions | Modify service |
 | Token privileges | Abuse SeDebug, etc. |
 | Stored credentials | Harvest |
+
+### Linux Targets
+
+| Check | Opportunity |
+|-------|-------------|
+| SUID binaries | Execute as owner |
+| Sudo misconfiguration | Command execution |
+| Kernel vulnerabilities | Kernel exploits |
+| Cron jobs | Writable scripts |
+
+---
+
+## 5. Defense Evasion Principles
+
+### Key Techniques
+
+| Technique | Purpose |
+|-----------|---------|
+| LOLBins | Use legitimate tools |
+| Obfuscation | Hide malicious code |
 
 <!-- truncated — full skill at .agent/skills/red-team-tactics/SKILL.md -->
 

@@ -154,6 +154,26 @@ Understanding why a conflict exists or who owns a piece of code:
 git blame -L <start>,<end> <file>
 
 # Find when a string was introduced or removed
+git log -S "<string>" --oneline --all
+
+# Find branch divergence point
+git merge-base <branch1> <branch2>
+
+# Full diff since divergence
+git diff $(git merge-base main HEAD)..HEAD
+
+# Search commit messages
+git log --grep="<keyword>" --oneline
+```
+
+---
+
+## 🚨 Advanced Operations
+
+### Bisect (find which commit introduced a bug)
+
+```bash
+git bisect start
 
 <!-- truncated — full skill at .agent/skills/git-master/SKILL.md -->
 
@@ -241,6 +261,26 @@ git blame -L <start>,<end> <file>
 
 ---
 
+## 6. Network
+
+| Task | Command |
+|------|---------|
+| Download | `curl -O https://example.com/file` |
+| API request | `curl -X GET https://api.example.com` |
+| POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' URL` |
+| Check port | `nc -zv localhost 3000` |
+| Network info | `ifconfig` or `ip addr` |
+
+---
+
+## 7. Script Template
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined var, pipe fail
+
+# Colors (optional)
+RED='\033[0;31m'
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
 
@@ -328,6 +368,26 @@ Fix and verify it's truly fixed.
 - [ ] Fix verified
 - [ ] Regression test added
 - [ ] Similar code checked
+```
+
+## Common Debugging Commands
+
+```bash
+# Recent changes
+git log --oneline -20
+git diff HEAD~5
+
+# Search for pattern
+grep -r "errorPattern" --include="*.ts"
+
+# Check logs
+pm2 logs app-name --err --lines 100
+```
+
+## Anti-Patterns
+
+❌ **Random changes** - "Maybe if I change this..."
+❌ **Ignoring evidence** - "That can't be the cause"
 
 <!-- truncated — full skill at .agent/skills/systematic-debugging/SKILL.md -->
 
@@ -415,5 +475,25 @@ Fix and verify it's truly fixed.
 ---
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
+
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
 
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->

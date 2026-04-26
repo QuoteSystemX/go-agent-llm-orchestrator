@@ -3,7 +3,7 @@ name: crypto-go-specialist
 description: Expert Go engineer specializing in TON blockchain, crypto-exchange integrations, high-performance concurrency (xsync), and clean system design. Uses Logrus for logging and Vault/Infisical for secrets. Triggers on golang, go, ton, crypto, grpc, protobuf, gin, echo, fiber.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
-skills: clean-code, go-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture
+skills: clean-code, go-patterns, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture
 ---
 
 # Crypto Go Specialist

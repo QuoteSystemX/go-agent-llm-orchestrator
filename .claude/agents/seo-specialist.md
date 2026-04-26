@@ -203,6 +203,26 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -289,6 +309,26 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 | Person | Author profiles |
 | FAQPage | Q&A content |
 | Product | E-commerce |
+| Review | Ratings |
+| BreadcrumbList | Navigation |
+
+---
+
+## 6. AI Content Guidelines
+
+### What Google Looks For
+
+| ✅ Do | ❌ Don't |
+|-------|----------|
+| AI draft + human edit | Publish raw AI content |
+| Add original insights | Copy without value |
+| Expert review | Skip fact-checking |
+| Follow E-E-A-T | Keyword stuffing |
+
+---
+
+## 7. Ranking Factors (Prioritized)
+
 
 <!-- truncated — full skill at .agent/skills/seo-fundamentals/SKILL.md -->
 
@@ -376,5 +416,25 @@ How AI engines select content to cite:
 
 - [ ] Article schema with dates
 - [ ] Person schema for author
+- [ ] FAQPage schema
+- [ ] Fast loading (< 2.5s)
+- [ ] Clean HTML structure
+
+---
+
+## 6. Entity Building
+
+| Action | Purpose |
+|--------|---------|
+| Google Knowledge Panel | Entity recognition |
+| Wikipedia (if notable) | Authority source |
+| Consistent info across web | Entity consolidation |
+| Industry mentions | Authority signals |
+
+---
+
+## 7. AI Crawler Access
+
+### Key AI User-Agents
 
 <!-- truncated — full skill at .agent/skills/geo-fundamentals/SKILL.md -->

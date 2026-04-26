@@ -48,6 +48,7 @@ graph TD
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
 | **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
 | **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
+| **Go Docs**         | "godoc", "go doc", "doc comment", "pkg.go.dev", "doc.go", "go documentation", "document go package" | `crypto-go-specialist` | ✅ YES |
 | **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
@@ -56,35 +57,6 @@ graph TD
 | **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
-
-### 3. Automatic Routing Protocol
-
-## TIER 0 - Automatic Analysis (ALWAYS ACTIVE)
-
-Before responding to ANY request:
-
-```javascript
-// Pseudo-code for decision tree
-function analyzeRequest(userMessage) {
-    // 1. Classify request type
-    const requestType = classifyRequest(userMessage);
-
-    // 2. Detect domains
-    const domains = detectDomains(userMessage);
-
-    // 3. Determine complexity
-    const complexity = assessComplexity(domains);
-
-    // 4. Select agent(s)
-    if (complexity === "SIMPLE" && domains.length === 1) {
-        return selectSingleAgent(domains[0]);
-    } else if (complexity === "MODERATE" && domains.length <= 2) {
-        return selectMultipleAgents(domains);
-    } else {
-        return "orchestrator"; // Complex task
-    }
-}
-```
 
 ## 4. Response Format
 
@@ -124,6 +96,28 @@ function analyzeRequest(userMessage) {
 | **Game**        | unity, godot, phaser, game, multiplayer        | `game-developer`        |
 | **E2E / QA**    | playwright, cypress, e2e, regression, pipeline | `qa-automation-engineer` |
 | **Audit**       | audit, scan, tech debt, task queue             | `reviewer`              |
+| **Git**         | git, conflict, merge, rebase, reflog, branch, bisect | `git-master`      |
+| **Go Docs**     | godoc, go doc, doc comment, pkg.go.dev, doc.go, document go | `crypto-go-specialist` |
+
+<!-- EMBED_END -->
+
+### 3. Automatic Routing Protocol
+
+Before responding to ANY request, apply TIER 0 analysis:
+
+```javascript
+function analyzeRequest(userMessage) {
+    const domains = detectDomains(userMessage);
+    const complexity = assessComplexity(domains);
+    if (complexity === "SIMPLE" && domains.length === 1) {
+        return selectSingleAgent(domains[0]);
+    } else if (complexity === "MODERATE" && domains.length <= 2) {
+        return selectMultipleAgents(domains);
+    } else {
+        return "orchestrator";
+    }
+}
+```
 
 ### Multi-Domain Tasks (Auto-invoke Orchestrator)
 

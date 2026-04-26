@@ -265,6 +265,26 @@ After writing all task cards, produce a summary:
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -352,6 +372,26 @@ if (!c) return;
 // ❌ Long functions (100+ lines)
 // ✅ Small, focused functions
 
+// ❌ any type
+const data: any = ...
+
+// ✅ Proper types
+const data: UserData = ...
+```
+
+## Review Comments Guide
+
+```
+// Blocking issues use 🔴
+🔴 BLOCKING: SQL injection vulnerability here
+
+// Important suggestions use 🟡
+🟡 SUGGESTION: Consider using useMemo for performance
+
+// Minor nits use 🟢
+🟢 NIT: Prefer const over let for immutable variable
+
+
 <!-- truncated — full skill at .agent/skills/code-review-checklist/SKILL.md -->
 
 
@@ -438,6 +478,26 @@ Before scanning, ask:
 |--------|------|-----------------|
 | **Dependencies** | Malicious packages | Do we audit new deps? |
 | **Lock files** | Integrity attacks | Are they committed? |
+| **Build pipeline** | CI/CD compromise | Who can modify? |
+| **Registry** | Typosquatting | Verified sources? |
+
+### Defense Principles
+
+- Verify package integrity (checksums)
+- Pin versions, audit updates
+- Use private registries for critical deps
+- Sign and verify artifacts
+
+---
+
+## 4. Attack Surface Mapping
+
+### What to Map
+
+| Category | Elements |
+|----------|----------|
+| **Entry Points** | APIs, forms, file uploads |
+| **Data Flows** | Input → Process → Output |
 
 <!-- truncated — full skill at .agent/skills/vulnerability-scanner/SKILL.md -->
 
@@ -525,6 +585,26 @@ Fix and verify it's truly fixed.
 - [ ] Fix verified
 - [ ] Regression test added
 - [ ] Similar code checked
+```
+
+## Common Debugging Commands
+
+```bash
+# Recent changes
+git log --oneline -20
+git diff HEAD~5
+
+# Search for pattern
+grep -r "errorPattern" --include="*.ts"
+
+# Check logs
+pm2 logs app-name --err --lines 100
+```
+
+## Anti-Patterns
+
+❌ **Random changes** - "Maybe if I change this..."
+❌ **Ignoring evidence** - "That can't be the cause"
 
 <!-- truncated — full skill at .agent/skills/systematic-debugging/SKILL.md -->
 

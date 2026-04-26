@@ -306,6 +306,26 @@ immediately obvious. Prefer ASCII over external diagrams — it stays in sync.]
 ## Common Misconceptions
 
 [What do people usually get wrong when first encountering this? What traps
+exist? This section prevents repeating past debugging sessions.]
+
+## References
+
+[Links to relevant code files, external papers, or related wiki pages.]
+```
+
+### 2. Architecture Decision Record (ADR)
+
+Use for: every non-obvious technical decision.
+
+```markdown
+# ADR-NNN: [Decision Title]
+
+**Status**: Accepted | Deprecated | Superseded by ADR-NNN
+**Date**: YYYY-MM-DD
+
+## Context
+
+[What situation forced this decision? What constraints existed?]
 
 <!-- truncated — full skill at .agent/skills/wiki-writing/SKILL.md -->
 
@@ -393,6 +413,26 @@ Get a user by ID.
 
 ## 3. Code Comment Guidelines
 
+### JSDoc/TSDoc Template
+
+```typescript
+/**
+ * Brief description of what the function does.
+ * 
+ * @param paramName - Description of parameter
+ * @returns Description of return value
+ * @throws ErrorType - When this error occurs
+ * 
+ * @example
+ * const result = functionName(input);
+ */
+```
+
+### When to Comment
+
+| ✅ Comment | ❌ Don't Comment |
+|-----------|-----------------|
+| Why (business logic) | What (obvious) |
 
 <!-- truncated — full skill at .agent/skills/documentation-templates/SKILL.md -->
 
@@ -480,6 +520,26 @@ Get a user by ID.
 ### Status Board Format
 
 | Agent | Status | Current Task | Progress |
+|-------|--------|--------------|----------|
+| [Agent Name] | ✅🔄⏳❌⚠️ | [Task description] | [% or count] |
+
+### Status Icons
+
+| Icon | Meaning | Usage |
+|------|---------|-------|
+| ✅ | Completed | Task finished successfully |
+| 🔄 | Running | Currently executing |
+| ⏳ | Waiting | Blocked, waiting for dependency |
+| ❌ | Error | Failed, needs attention |
+| ⚠️ | Warning | Potential issue, not blocking |
+
+---
+
+## Error Handling (PRINCIPLE-BASED)
+
+**PRINCIPLE:** Errors are opportunities for clear communication.
+
+### Error Response Pattern
 
 <!-- truncated — full skill at .agent/skills/brainstorming/SKILL.md -->
 
@@ -567,6 +627,26 @@ Fix and verify it's truly fixed.
 - [ ] Fix verified
 - [ ] Regression test added
 - [ ] Similar code checked
+```
+
+## Common Debugging Commands
+
+```bash
+# Recent changes
+git log --oneline -20
+git diff HEAD~5
+
+# Search for pattern
+grep -r "errorPattern" --include="*.ts"
+
+# Check logs
+pm2 logs app-name --err --lines 100
+```
+
+## Anti-Patterns
+
+❌ **Random changes** - "Maybe if I change this..."
+❌ **Ignoring evidence** - "That can't be the cause"
 
 <!-- truncated — full skill at .agent/skills/systematic-debugging/SKILL.md -->
 
@@ -654,5 +734,25 @@ Fix and verify it's truly fixed.
 ---
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
+
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
 
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->

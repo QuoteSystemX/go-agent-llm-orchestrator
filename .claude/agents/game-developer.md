@@ -254,6 +254,26 @@ Every game has this cycle:
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -340,6 +360,26 @@ RENDER → Draw the frame (interpolated)
 Abstract input into ACTIONS, not raw keys:
 
 ```
+"jump"  → Space, Gamepad A, Touch tap
+"move"  → WASD, Left stick, Virtual joystick
+```
+
+**Why:** Enables multi-platform, rebindable controls.
+
+---
+
+### 4. Performance Budget (60 FPS = 16.67ms)
+
+| System | Budget |
+|--------|--------|
+| Input | 1ms |
+| Physics | 3ms |
+| AI | 2ms |
+| Game Logic | 4ms |
+| Rendering | 5ms |
+| Buffer | 1.67ms |
+
+**Optimization Priority:**
 
 <!-- truncated — full skill at .agent/skills/game-development/SKILL.md -->
 
@@ -426,6 +466,26 @@ Map ACTIONS, not buttons:
 | Medium | Impacts |
 | Heavy | Major events |
 
+---
+
+## 4. Performance Optimization
+
+### Profiling First
+
+| Engine | Tool |
+|--------|------|
+| Unity | Profiler Window |
+| Godot | Debugger → Profiler |
+| Unreal | Unreal Insights |
+
+### Common Bottlenecks
+
+| Bottleneck | Solution |
+|------------|----------|
+| Draw calls | Batching, atlases |
+| GC spikes | Object pooling |
+| Physics | Simpler colliders |
+| Shaders | LOD shaders |
 
 <!-- truncated — full skill at .agent/skills/game-development/pc-games/SKILL.md -->
 
@@ -513,6 +573,26 @@ What type of game?
 
 ### Compression Formats
 
+| Type | Format |
+|------|--------|
+| Textures | KTX2 + Basis Universal |
+| Audio | WebM/Opus (fallback: MP3) |
+| 3D Models | glTF + Draco/Meshopt |
+
+### Loading Strategy
+
+| Phase | Load |
+|-------|------|
+| Startup | Core assets, <2MB |
+| Gameplay | Stream on demand |
+| Background | Prefetch next level |
+
+---
+
+## 5. PWA for Games
+
+### Benefits
+
 <!-- truncated — full skill at .agent/skills/game-development/web-games/SKILL.md -->
 
 
@@ -598,6 +678,26 @@ What type of game?
 ---
 
 ## 5. Monetization Models
+
+| Model | Best For |
+|-------|----------|
+| **Premium** | Quality games, loyal audience |
+| **Free + IAP** | Casual, progression-based |
+| **Ads** | Hyper-casual, high volume |
+| **Subscription** | Content updates, multiplayer |
+
+---
+
+## 6. Anti-Patterns
+
+| ❌ Don't | ✅ Do |
+|----------|-------|
+| Desktop controls on mobile | Design for touch |
+| Ignore battery drain | Monitor thermals |
+| Force landscape | Support player preference |
+| Always-on network | Cache and sync |
+
+---
 
 <!-- truncated — full skill at .agent/skills/game-development/mobile-games/SKILL.md -->
 
@@ -685,6 +785,26 @@ Too Easy → Boredom → Quit
 Just Right → Flow → Engagement
 ```
 
+### Balancing Strategies
+
+| Strategy | How |
+|----------|-----|
+| **Dynamic** | Adjust to player skill |
+| **Selection** | Let player choose |
+| **Accessibility** | Options for all |
+
+---
+
+## 5. Progression Design
+
+### Progression Types
+
+| Type | Example |
+|------|---------|
+| **Skill** | Player gets better |
+| **Power** | Character gets stronger |
+| **Content** | New areas unlock |
+
 <!-- truncated — full skill at .agent/skills/game-development/game-design/SKILL.md -->
 
 
@@ -771,6 +891,26 @@ What type of multiplayer?
 
 ## 4. Security Principles
 
+### Server Authority
+
+```
+Client: "I hit the enemy"
+Server: Validate → did projectile actually hit?
+         → was player in valid state?
+         → was timing possible?
+```
+
+### Anti-Cheat
+
+| Cheat | Prevention |
+|-------|------------|
+| Speed hack | Server validates movement |
+| Aimbot | Server validates sight line |
+| Item dupe | Server owns inventory |
+| Wall hack | Don't send hidden data |
+
+---
+
 <!-- truncated — full skill at .agent/skills/game-development/multiplayer/SKILL.md -->
 
 
@@ -856,6 +996,26 @@ What type of multiplayer?
 
 ### Hand Tracking
 
+- More immersive but less precise
+- Good for: social, casual
+- Challenging for: action, precision
+
+---
+
+## 5. Spatial Design
+
+### World Scale
+
+- 1 unit = 1 meter (critical)
+- Objects must feel right size
+- Test with real measurements
+
+### Depth Cues
+
+| Cue | Importance |
+|-----|------------|
+| Stereo | Primary depth |
+| Motion parallax | Secondary |
 
 <!-- truncated — full skill at .agent/skills/game-development/vr-ar/SKILL.md -->
 
@@ -942,6 +1102,26 @@ What type of multiplayer?
 ### Screen Shake
 
 - Short duration (50-200ms)
+- Diminishing intensity
+- Use sparingly
+
+---
+
+## 5. Genre Patterns
+
+### Platformer
+
+- Coyote time (leniency after edge)
+- Jump buffering
+- Variable jump height
+
+### Top-down
+
+- 8-directional or free movement
+- Aim-based or auto-aim
+- Consider rotation or not
+
+---
 
 <!-- truncated — full skill at .agent/skills/game-development/2d-games/SKILL.md -->
 
@@ -1028,6 +1208,26 @@ What type of multiplayer?
 ### Camera Feel
 
 - Smooth following (lerp)
+- Collision avoidance
+- Look-ahead for movement
+- FOV changes for speed
+
+---
+
+## 5. Lighting
+
+### Light Types
+
+| Type | Use |
+|------|-----|
+| **Directional** | Sun, moon |
+| **Point** | Lamps, torches |
+| **Spot** | Flashlight, stage |
+| **Ambient** | Base illumination |
+
+### Performance Consideration
+
+- Real-time shadows are expensive
 
 <!-- truncated — full skill at .agent/skills/game-development/3d-games/SKILL.md -->
 
@@ -1115,6 +1315,26 @@ What feeling should the game evoke?
 
 ### Color Principles
 
+- **Hierarchy:** Important elements should pop
+- **Consistency:** Same object = same color family
+- **Context:** Colors read differently on backgrounds
+- **Accessibility:** Don't rely only on color
+
+---
+
+## 4. Animation Principles
+
+### The 12 Principles (Applied to Games)
+
+| Principle | Game Application |
+|-----------|------------------|
+| **Squash & Stretch** | Jump arcs, impacts |
+| **Anticipation** | Wind-up before attack |
+| **Staging** | Clear silhouettes |
+| **Follow-through** | Hair, capes after movement |
+| **Slow in/out** | Easing on transitions |
+| **Arcs** | Natural movement paths |
+
 <!-- truncated — full skill at .agent/skills/game-development/game-art/SKILL.md -->
 
 
@@ -1200,5 +1420,25 @@ Game State → Music Response
 | **Beat-synced** | Rhythmic gameplay | Musical |
 | **Queue point** | Next natural break | Clean |
 
+---
+
+## 4. Adaptive Audio Decisions
+
+### Intensity Parameters
+
+| Parameter | Affects | Example |
+|-----------|---------|---------|
+| **Threat level** | Music intensity | Enemy count |
+| **Health** | Filter, reverb | Low health = muffled |
+| **Speed** | Tempo, energy | Racing speed |
+| **Environment** | Reverb, EQ | Cave vs outdoor |
+| **Time of day** | Mood, volume | Night = quieter |
+
+### Vertical vs Horizontal
+
+| System | What Changes | Best For |
+|--------|--------------|----------|
+| **Vertical (layers)** | Add/remove instrument layers | Intensity scaling |
+| **Horizontal (segments)** | Different music sections | State changes |
 
 <!-- truncated — full skill at .agent/skills/game-development/game-audio/SKILL.md -->

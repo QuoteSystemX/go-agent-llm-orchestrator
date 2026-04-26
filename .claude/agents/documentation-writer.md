@@ -196,6 +196,26 @@ What needs documenting?
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -282,8 +302,135 @@ Get a user by ID.
 
 ## 3. Code Comment Guidelines
 
+### JSDoc/TSDoc Template
+
+```typescript
+/**
+ * Brief description of what the function does.
+ * 
+ * @param paramName - Description of parameter
+ * @returns Description of return value
+ * @throws ErrorType - When this error occurs
+ * 
+ * @example
+ * const result = functionName(input);
+ */
+```
+
+### When to Comment
+
+| ✅ Comment | ❌ Don't Comment |
+|-----------|-----------------|
+| Why (business logic) | What (obvious) |
 
 <!-- truncated — full skill at .agent/skills/documentation-templates/SKILL.md -->
+
+
+### Skill: `godoc-patterns`
+
+<!-- skill: godoc-patterns v1.0.0 -->
+# GoDoc Patterns Skill
+
+GoDoc is Go's built-in documentation system. Doc-comments are rendered on [pkg.go.dev](https://pkg.go.dev) and surfaced by `go doc`, IDEs, and `godoc -http`. A well-documented package is self-explanatory without a README.
+
+> "GoDoc comments are API contracts written in prose." — Go team
+
+---
+
+## 📐 COMMENT SYNTAX RULES
+
+### The one mandatory rule
+
+A doc-comment immediately precedes the declaration with **no blank line** between them:
+
+```go
+// Package auth implements JWT-based session management.
+package auth
+
+// ErrTokenExpired is returned when a token's expiry time has passed.
+var ErrTokenExpired = errors.New("token expired")
+
+// New creates a TokenStore backed by the given cache.
+// The TTL controls how long tokens remain valid after issuance.
+func New(cache Cache, ttl time.Duration) *TokenStore {
+```
+
+### Blank line = not a doc-comment
+
+```go
+// This comment is NOT a doc-comment — blank line separates it.
+
+func Bad() {}
+
+// This IS a doc-comment.
+func Good() {}
+```
+
+---
+
+## 📦 PACKAGE-LEVEL DOCUMENTATION
+
+### Short packages — inline comment
+
+```go
+// Package uuid generates and parses RFC 4122 UUIDs.
+package uuid
+```
+
+### Complex packages — use doc.go
+
+For packages with substantial explanation, create a `doc.go` file:
+
+```go
+// Package cache provides a thread-safe in-memory cache with TTL eviction.
+//
+// # Basic usage
+//
+//	c := cache.New(5 * time.Minute)
+//	c.Set("key", value)
+//	v, ok := c.Get("key")
+//
+// # Eviction
+//
+// Items are evicted lazily on access and eagerly by a background goroutine
+// that runs every [Cache.CleanupInterval]. To disable background cleanup,
+// set CleanupInterval to zero.
+//
+// # Concurrency
+//
+// All methods are safe for concurrent use. The implementation uses
+// [sync.RWMutex] for reads and an exclusive lock for writes.
+package cache
+```
+
+### Package doc structure (for large packages)
+
+```
+// Package <name> <one-line summary>.
+//
+// # Overview
+// [2-4 sentences: what problem this solves, what the main abstraction is]
+//
+// # Usage
+// [Minimal working example using code blocks]
+//
+// # Configuration
+// [Key options and their effect]
+//
+// # Concurrency
+// [Whether types are safe for concurrent use]
+//
+// # Errors
+// [Sentinel errors exported by this package]
+package <name>
+```
+
+---
+
+## ✍️ FUNCTION & METHOD DOCUMENTATION
+
+
+<!-- truncated — full skill at .agent/skills/godoc-patterns/SKILL.md -->
 
 
 ### Skill: `i18n-localization`
@@ -369,5 +516,25 @@ locales/
 ```
 
 ---
+
+## 5. Best Practices
+
+### DO ✅
+
+- Use translation keys, not raw text
+- Namespace translations by feature
+- Support pluralization
+- Handle date/number formats per locale
+- Plan for RTL from the start
+- Use ICU message format for complex strings
+
+### DON'T ❌
+
+- Hardcode strings in components
+- Concatenate translated strings
+- Assume text length (German is 30% longer)
+- Forget about RTL layout
+- Mix languages in same file
+
 
 <!-- truncated — full skill at .agent/skills/i18n-localization/SKILL.md -->

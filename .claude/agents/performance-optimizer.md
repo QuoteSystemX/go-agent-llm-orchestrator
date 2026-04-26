@@ -279,6 +279,26 @@ What's slow?
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -365,5 +385,25 @@ What's slow?
 ---
 
 ## 4. Runtime Profiling
+
+### Performance Tab Analysis
+
+| Pattern | Meaning |
+|---------|---------|
+| Long tasks (>50ms) | UI blocking |
+| Many small tasks | Possible batching opportunity |
+| Layout/paint | Rendering bottleneck |
+| Script | JavaScript execution |
+
+### Memory Tab Analysis
+
+| Pattern | Meaning |
+|---------|---------|
+| Growing heap | Possible leak |
+| Large retained | Check references |
+| Detached DOM | Not cleaned up |
+
+---
+
 
 <!-- truncated — full skill at .agent/skills/performance-profiling/SKILL.md -->

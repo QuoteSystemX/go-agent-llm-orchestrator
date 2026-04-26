@@ -517,6 +517,26 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -603,6 +623,26 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 | Phase | Action |
 |-------|--------|
 | Before All | Connect resources |
+| Before Each | Reset state |
+| After Each | Clean up |
+| After All | Disconnect |
+
+---
+
+## 6. Mocking Principles
+
+### When to Mock
+
+| Mock | Don't Mock |
+|------|------------|
+| External APIs | The code under test |
+| Database (unit) | Simple dependencies |
+| Time/random | Pure functions |
+| Network | In-memory stores |
+
+### Mock Types
+
+| Type | Use |
 
 <!-- truncated — full skill at .agent/skills/testing-patterns/SKILL.md -->
 
@@ -691,6 +731,26 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 - Small incremental changes
 - Commit after each refactor
 
+---
+
+## 6. AAA Pattern
+
+Every test follows:
+
+| Step | Purpose |
+|------|---------|
+| **Arrange** | Set up test data |
+| **Act** | Execute code under test |
+| **Assert** | Verify expected outcome |
+
+---
+
+## 7. When to Use TDD
+
+| Scenario | TDD Value |
+|----------|-----------|
+| New feature | High |
+
 <!-- truncated — full skill at .agent/skills/tdd-workflow/SKILL.md -->
 
 
@@ -777,6 +837,26 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 | Concept | Use |
 |---------|-----|
+| Page Object Model | Encapsulate page logic |
+| Fixtures | Reusable test setup |
+| Assertions | Built-in auto-wait |
+| Trace Viewer | Debug failures |
+
+### Configuration
+
+| Setting | Recommendation |
+|---------|----------------|
+| Retries | 2 on CI |
+| Trace | on-first-retry |
+| Screenshots | on-failure |
+| Video | retain-on-failure |
+
+---
+
+## 5. Visual Testing
+
+### When to Use
+
 
 <!-- truncated — full skill at .agent/skills/webapp-testing/SKILL.md -->
 
@@ -864,6 +944,26 @@ if (!c) return;
 
 // ❌ Long functions (100+ lines)
 // ✅ Small, focused functions
+
+// ❌ any type
+const data: any = ...
+
+// ✅ Proper types
+const data: UserData = ...
+```
+
+## Review Comments Guide
+
+```
+// Blocking issues use 🔴
+🔴 BLOCKING: SQL injection vulnerability here
+
+// Important suggestions use 🟡
+🟡 SUGGESTION: Consider using useMemo for performance
+
+// Minor nits use 🟢
+🟢 NIT: Prefer const over let for immutable variable
+
 
 <!-- truncated — full skill at .agent/skills/code-review-checklist/SKILL.md -->
 

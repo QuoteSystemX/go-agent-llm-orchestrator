@@ -232,6 +232,26 @@ When performance is critical and maps are highly contended, use `puzpuzpuz/xsync
 
 ---
 
+## 6. Protobuf & gRPC with `buf`
+
+Modern gRPC development uses [buf.build](https://buf.build) for better linting and generation management.
+
+### Best Practices:
+- Always define package versions (e.g., `package api.v1;`).
+- Use `buf lint` to ensure API consistency.
+- Use `buf generate` to create Go code.
+
+---
+
+## 7. Framework Selection (2025)
+
+| Framework | Best For |
+|-----------|----------|
+| **Standard library** | Core services, minimal overhead. |
+| **Gin** | Middlewares, JSON APIs, high speed. |
+| **Echo** | Clean API design, high performance. |
+| **Fiber** | Extreme performance (fasthttp based). |
+
 
 <!-- truncated — full skill at .agent/skills/go-patterns/SKILL.md -->
 

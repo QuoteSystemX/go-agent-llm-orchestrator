@@ -131,6 +131,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `seo-specialist` | SEO & Marketing | SEO optimization, meta tags, analytics |
 | `game-developer` | Game Development | Unity, Godot, Unreal, Phaser, multiplayer |
 | `analyst` | BMAD Lifecycle | Discovery, PRD, Architecture, Story cards |
+| `product-manager` | Requirements & UX | User stories, requirements, personas, feature scoping |
+| `product-owner` | Strategy & Backlog | Backlog prioritization, MVP definition, roadmap, BMAD governance |
 | `qa-automation-engineer` | E2E & CI Pipelines | Playwright, Cypress, visual regression, CI failure triage |
 | `reviewer` | Code Audit | Scan codebase, generate task queue, technical debt report |
 
@@ -168,6 +170,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `penetration-tester` | Security testing | ❌ Feature code |
 | `game-developer` | Game logic, scenes, assets | ❌ Web/mobile components |
 | `analyst` | wiki/ artifacts, BMAD phase docs | ❌ Application code |
+| `product-manager` | Requirements docs, user stories, personas | ❌ Code files, implementation |
+| `product-owner` | Backlog, roadmap, sprint prioritization, BMAD governance | ❌ Code files, implementation |
 | `qa-automation-engineer` | Playwright/Cypress E2E tests, CI pipelines, visual regression | ❌ Unit tests (test-engineer), feature code |
 | `reviewer` | Codebase scanning, task card generation in tasks/ | ❌ Fixing code, deleting files |
 
@@ -613,6 +617,26 @@ Use built-in agents for speed, custom agents for domain expertise.
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -699,6 +723,26 @@ Agents: security-auditor → penetration-tester → synthesis
 
 1. security-auditor: Configuration and code review
 2. penetration-tester: Active vulnerability testing
+3. Synthesize with prioritized remediation
+```
+
+---
+
+## Available Agents
+
+| Agent | Expertise | Trigger Phrases |
+|-------|-----------|-----------------|
+| `orchestrator` | Coordination | "comprehensive", "multi-perspective" |
+| `security-auditor` | Security | "security", "auth", "vulnerabilities" |
+| `penetration-tester` | Security Testing | "pentest", "red team", "exploit" |
+| `backend-specialist` | Backend | "API", "server", "Node.js", "Express" |
+| `frontend-specialist` | Frontend | "React", "UI", "components", "Next.js" |
+| `test-engineer` | Testing | "tests", "coverage", "TDD" |
+| `devops-engineer` | DevOps | "deploy", "CI/CD", "infrastructure" |
+| `database-architect` | Database | "schema", "Prisma", "migrations" |
+| `mobile-developer` | Mobile | "React Native", "Flutter", "mobile" |
+| `api-designer` | API Design | "REST", "GraphQL", "OpenAPI" |
+| `debugger` | Debugging | "bug", "error", "not working" |
 
 <!-- truncated — full skill at .agent/skills/parallel-agents/SKILL.md -->
 
@@ -786,6 +830,26 @@ Run `npm run dev` to test."
 
 **Behavior:**
 - Ask for error messages and reproduction steps
+- Think systematically - check logs, trace data flow
+- Form hypothesis → test → verify
+- Explain the root cause, not just the fix
+- Prevent future occurrences
+
+**Output style:**
+```
+"Investigating...
+
+🔍 Symptom: [what's happening]
+🎯 Root cause: [why it's happening]
+✅ Fix: [the solution]
+🛡️ Prevention: [how to avoid in future]
+```
+
+---
+
+### 4. 📋 REVIEW Mode
+
+**When to use:** Code review, architecture review, security audit
 
 <!-- truncated — full skill at .agent/skills/behavioral-modes/SKILL.md -->
 
@@ -874,6 +938,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 > 🔴 **DO NOT copy-paste script commands. Choose based on project type.**
 
+| Project Type | Relevant Scripts |
+|--------------|------------------|
+| Frontend/React | `ux_audit.py`, `accessibility_checker.py` |
+| Backend/API | `api_validator.py`, `security_scan.py` |
+| Mobile | `mobile_audit.py` |
+| Database | `schema_validator.py` |
+| Full-stack | Mix of above based on what you touched |
+
+**Wrong:** Adding all scripts to every plan
+**Right:** Only scripts relevant to THIS task
+
+---
+
+### Principle 5: Verification is Simple
+
+| ❌ Wrong | ✅ Right |
+|----------|----------|
+| "Verify the component works correctly" | "Run `npm run dev`, click button, see toast" |
+| "Test the API" | "curl localhost:3000/api/users returns 200" |
+
 <!-- truncated — full skill at .agent/skills/plan-writing/SKILL.md -->
 
 
@@ -960,6 +1044,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 ### Status Board Format
 
 | Agent | Status | Current Task | Progress |
+|-------|--------|--------------|----------|
+| [Agent Name] | ✅🔄⏳❌⚠️ | [Task description] | [% or count] |
+
+### Status Icons
+
+| Icon | Meaning | Usage |
+|------|---------|-------|
+| ✅ | Completed | Task finished successfully |
+| 🔄 | Running | Currently executing |
+| ⏳ | Waiting | Blocked, waiting for dependency |
+| ❌ | Error | Failed, needs attention |
+| ⚠️ | Warning | Potential issue, not blocking |
+
+---
+
+## Error Handling (PRINCIPLE-BASED)
+
+**PRINCIPLE:** Errors are opportunities for clear communication.
+
+### Error Response Pattern
 
 <!-- truncated — full skill at .agent/skills/brainstorming/SKILL.md -->
 
@@ -1144,6 +1248,26 @@ Write-Output "Value: $value"
 
 ---
 
+## 6. File Paths
+
+### Windows Path Rules
+
+| Pattern | Use |
+|---------|-----|
+| Literal path | `C:\Users\User\file.txt` |
+| Variable path | `Join-Path $env:USERPROFILE "file.txt"` |
+| Relative | `Join-Path $ScriptDir "data"` |
+
+**Rule:** Use Join-Path for cross-platform safety.
+
+---
+
+## 7. Array Operations
+
+### Correct Patterns
+
+| Operation | Syntax |
+|-----------|--------|
 
 <!-- truncated — full skill at .agent/skills/powershell-windows/SKILL.md -->
 
@@ -1231,6 +1355,26 @@ Write-Output "Value: $value"
 
 ---
 
+## 6. Network
+
+| Task | Command |
+|------|---------|
+| Download | `curl -O https://example.com/file` |
+| API request | `curl -X GET https://api.example.com` |
+| POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' URL` |
+| Check port | `nc -zv localhost 3000` |
+| Network info | `ifconfig` or `ip addr` |
+
+---
+
+## 7. Script Template
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined var, pipe fail
+
+# Colors (optional)
+RED='\033[0;31m'
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
 
@@ -1282,6 +1426,7 @@ graph TD
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
 | **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
 | **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
+| **Go Docs**         | "godoc", "go doc", "doc comment", "pkg.go.dev", "doc.go", "go documentation", "document go package" | `crypto-go-specialist` | ✅ YES |
 | **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
@@ -1291,32 +1436,43 @@ graph TD
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 
-### 3. Automatic Routing Protocol
+## 4. Response Format
 
-## TIER 0 - Automatic Analysis (ALWAYS ACTIVE)
+**When auto-selecting an agent, inform the user concisely:**
 
-Before responding to ANY request:
+```markdown
+🤖 **Applying knowledge of `@security-auditor` + `@backend-specialist`...**
 
-```javascript
-// Pseudo-code for decision tree
-function analyzeRequest(userMessage) {
-    // 1. Classify request type
-    const requestType = classifyRequest(userMessage);
+[Proceed with specialized response]
+```
 
-    // 2. Detect domains
-    const domains = detectDomains(userMessage);
+**Benefits:**
 
-    // 3. Determine complexity
-    const complexity = assessComplexity(domains);
+- ✅ User sees which expertise is being applied
+- ✅ Transparent decision-making
+- ✅ Still automatic (no /commands needed)
 
-    // 4. Select agent(s)
-    if (complexity === "SIMPLE" && domains.length === 1) {
-        return selectSingleAgent(domains[0]);
-    } else if (complexity === "MODERATE" && domains.length <= 2) {
-        return selectMultipleAgents(domains);
-    } else {
-        return "orchestrator"; // Complex task
-    }
-}
+## Domain Detection Rules
 
-<!-- truncated — full skill at .agent/skills/intelligent-routing/SKILL.md -->
+### Single-Domain Tasks (Auto-invoke Single Agent)
+
+| Domain          | Patterns                                       | Agent                   |
+| --------------- | ---------------------------------------------- | ----------------------- |
+| **Security**    | auth, login, jwt, password, hash, token        | `security-auditor`      |
+| **Frontend**    | component, react, vue, css, html, tailwind     | `frontend-specialist`   |
+| **Backend**     | api, server, express, fastapi, node            | `backend-specialist`    |
+| **Mobile**      | react native, flutter, ios, android, expo      | `mobile-developer`      |
+| **Database**    | prisma, sql, mongodb, schema, migration        | `database-architect`    |
+| **Testing**     | test, jest, vitest, playwright, cypress        | `test-engineer`         |
+| **DevOps**      | docker, ci/cd, pm2, nginx, systemd             | `devops-engineer`       |
+| **Kubernetes**  | kubernetes, k8s, helm, kubectl, ingress, rbac, operator, hpa, vpa, namespace | `k8s-engineer` |
+| **AI / LLM**    | llm, rag, embedding, vector, prompt, langchain, openai, anthropic, chatbot    | `ai-engineer`  |
+| **Wiki / Docs** | mental model, wiki, intuition, adr, prose-first, explain why, documentation  | `wiki-architect` |
+| **Debug**       | error, bug, crash, not working, issue          | `debugger`              |
+| **Performance** | slow, lag, optimize, cache, performance        | `performance-optimizer` |
+| **SEO**         | seo, meta, analytics, sitemap, robots          | `seo-specialist`        |
+| **Game**        | unity, godot, phaser, game, multiplayer        | `game-developer`        |
+| **E2E / QA**    | playwright, cypress, e2e, regression, pipeline | `qa-automation-engineer` |
+| **Audit**       | audit, scan, tech debt, task queue             | `reviewer`              |
+| **Git**         | git, conflict, merge, rebase, reflog, branch, bisect | `git-master`      |
+| **Go Docs**     | godoc, go doc, doc comment, pkg.go.dev, doc.go, document go | `crypto-go-specialist` |

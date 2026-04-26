@@ -273,6 +273,26 @@ subjects:
     name: monitoring-sa
     namespace: monitoring
 roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+### Common RBAC Mistakes
+
+| ❌ Don't | ✅ Do |
+|----------|-------|
+| `verbs: ["*"]` on `ClusterRole` | List exact verbs needed |
+| Bind to `cluster-admin` for apps | Create minimal Role |
+| Share ServiceAccounts across apps | One SA per workload |
+| `automountServiceAccountToken: true` (default) | Set `false` if token unused |
+
+### Audit RBAC
+
+```bash
+# Who can do what
+kubectl auth can-i --list --as=system:serviceaccount:production:my-sa
+
 
 <!-- truncated — full skill at .agent/skills/k8s-patterns/SKILL.md -->
 
@@ -360,6 +380,26 @@ What are you deploying?
 
 ```
 1. PREPARE
+   └── Verify code, build, env vars
+
+2. BACKUP
+   └── Save current state before changing
+
+3. DEPLOY
+   └── Execute with monitoring open
+
+4. VERIFY
+   └── Health check, logs, key flows
+
+5. CONFIRM or ROLLBACK
+   └── All good? Confirm. Issues? Rollback.
+```
+
+### Phase Principles
+
+| Phase | Principle |
+|-------|-----------|
+| **Prepare** | Never deploy untested code |
 
 <!-- truncated — full skill at .agent/skills/deployment-procedures/SKILL.md -->
 
@@ -447,6 +487,26 @@ What are you deploying?
 
 ## 4. Scaling Decisions
 
+### When to Scale
+
+| Symptom | Solution |
+|---------|----------|
+| High CPU | Add instances (horizontal) |
+| High memory | Increase RAM or fix leak |
+| Slow response | Profile first, then scale |
+| Traffic spikes | Auto-scaling |
+
+### Scaling Strategy
+
+| Type | When to Use |
+|------|-------------|
+| **Vertical** | Quick fix, single instance |
+| **Horizontal** | Sustainable, distributed |
+| **Auto** | Variable traffic |
+
+---
+
+## 5. Health Check Principles
 
 <!-- truncated — full skill at .agent/skills/server-management/SKILL.md -->
 
@@ -534,6 +594,26 @@ What are you deploying?
 
 ---
 
+## 6. Network
+
+| Task | Command |
+|------|---------|
+| Download | `curl -O https://example.com/file` |
+| API request | `curl -X GET https://api.example.com` |
+| POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' URL` |
+| Check port | `nc -zv localhost 3000` |
+| Network info | `ifconfig` or `ip addr` |
+
+---
+
+## 7. Script Template
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined var, pipe fail
+
+# Colors (optional)
+RED='\033[0;31m'
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
 
@@ -621,5 +701,25 @@ What are you deploying?
 ---
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
+
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
 
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->

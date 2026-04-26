@@ -131,6 +131,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `seo-specialist` | SEO & Marketing | SEO optimization, meta tags, analytics |
 | `game-developer` | Game Development | Unity, Godot, Unreal, Phaser, multiplayer |
 | `analyst` | BMAD Lifecycle | Discovery, PRD, Architecture, Story cards |
+| `product-manager` | Requirements & UX | User stories, requirements, personas, feature scoping |
+| `product-owner` | Strategy & Backlog | Backlog prioritization, MVP definition, roadmap, BMAD governance |
 | `qa-automation-engineer` | E2E & CI Pipelines | Playwright, Cypress, visual regression, CI failure triage |
 | `reviewer` | Code Audit | Scan codebase, generate task queue, technical debt report |
 
@@ -168,6 +170,8 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `penetration-tester` | Security testing | ❌ Feature code |
 | `game-developer` | Game logic, scenes, assets | ❌ Web/mobile components |
 | `analyst` | wiki/ artifacts, BMAD phase docs | ❌ Application code |
+| `product-manager` | Requirements docs, user stories, personas | ❌ Code files, implementation |
+| `product-owner` | Backlog, roadmap, sprint prioritization, BMAD governance | ❌ Code files, implementation |
 | `qa-automation-engineer` | Playwright/Cypress E2E tests, CI pipelines, visual regression | ❌ Unit tests (test-engineer), feature code |
 | `reviewer` | Codebase scanning, task card generation in tasks/ | ❌ Fixing code, deleting files |
 

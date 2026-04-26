@@ -376,6 +376,26 @@ After editing any file:
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -462,6 +482,26 @@ ESM (import/export)
 
 CommonJS (require)
 ├── Legacy compatibility
+├── More npm packages support
+└── Use for: existing codebases, some edge cases
+```
+
+### Runtime Selection
+
+| Runtime | Best For |
+|---------|----------|
+| **Node.js** | General purpose, largest ecosystem |
+| **Bun** | Performance, built-in bundler |
+| **Deno** | Security-first, built-in TypeScript |
+
+---
+
+## 3. Architecture Principles
+
+### Layered Structure Concept
+
+```
+Request Flow:
 
 <!-- truncated — full skill at .agent/skills/nodejs-best-practices/SKILL.md -->
 
@@ -548,6 +588,26 @@ def (sync) is better when:
 ```
 
 ### The Golden Rule
+
+```
+I/O-bound → async (waiting for external)
+CPU-bound → sync + multiprocessing (computing)
+
+Don't:
+├── Mix sync and async carelessly
+├── Use sync libraries in async code
+└── Force async for CPU work
+```
+
+### Async Library Selection
+
+| Need | Async Library |
+|------|---------------|
+| HTTP client | httpx |
+| PostgreSQL | asyncpg |
+| Redis | aioredis / redis-py async |
+| File I/O | aiofiles |
+| Database ORM | SQLAlchemy 2.0 async, Tortoise |
 
 
 <!-- truncated — full skill at .agent/skills/python-patterns/SKILL.md -->
@@ -766,6 +826,26 @@ my-mcp-server/
 
 | Pattern | Example |
 |---------|---------|
+| Fixed | `docs://readme` |
+| Parameterized | `users://{userId}` |
+| Collection | `files://project/*` |
+
+---
+
+## 5. Error Handling
+
+### Error Types
+
+| Situation | Response |
+|-----------|----------|
+| Invalid params | Validation error message |
+| Not found | Clear "not found" |
+| Server error | Generic error, log details |
+
+### Best Practices
+
+- Return structured errors
+- Don't expose internal details
 
 <!-- truncated — full skill at .agent/skills/mcp-builder/SKILL.md -->
 
@@ -896,6 +976,26 @@ Write-Output "Value: $value"
 
 ---
 
+## 6. File Paths
+
+### Windows Path Rules
+
+| Pattern | Use |
+|---------|-----|
+| Literal path | `C:\Users\User\file.txt` |
+| Variable path | `Join-Path $env:USERPROFILE "file.txt"` |
+| Relative | `Join-Path $ScriptDir "data"` |
+
+**Rule:** Use Join-Path for cross-platform safety.
+
+---
+
+## 7. Array Operations
+
+### Correct Patterns
+
+| Operation | Syntax |
+|-----------|--------|
 
 <!-- truncated — full skill at .agent/skills/powershell-windows/SKILL.md -->
 
@@ -983,6 +1083,26 @@ Write-Output "Value: $value"
 
 ---
 
+## 6. Network
+
+| Task | Command |
+|------|---------|
+| Download | `curl -O https://example.com/file` |
+| API request | `curl -X GET https://api.example.com` |
+| POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' URL` |
+| Check port | `nc -zv localhost 3000` |
+| Network info | `ifconfig` or `ip addr` |
+
+---
+
+## 7. Script Template
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined var, pipe fail
+
+# Colors (optional)
+RED='\033[0;31m'
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
 
@@ -1070,5 +1190,25 @@ Expert Rust developer mastering Rust 1.75+ features, advanced type system usage,
 - Modern web frameworks: axum, warp, actix-web
 - HTTP/2 and HTTP/3 support with hyper
 - WebSocket and real-time communication
+- Authentication and middleware patterns
+- Database integration with sqlx and diesel
+- Serialization with serde and custom formats
+- GraphQL APIs with async-graphql
+- gRPC services with tonic
+
+### Error Handling & Safety
+- Comprehensive error handling with thiserror and anyhow
+- Custom error types and error propagation
+- Panic handling and graceful degradation
+- Result and Option patterns and combinators
+- Error conversion and context preservation
+- Logging and structured error reporting
+- Testing error conditions and edge cases
+- Recovery strategies and fault tolerance
+
+### Testing & Quality Assurance
+- Unit testing with built-in test framework
+- Property-based testing with proptest and quickcheck
+- Integration testing and test organization
 
 <!-- truncated — full skill at .agent/skills/rust-pro/SKILL.md -->

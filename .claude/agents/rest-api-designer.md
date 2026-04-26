@@ -341,6 +341,26 @@ const config = {
 } satisfies ApiConfig; // Validates shape, keeps literal types
 ```
 
+---
+
+## 3. OpenAPI → TypeScript Tooling
+
+### Recommended: `openapi-typescript`
+
+```bash
+npx openapi-typescript openapi.yaml -o src/types/api.d.ts
+```
+
+Generates fully-typed path/operation interfaces from the OpenAPI spec:
+
+```typescript
+// Auto-generated — DO NOT EDIT
+export interface paths {
+  '/orders': {
+    get: operations['listOrders'];
+    post: operations['createOrder'];
+  };
+
 <!-- truncated — full skill at .agent/skills/typescript-expert/SKILL.md -->
 
 
@@ -427,6 +447,26 @@ Get a user by ID.
 
 ## 3. Code Comment Guidelines
 
+### JSDoc/TSDoc Template
+
+```typescript
+/**
+ * Brief description of what the function does.
+ * 
+ * @param paramName - Description of parameter
+ * @returns Description of return value
+ * @throws ErrorType - When this error occurs
+ * 
+ * @example
+ * const result = functionName(input);
+ */
+```
+
+### When to Comment
+
+| ✅ Comment | ❌ Don't Comment |
+|-----------|-----------------|
+| Why (business logic) | What (obvious) |
 
 <!-- truncated — full skill at .agent/skills/documentation-templates/SKILL.md -->
 

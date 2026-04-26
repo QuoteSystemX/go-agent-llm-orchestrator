@@ -198,6 +198,26 @@ When analyzing a legacy file, produce:
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -285,6 +305,26 @@ if (basePrice() > 1000) return basePrice() * 0.95
 function basePrice() { return quantity * itemPrice }
 ```
 
+### 5. Introduce Parameter Object
+```
+// Before
+function report(startDate, endDate, minAmount, maxAmount) {...}
+
+// After
+function report(dateRange: DateRange, amountRange: AmountRange) {...}
+```
+
+### 6. Replace Conditional with Polymorphism
+```
+// Before
+function getSpeed(bird) {
+  switch (bird.type) {
+    case 'European': return baseSpeed()
+    case 'African': return baseSpeed() - loadFactor() * bird.numberOfCoconuts
+  }
+}
+
+
 <!-- truncated — full skill at .agent/skills/refactoring-patterns/SKILL.md -->
 
 
@@ -371,5 +411,25 @@ if (!c) return;
 
 // ❌ Long functions (100+ lines)
 // ✅ Small, focused functions
+
+// ❌ any type
+const data: any = ...
+
+// ✅ Proper types
+const data: UserData = ...
+```
+
+## Review Comments Guide
+
+```
+// Blocking issues use 🔴
+🔴 BLOCKING: SQL injection vulnerability here
+
+// Important suggestions use 🟡
+🟡 SUGGESTION: Consider using useMemo for performance
+
+// Minor nits use 🟢
+🟢 NIT: Prefer const over let for immutable variable
+
 
 <!-- truncated — full skill at .agent/skills/code-review-checklist/SKILL.md -->

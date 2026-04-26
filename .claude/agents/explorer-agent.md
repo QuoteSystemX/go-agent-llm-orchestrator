@@ -165,6 +165,26 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -306,6 +326,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 > 🔴 **DO NOT copy-paste script commands. Choose based on project type.**
 
+| Project Type | Relevant Scripts |
+|--------------|------------------|
+| Frontend/React | `ux_audit.py`, `accessibility_checker.py` |
+| Backend/API | `api_validator.py`, `security_scan.py` |
+| Mobile | `mobile_audit.py` |
+| Database | `schema_validator.py` |
+| Full-stack | Mix of above based on what you touched |
+
+**Wrong:** Adding all scripts to every plan
+**Right:** Only scripts relevant to THIS task
+
+---
+
+### Principle 5: Verification is Simple
+
+| ❌ Wrong | ✅ Right |
+|----------|----------|
+| "Verify the component works correctly" | "Run `npm run dev`, click button, see toast" |
+| "Test the API" | "curl localhost:3000/api/users returns 200" |
+
 <!-- truncated — full skill at .agent/skills/plan-writing/SKILL.md -->
 
 
@@ -392,6 +432,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 ### Status Board Format
 
 | Agent | Status | Current Task | Progress |
+|-------|--------|--------------|----------|
+| [Agent Name] | ✅🔄⏳❌⚠️ | [Task description] | [% or count] |
+
+### Status Icons
+
+| Icon | Meaning | Usage |
+|------|---------|-------|
+| ✅ | Completed | Task finished successfully |
+| 🔄 | Running | Currently executing |
+| ⏳ | Waiting | Blocked, waiting for dependency |
+| ❌ | Error | Failed, needs attention |
+| ⚠️ | Warning | Potential issue, not blocking |
+
+---
+
+## Error Handling (PRINCIPLE-BASED)
+
+**PRINCIPLE:** Errors are opportunities for clear communication.
+
+### Error Response Pattern
 
 <!-- truncated — full skill at .agent/skills/brainstorming/SKILL.md -->
 
@@ -479,5 +539,25 @@ Fix and verify it's truly fixed.
 - [ ] Fix verified
 - [ ] Regression test added
 - [ ] Similar code checked
+```
+
+## Common Debugging Commands
+
+```bash
+# Recent changes
+git log --oneline -20
+git diff HEAD~5
+
+# Search for pattern
+grep -r "errorPattern" --include="*.ts"
+
+# Check logs
+pm2 logs app-name --err --lines 100
+```
+
+## Anti-Patterns
+
+❌ **Random changes** - "Maybe if I change this..."
+❌ **Ignoring evidence** - "That can't be the cause"
 
 <!-- truncated — full skill at .agent/skills/systematic-debugging/SKILL.md -->

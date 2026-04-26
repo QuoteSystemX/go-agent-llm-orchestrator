@@ -21,6 +21,7 @@ skills:
   geo-fundamentals: 1.0.0
   git-master: 1.0.0
   go-patterns: 1.0.0
+  godoc-patterns: 1.0.0
   i18n-localization: 1.0.0
   intelligent-routing: 1.0.0
   k8s-patterns: 1.0.0

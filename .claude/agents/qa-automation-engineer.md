@@ -194,6 +194,26 @@ Developers test the happy path. **You test the chaos.**
 
 | Concept | Use |
 |---------|-----|
+| Page Object Model | Encapsulate page logic |
+| Fixtures | Reusable test setup |
+| Assertions | Built-in auto-wait |
+| Trace Viewer | Debug failures |
+
+### Configuration
+
+| Setting | Recommendation |
+|---------|----------------|
+| Retries | 2 on CI |
+| Trace | on-first-retry |
+| Screenshots | on-failure |
+| Video | retain-on-failure |
+
+---
+
+## 5. Visual Testing
+
+### When to Use
+
 
 <!-- truncated — full skill at .agent/skills/webapp-testing/SKILL.md -->
 
@@ -281,6 +301,26 @@ Developers test the happy path. **You test the chaos.**
 | Phase | Action |
 |-------|--------|
 | Before All | Connect resources |
+| Before Each | Reset state |
+| After Each | Clean up |
+| After All | Disconnect |
+
+---
+
+## 6. Mocking Principles
+
+### When to Mock
+
+| Mock | Don't Mock |
+|------|------------|
+| External APIs | The code under test |
+| Database (unit) | Simple dependencies |
+| Time/random | Pure functions |
+| Network | In-memory stores |
+
+### Mock Types
+
+| Type | Use |
 
 <!-- truncated — full skill at .agent/skills/testing-patterns/SKILL.md -->
 
@@ -421,6 +461,26 @@ If no files specified, ask the user which files to review.
 ---
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
+
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
 
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 

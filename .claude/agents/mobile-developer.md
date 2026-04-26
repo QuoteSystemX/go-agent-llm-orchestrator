@@ -469,6 +469,26 @@ Before saying "project complete":
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -555,6 +575,26 @@ Before saying "project complete":
 | **Missing keyExtractor** | Index-based keys cause bugs on reorder | Unique, stable ID from data |
 | **Skip getItemLayout** | Async layout = janky scroll | Provide when items have fixed height |
 | **setState() everywhere** | Unnecessary widget rebuilds | Targeted state, `const` constructors |
+| **Native driver: false** | Animations blocked by JS thread | `useNativeDriver: true` always |
+| **console.log in production** | Blocks JS thread severely | Remove before release build |
+| **Skip React.memo/const** | Every item re-renders on any change | Memoize list items ALWAYS |
+
+#### Touch/UX Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
+| **Touch target < 44px** | Impossible to tap accurately, frustrating | Minimum 44pt (iOS) / 48dp (Android) |
+| **Spacing < 8px between targets** | Accidental taps on neighbors | Minimum 8-12px gap |
+| **Gesture-only interactions** | Motor impaired users excluded | Always provide button alternative |
+| **No loading state** | User thinks app crashed | ALWAYS show loading feedback |
+| **No error state** | User stuck, no recovery path | Show error with retry option |
+| **No offline handling** | Crash/block when network lost | Graceful degradation, cached data |
+| **Ignore platform conventions** | Users confused, muscle memory broken | iOS feels iOS, Android feels Android |
+
+#### Security Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
 
 <!-- truncated — full skill at .agent/skills/mobile-design/SKILL.md -->
 
@@ -642,5 +682,25 @@ locales/
 ```
 
 ---
+
+## 5. Best Practices
+
+### DO ✅
+
+- Use translation keys, not raw text
+- Namespace translations by feature
+- Support pluralization
+- Handle date/number formats per locale
+- Plan for RTL from the start
+- Use ICU message format for complex strings
+
+### DON'T ❌
+
+- Hardcode strings in components
+- Concatenate translated strings
+- Assume text length (German is 30% longer)
+- Forget about RTL layout
+- Mix languages in same file
+
 
 <!-- truncated — full skill at .agent/skills/i18n-localization/SKILL.md -->

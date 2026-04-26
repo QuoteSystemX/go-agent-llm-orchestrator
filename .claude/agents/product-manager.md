@@ -290,6 +290,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 > 🔴 **DO NOT copy-paste script commands. Choose based on project type.**
 
+| Project Type | Relevant Scripts |
+|--------------|------------------|
+| Frontend/React | `ux_audit.py`, `accessibility_checker.py` |
+| Backend/API | `api_validator.py`, `security_scan.py` |
+| Mobile | `mobile_audit.py` |
+| Database | `schema_validator.py` |
+| Full-stack | Mix of above based on what you touched |
+
+**Wrong:** Adding all scripts to every plan
+**Right:** Only scripts relevant to THIS task
+
+---
+
+### Principle 5: Verification is Simple
+
+| ❌ Wrong | ✅ Right |
+|----------|----------|
+| "Verify the component works correctly" | "Run `npm run dev`, click button, see toast" |
+| "Test the API" | "curl localhost:3000/api/users returns 200" |
+
 <!-- truncated — full skill at .agent/skills/plan-writing/SKILL.md -->
 
 
@@ -376,6 +396,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 ### Status Board Format
 
 | Agent | Status | Current Task | Progress |
+|-------|--------|--------------|----------|
+| [Agent Name] | ✅🔄⏳❌⚠️ | [Task description] | [% or count] |
+
+### Status Icons
+
+| Icon | Meaning | Usage |
+|------|---------|-------|
+| ✅ | Completed | Task finished successfully |
+| 🔄 | Running | Currently executing |
+| ⏳ | Waiting | Blocked, waiting for dependency |
+| ❌ | Error | Failed, needs attention |
+| ⚠️ | Warning | Potential issue, not blocking |
+
+---
+
+## Error Handling (PRINCIPLE-BASED)
+
+**PRINCIPLE:** Errors are opportunities for clear communication.
+
+### Error Response Pattern
 
 <!-- truncated — full skill at .agent/skills/brainstorming/SKILL.md -->
 
@@ -464,6 +504,26 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -550,5 +610,25 @@ Epic: [epic name]. PRD Section: [N]. Persona: [user persona name].
 
 When the analyst receives any BMAD request, it MUST first determine the current phase:
 
+```
+IF wiki/BRIEF.md missing         → Run Discovery (Phase 1)
+IF wiki/PRD.md missing           → Run PRD (Phase 2)
+IF wiki/ARCHITECTURE.md missing  → Run Architecture (Phase 3)
+IF tasks/ has no [STORY] cards   → Run Stories (Phase 4)
+IF wiki/sprints/ has no active sprint → Run Sprint (Phase 5)
+ELSE                             → Report current phase status
+```
+
+## Wiki Integration
+
+BMAD artifacts are placed directly into the target repository's `wiki/` directory alongside the existing knowledge graph:
+
+```
+wiki/
+├── _index.md           ← updated to include BMAD artifact links
+├── BRIEF.md            ← Discovery output
+├── PRD.md              ← PRD output
+├── ARCHITECTURE.md     ← Architecture output
+├── DECISIONS.md        ← ADR log (populated by knowledge_updater)
 
 <!-- truncated — full skill at .agent/skills/bmad-lifecycle/SKILL.md -->

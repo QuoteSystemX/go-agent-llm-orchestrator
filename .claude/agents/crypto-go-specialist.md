@@ -208,6 +208,26 @@ You are familiar with the specific stack used in the `~/go/project/` environment
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -294,8 +314,135 @@ When performance is critical and maps are highly contended, use `puzpuzpuz/xsync
 
 ---
 
+## 6. Protobuf & gRPC with `buf`
+
+Modern gRPC development uses [buf.build](https://buf.build) for better linting and generation management.
+
+### Best Practices:
+- Always define package versions (e.g., `package api.v1;`).
+- Use `buf lint` to ensure API consistency.
+- Use `buf generate` to create Go code.
+
+---
+
+## 7. Framework Selection (2025)
+
+| Framework | Best For |
+|-----------|----------|
+| **Standard library** | Core services, minimal overhead. |
+| **Gin** | Middlewares, JSON APIs, high speed. |
+| **Echo** | Clean API design, high performance. |
+| **Fiber** | Extreme performance (fasthttp based). |
+
 
 <!-- truncated — full skill at .agent/skills/go-patterns/SKILL.md -->
+
+
+### Skill: `godoc-patterns`
+
+<!-- skill: godoc-patterns v1.0.0 -->
+# GoDoc Patterns Skill
+
+GoDoc is Go's built-in documentation system. Doc-comments are rendered on [pkg.go.dev](https://pkg.go.dev) and surfaced by `go doc`, IDEs, and `godoc -http`. A well-documented package is self-explanatory without a README.
+
+> "GoDoc comments are API contracts written in prose." — Go team
+
+---
+
+## 📐 COMMENT SYNTAX RULES
+
+### The one mandatory rule
+
+A doc-comment immediately precedes the declaration with **no blank line** between them:
+
+```go
+// Package auth implements JWT-based session management.
+package auth
+
+// ErrTokenExpired is returned when a token's expiry time has passed.
+var ErrTokenExpired = errors.New("token expired")
+
+// New creates a TokenStore backed by the given cache.
+// The TTL controls how long tokens remain valid after issuance.
+func New(cache Cache, ttl time.Duration) *TokenStore {
+```
+
+### Blank line = not a doc-comment
+
+```go
+// This comment is NOT a doc-comment — blank line separates it.
+
+func Bad() {}
+
+// This IS a doc-comment.
+func Good() {}
+```
+
+---
+
+## 📦 PACKAGE-LEVEL DOCUMENTATION
+
+### Short packages — inline comment
+
+```go
+// Package uuid generates and parses RFC 4122 UUIDs.
+package uuid
+```
+
+### Complex packages — use doc.go
+
+For packages with substantial explanation, create a `doc.go` file:
+
+```go
+// Package cache provides a thread-safe in-memory cache with TTL eviction.
+//
+// # Basic usage
+//
+//	c := cache.New(5 * time.Minute)
+//	c.Set("key", value)
+//	v, ok := c.Get("key")
+//
+// # Eviction
+//
+// Items are evicted lazily on access and eagerly by a background goroutine
+// that runs every [Cache.CleanupInterval]. To disable background cleanup,
+// set CleanupInterval to zero.
+//
+// # Concurrency
+//
+// All methods are safe for concurrent use. The implementation uses
+// [sync.RWMutex] for reads and an exclusive lock for writes.
+package cache
+```
+
+### Package doc structure (for large packages)
+
+```
+// Package <name> <one-line summary>.
+//
+// # Overview
+// [2-4 sentences: what problem this solves, what the main abstraction is]
+//
+// # Usage
+// [Minimal working example using code blocks]
+//
+// # Configuration
+// [Key options and their effect]
+//
+// # Concurrency
+// [Whether types are safe for concurrent use]
+//
+// # Errors
+// [Sentinel errors exported by this package]
+package <name>
+```
+
+---
+
+## ✍️ FUNCTION & METHOD DOCUMENTATION
+
+
+<!-- truncated — full skill at .agent/skills/godoc-patterns/SKILL.md -->
 
 
 ### Skill: `api-patterns`
@@ -511,6 +658,26 @@ my-mcp-server/
 
 | Pattern | Example |
 |---------|---------|
+| Fixed | `docs://readme` |
+| Parameterized | `users://{userId}` |
+| Collection | `files://project/*` |
+
+---
+
+## 5. Error Handling
+
+### Error Types
+
+| Situation | Response |
+|-----------|----------|
+| Invalid params | Validation error message |
+| Not found | Clear "not found" |
+| Server error | Generic error, log details |
+
+### Best Practices
+
+- Return structured errors
+- Don't expose internal details
 
 <!-- truncated — full skill at .agent/skills/mcp-builder/SKILL.md -->
 
@@ -641,6 +808,26 @@ my-mcp-server/
 
 ---
 
+## 6. Network
+
+| Task | Command |
+|------|---------|
+| Download | `curl -O https://example.com/file` |
+| API request | `curl -X GET https://api.example.com` |
+| POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' URL` |
+| Check port | `nc -zv localhost 3000` |
+| Network info | `ifconfig` or `ip addr` |
+
+---
+
+## 7. Script Template
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined var, pipe fail
+
+# Colors (optional)
+RED='\033[0;31m'
 
 <!-- truncated — full skill at .agent/skills/bash-linux/SKILL.md -->
 

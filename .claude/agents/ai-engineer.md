@@ -255,6 +255,26 @@ response = client.messages.create(
     tools=[{
         "name": "extract_entities",
         "description": "Extract named entities from text",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "persons": {"type": "array", "items": {"type": "string"}},
+                "organizations": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["persons", "organizations"]
+        }
+    }],
+    tool_choice={"type": "tool", "name": "extract_entities"},
+    messages=[{"role": "user", "content": text}]
+)
+result = response.content[0].input  # guaranteed dict
+```
+
+---
+
+## 🔍 RAG (Retrieval-Augmented Generation)
+
+### RAG Pipeline Architecture
 
 <!-- truncated — full skill at .agent/skills/llm-patterns/SKILL.md -->
 
@@ -341,6 +361,26 @@ def (sync) is better when:
 ```
 
 ### The Golden Rule
+
+```
+I/O-bound → async (waiting for external)
+CPU-bound → sync + multiprocessing (computing)
+
+Don't:
+├── Mix sync and async carelessly
+├── Use sync libraries in async code
+└── Force async for CPU work
+```
+
+### Async Library Selection
+
+| Need | Async Library |
+|------|---------------|
+| HTTP client | httpx |
+| PostgreSQL | asyncpg |
+| Redis | aioredis / redis-py async |
+| File I/O | aiofiles |
+| Database ORM | SQLAlchemy 2.0 async, Tortoise |
 
 
 <!-- truncated — full skill at .agent/skills/python-patterns/SKILL.md -->
@@ -508,6 +548,26 @@ Fix and verify it's truly fixed.
 - [ ] Fix verified
 - [ ] Regression test added
 - [ ] Similar code checked
+```
+
+## Common Debugging Commands
+
+```bash
+# Recent changes
+git log --oneline -20
+git diff HEAD~5
+
+# Search for pattern
+grep -r "errorPattern" --include="*.ts"
+
+# Check logs
+pm2 logs app-name --err --lines 100
+```
+
+## Anti-Patterns
+
+❌ **Random changes** - "Maybe if I change this..."
+❌ **Ignoring evidence** - "That can't be the cause"
 
 <!-- truncated — full skill at .agent/skills/systematic-debugging/SKILL.md -->
 
@@ -595,5 +655,25 @@ Fix and verify it's truly fixed.
 ---
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
+
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
 
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->

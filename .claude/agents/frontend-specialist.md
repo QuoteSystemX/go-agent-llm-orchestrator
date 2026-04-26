@@ -685,6 +685,26 @@ After editing any file:
 
 ## 🔴 Before Editing ANY File (THINK FIRST!)
 
+**Before changing a file, ask yourself:**
+
+| Question | Why |
+|----------|-----|
+| **What imports this file?** | They might break |
+| **What does this file import?** | Interface changes |
+| **What tests cover this?** | Tests might fail |
+| **Is this a shared component?** | Multiple places affected |
+
+**Quick Check:**
+```
+File to edit: UserService.ts
+└── Who imports this? → UserController.ts, AuthController.ts
+└── Do they need changes too? → Check function signatures
+```
+
+> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
+> 🔴 **Never leave broken imports or missing updates.**
+
+
 <!-- truncated — full skill at .agent/skills/clean-code/SKILL.md -->
 
 
@@ -771,6 +791,26 @@ After editing any file:
    ├─ Section 1: Eliminating Waterfalls
    │  └─ Each waterfall adds full network latency (100-500ms+)
    └─ Section 2: Bundle Size Optimization
+      └─ Affects Time to Interactive and Largest Contentful Paint
+
+2️⃣ HIGH (Significant Impact - Do Second):
+   └─ Section 3: Server-Side Performance
+      └─ Eliminates server-side waterfalls, faster response times
+
+3️⃣ MEDIUM (Moderate Gains - Do Third):
+   ├─ Section 4: Client-Side Data Fetching
+   ├─ Section 5: Re-render Optimization
+   └─ Section 6: Rendering Performance
+
+4️⃣ LOW (Polish - Do Last):
+   ├─ Section 7: JavaScript Performance
+   └─ Section 8: Advanced Patterns
+
+🔥 **MODERN (Next.js 16+):**
+   └─ Section 9: Cache Components (Replaces most traditional revalidation)
+```
+
+---
 
 <!-- truncated — full skill at .agent/skills/nextjs-react-expert/SKILL.md -->
 
@@ -912,6 +952,26 @@ If no files specified, ask the user which files to review.
 
 ### When to Use
 
+| Scenario | Use |
+|----------|-----|
+| Page-level layouts | Viewport breakpoints |
+| Component-level responsive | Container queries |
+| Reusable components | Container queries (context-independent) |
+
+---
+
+## 4. Responsive Design
+
+### Breakpoint System
+
+| Prefix | Min Width | Target |
+|--------|-----------|--------|
+| (none) | 0px | Mobile-first base |
+| `sm:` | 640px | Large phone / small tablet |
+| `md:` | 768px | Tablet |
+| `lg:` | 1024px | Laptop |
+| `xl:` | 1280px | Desktop |
+
 <!-- truncated — full skill at .agent/skills/tailwind-patterns/SKILL.md -->
 
 
@@ -998,6 +1058,26 @@ Before any design work, ANSWER THESE or ASK USER:
 | **Audience** | Who exactly? | Drives all visual decisions |
 
 ### Audience → Design Approach
+
+| Audience | Think About |
+|----------|-------------|
+| **Gen Z** | Bold, fast, mobile-first, authentic |
+| **Millennials** | Clean, minimal, value-driven |
+| **Gen X** | Familiar, trustworthy, clear |
+| **Boomers** | Readable, high contrast, simple |
+| **B2B** | Professional, data-focused, trust |
+| **Luxury** | Restrained elegance, whitespace |
+
+---
+
+## 2. UX Psychology Principles
+
+### Core Laws (Internalize These)
+
+| Law | Principle | Application |
+|-----|-----------|-------------|
+| **Hick's Law** | More choices = slower decisions | Limit options, use progressive disclosure |
+| **Fitts' Law** | Bigger + closer = easier to click | Size CTAs appropriately |
 
 <!-- truncated — full skill at .agent/skills/frontend-design/SKILL.md -->
 
@@ -1128,5 +1208,25 @@ locales/
 ```
 
 ---
+
+## 5. Best Practices
+
+### DO ✅
+
+- Use translation keys, not raw text
+- Namespace translations by feature
+- Support pluralization
+- Handle date/number formats per locale
+- Plan for RTL from the start
+- Use ICU message format for complex strings
+
+### DON'T ❌
+
+- Hardcode strings in components
+- Concatenate translated strings
+- Assume text length (German is 30% longer)
+- Forget about RTL layout
+- Mix languages in same file
+
 
 <!-- truncated — full skill at .agent/skills/i18n-localization/SKILL.md -->

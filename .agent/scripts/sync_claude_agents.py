@@ -20,7 +20,7 @@ import argparse
 import sys
 from pathlib import Path
 
-SKILL_EMBED_MAX_LINES = 80
+SKILL_EMBED_MAX_LINES = 100
 EMBED_END_MARKER = "<!-- EMBED_END -->"
 
 REPO_ROOT = Path(__file__).parent.parent.parent
