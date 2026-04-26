@@ -471,9 +471,9 @@ async function approveDraft(id) {
 }
 
 const BMAD_SUITE = [
-    { pattern: 'discovery',      agent: 'analyst',       schedule: '0 8 * * 1',   importance: 8, category: 'service', mission: '/discovery Analyze repository state and sync wiki/BRIEF.md' },
-    { pattern: 'story_writer',   agent: 'analyst',       schedule: '0 9 * * 1',   importance: 8, category: 'service', mission: '/stories Generate story cards from PRD and architecture artifacts' },
-    { pattern: 'sprint_planner', agent: 'analyst',       schedule: '0 10 * * 1',  importance: 8, category: 'service', mission: '/sprint Update sprint board from current story backlog' },
+    { pattern: 'discovery',      agent: 'analyst',       schedule: '0 8 * * *',   importance: 8, category: 'service', mission: '/discovery Analyze repository state and sync wiki/BRIEF.md' },
+    { pattern: 'story_writer',   agent: 'analyst',       schedule: '0 9 * * *',   importance: 8, category: 'service', mission: '/stories Generate story cards from PRD and architecture artifacts' },
+    { pattern: 'sprint_planner', agent: 'analyst',       schedule: '0 10 * * *',  importance: 8, category: 'service', mission: '/sprint Update sprint board from current story backlog' },
     { pattern: 'full_cycle',     agent: 'orchestrator',  schedule: '0 */3 * * *', importance: 9, category: 'service', mission: 'Pick one story from tasks/ and implement it end-to-end, then open a PR' },
     { pattern: 'sprint_closer',  agent: 'analyst',       schedule: '50 23 * * *', importance: 7, category: 'service', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts' },
 ];
