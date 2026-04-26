@@ -69,10 +69,11 @@ Specialist AI personas for different domains.
 | `k8s-engineer`           | Kubernetes platform        | k8s-patterns, deployment-procedures, server-management, bash-linux |
 | `ai-engineer`            | AI / LLM systems           | llm-patterns, python-patterns, api-patterns, systematic-debugging  |
 | `wiki-architect`         | Knowledge architecture     | wiki-writing, documentation-templates, brainstorming               |
+| `data-engineer`          | Data pipelines & analytics | data-patterns, database-design, python-patterns, bash-linux        |
 
 ---
 
-## 🧩 Skills (41)
+## 🧩 Skills (42)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -361,8 +362,8 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 
 | Metric              | Value                         |
 | ------------------- | ----------------------------- |
-| **Total Agents**    | 30                            |
-| **Total Skills**    | 45                            |
+| **Total Agents**    | 31                            |
+| **Total Skills**    | 46                            |
 | **Total Workflows** | 18                            |
 | **Total Scripts**   | 2 (master) + 18 (skill-level) |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)      |
@@ -392,6 +393,7 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 | Git / Conflicts    | `git-master`             | git-master, bash-linux                                   |
 | AI / LLM           | `ai-engineer`            | llm-patterns, python-patterns                            |
 | Wiki / Knowledge   | `wiki-architect`         | wiki-writing, documentation-templates                    |
+| Data Pipelines     | `data-engineer`          | data-patterns, database-design, python-patterns          |
 | Security Audit     | `security-auditor`       | vulnerability-scanner, red-team-tactics                  |
 | Pentesting         | `penetration-tester`     | red-team-tactics                                         |
 | Testing            | `test-engineer`          | testing-patterns, tdd-workflow, webapp-testing           |

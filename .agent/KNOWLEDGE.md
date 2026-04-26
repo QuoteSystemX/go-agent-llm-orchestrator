@@ -175,6 +175,7 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `k8s-engineer` | `[INFRA]` (k8s) | Helm, Operators, RBAC, HPA/VPA, Ingress, namespace isolation |
   | `ai-engineer` | `[FEAT]` (AI) | LLM integration, RAG pipelines, tool use, embeddings, evaluation |
   | `wiki-architect` | `[DOCS]` (wiki) | Mental Models, Intuition sections, ADRs, Prose-First, drift detection |
+  | `data-engineer` | `[FEAT]` (data) | ETL/ELT pipelines, dbt, Airflow, Kafka streaming, ClickHouse analytics, data modeling |
 
 - **Execution Protocol**:
   - At the start of a session, agents MUST check the `tasks/` directory for cards matching their domain.

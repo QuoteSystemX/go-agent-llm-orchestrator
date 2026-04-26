@@ -130,6 +130,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `code-archaeologist` | Legacy / Refactor | Untangling old code, dead code removal |
 | `seo-specialist` | SEO & Marketing | SEO optimization, meta tags, analytics |
 | `game-developer` | Game Development | Unity, Godot, Unreal, Phaser, multiplayer |
+| `data-engineer` | Data Pipelines & Analytics | dbt, Airflow, Kafka streaming, ClickHouse, PySpark, data modeling |
 | `analyst` | BMAD Lifecycle | Discovery, PRD, Architecture, Story cards |
 | `product-manager` | Requirements & UX | User stories, requirements, personas, feature scoping |
 | `product-owner` | Strategy & Backlog | Backlog prioritization, MVP definition, roadmap, BMAD governance |
@@ -169,6 +170,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `explorer-agent` | Codebase discovery | ❌ Write operations |
 | `penetration-tester` | Security testing | ❌ Feature code |
 | `game-developer` | Game logic, scenes, assets | ❌ Web/mobile components |
+| `data-engineer` | Pipelines, dbt models, DAGs, Kafka consumers, ClickHouse schemas | ❌ UI, Go services, K8s manifests |
 | `analyst` | wiki/ artifacts, BMAD phase docs | ❌ Application code |
 | `product-manager` | Requirements docs, user stories, personas | ❌ Code files, implementation |
 | `product-owner` | Backlog, roadmap, sprint prioritization, BMAD governance | ❌ Code files, implementation |
@@ -1432,6 +1434,7 @@ graph TD
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
 | **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`                  | ✅ YES       |
 | **Audit**           | "audit", "scan code", "tech debt", "generate tasks"      | `reviewer`                                | ✅ YES       |
+| **Data Pipeline**   | "pipeline", "etl", "elt", "dbt", "airflow", "kafka", "clickhouse", "spark", "data warehouse", "data lake" | `data-engineer` | ✅ YES |
 | **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
@@ -1474,5 +1477,6 @@ graph TD
 | **Game**        | unity, godot, phaser, game, multiplayer        | `game-developer`        |
 | **E2E / QA**    | playwright, cypress, e2e, regression, pipeline | `qa-automation-engineer` |
 | **Audit**       | audit, scan, tech debt, task queue             | `reviewer`              |
+| **Data**        | pipeline, etl, elt, dbt, airflow, kafka, spark, clickhouse, data lake | `data-engineer` |
 | **Git**         | git, conflict, merge, rebase, reflog, branch, bisect | `git-master`      |
 | **Go Docs**     | godoc, go doc, doc comment, pkg.go.dev, doc.go, document go | `crypto-go-specialist` |

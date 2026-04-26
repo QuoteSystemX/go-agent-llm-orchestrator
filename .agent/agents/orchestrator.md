@@ -130,6 +130,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `code-archaeologist` | Legacy / Refactor | Untangling old code, dead code removal |
 | `seo-specialist` | SEO & Marketing | SEO optimization, meta tags, analytics |
 | `game-developer` | Game Development | Unity, Godot, Unreal, Phaser, multiplayer |
+| `data-engineer` | Data Pipelines & Analytics | dbt, Airflow, Kafka streaming, ClickHouse, PySpark, data modeling |
 | `analyst` | BMAD Lifecycle | Discovery, PRD, Architecture, Story cards |
 | `product-manager` | Requirements & UX | User stories, requirements, personas, feature scoping |
 | `product-owner` | Strategy & Backlog | Backlog prioritization, MVP definition, roadmap, BMAD governance |
@@ -169,6 +170,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `explorer-agent` | Codebase discovery | ❌ Write operations |
 | `penetration-tester` | Security testing | ❌ Feature code |
 | `game-developer` | Game logic, scenes, assets | ❌ Web/mobile components |
+| `data-engineer` | Pipelines, dbt models, DAGs, Kafka consumers, ClickHouse schemas | ❌ UI, Go services, K8s manifests |
 | `analyst` | wiki/ artifacts, BMAD phase docs | ❌ Application code |
 | `product-manager` | Requirements docs, user stories, personas | ❌ Code files, implementation |
 | `product-owner` | Backlog, roadmap, sprint prioritization, BMAD governance | ❌ Code files, implementation |
