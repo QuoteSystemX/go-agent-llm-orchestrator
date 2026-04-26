@@ -74,7 +74,7 @@ type GithubRepoContext struct {
 type SessionResponse struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`   // Jules returns "name" as the session identifier
-	Status  string `json:"status"`
+	Status  string `json:"state"`
 	Result  string `json:"result,omitempty"`
 	Message string `json:"message,omitempty"`
 }
