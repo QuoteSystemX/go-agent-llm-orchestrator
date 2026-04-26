@@ -1966,11 +1966,26 @@ async function fetchRAGStats() {
     if (!container) return;
 
     try {
+        container.innerHTML = `
+            <div class="empty-state" style="opacity:0.5">
+                <i data-lucide="refresh-cw" class="spin" style="width:32px; height:32px; margin-bottom:1rem"></i>
+                <p>Loading RAG statistics...</p>
+            </div>
+        `;
+        lucide.createIcons();
+        
         const response = await fetch('/api/v1/rag/stats');
         const stats = await response.json();
         
         if (!stats || stats.length === 0) {
-            container.innerHTML = '<div class="empty-state">No repositories indexed in RAG yet.</div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="database-zap" style="width:48px; height:48px; margin-bottom:1rem; opacity:0.2"></i>
+                    <p>No repositories indexed in RAG yet.</p>
+                    <p style="font-size:0.8rem; color:var(--text-muted)">Analysis needs to run at least once for a repository to appear here.</p>
+                </div>
+            `;
+            lucide.createIcons();
             return;
         }
 
@@ -1980,7 +1995,7 @@ async function fetchRAGStats() {
                     <div class="rag-repo-id">${s.repo_id}</div>
                     <div class="rag-last-scrub">
                         <i data-lucide="clock"></i>
-                        Last scrub: ${s.last_scrub_at ? new Date(s.last_scrub_at).toLocaleString() : 'never'}
+                        Last scrub: ${s.last_scrubbed_at ? new Date(s.last_scrubbed_at).toLocaleString() : 'never'}
                     </div>
                 </div>
                 
@@ -1991,7 +2006,7 @@ async function fetchRAGStats() {
                     </div>
                     <div class="rag-metric-item">
                         <span class="rag-metric-label">Files</span>
-                        <span class="rag-metric-value">${s.indexed_files.toLocaleString()}</span>
+                        <span class="rag-metric-value">${s.files_indexed.toLocaleString()}</span>
                     </div>
                 </div>
 

@@ -16,55 +16,108 @@
 /* RAG Tab Styles */
 .rag-section {
     padding: 2rem;
+    animation: fadeIn 0.4s ease-out;
 }
 
 .rag-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .rag-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+}
+
+.rag-title i {
+    width: 28px;
+    height: 28px;
+    filter: drop-shadow(0 0 8px var(--primary-alpha));
 }
 
 .rag-title h3 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 .rag-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
 }
 
 .rag-card {
-    padding: 1.5rem;
+    padding: 1.75rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.rag-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary-alpha);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--primary-alpha);
+}
+
+.rag-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.rag-card:hover::before {
+    opacity: 0.5;
 }
 
 .rag-card-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .rag-repo-id {
     font-weight: 600;
-    font-size: 1rem;
-    color: var(--primary);
+    font-size: 1.1rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rag-last-scrub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.3rem 0.6rem;
+    border-radius: 2rem;
+    width: fit-content;
 }
 
 .rag-metrics {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .rag-metric-item {
@@ -74,34 +127,41 @@
 }
 
 .rag-metric-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
 }
 
 .rag-metric-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.rag-last-scrub {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--primary);
 }
 
 .rag-actions {
     display: flex;
     gap: 0.75rem;
-    margin-top: auto;
+    margin-top: 0.5rem;
 }
 
 .rag-actions button {
     flex: 1;
     font-size: 0.75rem;
-    padding: 0.5rem;
+    padding: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.rag-actions button i {
+    width: 14px;
+    height: 14px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
