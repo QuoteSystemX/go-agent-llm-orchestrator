@@ -1,0 +1,51 @@
+# .agent/skill.lock
+# Auto-generated — commit this file to freeze embedded skill versions.
+# To update: python3 .agent/scripts/skill_versioning.py
+# Generated: 2026-04-26
+version: 1
+skills:
+  api-patterns: 1.0.0
+  app-builder: 1.0.0
+  architecture: 1.0.0
+  bash-linux: 1.0.0
+  behavioral-modes: 1.0.0
+  bmad-lifecycle: 1.0.0
+  brainstorming: 1.0.0
+  clean-code: 2.0
+  code-review-checklist: 1.0.0
+  database-design: 1.0.0
+  deployment-procedures: 1.0.0
+  documentation-templates: 1.0.0
+  frontend-design: 1.0.0
+  game-development: 1.0.0
+  geo-fundamentals: 1.0.0
+  git-master: 1.0.0
+  go-patterns: 1.0.0
+  i18n-localization: 1.0.0
+  intelligent-routing: 1.0.0
+  k8s-patterns: 1.0.0
+  lint-and-validate: 1.0.0
+  llm-patterns: 1.0.0
+  mcp-builder: 1.0.0
+  mobile-design: 1.0.0
+  nextjs-react-expert: 1.0.0
+  nodejs-best-practices: 1.0.0
+  parallel-agents: 1.0.0
+  performance-profiling: 1.0.0
+  plan-writing: 1.0.0
+  powershell-windows: 1.0.0
+  python-patterns: 1.0.0
+  red-team-tactics: 1.0.0
+  refactoring-patterns: 1.0
+  rust-pro: 1.0.0
+  seo-fundamentals: 1.0.0
+  server-management: 1.0.0
+  systematic-debugging: 1.0.0
+  tailwind-patterns: 1.0.0
+  tdd-workflow: 1.0.0
+  testing-patterns: 1.0.0
+  typescript-expert: 1.0.0
+  vulnerability-scanner: 1.0.0
+  web-design-guidelines: 1.0.0
+  webapp-testing: 1.0.0
+  wiki-writing: 1.0.0

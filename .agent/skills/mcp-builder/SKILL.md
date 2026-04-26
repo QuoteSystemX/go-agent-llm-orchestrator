@@ -2,6 +2,7 @@
 name: mcp-builder
 description: MCP (Model Context Protocol) server building principles. Tool design, resource patterns, best practices.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # MCP Builder
@@ -174,3 +175,7 @@ my-mcp-server/
 ---
 
 > **Remember:** MCP tools should be simple, focused, and well-documented. The AI relies on descriptions to use them correctly.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

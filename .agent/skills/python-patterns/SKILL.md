@@ -2,6 +2,7 @@
 name: python-patterns
 description: Python development principles and decision-making. Framework selection, async patterns, type hints, project structure. Teaches thinking, not copying.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # Python Patterns
@@ -439,3 +440,7 @@ Before implementing:
 ---
 
 > **Remember**: Python patterns are about decision-making for YOUR specific context. Don't copy code—think about what serves your application best.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

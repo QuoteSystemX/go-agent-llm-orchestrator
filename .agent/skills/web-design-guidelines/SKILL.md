@@ -5,6 +5,7 @@ metadata:
   author: vercel
   version: "1.0.0"
   argument-hint: <file-or-pattern>
+version: 1.0.0
 ---
 
 # Web Interface Guidelines
@@ -55,3 +56,7 @@ If no files specified, ask the user which files to review.
 3. AUDIT    → Run web-design-guidelines review ← YOU ARE HERE
 4. FIX      → Address findings from audit
 ```
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

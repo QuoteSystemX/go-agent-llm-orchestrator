@@ -2,6 +2,7 @@
 name: brainstorming
 description: Socratic questioning protocol + user communication. MANDATORY for complex requests, new features, or unclear requirements. Includes progress reporting and error handling.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Brainstorming & Communication Protocol
@@ -161,3 +162,7 @@ allowed-tools: Read, Glob, Grep
 | "I think" phrases | Uncertainty → Ask instead |
 
 ---
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

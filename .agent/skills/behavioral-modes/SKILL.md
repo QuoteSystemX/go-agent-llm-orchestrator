@@ -2,6 +2,7 @@
 name: behavioral-modes
 description: AI operational modes (brainstorm, implement, debug, review, teach, ship, orchestrate). Use to adapt behavior based on task type.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Behavioral Modes - Adaptive AI Operating Modes
@@ -240,3 +241,7 @@ Users can explicitly request a mode:
 /debug why login fails
 /review this pull request
 ```
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

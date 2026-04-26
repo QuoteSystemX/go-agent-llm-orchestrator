@@ -2,6 +2,7 @@
 name: go-patterns
 description: Professional Go development principles for 2025. Covers Gin/Echo/Fiber, gRPC with buf, logrus, vault, and high-performance concurrency.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # Go Patterns
@@ -127,3 +128,7 @@ Modern gRPC development uses [buf.build](https://buf.build) for better linting a
 ---
 
 > **Remember**: Go is about simplicity and clarity. Write code that is easy to read, easy to test, and safe to run in parallel.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

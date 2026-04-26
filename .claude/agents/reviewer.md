@@ -183,6 +183,7 @@ After writing all task cards, produce a summary:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -269,6 +270,7 @@ After writing all task cards, produce a summary:
 
 ### Skill: `code-review-checklist`
 
+<!-- skill: code-review-checklist v1.0.0 -->
 # Code Review Checklist
 
 ## Quick Review Checklist
@@ -355,6 +357,7 @@ if (!c) return;
 
 ### Skill: `vulnerability-scanner`
 
+<!-- skill: vulnerability-scanner v1.0.0 -->
 # Vulnerability Scanner
 
 > Think like an attacker, defend like an expert. 2025 threat landscape awareness.
@@ -441,6 +444,7 @@ Before scanning, ask:
 
 ### Skill: `systematic-debugging`
 
+<!-- skill: systematic-debugging v1.0.0 -->
 # Systematic Debugging
 
 > Source: obra/superpowers
@@ -527,6 +531,7 @@ Fix and verify it's truly fixed.
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.

@@ -1,6 +1,7 @@
 ---
 name: k8s-patterns
 description: Deep Kubernetes expertise — Helm, Operators, RBAC, HPA/VPA, Ingress, NetworkPolicy, namespace isolation, CRDs, service mesh, cluster hardening, observability. Universal — works in Antigravity (Gemini) and Claude Code.
+version: 1.0.0
 ---
 
 # Kubernetes Patterns Skill
@@ -750,4 +751,9 @@ kubectl describe node <name> | grep -A 10 "Allocated resources"
 - [ ] Alerting rules for error rate, OOMKill, pod restarts
 - [ ] Structured logs (JSON) to stdout
 
+
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version
 <!-- EMBED_END -->

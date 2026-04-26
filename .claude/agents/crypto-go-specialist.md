@@ -126,6 +126,7 @@ You are familiar with the specific stack used in the `~/go/project/` environment
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -212,6 +213,7 @@ You are familiar with the specific stack used in the `~/go/project/` environment
 
 ### Skill: `go-patterns`
 
+<!-- skill: go-patterns v1.0.0 -->
 # Go Patterns
 
 > Expert Go development principles for high-performance, concurrent systems.
@@ -298,6 +300,7 @@ When performance is critical and maps are highly contended, use `puzpuzpuz/xsync
 
 ### Skill: `api-patterns`
 
+<!-- skill: api-patterns v1.0.0 -->
 # API Patterns
 
 > API design principles and decision-making for 2025.
@@ -376,6 +379,7 @@ Before designing an API:
 
 ### Skill: `database-design`
 
+<!-- skill: database-design v1.0.0 -->
 # Database Design
 
 > **Learn to THINK, not copy SQL patterns.**
@@ -426,6 +430,7 @@ Before designing schema:
 
 ### Skill: `mcp-builder`
 
+<!-- skill: mcp-builder v1.0.0 -->
 # MCP Builder
 
 > Principles for building MCP servers.
@@ -512,6 +517,7 @@ my-mcp-server/
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.
@@ -554,6 +560,7 @@ my-mcp-server/
 
 ### Skill: `bash-linux`
 
+<!-- skill: bash-linux v1.0.0 -->
 # Bash Linux Patterns
 
 > Essential patterns for Bash on Linux/macOS.
@@ -640,6 +647,7 @@ my-mcp-server/
 
 ### Skill: `architecture`
 
+<!-- skill: architecture v1.0.0 -->
 # Architecture Decision Framework
 
 > "Requirements drive architecture. Trade-offs inform decisions. ADRs capture rationale."

@@ -2,6 +2,7 @@
 name: bmad-lifecycle
 description: BMAD product lifecycle phase knowledge. Phases: Discovery → PRD → Architecture → Stories → Sprint. Each phase produces a wiki artifact consumed by the next. Use when driving structured product development, interpreting BMAD artifacts, or routing story cards to specialist agents.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # BMAD Lifecycle Framework
@@ -110,3 +111,7 @@ wiki/
 ```
 
 Templates for all BMAD artifacts are in `.agent/wiki-templates/` and distributed to all target repos via `distribute-agentic-kit.yml`.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

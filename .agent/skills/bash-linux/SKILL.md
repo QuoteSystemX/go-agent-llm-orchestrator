@@ -2,6 +2,7 @@
 name: bash-linux
 description: Bash/Linux terminal patterns. Critical commands, piping, error handling, scripting. Use when working on macOS or Linux systems.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Bash Linux Patterns
@@ -197,3 +198,7 @@ trap cleanup EXIT
 ---
 
 > **Remember:** Bash is text-based. Use `&&` for success chains, `set -e` for safety, and quote your variables!
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

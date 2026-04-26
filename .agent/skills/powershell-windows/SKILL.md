@@ -2,6 +2,7 @@
 name: powershell-windows
 description: PowerShell Windows patterns. Critical pitfalls, operator syntax, error handling.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # PowerShell Windows Patterns
@@ -165,3 +166,7 @@ catch {
 ---
 
 > **Remember:** PowerShell has unique syntax rules. Parentheses, ASCII-only, and null checks are non-negotiable.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

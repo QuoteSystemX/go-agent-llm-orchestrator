@@ -46,6 +46,8 @@ graph TD
 | **Test**            | "test", "coverage", "unit", "e2e"                        | `test-engineer`                           | ✅ YES       |
 | **Deployment**      | "deploy", "production", "CI/CD", "docker"                | `devops-engineer`                         | ✅ YES       |
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
+| **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
+| **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
 | **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
@@ -114,6 +116,8 @@ function analyzeRequest(userMessage) {
 | **Testing**     | test, jest, vitest, playwright, cypress        | `test-engineer`         |
 | **DevOps**      | docker, ci/cd, pm2, nginx, systemd             | `devops-engineer`       |
 | **Kubernetes**  | kubernetes, k8s, helm, kubectl, ingress, rbac, operator, hpa, vpa, namespace | `k8s-engineer` |
+| **AI / LLM**    | llm, rag, embedding, vector, prompt, langchain, openai, anthropic, chatbot    | `ai-engineer`  |
+| **Wiki / Docs** | mental model, wiki, intuition, adr, prose-first, explain why, documentation  | `wiki-architect` |
 | **Debug**       | error, bug, crash, not working, issue          | `debugger`              |
 | **Performance** | slow, lag, optimize, cache, performance        | `performance-optimizer` |
 | **SEO**         | seo, meta, analytics, sitemap, robots          | `seo-specialist`        |
@@ -333,7 +337,7 @@ Any routing decision that results in **code being written or modified** MUST aut
 
 A routing is a **code-change** if the selected agent is any of:
 `backend-specialist`, `frontend-specialist`, `crypto-go-specialist`, `mobile-developer`,
-`database-architect`, `devops-engineer`, `k8s-engineer`, `debugger`, `performance-optimizer`,
+`database-architect`, `devops-engineer`, `k8s-engineer`, `ai-engineer`, `debugger`, `performance-optimizer`,
 `code-archaeologist`, `rest-api-designer`, `grpc-architect`, `game-developer`
 
 ### Regression Guard Protocol
@@ -417,3 +421,7 @@ After every code-change routing session, test-engineer produces:
 
 - **Antigravity (Gemini)**: Integrate this skill into `GEMINI.md` TIER 0 rules.
 - **Claude Code**: This skill is loaded by the `orchestrator` agent. No manual integration needed — the orchestrator applies intelligent routing automatically before any agent delegation.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

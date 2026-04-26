@@ -113,6 +113,7 @@ Developers test the happy path. **You test the chaos.**
 
 ### Skill: `webapp-testing`
 
+<!-- skill: webapp-testing v1.0.0 -->
 # Web App Testing
 
 > Discover and test everything. Leave no route untested.
@@ -199,6 +200,7 @@ Developers test the happy path. **You test the chaos.**
 
 ### Skill: `testing-patterns`
 
+<!-- skill: testing-patterns v1.0.0 -->
 # Testing Patterns
 
 > Principles for reliable test suites.
@@ -285,6 +287,7 @@ Developers test the happy path. **You test the chaos.**
 
 ### Skill: `web-design-guidelines`
 
+<!-- skill: web-design-guidelines v1.0.0 -->
 # Web Interface Guidelines
 
 Review files for compliance with Web Interface Guidelines.
@@ -337,6 +340,7 @@ If no files specified, ask the user which files to review.
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -423,6 +427,7 @@ If no files specified, ask the user which files to review.
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.

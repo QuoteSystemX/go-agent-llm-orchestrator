@@ -416,6 +416,7 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -502,6 +503,7 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 
 ### Skill: `app-builder`
 
+<!-- skill: app-builder v1.0.0 -->
 # App Builder - Application Building Orchestrator
 
 > Analyzes user's requests, determines tech stack, plans structure, and coordinates agents.
@@ -575,6 +577,7 @@ App Builder Process:
 
 ### Skill: `plan-writing`
 
+<!-- skill: plan-writing v1.0.0 -->
 # Plan Writing
 
 > Source: obra/superpowers
@@ -661,6 +664,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `brainstorming`
 
+<!-- skill: brainstorming v1.0.0 -->
 # Brainstorming & Communication Protocol
 
 > **MANDATORY:** Use for complex/vague requests, new features, updates.

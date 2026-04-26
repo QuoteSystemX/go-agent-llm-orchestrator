@@ -180,6 +180,7 @@ spectral lint openapi.yaml       # Custom rules (breaking changes)
 
 ### Skill: `api-patterns`
 
+<!-- skill: api-patterns v1.0.0 -->
 # API Patterns
 
 > API design principles and decision-making for 2025.
@@ -258,6 +259,7 @@ Before designing an API:
 
 ### Skill: `typescript-expert`
 
+<!-- skill: typescript-expert v1.0.0 -->
 # TypeScript Expert
 
 > TypeScript is not just "JavaScript with types." It is a design language. The type system encodes your domain model — if the types are wrong, the code is wrong.
@@ -344,6 +346,7 @@ const config = {
 
 ### Skill: `documentation-templates`
 
+<!-- skill: documentation-templates v1.0.0 -->
 # Documentation Templates
 
 > Templates and structure guidelines for common documentation types.
@@ -430,6 +433,7 @@ Get a user by ID.
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.

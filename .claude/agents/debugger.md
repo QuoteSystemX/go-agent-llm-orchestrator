@@ -236,6 +236,7 @@ After finding the bug:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -322,6 +323,7 @@ After finding the bug:
 
 ### Skill: `systematic-debugging`
 
+<!-- skill: systematic-debugging v1.0.0 -->
 # Systematic Debugging
 
 > Source: obra/superpowers

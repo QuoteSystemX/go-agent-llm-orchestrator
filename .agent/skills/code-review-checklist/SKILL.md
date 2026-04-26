@@ -2,6 +2,7 @@
 name: code-review-checklist
 description: Code review guidelines covering code quality, security, and best practices.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Code Review Checklist
@@ -107,3 +108,7 @@ const data: UserData = ...
 // Questions use ❓
 ❓ QUESTION: What happens if user is null here?
 ```
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

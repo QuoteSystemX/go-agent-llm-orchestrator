@@ -209,6 +209,7 @@ When handing a story to engineering, explicitly recommend:
 
 ### Skill: `plan-writing`
 
+<!-- skill: plan-writing v1.0.0 -->
 # Plan Writing
 
 > Source: obra/superpowers
@@ -295,6 +296,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `brainstorming`
 
+<!-- skill: brainstorming v1.0.0 -->
 # Brainstorming & Communication Protocol
 
 > **MANDATORY:** Use for complex/vague requests, new features, updates.
@@ -381,6 +383,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -467,6 +470,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `bmad-lifecycle`
 
+<!-- skill: bmad-lifecycle v1.0.0 -->
 # BMAD Lifecycle Framework
 
 ## Phase Map

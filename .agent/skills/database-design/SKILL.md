@@ -2,6 +2,7 @@
 name: database-design
 description: Database design principles and decision-making. Schema design, indexing strategy, ORM selection, serverless databases.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # Database Design
@@ -50,3 +51,7 @@ Before designing schema:
 ❌ Use SELECT * in production
 ❌ Store JSON when structured data is better
 ❌ Ignore N+1 queries
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

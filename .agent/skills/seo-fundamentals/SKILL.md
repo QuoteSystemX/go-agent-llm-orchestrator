@@ -2,6 +2,7 @@
 name: seo-fundamentals
 description: SEO fundamentals, E-E-A-T, Core Web Vitals, and Google algorithm principles.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # SEO Fundamentals
@@ -127,3 +128,7 @@ allowed-tools: Read, Glob, Grep
 ---
 
 > **Remember:** SEO is a long-term game. Quality content + technical excellence + patience = results.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

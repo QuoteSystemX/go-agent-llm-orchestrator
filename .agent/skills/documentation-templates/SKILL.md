@@ -2,6 +2,7 @@
 name: documentation-templates
 description: Documentation templates and structure guidelines. README, API docs, code comments, and AI-friendly documentation.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Documentation Templates
@@ -192,3 +193,7 @@ For RAG indexing:
 ---
 
 > **Remember:** Templates are starting points. Adapt to your project's needs.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

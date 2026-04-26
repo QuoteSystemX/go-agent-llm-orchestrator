@@ -2,6 +2,7 @@
 name: nodejs-best-practices
 description: Node.js development principles and decision-making. Framework selection, async patterns, security, and architecture. Teaches thinking, not copying.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # Node.js Best Practices
@@ -331,3 +332,7 @@ Before implementing:
 ---
 
 > **Remember**: Node.js best practices are about decision-making, not memorizing patterns. Every project deserves fresh consideration based on its requirements.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

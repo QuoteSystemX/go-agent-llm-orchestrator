@@ -2,6 +2,7 @@
 name: game-development
 description: Game development orchestrator. Routes to platform-specific skills based on project needs.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Game Development
@@ -165,3 +166,7 @@ Abstract input into ACTIONS, not raw keys:
 ---
 
 > **Remember:** Great games come from iteration, not perfection. Prototype fast, then polish.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

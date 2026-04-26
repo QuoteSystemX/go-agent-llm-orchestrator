@@ -146,6 +146,7 @@ ELSE                             → Report status of current phase
 
 ### Skill: `bmad-lifecycle`
 
+<!-- skill: bmad-lifecycle v1.0.0 -->
 # BMAD Lifecycle Framework
 
 ## Phase Map
@@ -232,6 +233,7 @@ When the analyst receives any BMAD request, it MUST first determine the current 
 
 ### Skill: `plan-writing`
 
+<!-- skill: plan-writing v1.0.0 -->
 # Plan Writing
 
 > Source: obra/superpowers
@@ -318,6 +320,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `brainstorming`
 
+<!-- skill: brainstorming v1.0.0 -->
 # Brainstorming & Communication Protocol
 
 > **MANDATORY:** Use for complex/vague requests, new features, updates.
@@ -404,6 +407,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `architecture`
 
+<!-- skill: architecture v1.0.0 -->
 # Architecture Decision Framework
 
 > "Requirements drive architecture. Trade-offs inform decisions. ADRs capture rationale."

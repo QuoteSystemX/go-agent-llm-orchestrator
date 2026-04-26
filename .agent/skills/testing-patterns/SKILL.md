@@ -2,6 +2,7 @@
 name: testing-patterns
 description: Testing patterns and principles. Unit, integration, mocking strategies.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Testing Patterns
@@ -176,3 +177,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 > **Remember:** Tests are documentation. If someone can't understand what the code does from the tests, rewrite them.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

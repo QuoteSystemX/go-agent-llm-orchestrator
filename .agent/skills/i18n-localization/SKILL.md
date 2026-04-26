@@ -2,6 +2,7 @@
 name: i18n-localization
 description: Internationalization and localization patterns. Detecting hardcoded strings, managing translations, locale files, RTL support.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # i18n & Localization
@@ -152,3 +153,7 @@ Before shipping:
 | Script | Purpose | Command |
 |--------|---------|---------|
 | `scripts/i18n_checker.py` | Detect hardcoded strings & missing translations | `python scripts/i18n_checker.py <project_path>` |
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

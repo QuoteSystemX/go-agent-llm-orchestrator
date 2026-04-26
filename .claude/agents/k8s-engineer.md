@@ -192,6 +192,7 @@ Cloud provider?
 
 ### Skill: `k8s-patterns`
 
+<!-- skill: k8s-patterns v1.0.0 -->
 # Kubernetes Patterns Skill
 
 Production-grade Kubernetes knowledge covering cluster design, workload management, security hardening, and operational practices.
@@ -278,6 +279,7 @@ roleRef:
 
 ### Skill: `deployment-procedures`
 
+<!-- skill: deployment-procedures v1.0.0 -->
 # Deployment Procedures
 
 > Deployment principles and decision-making for safe production releases.
@@ -364,6 +366,7 @@ What are you deploying?
 
 ### Skill: `server-management`
 
+<!-- skill: server-management v1.0.0 -->
 # Server Management
 
 > Server management principles for production operations.
@@ -450,6 +453,7 @@ What are you deploying?
 
 ### Skill: `bash-linux`
 
+<!-- skill: bash-linux v1.0.0 -->
 # Bash Linux Patterns
 
 > Essential patterns for Bash on Linux/macOS.
@@ -536,6 +540,7 @@ What are you deploying?
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.

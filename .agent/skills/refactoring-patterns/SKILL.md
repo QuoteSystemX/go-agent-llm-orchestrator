@@ -199,3 +199,7 @@ refactor: rename confusing variable n → userCount
 ```
 
 > Never mix: `fix: bug + refactor: cleanup` in one commit. Split them.
+
+## Changelog
+
+- **1.0** (2026-04-26): Initial version

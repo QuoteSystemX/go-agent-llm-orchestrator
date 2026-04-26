@@ -83,6 +83,7 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -169,6 +170,7 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 
 ### Skill: `architecture`
 
+<!-- skill: architecture v1.0.0 -->
 # Architecture Decision Framework
 
 > "Requirements drive architecture. Trade-offs inform decisions. ADRs capture rationale."
@@ -222,6 +224,7 @@ Before finalizing architecture:
 
 ### Skill: `plan-writing`
 
+<!-- skill: plan-writing v1.0.0 -->
 # Plan Writing
 
 > Source: obra/superpowers
@@ -308,6 +311,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `brainstorming`
 
+<!-- skill: brainstorming v1.0.0 -->
 # Brainstorming & Communication Protocol
 
 > **MANDATORY:** Use for complex/vague requests, new features, updates.
@@ -394,6 +398,7 @@ This skill provides a framework for breaking down work into clear, actionable ta
 
 ### Skill: `systematic-debugging`
 
+<!-- skill: systematic-debugging v1.0.0 -->
 # Systematic Debugging
 
 > Source: obra/superpowers

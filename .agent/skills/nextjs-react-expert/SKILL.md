@@ -2,6 +2,7 @@
 name: react-best-practices
 description: React and Next.js performance optimization from Vercel Engineering. Use when building React components, optimizing performance, eliminating waterfalls, reducing bundle size, reviewing code for performance issues, or implementing server/client-side optimizations.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Next.js & React Performance Expert
@@ -291,3 +292,7 @@ Before shipping to production:
 **Date:** January 2026
 **Version:** 1.0.0
 **Total Rules:** 57 across 8 categories
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

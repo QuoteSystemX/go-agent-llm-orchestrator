@@ -73,6 +73,7 @@ Do not just "pick a side". Analyze the code:
 
 ### Skill: `git-master`
 
+<!-- skill: git-master v1.0.0 -->
 # Git Master Skill
 
 Systematic approach to complex Git operations with heavy emphasis on safety, conflict resolution, and history archaeology.
@@ -159,6 +160,7 @@ git blame -L <start>,<end> <file>
 
 ### Skill: `bash-linux`
 
+<!-- skill: bash-linux v1.0.0 -->
 # Bash Linux Patterns
 
 > Essential patterns for Bash on Linux/macOS.
@@ -245,6 +247,7 @@ git blame -L <start>,<end> <file>
 
 ### Skill: `systematic-debugging`
 
+<!-- skill: systematic-debugging v1.0.0 -->
 # Systematic Debugging
 
 > Source: obra/superpowers
@@ -331,6 +334,7 @@ Fix and verify it's truly fixed.
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.

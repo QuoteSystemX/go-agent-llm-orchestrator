@@ -180,6 +180,7 @@ This validates that security principles were correctly applied.
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -266,6 +267,7 @@ This validates that security principles were correctly applied.
 
 ### Skill: `vulnerability-scanner`
 
+<!-- skill: vulnerability-scanner v1.0.0 -->
 # Vulnerability Scanner
 
 > Think like an attacker, defend like an expert. 2025 threat landscape awareness.
@@ -352,6 +354,7 @@ Before scanning, ask:
 
 ### Skill: `red-team-tactics`
 
+<!-- skill: red-team-tactics v1.0.0 -->
 # Red Team Tactics
 
 > Adversary simulation principles based on MITRE ATT&CK framework.
@@ -438,6 +441,7 @@ LATERAL MOVEMENT → COLLECTION → C2 → EXFILTRATION → IMPACT
 
 ### Skill: `api-patterns`
 
+<!-- skill: api-patterns v1.0.0 -->
 # API Patterns
 
 > API design principles and decision-making for 2025.

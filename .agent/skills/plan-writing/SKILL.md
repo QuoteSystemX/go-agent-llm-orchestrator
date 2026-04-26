@@ -2,6 +2,7 @@
 name: plan-writing
 description: Structured task planning with clear breakdowns, dependencies, and verification criteria. Use when implementing features, refactoring, or any multi-step work.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Plan Writing
@@ -150,3 +151,7 @@ One sentence: What are we building/fixing?
 - Adding a feature
 - Fixing a bug (if complex)
 - Refactoring multiple files
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

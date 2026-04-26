@@ -121,6 +121,7 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -207,6 +208,7 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 
 ### Skill: `seo-fundamentals`
 
+<!-- skill: seo-fundamentals v1.0.0 -->
 # SEO Fundamentals
 
 > Principles for search engine visibility.
@@ -293,6 +295,7 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 
 ### Skill: `geo-fundamentals`
 
+<!-- skill: geo-fundamentals v1.0.0 -->
 # GEO Fundamentals
 
 > Optimization for AI-powered search engines.

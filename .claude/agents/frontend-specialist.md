@@ -603,6 +603,7 @@ After editing any file:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -689,6 +690,7 @@ After editing any file:
 
 ### Skill: `nextjs-react-expert`
 
+<!-- skill: nextjs-react-expert v1.0.0 -->
 # Next.js & React Performance Expert
 
 > **From Vercel Engineering** - 57 optimization rules prioritized by impact
@@ -775,6 +777,7 @@ After editing any file:
 
 ### Skill: `web-design-guidelines`
 
+<!-- skill: web-design-guidelines v1.0.0 -->
 # Web Interface Guidelines
 
 Review files for compliance with Web Interface Guidelines.
@@ -827,6 +830,7 @@ If no files specified, ask the user which files to review.
 
 ### Skill: `tailwind-patterns`
 
+<!-- skill: tailwind-patterns v1.0.0 -->
 # Tailwind CSS Patterns (v4 - 2025)
 
 > Modern utility-first CSS with CSS-native configuration.
@@ -913,6 +917,7 @@ If no files specified, ask the user which files to review.
 
 ### Skill: `frontend-design`
 
+<!-- skill: frontend-design v1.0.0 -->
 # Frontend Design System
 
 > **Philosophy:** Every pixel has purpose. Restraint is luxury. User psychology drives decisions.
@@ -999,6 +1004,7 @@ Before any design work, ANSWER THESE or ASK USER:
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.
@@ -1041,6 +1047,7 @@ Before any design work, ANSWER THESE or ASK USER:
 
 ### Skill: `i18n-localization`
 
+<!-- skill: i18n-localization v1.0.0 -->
 # i18n & Localization
 
 > Internationalization (i18n) and Localization (L10n) best practices.

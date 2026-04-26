@@ -294,6 +294,7 @@ After editing any file:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -380,6 +381,7 @@ After editing any file:
 
 ### Skill: `nodejs-best-practices`
 
+<!-- skill: nodejs-best-practices v1.0.0 -->
 # Node.js Best Practices
 
 > Principles and decision-making for Node.js development in 2025.
@@ -466,6 +468,7 @@ CommonJS (require)
 
 ### Skill: `python-patterns`
 
+<!-- skill: python-patterns v1.0.0 -->
 # Python Patterns
 
 > Python development principles and decision-making for 2025.
@@ -552,6 +555,7 @@ def (sync) is better when:
 
 ### Skill: `api-patterns`
 
+<!-- skill: api-patterns v1.0.0 -->
 # API Patterns
 
 > API design principles and decision-making for 2025.
@@ -630,6 +634,7 @@ Before designing an API:
 
 ### Skill: `database-design`
 
+<!-- skill: database-design v1.0.0 -->
 # Database Design
 
 > **Learn to THINK, not copy SQL patterns.**
@@ -680,6 +685,7 @@ Before designing schema:
 
 ### Skill: `mcp-builder`
 
+<!-- skill: mcp-builder v1.0.0 -->
 # MCP Builder
 
 > Principles for building MCP servers.
@@ -766,6 +772,7 @@ my-mcp-server/
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.
@@ -808,6 +815,7 @@ my-mcp-server/
 
 ### Skill: `powershell-windows`
 
+<!-- skill: powershell-windows v1.0.0 -->
 # PowerShell Windows Patterns
 
 > Critical patterns and pitfalls for Windows PowerShell.
@@ -894,6 +902,7 @@ Write-Output "Value: $value"
 
 ### Skill: `bash-linux`
 
+<!-- skill: bash-linux v1.0.0 -->
 # Bash Linux Patterns
 
 > Essential patterns for Bash on Linux/macOS.
@@ -980,6 +989,7 @@ Write-Output "Value: $value"
 
 ### Skill: `rust-pro`
 
+<!-- skill: rust-pro v1.0.0 -->
 You are a Rust expert specializing in modern Rust 1.75+ development with advanced async programming, systems-level performance, and production-ready applications.
 
 ## Use this skill when

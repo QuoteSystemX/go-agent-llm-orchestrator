@@ -199,3 +199,6 @@ File to edit: UserService.ts
 > 🔴 **VIOLATION:** Auto-fixing without asking = Not allowed.
 > 🔴 **Rule:** Always READ output → SUMMARIZE → ASK → then fix.
 
+## Changelog
+
+- **2.0** (2026-04-26): Initial version

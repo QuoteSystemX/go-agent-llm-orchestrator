@@ -2,6 +2,7 @@
 name: systematic-debugging
 description: 4-phase systematic debugging methodology with root cause analysis and evidence-based verification. Use when debugging complex issues.
 allowed-tools: Read, Glob, Grep
+version: 1.0.0
 ---
 
 # Systematic Debugging
@@ -107,3 +108,7 @@ pm2 logs app-name --err --lines 100
 ❌ **Assuming** - "It must be X" without proof
 ❌ **Not reproducing first** - Fixing blindly
 ❌ **Stopping at symptoms** - Not finding root cause
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

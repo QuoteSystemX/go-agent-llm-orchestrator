@@ -236,6 +236,7 @@ After database changes:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -322,6 +323,7 @@ After database changes:
 
 ### Skill: `database-design`
 
+<!-- skill: database-design v1.0.0 -->
 # Database Design
 
 > **Learn to THINK, not copy SQL patterns.**

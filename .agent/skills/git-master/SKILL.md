@@ -1,6 +1,7 @@
 ---
 name: git-master
 description: Expert-level Git operations, conflict resolution, and repository state management. Universal — works in Antigravity (Gemini) and Claude Code.
+version: 1.0.0
 ---
 
 # Git Master Skill
@@ -183,4 +184,9 @@ git branch -d recovery/<timestamp>  # delete recovery branch if all good
 | Conflict is architectural (e.g., schema + API changed together) | `orchestrator` | Summary of both sides' intent |
 | Conflict in test files | `test-engineer` | Conflicting test file + context |
 
+
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version
 <!-- EMBED_END -->

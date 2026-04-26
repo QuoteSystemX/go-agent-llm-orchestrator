@@ -116,6 +116,7 @@ When analyzing a legacy file, produce:
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -202,6 +203,7 @@ When analyzing a legacy file, produce:
 
 ### Skill: `refactoring-patterns`
 
+<!-- skill: refactoring-patterns v1.0 -->
 # Refactoring Patterns
 
 > **Refactoring** = improving code structure without changing observable behavior.
@@ -288,6 +290,7 @@ function basePrice() { return quantity * itemPrice }
 
 ### Skill: `code-review-checklist`
 
+<!-- skill: code-review-checklist v1.0.0 -->
 # Code Review Checklist
 
 ## Quick Review Checklist

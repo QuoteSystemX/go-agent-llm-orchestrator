@@ -173,12 +173,15 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `grpc-architect` | `[FEAT]` (API) | gRPC / Protobuf design, streaming patterns |
   | `git-master` | `[INFRA]` (git) | Merge conflict resolution, repository recovery, history archaeology |
   | `k8s-engineer` | `[INFRA]` (k8s) | Helm, Operators, RBAC, HPA/VPA, Ingress, namespace isolation |
+  | `ai-engineer` | `[FEAT]` (AI) | LLM integration, RAG pipelines, tool use, embeddings, evaluation |
+  | `wiki-architect` | `[DOCS]` (wiki) | Mental Models, Intuition sections, ADRs, Prose-First, drift detection |
 
 - **Execution Protocol**:
   - At the start of a session, agents MUST check the `tasks/` directory for cards matching their domain.
   - Agents use `task.md` (in the `.agent` session metadata) to track their *current* session's progress.
   - After creating the PR, the agent MUST delete the corresponding `tasks/*.md` card.
 - **Audit Reports**: If the `tasks/` queue is empty and discovery yielded zero candidates, produce an Audit Report.
+- **Agent Quality Labels**: When creating a PR, agents MUST add the label `agent-generated` and `agent:<name>` (e.g. `agent:debugger`). Human reviewers then add one quality label: `agent:excellent` / `agent:ok` / `agent:revised` / `agent:rejected`. Scores are aggregated weekly into `wiki/agent-scores.md`.
 
 ### 4. BMAD Phase Rules
 

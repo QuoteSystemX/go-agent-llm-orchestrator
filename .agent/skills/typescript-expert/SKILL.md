@@ -202,3 +202,7 @@ type Status = typeof Status[keyof typeof Status]; // 'pending' | 'active'
 - [ ] API boundary types generated from OpenAPI, not hand-written
 - [ ] Zod validates all external data (API responses, env vars, user input)
 - [ ] `eslint @typescript-eslint/recommended` passes clean
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

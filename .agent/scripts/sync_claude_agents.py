@@ -151,23 +151,31 @@ def render_frontmatter(fm: dict) -> str:
 
 
 def load_skill(skill_name: str) -> str:
-    """Load and truncate SKILL.md content for embedding."""
+    """Load and truncate SKILL.md content for embedding. Includes version header."""
     skill_path = SKILLS_SRC / skill_name / "SKILL.md"
     if not skill_path.exists():
         return f"<!-- skill '{skill_name}' not found -->"
 
     raw = skill_path.read_text(encoding="utf-8")
-    _, body = parse_frontmatter(raw)
+    fm, body = parse_frontmatter(raw)
+
+    version = fm.get("version", "")
+    version_comment = f"<!-- skill: {skill_name} v{version} -->\n" if version else ""
 
     if EMBED_END_MARKER in body:
         body = body[: body.index(EMBED_END_MARKER)]
+
+    # Strip Changelog section from embedded content (it's metadata, not knowledge)
+    changelog_idx = body.find("\n## Changelog")
+    if changelog_idx != -1:
+        body = body[:changelog_idx]
 
     lines = body.splitlines()
     if len(lines) > SKILL_EMBED_MAX_LINES:
         lines = lines[:SKILL_EMBED_MAX_LINES]
         lines.append(f"\n<!-- truncated — full skill at .agent/skills/{skill_name}/SKILL.md -->")
 
-    return "\n".join(lines).strip()
+    return version_comment + "\n".join(lines).strip()
 
 
 def parse_skills_list(value: str) -> list[str]:

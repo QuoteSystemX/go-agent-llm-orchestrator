@@ -2,6 +2,7 @@
 name: performance-profiling
 description: Performance profiling principles. Measurement, analysis, and optimization techniques.
 allowed-tools: Read, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Performance Profiling
@@ -141,3 +142,7 @@ allowed-tools: Read, Glob, Grep, Bash
 ---
 
 > **Remember:** The fastest code is code that doesn't run. Remove before optimizing.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

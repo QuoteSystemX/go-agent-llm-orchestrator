@@ -2,6 +2,7 @@
 name: server-management
 description: Server management principles and decision-making. Process management, monitoring strategy, and scaling decisions. Teaches thinking, not commands.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Server Management
@@ -159,3 +160,7 @@ When something's wrong:
 ---
 
 > **Remember:** A well-managed server is boring. That's the goal.
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

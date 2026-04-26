@@ -197,6 +197,7 @@ What's slow?
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -283,6 +284,7 @@ What's slow?
 
 ### Skill: `performance-profiling`
 
+<!-- skill: performance-profiling v1.0.0 -->
 # Performance Profiling
 
 > Measure, analyze, optimize - in that order.

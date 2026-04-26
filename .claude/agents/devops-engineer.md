@@ -252,6 +252,7 @@ What are you deploying?
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -338,6 +339,7 @@ What are you deploying?
 
 ### Skill: `deployment-procedures`
 
+<!-- skill: deployment-procedures v1.0.0 -->
 # Deployment Procedures
 
 > Deployment principles and decision-making for safe production releases.
@@ -424,6 +426,7 @@ What are you deploying?
 
 ### Skill: `server-management`
 
+<!-- skill: server-management v1.0.0 -->
 # Server Management
 
 > Server management principles for production operations.
@@ -510,6 +513,7 @@ What are you deploying?
 
 ### Skill: `powershell-windows`
 
+<!-- skill: powershell-windows v1.0.0 -->
 # PowerShell Windows Patterns
 
 > Critical patterns and pitfalls for Windows PowerShell.
@@ -596,6 +600,7 @@ Write-Output "Value: $value"
 
 ### Skill: `bash-linux`
 
+<!-- skill: bash-linux v1.0.0 -->
 # Bash Linux Patterns
 
 > Essential patterns for Bash on Linux/macOS.

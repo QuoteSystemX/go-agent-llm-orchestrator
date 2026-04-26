@@ -114,6 +114,7 @@ What needs documenting?
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -200,6 +201,7 @@ What needs documenting?
 
 ### Skill: `documentation-templates`
 
+<!-- skill: documentation-templates v1.0.0 -->
 # Documentation Templates
 
 > Templates and structure guidelines for common documentation types.
@@ -286,6 +288,7 @@ Get a user by ID.
 
 ### Skill: `i18n-localization`
 
+<!-- skill: i18n-localization v1.0.0 -->
 # i18n & Localization
 
 > Internationalization (i18n) and Localization (L10n) best practices.

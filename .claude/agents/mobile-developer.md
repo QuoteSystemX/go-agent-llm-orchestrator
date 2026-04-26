@@ -387,6 +387,7 @@ Before saying "project complete":
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -473,6 +474,7 @@ Before saying "project complete":
 
 ### Skill: `mobile-design`
 
+<!-- skill: mobile-design v1.0.0 -->
 # Mobile Design System
 
 > **Philosophy:** Touch-first. Battery-conscious. Platform-respectful. Offline-capable.
@@ -559,6 +561,7 @@ Before saying "project complete":
 
 ### Skill: `i18n-localization`
 
+<!-- skill: i18n-localization v1.0.0 -->
 # i18n & Localization
 
 > Internationalization (i18n) and Localization (L10n) best practices.

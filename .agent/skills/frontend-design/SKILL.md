@@ -2,6 +2,7 @@
 name: frontend-design
 description: Design thinking and decision-making for web UI. Use when designing components, layouts, color schemes, typography, or creating aesthetic interfaces. Teaches principles, not fixed values.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.0.0
 ---
 
 # Frontend Design System
@@ -450,3 +451,7 @@ export default function SearchBar() {
 ### When to use `<Form>` vs. standard `<form>`:
 - **Use `next/form`** for: Search, Filtering, Sorting, Pagination (GET requests).
 - **Use standard `<form>`** for: Mutations, Login, Data Entry (POST requests via Server Actions).
+
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

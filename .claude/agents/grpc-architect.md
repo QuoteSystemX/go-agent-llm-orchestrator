@@ -151,6 +151,7 @@ buf generate                                      # Generated code compiles
 
 ### Skill: `go-patterns`
 
+<!-- skill: go-patterns v1.0.0 -->
 # Go Patterns
 
 > Expert Go development principles for high-performance, concurrent systems.
@@ -237,6 +238,7 @@ When performance is critical and maps are highly contended, use `puzpuzpuz/xsync
 
 ### Skill: `api-patterns`
 
+<!-- skill: api-patterns v1.0.0 -->
 # API Patterns
 
 > API design principles and decision-making for 2025.
@@ -315,6 +317,7 @@ Before designing an API:
 
 ### Skill: `architecture`
 
+<!-- skill: architecture v1.0.0 -->
 # Architecture Decision Framework
 
 > "Requirements drive architecture. Trade-offs inform decisions. ADRs capture rationale."
@@ -368,6 +371,7 @@ Before finalizing architecture:
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.

@@ -2,6 +2,7 @@
 name: api-patterns
 description: API design principles and decision-making. REST vs GraphQL vs tRPC selection, response formats, versioning, pagination.
 allowed-tools: Read, Write, Edit, Glob, Grep
+version: 1.0.0
 ---
 
 # API Patterns
@@ -79,3 +80,6 @@ Before designing an API:
 |--------|---------|---------|
 | `scripts/api_validator.py` | API endpoint validation | `python scripts/api_validator.py <project_path>` |
 
+## Changelog
+
+- **1.0.0** (2026-04-26): Initial version

@@ -435,6 +435,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ### Skill: `clean-code`
 
+<!-- skill: clean-code v2.0 -->
 # Clean Code - Pragmatic AI Coding Standards
 
 > **CRITICAL SKILL** - Be **concise, direct, and solution-focused**.
@@ -521,6 +522,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ### Skill: `testing-patterns`
 
+<!-- skill: testing-patterns v1.0.0 -->
 # Testing Patterns
 
 > Principles for reliable test suites.
@@ -607,6 +609,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ### Skill: `tdd-workflow`
 
+<!-- skill: tdd-workflow v1.0.0 -->
 # TDD Workflow
 
 > Write tests first, code second.
@@ -693,6 +696,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ### Skill: `webapp-testing`
 
+<!-- skill: webapp-testing v1.0.0 -->
 # Web App Testing
 
 > Discover and test everything. Leave no route untested.
@@ -779,6 +783,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 ### Skill: `code-review-checklist`
 
+<!-- skill: code-review-checklist v1.0.0 -->
 # Code Review Checklist
 
 ## Quick Review Checklist
@@ -865,6 +870,7 @@ if (!c) return;
 
 ### Skill: `lint-and-validate`
 
+<!-- skill: lint-and-validate v1.0.0 -->
 # Lint and Validate Skill
 
 > **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.
