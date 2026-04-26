@@ -410,11 +410,15 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 
 	// 3. Call LLM
 	a.updateState(repoName, "Analyzing with LLM", "", -1, -1)
-	log.Printf("DTO [%s]: Requesting LLM analysis (this may take a minute)...", repoName)
+	log.Printf("DTO [%s]: Requesting LLM analysis (prompt=%d chars, ~%.0f tokens)...", repoName, len(prompt), float64(len(prompt))/2.5)
+	llmStart := time.Now()
 	response, err := a.router.GenerateResponse(ctx, llm.DTO, prompt)
+	llmElapsed := time.Since(llmStart)
 	if err != nil {
+		log.Printf("DTO [%s]: LLM analysis FAILED after %v: %v", repoName, llmElapsed, err)
 		return nil, fmt.Errorf("LLM analysis failed: %w", err)
 	}
+	log.Printf("DTO [%s]: LLM analysis completed in %v (%d chars response)", repoName, llmElapsed, len(response))
 
 	// 4. Parse response
 	result, err := a.parseAnalysisResult(response)

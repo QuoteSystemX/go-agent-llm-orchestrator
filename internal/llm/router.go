@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -193,6 +194,18 @@ func (r *Router) getLocalTimeout() time.Duration {
 	fmt.Sscanf(valStr, "%d", &val)
 	if val <= 0 {
 		val = 300
+	}
+	return time.Duration(val) * time.Second
+}
+
+// getDTOTimeout returns the timeout for DTO (analysis) LLM calls.
+// Configurable via llm_dto_timeout in DB (seconds). Default matches llm_local_timeout (600s).
+func (r *Router) getDTOTimeout() time.Duration {
+	valStr := r.getModel("llm_dto_timeout", "600")
+	var val int
+	fmt.Sscanf(valStr, "%d", &val)
+	if val <= 0 {
+		val = 600
 	}
 	return time.Duration(val) * time.Second
 }
@@ -408,6 +421,12 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		}
 		jd, _ := json.Marshal(pl)
 
+		timeout := r.getLocalTimeout()
+		if classification == DTO {
+			timeout = r.getDTOTimeout()
+		}
+		log.Printf("LLM Router: [%s] %s call, timeout=%v", prov, classification, timeout)
+
 		var lastErr error
 		maxRetries := r.getLocalRetries()
 		for i := 0; i < maxRetries; i++ {
@@ -417,7 +436,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 				req.Header.Set("Authorization", "Bearer "+key)
 			}
 
-			client := &http.Client{Timeout: r.getLocalTimeout()}
+			client := &http.Client{Timeout: timeout}
 			resp, err := client.Do(req)
 			if err != nil {
 				log.Printf("LLM Router: [%s] attempt %d failed: %v", prov, i+1, err)
@@ -428,8 +447,9 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
-				log.Printf("LLM Router: [%s] attempt %d returned status %d", prov, i+1, resp.StatusCode)
-				lastErr = fmt.Errorf("llm api error: status %d", resp.StatusCode)
+				body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+				log.Printf("LLM Router: [%s] attempt %d returned status %d: %s", prov, i+1, resp.StatusCode, strings.TrimSpace(string(body)))
+				lastErr = fmt.Errorf("llm api error: status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 				// 401/403 are auth errors — no point retrying
 				if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 					return "", lastErr
