@@ -155,7 +155,7 @@ function renderTasks() {
                             const noPrompt = !task.prompt_ready;
                             const dis = noPrompt ? 'disabled' : '';
                             return `
-                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''} ${isService ? 'service-task-card' : ''}">
+                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''} ${isService ? 'service-task-card' : ''} ${task.status === 'DRAFT' ? 'draft-task-card' : ''}">
                                 <div class="task-info-block">
                                     <div class="task-header">
                                         <div class="task-title">${task.id.split(':').pop()}</div>

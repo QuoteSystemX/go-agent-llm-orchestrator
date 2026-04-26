@@ -719,6 +719,13 @@ body { padding-bottom: 40px; }
 .bg-paused   { background: rgba(148,163,184,0.12); color: var(--text-muted); border: 1px solid rgba(148,163,184,0.2); }
 .bg-success  { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
 .bg-failed   { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+.bg-draft    { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px dashed #fbbf24; }
+.bg-waiting  { background: rgba(245,158,11,0.12); color: var(--warning); border: 1px dashed rgba(245,158,11,0.5); }
+
+.draft-task-card {
+    border-left: 2px dashed #fbbf24 !important;
+    opacity: 0.9;
+}
 
 .service-task-badge {
     background: rgba(59, 130, 246, 0.1);
