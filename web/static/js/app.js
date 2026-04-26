@@ -956,6 +956,13 @@ async function fetchLogs() {
     } catch (e) { /* silent */ }
 }
 
+function formatUptime(seconds) {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return d > 0 ? `${d}d${h}h` : h > 0 ? `${h}h${m}m` : `${m}m`;
+}
+
 async function updateSystemStats() {
     try {
         const resp = await fetch('/api/v1/system/stats');
@@ -1016,9 +1023,7 @@ async function fetchSystemStats() {
         // If there's an uptime element, update it (we might need to add it to HTML)
         const uptimeEl = document.getElementById('stat-uptime');
         if (uptimeEl && data.uptime_seconds) {
-            const h = Math.floor(data.uptime_seconds / 3600);
-            const m = Math.floor((data.uptime_seconds % 3600) / 60);
-            uptimeEl.textContent = `${h}h ${m}m`;
+            uptimeEl.textContent = formatUptime(data.uptime_seconds);
         }
     } catch (e) { /* silent */ }
 }
@@ -1539,13 +1544,13 @@ async function fetchHealth() {
         }
 
         if (currentChatProvider === 'local' && ollama.model && ollama.status === 'READY') {
-            modelInfo.style.display = 'flex';
-            modelName.innerText = ollama.model.name;
+            if (modelInfo) modelInfo.style.display = 'flex';
+            if (modelName) modelName.innerText = ollama.model.name;
         } else if (currentChatProvider === 'remote' && remote.status === 'READY') {
-            modelInfo.style.display = 'flex';
-            modelName.innerText = 'Remote API'; // Optionally show remote model here if backend supports it
+            if (modelInfo) modelInfo.style.display = 'flex';
+            if (modelName) modelName.innerText = 'Remote API';
         } else {
-            modelInfo.style.display = 'none';
+            if (modelInfo) modelInfo.style.display = 'none';
         }
 
         // Only disable if we are not currently sending a message

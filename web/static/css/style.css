@@ -65,24 +65,23 @@ header {
     display: flex;
     gap: 0;
     align-items: center;
-    padding: 0.4rem 0.5rem;
+    padding: 0.3rem 0.25rem;
     border-radius: 0.5rem;
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-muted);
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--glass-border);
-    min-width: 520px;
 }
 
 .stat-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0 1rem;
+    gap: 0.35rem;
+    padding: 0 0.6rem;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
-    flex: 1;
-    justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .stat-item:last-child {
@@ -90,15 +89,17 @@ header {
 }
 
 .stat-item i {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     color: var(--primary);
     opacity: 0.8;
+    flex-shrink: 0;
 }
 
 .stat-item span {
     color: var(--text);
-    font-family: 'JetBrains Mono', monospace; /* Consistent number alignment */
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
 }
 
 /* Buttons */
@@ -955,6 +956,12 @@ body { padding-bottom: 40px; }
     color: var(--danger);
 }
 
+.btn-clear-chat i {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5px;
+}
+
 .provider-switcher {
     display: flex;
     padding: 2px;
@@ -1655,12 +1662,6 @@ body { padding-bottom: 40px; }
 
 .sparkline.mem polyline {
     stroke: #00e5ff;
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
 /* Phase Details Styles */
