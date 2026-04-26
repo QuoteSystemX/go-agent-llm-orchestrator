@@ -71,6 +71,9 @@ func (m *HealthMonitor) check() {
 
 	// 1. Check Local Ollama
 	endpoint := os.Getenv("LLM_LOCAL_ENDPOINT")
+	if m.db != nil {
+		endpoint = m.db.GetSetting("llm_local_endpoint", endpoint)
+	}
 	if endpoint == "" {
 		endpoint = "http://localhost:11434"
 	}
@@ -125,9 +128,11 @@ func (m *HealthMonitor) check() {
 	remoteEndpoint := os.Getenv("LLM_REMOTE_ENDPOINT")
 	remoteAPIKey := os.Getenv("LLM_REMOTE_API_KEY")
 	
-	if m.db != nil {
-		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", remoteEndpoint)
-		remoteAPIKey = m.db.GetSetting("llm_remote_api_key", remoteAPIKey)
+	if remoteEndpoint == "" && m.db != nil {
+		remoteEndpoint = m.db.GetSetting("llm_remote_endpoint", "")
+	}
+	if remoteAPIKey == "" && m.db != nil {
+		remoteAPIKey = m.db.GetSetting("llm_remote_api_key", "")
 	}
 
 	if remoteEndpoint != "" {
