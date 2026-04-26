@@ -28,18 +28,24 @@ graph TD
 | **Admin API** | REST API for task management (CRUD) and log retrieval. | Go (Standard Net/HTTP) | `internal/api` |
 | **Web UI** | Premium management dashboard (Glassmorphism). | HTML/CSS/JS (Vanilla) | `web/static` |
 | **Scheduler** | Watches task schedules and triggers executions. | Go (robfig/cron) | `internal/scheduler` |
+| **Autopilot** | Monitors backlogs and scales workers dynamically. | Go | `internal/autopilot` |
+| **DTO/RAG** | Repository analysis and code search indexing. | Go (chromem-go) | `internal/dto`, `internal/rag` |
+| **Traffic Manager** | Priority-based LLM request queuing. | Go | `internal/traffic` |
 | **Monitor** | Polls Jules API for status updates and triggers supervisor. | Go | `internal/monitor` |
 | **Supervisor** | Generates automated responses for blocked agent sessions. | Go | `internal/llm` |
 | **Storage Engine** | Manages persistent data in SQLite (Main & History). | SQLite3 | `internal/db` |
+| **Git Syncer** | Keeps local repos and prompt-library in sync. | Go (go-git) | `internal/git` |
 
 ## 3. Data Flow
 
 1. **Boot Sync**: `main.go` reads `distribution.yml` → UPSERTs tasks into SQLite.
-2. **Management**: User interacts via Web UI → Admin API updates SQLite → Scheduler syncs in-memory cron.
-3. **Execution**: Scheduler triggers task → Captures In/Out payloads → Calls Jules API.
-4. **Monitoring**: `internal/monitor` polls Jules API → Updates session statuses.
-5. **Supervision**: If session is in a trigger status (e.g., `AWAITING_USER_FEEDBACK`), `internal/llm` generates response.
-6. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions based on `retention_days` setting.
+2. **Repository Sync**: `internal/git` pulls/clones managed repositories and the `prompt-library`.
+3. **DTO Indexing**: `internal/dto` pre-scans repositories and generates embeddings for the RAG store.
+4. **Autopilot Loop**: `internal/autopilot` checks `tasks/` in local repos → Activates workers if backlog > 0.
+5. **Execution**: Scheduler triggers task → `internal/traffic` queues request → Calls Jules API with RAG context.
+6. **Monitoring**: `internal/monitor` polls Jules API → Updates session statuses.
+7. **Supervision**: If session is in `AWAITING_USER_FEEDBACK`, `internal/llm` generates response via Supervisor.
+8. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions.
 
 ## 4. Architecture Decision Records (ADRs)
 

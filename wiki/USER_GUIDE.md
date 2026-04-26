@@ -24,6 +24,23 @@ Click the **"Logs"** button on any task card to open the history.
 - **Payload Audit**: See exactly what was sent to Jules (**IN**) and what Jules responded (**OUT**).
 - **Phase Breakdown**: Complex tasks show individual phases (Analysis, Planning, etc.) with timing.
 - **Status tracking**: Monitor real-time status updates from Jules.
+- **Jules Link**: Clicking the session ID in the task list now opens the native Jules UI at `jules.google.com`.
+
+## 🤖 Autopilot & Backlog Management
+
+The orchestrator includes an **Autopilot Engine** that optimizes resource usage:
+
+1. **Backlog Scanning**: Every 10 minutes, the engine scans the `tasks/` folder of each managed repository.
+2. **Dynamic Scaling**: If `.md` or `.json` tasks are found, Autopilot activates the corresponding `worker` tasks (sets status to `PENDING`).
+3. **Idle Pause**: When the backlog is empty, Autopilot pauses the workers to save costs and context.
+
+## 🔍 DTO: Source Code Search & RAG
+
+To provide agents with deep project context, the orchestrator implements **DTO (DAG-based Task Orchestration)**:
+
+- **Automated Indexing**: Repositories are periodically synced and indexed into a local vector store.
+- **Context Injection**: When a task starts, the orchestrator identifies relevant code chunks and provides them to the Jules session via the **Source Context API**.
+- **Performance**: Indexing is limited to files < 100KB to ensure fast search and optimal LLM context usage.
 
 ## 🤖 LLM Configuration & Supervision
 
@@ -61,6 +78,14 @@ Click the **"Settings"** button to adjust:
 5. **Prompt Library (Git)**: Configure where to sync agent templates and workflows from.
 6. **Log Retention**: Set how many days to keep execution history (default: 7).
 7. **Global Quota**: Set daily task limits to control LLM costs.
+
+## 📄 Distribution Configuration (`distribution.yml`)
+
+For large-scale deployments, use the `distribution.yml` file to define tasks across all repositories:
+
+- **Centralized Management**: Define schedules, agents, and patterns for your entire fleet in one YAML.
+- **Persistence**: On startup, the orchestrator imports this file and updates the database.
+- **Automation**: Combines with Helm to manage deployment in Kubernetes.
 
 ## 🛠️ Maintenance
 

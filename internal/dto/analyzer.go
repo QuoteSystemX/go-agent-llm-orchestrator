@@ -213,6 +213,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	}
 	state.Phase = "Initializing"
 	state.FilesIndexed = 0
+	state.AlreadyIndexed = 0
 	state.TotalFiles = 0
 	state.CurrentFile = ""
 	a.stateMutex.Unlock()
@@ -409,7 +410,12 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	prompt := a.buildAnalysisPrompt(ctx, repoName, readme, currentTasks, templates, maxChars)
 
 	// 3. Call LLM
-	a.updateState(repoName, "Analyzing with LLM", "", -1, -1)
+	a.stateMutex.Lock()
+	if s, ok := a.state[repoName]; ok {
+		s.Phase = "Analyzing with LLM"
+		s.CurrentFile = ""
+	}
+	a.stateMutex.Unlock()
 	log.Printf("DTO [%s]: Requesting LLM analysis (prompt=%d chars, ~%.0f tokens)...", repoName, len(prompt), float64(len(prompt))/2.5)
 	llmStart := time.Now()
 	response, err := a.router.GenerateResponse(ctx, llm.DTO, prompt)
