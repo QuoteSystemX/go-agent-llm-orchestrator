@@ -448,6 +448,28 @@ button {
 
 .task-title { font-weight: 600; font-size: 1rem; }
 
+.last-session-link {
+    font-size: 0.65rem;
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.last-session-link a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    opacity: 0.85;
+    transition: all 0.2s;
+    border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+}
+
+.last-session-link a:hover {
+    opacity: 1;
+    border-bottom-style: solid;
+}
+
 .task-mission {
     margin-bottom: 0;
     height: auto;

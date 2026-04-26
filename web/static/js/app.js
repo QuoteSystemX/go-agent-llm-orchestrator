@@ -160,6 +160,14 @@ function renderTasks() {
                                     <div class="task-header">
                                         <div class="task-title">${task.id.split(':').pop()}</div>
                                         <div style="font-size: 0.7rem; color: var(--text-muted)">ID: ${task.id}</div>
+                                        ${task.last_session_id ? `
+                                            <div class="last-session-link">
+                                                <i data-lucide="external-link" style="width:10px; height:10px; color:var(--primary)"></i>
+                                                <a href="https://console.cloud.google.com/genai/jules/sessions/${task.last_session_id.split('/').pop()}" target="_blank" title="View last session in Jules Console">
+                                                    Session: ${task.last_session_id.split('/').pop()}
+                                                </a>
+                                            </div>
+                                        ` : ''}
                                     </div>
                                     ${task.status === 'FAILED' ? `
                                         <span class="failure-badge-wrap">
