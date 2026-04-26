@@ -527,6 +527,7 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"local_model":                    s.getSetting(r.Context(), "llm_local_model", ""),
+			"available_models":               os.Getenv("OLLAMA_AVAILABLE_MODELS"),
 			"remote_model":                   s.getSetting(r.Context(), "llm_remote_model", ""),
 			"remote_api_key":                 maskedRemote,
 			"remote_endpoint_url":            s.getSetting(r.Context(), "llm_remote_endpoint", os.Getenv("LLM_REMOTE_ENDPOINT")),
@@ -537,8 +538,8 @@ func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) 
 			"local_timeout":                  s.getSetting(r.Context(), "llm_local_timeout", "300"),
 			"local_retries":                  s.getSetting(r.Context(), "llm_local_retries", "3"),
 			"system_prompt":                  s.getSetting(r.Context(), "llm_system_prompt", "You are a professional coding assistant and project orchestrator."),
-			"dto_prompt_budget_tokens":       dtoBudgetOverride,    // "" = auto-detected
-			"dto_prompt_budget_effective":    dtoBudgetEffective,   // always the resolved value
+			"dto_prompt_budget_tokens":       dtoBudgetOverride,
+			"dto_prompt_budget_effective":    dtoBudgetEffective,
 		})
 	case http.MethodPost:
 		var data struct {

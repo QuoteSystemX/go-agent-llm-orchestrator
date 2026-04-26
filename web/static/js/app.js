@@ -645,7 +645,12 @@ async function loadLLMSettings() {
         const resp = await fetch('/api/v1/settings/llm');
         if (!resp.ok) return;
         const data = await resp.json();
-        if (data.local_model) document.getElementById('local-model').value = data.local_model;
+        const modelSelect = document.getElementById('local-model');
+        if (data.available_models) {
+            const models = data.available_models.split(',').map(m => m.trim()).filter(Boolean);
+            modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+        if (data.local_model) modelSelect.value = data.local_model;
         if (data.remote_model) document.getElementById('remote-model').value = data.remote_model;
         renderKeyStatus('remote-api-key-status', data.remote_api_key, 'remote-api-key', 'sk-...');
         if (data.remote_endpoint_url) document.getElementById('remote-endpoint-url').value = data.remote_endpoint_url;
