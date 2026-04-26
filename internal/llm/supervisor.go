@@ -100,7 +100,7 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 		status = session.Status
 	}
 	details := fmt.Sprintf("Class: %s | Status: %s | Response: %s", class, status, response)
-	_, err = s.db.ExecContext(ctx,
+	_, err = s.db.History().ExecContext(ctx,
 		"INSERT INTO audit_logs (session_id, action, details) VALUES (?, ?, ?)",
 		sessionID, "AUTO_RESPONDED", details)
 	return err
