@@ -60,6 +60,12 @@
 
             <div id="tab-repositories" class="tab-pane active">
                 <section class="task-section">
+                    <div class="task-toolbar">
+                        <label class="toggle-service-tasks">
+                            <input type="checkbox" id="show-service-tasks" onchange="toggleServiceTasks(this.checked)">
+                            <span>Show BMAD service tasks</span>
+                        </label>
+                    </div>
                     <div id="task-list" class="task-grid">
                         <!-- Tasks will be injected here -->
                     </div>

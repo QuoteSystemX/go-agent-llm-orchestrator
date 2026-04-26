@@ -1,4 +1,5 @@
 let tasks = [];
+let showServiceTasks = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +34,11 @@ async function fetchTasks() {
     } catch (err) {
         console.error('Failed to fetch tasks:', err);
     }
+}
+
+function toggleServiceTasks(checked) {
+    showServiceTasks = checked;
+    renderTasks();
 }
 
 function renderTasks() {
@@ -115,17 +121,18 @@ function renderTasks() {
                         ${statusBadgesHtml}
                     </div>
 
-                    <span class="task-count ${promptBadgeClass}">${promptCount}/${allProjectTasks.length} prompts</span>
+                    <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
                     ${allProjectTasks[0].jules_tasks > 0 ? `<span class="jules-badge">${allProjectTasks[0].jules_tasks} Jules</span>` : ''}
                     <div class="project-line"></div>
                 </div>
                 <div class="project-content">
                     <div class="task-grid">
-                        ${projectTasks.map(task => {
+                        ${(showServiceTasks ? allProjectTasks : projectTasks).map(task => {
+                            const isService = servicePatterns.includes(task.pattern);
                             const noPrompt = !task.prompt_ready;
                             const dis = noPrompt ? 'disabled' : '';
                             return `
-                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''}">
+                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''} ${isService ? 'service-task-card' : ''}">
                                 <div class="task-info-block">
                                     <div class="task-header">
                                         <div class="task-title">${task.id.split(':').pop()}</div>
