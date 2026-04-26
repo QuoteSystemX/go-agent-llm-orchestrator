@@ -1103,11 +1103,14 @@ function updateAnalysisProgress(status) {
                          </div>`;
             }
             if (status.files_indexed >= 0) {
-                let progressText = `Processed: ${status.files_indexed}`;
+                let progressText = `${status.files_indexed}`;
+                if (status.already_indexed > 0 || status.total_files > 0) {
+                    progressText += ` / ${status.already_indexed || 0}`;
+                }
                 if (status.total_files > 0) {
                     progressText += ` / ${status.total_files}`;
                 }
-                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem">
+                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem" title="current session / already indexed / total files">
                             <i data-lucide="database" style="width:12px;height:12px;margin-right:2px"></i> ${progressText} files
                          </div>`;
             }

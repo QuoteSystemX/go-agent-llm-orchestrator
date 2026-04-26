@@ -21,14 +21,15 @@ import (
 )
 
 type RepoAnalysisState struct {
-	IsRunning    bool            `json:"is_running"`
-	Type         string          `json:"type"` // "MANUAL" or "BACKGROUND"
-	Phase        string          `json:"phase"`
-	CurrentFile  string          `json:"current_file"`
-	FilesIndexed int             `json:"files_indexed"`
-	TotalFiles   int             `json:"total_files"`
-	Proposals    *AnalysisResult `json:"proposals,omitempty"`
-	Error        string          `json:"error,omitempty"`
+	IsRunning      bool            `json:"is_running"`
+	Type           string          `json:"type"` // "MANUAL" or "BACKGROUND"
+	Phase          string          `json:"phase"`
+	CurrentFile    string          `json:"current_file"`
+	FilesIndexed   int             `json:"files_indexed"`
+	AlreadyIndexed int             `json:"already_indexed"`
+	TotalFiles     int             `json:"total_files"`
+	Proposals      *AnalysisResult `json:"proposals,omitempty"`
+	Error          string          `json:"error,omitempty"`
 }
 
 type Analyzer struct {
@@ -97,14 +98,15 @@ func (a *Analyzer) GetStatus(repoName string) *RepoAnalysisState {
 	defer a.stateMutex.RUnlock()
 	if s, ok := a.state[repoName]; ok {
 		return &RepoAnalysisState{
-			IsRunning:    s.IsRunning,
-			Type:         s.Type,
-			Phase:        s.Phase,
-			CurrentFile:  s.CurrentFile,
-			FilesIndexed: s.FilesIndexed,
-			TotalFiles:   s.TotalFiles,
-			Proposals:    s.Proposals,
-			Error:        s.Error,
+			IsRunning:      s.IsRunning,
+			Type:           s.Type,
+			Phase:          s.Phase,
+			CurrentFile:    s.CurrentFile,
+			FilesIndexed:   s.FilesIndexed,
+			AlreadyIndexed: s.AlreadyIndexed,
+			TotalFiles:     s.TotalFiles,
+			Proposals:      s.Proposals,
+			Error:          s.Error,
 		}
 	}
 	return &RepoAnalysisState{IsRunning: false}
@@ -284,12 +286,21 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 
 	maxFileSize := int64(100 * 1024) // 100 KB
 
+	// Capture how many files are already in the persistent index before this run.
+	alreadyIndexed := ragStore.IndexedCount()
+	a.stateMutex.Lock()
+	if s, ok := a.state[repoName]; ok {
+		s.AlreadyIndexed = alreadyIndexed
+	}
+	a.stateMutex.Unlock()
+
 	log.Printf("DTO [%s]: Pre-scanning files...", repoName)
 	totalToIndex := 0
+	totalAllFiles := 0
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() { return nil }
 		if info.Size() > maxFileSize { return nil }
-		
+
 		// Use same ignore list
 		ignoredDirs := []string{"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", "/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", "/.venv/", "/__pycache__/", "/pkg/"}
 		for _, dir := range ignoredDirs {
@@ -298,6 +309,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 
 		ext := filepath.Ext(path)
 		if targetExts[ext] {
+			totalAllFiles++
 			modTime := info.ModTime().Unix()
 			if !ragStore.IsIndexed(path, modTime) {
 				totalToIndex++
@@ -305,9 +317,9 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		}
 		return nil
 	})
-	a.updateState(repoName, "", "", -1, totalToIndex)
+	a.updateState(repoName, "", "", -1, totalAllFiles)
 
-	log.Printf("DTO [%s]: Scanning repository files (%d new files to index)...", repoName, totalToIndex)
+	log.Printf("DTO [%s]: Scanning repository files (%d new files to index, %d total, %d already indexed)...", repoName, totalToIndex, totalAllFiles, alreadyIndexed)
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -337,13 +349,16 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 			if !ragStore.IsIndexed(path, modTime) {
 				category := categorizePath(repoPath, path)
 				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount, -1)
+				// Remove stale chunks before reindexing so modified files don't
+				// leave orphaned chunks from the previous (longer) version.
+				_ = ragStore.RemoveDocumentsBySource(ctx, path)
 				if err := a.indexFile(ctx, path, ragStore, category); err == nil {
 					ragStore.MarkIndexed(path, modTime)
 					fileCount++
 					a.updateState(repoName, "", "", fileCount, -1)
-					
+
 					// Save index incrementally every 20 files to persist progress
-					if fileCount % 20 == 0 {
+					if fileCount%20 == 0 {
 						ragStore.SaveIndex()
 					}
 				} else {

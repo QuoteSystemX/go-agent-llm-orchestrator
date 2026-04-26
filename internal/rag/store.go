@@ -228,11 +228,28 @@ func (s *MemoryStore) Reset(ctx context.Context) {
 	os.Remove(s.indexPath)
 }
 
+// RemoveDocumentsBySource deletes all chunks for a given source file from the vector DB.
+func (s *MemoryStore) RemoveDocumentsBySource(ctx context.Context, source string) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.collection == nil {
+		return nil
+	}
+	return s.collection.Delete(ctx, map[string]string{"source": source}, nil)
+}
+
 // IsIndexed checks if a source file is already indexed and up-to-date
 func (s *MemoryStore) IsIndexed(source string, modTime int64) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.indexed[source] >= modTime
+}
+
+// IndexedCount returns the number of files in the persistent index cache.
+func (s *MemoryStore) IndexedCount() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.indexed)
 }
 
 // MarkIndexed marks a source file as indexed with a specific modification time
