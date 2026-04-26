@@ -112,8 +112,16 @@ func main() {
 	statsAggregator := monitor.NewStatsAggregator(60)
 	statsAggregator.Start()
 
+	hub := api.NewHub()
+	go hub.Run()
+	logBuf.SetHub(hub)
+
 	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer, statsAggregator)
 	adminServer.SetHealthMonitor(healthMonitor)
+	healthMonitor.SetNotifyFunc(func(status monitor.HealthStatus) {
+		hub.Broadcast(api.TypeStats, status)
+	})
+	adminServer.SetHub(hub)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
@@ -123,6 +131,31 @@ func main() {
 	// 4. Start Background Processes
 
 	engine.Start()
+	engine.SetNotifyFunc(func(taskID, status string) {
+		hub.Broadcast(api.TypeTask, map[string]string{
+			"id":     taskID,
+			"status": status,
+		})
+	})
+	analyzer.SetNotifyFunc(func(repoURL string, state *dto.RepoAnalysisState) {
+		hub.Broadcast(api.TypeRepoAnalysis, map[string]any{
+			"repo":  repoURL,
+			"state": state,
+		})
+	})
+
+	engine.SetActivityNotifyFunc(func() {
+		hub.Broadcast(api.TypeActivity, nil)
+	})
+
+	// Broadcast full system status every 10 seconds
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			adminServer.BroadcastStatus(context.Background())
+		}
+	}()
 
 	// Background DTO Sync (once per hour)
 	go func() {
@@ -133,11 +166,30 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				log.Println("Background DTO Sync: Pulling fresh templates...")
+				log.Println("Background DTO Sync: Starting periodic update...")
+				
+				// 1. Sync prompt library
 				if err := gitSyncer.Sync(ctx); err != nil {
-					log.Printf("Background DTO Sync Error: %v", err)
+					log.Printf("Background DTO Sync: Prompt library update failed: %v", err)
+				}
+
+				// 2. Sync and Index all managed repositories
+				repos, err := database.GetDistinctRepos(ctx)
+				if err != nil {
+					log.Printf("Background DTO Sync: Failed to list repos: %v", err)
 					continue
 				}
+
+				for _, repoName := range repos {
+					log.Printf("Background DTO Sync: Auto-syncing RAG for %s...", repoName)
+					// AnalyzeRepo(..., true) handles git pull and incremental RAG indexing.
+					// It returns early if the commit hash hasn't changed.
+					if _, err := analyzer.AnalyzeRepo(ctx, repoName, true); err != nil {
+						log.Printf("Background DTO Sync: Failed for %s: %v", repoName, err)
+					}
+				}
+				log.Println("Background DTO Sync: Periodic update finished.")
+				
 				// Sync templates from the cloned repo
 				tplDir := filepath.Join(cacheDir, "templates")
 				if err := dtoMgr.SyncFromDir(ctx, tplDir); err != nil {

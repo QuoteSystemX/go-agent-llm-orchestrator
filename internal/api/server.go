@@ -18,6 +18,7 @@ import (
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/web"
+	"github.com/gorilla/websocket"
 	"github.com/robfig/cron/v3"
 )
 
@@ -54,6 +55,7 @@ type AdminServer struct {
 	logBuf          *LogBuffer
 	dtoMgr          *dto.TemplateManager
 	analyzer        *dto.Analyzer
+	hub             *Hub
 	startTime       time.Time
 }
 
@@ -79,6 +81,9 @@ func (s *AdminServer) SetPromptChecker(pc PromptChecker) { s.promptChecker = pc 
 
 // SetHealthMonitor attaches a health monitor to track system component status.
 func (s *AdminServer) SetHealthMonitor(hm *monitor.HealthMonitor) { s.healthMonitor = hm }
+
+// SetHub attaches a websocket hub.
+func (s *AdminServer) SetHub(h *Hub) { s.hub = h }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -145,6 +150,7 @@ func (s *AdminServer) Start(addr string) error {
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
+	mux.HandleFunc("/api/v1/ws", s.handleWS)
 	
 	// Health
 	mux.HandleFunc("/healthz", s.handleHealth)
@@ -505,6 +511,34 @@ func (s *AdminServer) handleLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(s.logBuf.Entries())
+}
+
+func (s *AdminServer) handleWS(w http.ResponseWriter, r *http.Request) {
+	if s.hub == nil {
+		http.Error(w, "websocket hub not initialized", http.StatusServiceUnavailable)
+		return
+	}
+
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true // Allow all origins for now
+		},
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("WS: Upgrade error: %v", err)
+		return
+	}
+
+	client := &Client{hub: s.hub, conn: conn, send: make(chan []byte, 256)}
+	s.hub.register <- client
+
+	// Start pumps
+	go client.writePump()
+	go client.readPump()
 }
 
 func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) {
@@ -895,8 +929,12 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	s.db.SaveChatMessage(r.Context(), "user", userMsg, req.Provider, req.Repo)
 
 	// If a repository is selected, use RAG to enhance the context
+	var sources []string
 	if req.Repo != "" && s.analyzer != nil {
-		ragContext := s.analyzer.SearchContext(r.Context(), req.Repo, userMsg, 3)
+		res := s.analyzer.SearchContextFull(r.Context(), req.Repo, userMsg, 3, "")
+		ragContext := res.Content
+		sources = res.Sources
+
 		if ragContext != "" {
 			// Check total context size to respect Context Window settings
 			windowStr := s.db.GetSetting("llm_local_context_window", "4096")
@@ -955,6 +993,13 @@ func (s *AdminServer) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var fullResponse strings.Builder
+	
+	// Send sources if available
+	if len(sources) > 0 {
+		fmt.Fprintf(w, "data: [SOURCES]%s\n\n", strings.Join(sources, ","))
+		flusher.Flush()
+	}
+
 	for token := range tokens {
 		fullResponse.WriteString(token)
 		fmt.Fprintf(w, "data: %s\n\n", token)
@@ -1425,5 +1470,59 @@ func (s *AdminServer) handleRAGAction(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "unknown action", http.StatusBadRequest)
+	}
+}
+func (s *AdminServer) BroadcastStatus(ctx context.Context) {
+	if s.hub == nil {
+		return
+	}
+
+	// 1. Health Status
+	if s.healthMonitor != nil {
+		s.hub.Broadcast(TypeStats, s.healthMonitor.GetStatus())
+	}
+
+	// 2. System Stats (CPU/Memory)
+	if s.statsAggregator != nil {
+		s.hub.Broadcast(TypeSysStats, s.statsAggregator.GetLatest())
+	}
+
+	// 3. System Usage (Quota)
+	usage, _ := s.db.GetDailyUsage(ctx)
+	limit, _ := s.db.GetDailyLimit(ctx)
+	upcoming, _ := s.db.GetUpcomingTaskCountToday(ctx)
+	s.hub.Broadcast(TypeSysUsage, map[string]any{
+		"usage":    usage,
+		"limit":    limit,
+		"forecast": usage + upcoming,
+	})
+
+	// 4. Next Runs
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	now := time.Now()
+	rows, err := s.db.Main().QueryContext(ctx, "SELECT id, name, schedule FROM tasks WHERE status != 'PAUSED'")
+	if err == nil {
+		defer rows.Close()
+		var runs []map[string]any
+		for rows.Next() {
+			var id, name, schedule string
+			if err := rows.Scan(&id, &name, &schedule); err == nil {
+				if sched, err := parser.Parse(schedule); err == nil {
+					next := sched.Next(now)
+					runs = append(runs, map[string]any{
+						"task_id":       id,
+						"name":          name,
+						"schedule":      schedule,
+						"next_run":      next.Format(time.RFC3339),
+						"seconds_until": next.Sub(now).Seconds(),
+					})
+				}
+			}
+		}
+		// Sort by seconds until
+		sort.Slice(runs, func(i, j int) bool {
+			return runs[i]["seconds_until"].(float64) < runs[j]["seconds_until"].(float64)
+		})
+		s.hub.Broadcast(TypeNextRuns, runs)
 	}
 }

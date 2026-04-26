@@ -45,6 +45,8 @@ type Analyzer struct {
 
 	appCtx context.Context
 	sem    chan struct{}
+
+	onUpdate func(repoURL string, state *RepoAnalysisState)
 }
 
 func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
@@ -111,7 +113,16 @@ func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total 
 		if file != "" { s.CurrentFile = file }
 		if indexed >= 0 { s.FilesIndexed = indexed }
 		if total >= 0 { s.TotalFiles = total }
+		if a.onUpdate != nil {
+			a.onUpdate(repoName, s)
+		}
 	}
+}
+
+func (a *Analyzer) SetNotifyFunc(fn func(repoURL string, state *RepoAnalysisState)) {
+	a.stateMutex.Lock()
+	defer a.stateMutex.Unlock()
+	a.onUpdate = fn
 }
 
 func (a *Analyzer) GetStatus(repoName string) *RepoAnalysisState {
@@ -265,6 +276,10 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	state.AlreadyIndexed = 0
 	state.TotalFiles = 0
 	state.CurrentFile = ""
+	
+	if a.onUpdate != nil {
+		a.onUpdate(repoName, state)
+	}
 	a.stateMutex.Unlock()
 
 	defer func() {
@@ -272,6 +287,9 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		if s, ok := a.state[repoName]; ok {
 			s.IsRunning = false
 			s.Phase = ""
+			if a.onUpdate != nil {
+				a.onUpdate(repoName, s)
+			}
 		}
 		a.stateMutex.Unlock()
 	}()
@@ -745,22 +763,44 @@ func (a *Analyzer) ScrubAllRepos(ctx context.Context) (int, error) {
 	return a.ragManager.ScrubAll(ctx)
 }
 
-func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, topK int) string {
-	return a.SearchContextFiltered(ctx, repoName, query, topK, "")
+type SearchResult struct {
+	Content string
+	Sources []string
 }
 
-// SearchContextFiltered queries the RAG store filtered by category ("meta", "code", or "" for all).
-func (a *Analyzer) SearchContextFiltered(ctx context.Context, repoName, query string, topK int, category string) string {
+func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, topK int) string {
+	res := a.SearchContextFull(ctx, repoName, query, topK, "")
+	return res.Content
+}
+
+// SearchContextFull queries the RAG store and returns both content and sources.
+func (a *Analyzer) SearchContextFull(ctx context.Context, repoName, query string, topK int, category string) SearchResult {
 	ragStore := a.getRagStore(repoName)
 	log.Printf("DTO [%s]: Querying RAG (category=%q) for top %d chunks: '%s'", repoName, category, topK, query)
 	docs := ragStore.SearchFiltered(ctx, query, topK, category)
 	log.Printf("DTO [%s]: RAG found %d chunks (category=%q)", repoName, len(docs), category)
 
 	var sb strings.Builder
+	var sources []string
+	seen := make(map[string]bool)
+
 	for _, d := range docs {
 		sb.WriteString(fmt.Sprintf("--- Source: %s ---\n%s\n", d.Source, d.Content))
+		if !seen[d.Source] {
+			sources = append(sources, d.Source)
+			seen[d.Source] = true
+		}
 	}
-	return sb.String()
+	return SearchResult{
+		Content: sb.String(),
+		Sources: sources,
+	}
+}
+
+// SearchContextFiltered queries the RAG store filtered by category ("meta", "code", or "" for all).
+func (a *Analyzer) SearchContextFiltered(ctx context.Context, repoName, query string, topK int, category string) string {
+	res := a.SearchContextFull(ctx, repoName, query, topK, category)
+	return res.Content
 }
 
 // categorizePath classifies a repository file as "meta" or "code".

@@ -79,3 +79,15 @@ func (s *StatsAggregator) GetHistory() (cpu, mem, tasks []StatSample) {
 	tasks = append([]StatSample(nil), s.Tasks...)
 	return
 }
+func (s *StatsAggregator) GetLatest() map[string]any {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	const megabyte = 1024 * 1024
+
+	return map[string]any{
+		"num_goroutine":   runtime.NumGoroutine(),
+		"memory_alloc_mb": float64(m.Alloc) / megabyte,
+		"memory_sys_mb":   float64(m.Sys) / megabyte,
+		"uptime_seconds":  0, // Optional: add start time to NewStatsAggregator for real uptime
+	}
+}

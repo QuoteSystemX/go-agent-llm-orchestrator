@@ -40,6 +40,7 @@ type HealthMonitor struct {
 	mu     sync.RWMutex
 	client *http.Client
 	db     *db.DB
+	onStatusChange func(HealthStatus)
 }
 
 func NewHealthMonitor(database *db.DB) *HealthMonitor {
@@ -47,6 +48,12 @@ func NewHealthMonitor(database *db.DB) *HealthMonitor {
 		client: &http.Client{Timeout: 5 * time.Second},
 		db:     database,
 	}
+}
+
+func (m *HealthMonitor) SetNotifyFunc(fn func(HealthStatus)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onStatusChange = fn
 }
 
 func (m *HealthMonitor) Start() {
@@ -167,4 +174,8 @@ func (m *HealthMonitor) check() {
 	m.mu.Lock()
 	m.status = newStatus
 	m.mu.Unlock()
+
+	if m.onStatusChange != nil {
+		m.onStatusChange(newStatus)
+	}
 }

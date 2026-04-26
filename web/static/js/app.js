@@ -1,21 +1,119 @@
 let tasks = [];
 let showServiceTasks = false;
+let logEntries = [];
+const MAX_LOGS = 100;
+let _ws = null;
+
+class OrchestratorSocket {
+    constructor() {
+        this.socket = null;
+        this.reconnectDelay = 1000;
+        this.maxReconnectDelay = 30000;
+        this.connect();
+    }
+
+    connect() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${window.location.host}/api/v1/ws`;
+        console.log('WS: Connecting to', url);
+        
+        this.socket = new WebSocket(url);
+
+        this.socket.onopen = () => {
+            console.log('WS: Connected');
+            this.reconnectDelay = 1000;
+            document.getElementById('live-indicator')?.classList.add('active');
+        };
+
+        this.socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                this.handleMessage(data);
+            } catch (e) {
+                console.error('WS: Parse error', e, event.data);
+            }
+        };
+
+        this.socket.onclose = () => {
+            console.log('WS: Disconnected');
+            document.getElementById('live-indicator')?.classList.remove('active');
+            this.reconnect();
+        };
+
+        this.socket.onerror = (error) => {
+            this.socket.close();
+        };
+    }
+
+    reconnect() {
+        setTimeout(() => {
+            this.connect();
+            this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+        }, this.reconnectDelay);
+    }
+
+    handleMessage(msg) {
+        switch (msg.type) {
+            case 'log':
+                this.handleLog(msg.payload);
+                break;
+            case 'stats':
+                if (typeof updateHealthUI === 'function') updateHealthUI(msg.payload);
+                break;
+            case 'sys_stats':
+                if (typeof updateSysStatsUI === 'function') updateSysStatsUI(msg.payload);
+                break;
+            case 'sys_usage':
+                if (typeof updateSysUsageUI === 'function') updateSysUsageUI(msg.payload);
+                break;
+            case 'task':
+                this.handleTask(msg.payload);
+                break;
+            case 'activity_update':
+                if (typeof fetchActivityLogs === 'function') fetchActivityLogs();
+                break;
+            case 'next_runs':
+                this.handleNextRuns(msg.payload);
+                break;
+            case 'repo_analysis':
+                if (typeof handleRepoAnalysisUpdate === 'function') handleRepoAnalysisUpdate(msg.payload);
+                break;
+            default:
+                console.warn('WS: Unknown message type', msg.type);
+        }
+    }
+
+    handleLog(entry) {
+        logEntries.push(entry);
+        if (logEntries.length > MAX_LOGS) {
+            logEntries.shift();
+        }
+        if (typeof renderLogs === 'function') renderLogs();
+    }
+
+    handleTask(payload) {
+        const task = tasks.find(t => t.id === payload.id);
+        if (task) {
+            task.status = payload.status;
+            if (typeof renderTasks === 'function') renderTasks();
+        }
+    }
+
+    handleNextRuns(runs) {
+        if (!runs || runs.length === 0) return;
+        _nextRuns = runs.map(r => ({ ...r, _sec: r.seconds_until }));
+        if (typeof renderNextRunSlots === 'function') renderNextRunSlots();
+    }
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchTasks();
     fetchNextRun();
-    fetchLogs();
-    fetchActivityLogs();
-    fetchSystemUsage();
-    fetchSystemStats();
+    _ws = new OrchestratorSocket();
+    setupLogStreaming();
     initActivityFilters();
-    setInterval(fetchNextRun, 30000);
-    setInterval(fetchSystemUsage, 30000);
-    setInterval(fetchSystemStats, 10000);
     setInterval(tickCountdown, 1000);
-    setInterval(fetchLogs, 5000);
-    setInterval(fetchActivityLogs, 10000);
     loadChatHistory();
 
     const repoSelect = document.getElementById('dto-repo-select');
@@ -74,7 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchTasks() {
     try {
         const response = await fetch('/api/v1/tasks');
-        tasks = await response.json();
+        const data = await response.json();
+        tasks = data || [];
         renderTasks();
     } catch (err) {
         console.error('Failed to fetch tasks:', err);
@@ -918,43 +1017,55 @@ function toggleLogPanel() {
     const chevron = document.getElementById('log-panel-chevron');
     panel.classList.toggle('collapsed', !_logPanelOpen);
     chevron.style.transform = _logPanelOpen ? 'rotate(180deg)' : '';
-    if (_logPanelOpen) fetchLogs();
+    if (_logPanelOpen) renderLogs();
 }
 
-async function fetchLogs() {
-    try {
-        const resp = await fetch('/api/v1/logs');
-        if (!resp.ok) return;
-        const entries = await resp.json();
-        if (!entries || entries.length === 0) return;
+function setupLogStreaming() {
+    // Initial fetch to populate history
+    fetch('/api/v1/logs')
+        .then(r => r.json())
+        .then(entries => {
+            logEntries = entries || [];
+            renderLogs();
+        });
 
-        // Update the "last line" preview in the collapsed bar
-        const last = entries[entries.length - 1];
-        document.getElementById('log-panel-last').textContent = last.msg;
-        document.getElementById('log-panel-count').textContent = entries.length + ' lines';
+    // NOTE: Real-time logs are now handled via OrchestratorSocket (_ws)
+}
 
-        if (!_logPanelOpen) return;
+function renderLogs() {
+    if (!logEntries || logEntries.length === 0) return;
 
-        const container = document.getElementById('log-panel-entries');
-        const wasAtBottom = container.parentElement.scrollHeight - container.parentElement.scrollTop
-            <= container.parentElement.clientHeight + 40;
+    // Update the "last line" preview in the collapsed bar
+    const last = logEntries[logEntries.length - 1];
+    const lastPreview = document.getElementById('log-panel-last');
+    if (lastPreview) lastPreview.textContent = last.msg;
+    
+    const countLabel = document.getElementById('log-panel-count');
+    if (countLabel) countLabel.textContent = logEntries.length + ' lines';
 
-        container.innerHTML = entries.map(e => {
-            const msg = e.msg || '';
-            let cls = '';
-            if (/FAIL|error|ERR|fatal/i.test(msg)) cls = 'is-error';
-            else if (/OK|ready|started|success/i.test(msg)) cls = 'is-ok';
-            else if (/warn|NOT CONFIGURED/i.test(msg)) cls = 'is-warn';
-            return `<div class="log-line">
-                <span class="log-line-time">${e.time}</span>
-                <span class="log-line-msg ${cls}">${escapeHtml(msg)}</span>
-            </div>`;
-        }).join('');
+    if (!_logPanelOpen) return;
 
-        if (wasAtBottom) {
-            container.parentElement.scrollTop = container.parentElement.scrollHeight;
-        }
-    } catch (e) { /* silent */ }
+    const container = document.getElementById('log-panel-entries');
+    if (!container) return;
+
+    const wasAtBottom = container.parentElement.scrollHeight - container.parentElement.scrollTop
+        <= container.parentElement.clientHeight + 40;
+
+    container.innerHTML = logEntries.map(e => {
+        const msg = e.msg || '';
+        let cls = '';
+        if (/FAIL|error|ERR|fatal/i.test(msg)) cls = 'is-error';
+        else if (/OK|ready|started|success/i.test(msg)) cls = 'is-ok';
+        else if (/warn|NOT CONFIGURED/i.test(msg)) cls = 'is-warn';
+        return `<div class="log-line log-entry">
+            <span class="log-line-time">${e.time}</span>
+            <span class="log-line-msg ${cls}">${escapeHtml(msg)}</span>
+        </div>`;
+    }).join('');
+
+    if (wasAtBottom) {
+        container.parentElement.scrollTop = container.parentElement.scrollHeight;
+    }
 }
 
 function formatUptime(seconds) {
@@ -1014,19 +1125,23 @@ async function fetchSystemStats() {
         const resp = await fetch('/api/v1/system/stats');
         if (!resp.ok) return;
         const data = await resp.json();
-        
-        // Goroutines as load indicator
-        document.getElementById('stat-cpu').textContent = data.num_goroutine; 
-        
-        // Show Sys Memory (Total reserved) instead of just Alloc
-        document.getElementById('stat-mem').textContent = data.memory_sys_mb + 'MB';
-        
-        // If there's an uptime element, update it (we might need to add it to HTML)
-        const uptimeEl = document.getElementById('stat-uptime');
-        if (uptimeEl && data.uptime_seconds) {
-            uptimeEl.textContent = formatUptime(data.uptime_seconds);
-        }
+        updateSysStatsUI(data);
     } catch (e) { /* silent */ }
+}
+
+function updateSysStatsUI(data) {
+    // Goroutines as load indicator
+    const cpuEl = document.getElementById('stat-cpu');
+    if (cpuEl) cpuEl.textContent = data.num_goroutine; 
+    
+    // Show Sys Memory (Total reserved) instead of just Alloc
+    const memEl = document.getElementById('stat-mem');
+    if (memEl) memEl.textContent = data.memory_sys_mb + 'MB';
+    
+    const uptimeEl = document.getElementById('stat-uptime');
+    if (uptimeEl && data.uptime_seconds) {
+        uptimeEl.textContent = formatUptime(data.uptime_seconds);
+    }
 }
 
 // ── Tabs Logic ────────────────────────────────────────────────
@@ -1083,7 +1198,14 @@ async function loadRepoStatus() {
     }
 }
 
-let analysisPollInterval = null;
+// WebSocket migration complete
+function handleRepoAnalysisUpdate(payload) {
+    const { repo, state } = payload;
+    const select = document.getElementById('dto-repo-select');
+    if (!select || select.value !== repo) return;
+    
+    updateAnalysisProgress(state);
+}
 
 function updateAnalysisProgress(status) {
     const btn = document.getElementById('btn-run-analysis');
@@ -1129,10 +1251,6 @@ function updateAnalysisProgress(status) {
             }
             container.innerHTML = html;
         }
-
-        if (!analysisPollInterval) {
-            analysisPollInterval = setInterval(loadRepoStatus, 1000);
-        }
         lucide.createIcons();
     } else {
         btn.disabled = false;
@@ -1154,11 +1272,6 @@ function updateAnalysisProgress(status) {
             badge.style.background = 'rgba(34, 197, 94, 0.2)'; // Green success color
             badge.style.color = '#22c55e';
             badge.innerText = 'System Ready';
-        }
-        
-        if (analysisPollInterval) {
-            clearInterval(analysisPollInterval);
-            analysisPollInterval = null;
         }
         lucide.createIcons();
     }
@@ -1436,20 +1549,30 @@ async function sendChatMessage() {
                 if (line.startsWith('data: ')) {
                     const token = line.slice(6);
                     if (token === '[DONE]') break;
+                    
+                    if (token.startsWith('[SOURCES]')) {
+                        const sourcesStr = token.slice(9);
+                        chatMessages[assistantMsgIndex].sources = sourcesStr.split(',').filter(s => s);
+                        renderChat();
+                        continue;
+                    }
+
                     aiContent += token;
-                    chatMessages[botMsgIndex].content = aiContent;
+                    chatMessages[assistantMsgIndex].content = aiContent;
                     renderChat();
                 }
             }
         }
         
-        const lastUserMsg = chatMessages[botMsgIndex - 1];
+        const lastUserMsg = chatMessages[assistantMsgIndex - 1];
         lastUserMsg.duration = (Date.now() - startTime) / 1000;
-        chatMessages[botMsgIndex].typing = false;
+        chatMessages[assistantMsgIndex].typing = false;
 
     } catch (err) {
-        chatMessages[botMsgIndex].content = `Error: ${err.message}`;
-        chatMessages[botMsgIndex].typing = false;
+        if (chatMessages[assistantMsgIndex]) {
+            chatMessages[assistantMsgIndex].content = `Error: ${err.message}`;
+            chatMessages[assistantMsgIndex].typing = false;
+        }
     } finally {
         isAITyping = false;
         clearInterval(timerInterval);
@@ -1481,20 +1604,38 @@ function renderChat() {
             <div class="chat-message-wrapper ${m.role}">
                 <div class="chat-message">
                     ${escapeHtml(m.content).replace(/\n/g, '<br>')}
+                    ${m.sources && m.sources.length > 0 ? `
+                        <div class="chat-sources">
+                            <button class="sources-toggle" onclick="toggleSources(${index})">
+                                <i data-lucide="book-open" style="width:12px; height:12px"></i>
+                                Sources (${m.sources.length})
+                            </button>
+                            <div id="sources-${index}" class="sources-list" style="display:none">
+                                ${m.sources.map(s => `<div class="source-item">${s}</div>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
                 ${showTimer ? `<div class="message-timer">${dText}</div>` : ''}
             </div>
         `;
     }).join('');
 
+    lucide.createIcons();
     container.scrollTop = container.scrollHeight;
+}
+
+function toggleSources(index) {
+    const el = document.getElementById(`sources-${index}`);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
 }
 
 // Initial render of chat
 document.addEventListener('DOMContentLoaded', () => {
     renderChat();
     fetchHealth();
-    setInterval(fetchHealth, 10000);
 });
 
 let aiReady = false;
@@ -1504,57 +1645,64 @@ async function fetchHealth() {
         const resp = await fetch('/api/v1/health');
         if (!resp.ok) throw new Error('Health check failed: ' + resp.status);
         const data = await resp.json();
-        console.log('AI Health Check:', data);
-        const ollama = data.components.ollama;
-        const remote = data.components.remote;
-        
-        const dot = document.getElementById('ai-status-dot');
-        const text = document.getElementById('ai-status-text');
-        const modelInfo = document.getElementById('ai-model-info');
-        const modelName = document.getElementById('ai-model-name');
-        const btn = document.getElementById('chat-send-btn');
+        updateHealthUI(data);
+    } catch (e) { /* silent */ }
+}
 
-        if (!dot || !text) return;
+function updateHealthUI(data) {
+    console.log('AI Health Update:', data);
+    const ollama = data.components.ollama;
+    const remote = data.components.remote;
+    
+    const dot = document.getElementById('ai-status-dot');
+    const text = document.getElementById('ai-status-text');
+    const modelInfo = document.getElementById('ai-model-info');
+    const modelName = document.getElementById('ai-model-name');
 
-        // Determine which component we care about based on currentChatProvider
-        let currentStatus = '';
-        let isReady = false;
-        let isOffline = false;
-        let missingReason = '';
+    if (!dot || !text) return;
 
-        if (currentChatProvider === 'local') {
-            currentStatus = ollama.status;
-            isReady = (ollama.status === 'READY');
-            isOffline = (ollama.status === 'DISCONNECTED');
-            missingReason = `Ollama: ${ollama.status.replace(/_/g, ' ')}`;
-            text.innerText = isReady ? 'Internal AI Ready' : 'Internal AI Error';
-        } else {
-            currentStatus = remote.status;
-            isReady = (remote.status === 'READY');
-            isOffline = (remote.status === 'NOT_CONFIGURED' || remote.status === 'DISCONNECTED');
-            missingReason = `Remote: ${remote.status.replace(/_/g, ' ')}`;
-            text.innerText = isReady ? 'External AI Ready' : 'External AI Error';
-        }
+    let currentStatus = '';
+    let isReady = false;
+    let isOffline = false;
+    let missingReason = '';
 
-        aiReady = isReady;
+    if (currentChatProvider === 'local') {
+        currentStatus = ollama.status;
+        isReady = (ollama.status === 'READY');
+        isOffline = (ollama.status === 'DISCONNECTED');
+        missingReason = `Ollama: ${ollama.status.replace(/_/g, ' ')}`;
+        text.innerText = isReady ? 'Internal AI Ready' : 'Internal AI Error';
+    } else {
+        currentStatus = remote.status;
+        isReady = (remote.status === 'READY');
+        isOffline = (remote.status === 'NOT_CONFIGURED' || remote.status === 'DISCONNECTED');
+        missingReason = `Remote: ${remote.status.replace(/_/g, ' ')}`;
+        text.innerText = isReady ? 'External AI Ready' : 'External AI Error';
+    }
 
-        if (isReady) {
-            dot.className = 'status-dot ready';
-            text.title = 'Ready';
-        } else {
-            dot.className = 'status-dot ' + (isOffline ? 'disconnected' : 'loading');
-            text.title = missingReason;
-        }
+    aiReady = isReady;
 
-        if (currentChatProvider === 'local' && ollama.model && ollama.status === 'READY') {
-            if (modelInfo) modelInfo.style.display = 'flex';
-            if (modelName) modelName.innerText = ollama.model.name;
-        } else if (currentChatProvider === 'remote' && remote.status === 'READY') {
-            if (modelInfo) modelInfo.style.display = 'flex';
-            if (modelName) modelName.innerText = 'Remote API';
-        } else {
-            if (modelInfo) modelInfo.style.display = 'none';
-        }
+    if (isReady) {
+        dot.className = 'status-dot ready';
+        text.title = 'Ready';
+    } else {
+        dot.className = 'status-dot ' + (isOffline ? 'disconnected' : 'loading');
+        text.title = missingReason;
+    }
+
+    if (currentChatProvider === 'local' && ollama.model && ollama.status === 'READY') {
+        if (modelInfo) modelInfo.style.display = 'flex';
+        if (modelName) modelName.innerText = ollama.model.name;
+    } else if (currentChatProvider === 'remote' && remote.status === 'READY') {
+        if (modelInfo) modelInfo.style.display = 'flex';
+        if (modelName) modelName.innerText = 'Remote API';
+    } else {
+        if (modelInfo) modelInfo.style.display = 'none';
+    }
+
+    const btn = document.getElementById('chat-send-btn');
+    const input = document.getElementById('chat-input');
+    if (!btn || !input) return;
 
         // Only disable if we are not currently sending a message
         if (!btn.classList.contains('sending')) {
@@ -1576,8 +1724,44 @@ async function fetchHealth() {
     }
 }
 
+async function fetchSystemUsage() {
+    try {
+        const resp = await fetch('/api/v1/system/usage');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        updateSysUsageUI(data);
+    } catch (e) { /* silent */ }
+}
+
+function updateSysUsageUI(data) {
+    const quotaEl = document.getElementById('stat-quota');
+    const fill = document.getElementById('limit-progress-fill');
+    const usageCount = document.getElementById('limit-usage-count');
+    const maxCount = document.getElementById('limit-max-count');
+    const remainingCount = document.getElementById('limit-remaining-count');
+
+    const usage = data.usage || 0;
+    const limit = data.limit || 0;
+    const remaining = limit > 0 ? Math.max(0, limit - usage) : '∞';
+    
+    if (quotaEl) {
+        quotaEl.textContent = `${usage} / ${limit || '∞'}`;
+        if (limit > 0) {
+            const pct = (usage / limit) * 100;
+            if (pct > 90) quotaEl.style.color = 'var(--danger)';
+            else if (pct > 70) quotaEl.style.color = 'var(--warning)';
+            else quotaEl.style.color = 'var(--text)';
+        }
+    }
+    
+    if (fill && limit > 0) fill.style.width = Math.min(100, (usage / limit) * 100) + '%';
+    if (usageCount) usageCount.textContent = usage;
+    if (maxCount) maxCount.textContent = limit || '∞';
+    if (remainingCount) remainingCount.textContent = remaining;
+}
+
 let activityLogs = [];
-let currentFilterHours = 1;
+let currentFilterHours = 24;
 
 async function fetchActivityLogs() {
     try {
@@ -1590,48 +1774,9 @@ async function fetchActivityLogs() {
     }
 }
 
-async function fetchSystemUsage() {
-    try {
-        const resp = await fetch('/api/v1/system/usage');
-        if (!resp.ok) return;
-        const data = await resp.json();
-        
-        const quotaEl = document.getElementById('stat-quota');
-        const fill = document.getElementById('limit-progress-fill');
-        const usageCount = document.getElementById('limit-usage-count');
-        const maxCount = document.getElementById('limit-max-count');
-        const remainingCount = document.getElementById('limit-remaining-count');
+// ── Activity Logs ──────────────────────────────────────────
 
-        const usage = data.usage || 0;
-        const limit = data.limit || 0;
-        const remaining = limit > 0 ? Math.max(0, limit - usage) : '∞';
-        
-        if (quotaEl) {
-            quotaEl.textContent = `${usage} / ${limit || '∞'}`;
-            if (limit > 0) {
-                const pct = (usage / limit) * 100;
-                if (pct > 90) quotaEl.style.color = 'var(--danger)';
-                else if (pct > 70) quotaEl.style.color = 'var(--warning)';
-                else quotaEl.style.color = 'var(--text)';
-            }
-        }
-
-        usageCount.textContent = usage;
-        maxCount.textContent = limit || '∞';
-        remainingCount.textContent = remaining;
-        document.getElementById('limit-forecast-count').textContent = data.forecast || usage;
-
-        if (limit > 0) {
-            const pct = Math.min(100, (usage / limit) * 100);
-            fill.style.width = `${pct}%`;
-            if (pct > 90) fill.style.background = 'var(--danger)';
-            else if (pct > 70) fill.style.background = 'var(--warning)';
-            else fill.style.background = 'linear-gradient(90deg, var(--primary) 0%, #60a5fa 100%)';
-        } else {
-            fill.style.width = '0%';
-        }
-    } catch (e) { /* silent */ }
-}
+// ── System Settings ───────────────────────────────────────
 
 async function loadSystemSettings() {
     try {
@@ -1754,7 +1899,7 @@ function renderActivityLogs() {
         return;
     }
 
-    container.innerHTML = activityLogs.map(log => {
+    container.innerHTML = `<div class="timeline">${activityLogs.map(log => {
         let icon = 'clock';
         let colorClass = '';
         let spin = false;
@@ -1784,38 +1929,29 @@ function renderActivityLogs() {
         }
         
         return `
-            <div class="activity-item" data-log-id="${log.id}">
-                <div class="activity-header">
-                    <div class="activity-repo">
-                        <i data-lucide="github" style="width:14px; height:14px; vertical-align:middle; margin-right:4px"></i>
-                        ${log.repo_name}
-                    </div>
-                    <div class="activity-time">${formatDate(log.executed_at)}</div>
+            <div class="timeline-item" data-log-id="${log.id}">
+                <div class="timeline-dot ${colorClass}">
+                    <i data-lucide="${icon}" class="timeline-icon ${spin ? 'spin' : ''}"></i>
                 </div>
-                <div class="activity-body">
-                    <i data-lucide="${icon}" class="activity-status-icon ${colorClass} ${spin ? 'spin' : ''}"></i>
-                    <span style="font-weight:600; color:var(--text)">${statusLabel}</span>
-                    <span style="margin-left:auto; opacity:0.7">${log.agent}: ${log.mission}</span>
-                </div>
-                <div class="activity-details">
-                    <div class="detail-item" title="Session ID">
-                        <i data-lucide="fingerprint" style="width:10px; height:10px"></i>
-                        ${log.session_id ? log.session_id.substring(0, 12) : 'pending...'}
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <div class="timeline-repo">${log.repo_name || log.repo || 'System'}</div>
+                        <div class="timeline-time">${new Date(log.executed_at || log.created_at).toLocaleString()}</div>
                     </div>
-                    <div class="detail-item" title="Duration">
-                        <i data-lucide="timer" style="width:10px; height:10px"></i>
-                        ${log.duration_ms > 0 ? log.duration_ms + 'ms' : '-'}
+                    <div class="timeline-body">${log.pattern}: ${log.mission}</div>
+                    <div class="timeline-status ${colorClass}">
+                        ${statusLabel} • ${log.agent}
+                        <button class="btn-secondary btn-sm" style="margin-left:auto; padding: 0.1rem 0.5rem; font-size: 0.65rem" onclick="toggleLogDetails(${log.id}, event)">
+                            <i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect
+                        </button>
                     </div>
-                    <button class="btn-secondary btn-sm" style="margin-left:auto; padding: 0.1rem 0.5rem" onclick="toggleLogDetails(${log.id}, event)">
-                        <i data-lucide="search" style="width:10px; height:10px; margin-right:4px"></i> Inspect
-                    </button>
-                </div>
-                <div id="log-details-${log.id}" class="log-phase-details" style="display:none">
-                    <!-- Phases injected here -->
+                    <div id="log-details-${log.id}" class="log-phase-details" style="display:none">
+                        <!-- Phases injected here -->
+                    </div>
                 </div>
             </div>
         `;
-    }).join('');
+    }).join('')}</div>`;
     
     lucide.createIcons();
 }
@@ -1885,7 +2021,7 @@ async function toggleLogDetails(logId, event) {
                 lucide.createIcons();
                 
                 // Auto-refresh if the log status indicates it's still running
-                const logItem = document.querySelector(`.activity-item[data-log-id="${logId}"]`);
+                const logItem = document.querySelector(`.timeline-item[data-log-id="${logId}"]`);
                 if (logItem && logItem.innerText.includes('Executing') && !window.inspectInterval) {
                     window.inspectInterval = setInterval(load, 3000);
                 } else if (logItem && !logItem.innerText.includes('Executing') && window.inspectInterval) {

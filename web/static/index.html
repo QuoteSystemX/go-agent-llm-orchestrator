@@ -121,10 +121,10 @@
                     <div class="activity-controls">
                         <div class="filter-group">
                             <span class="filter-label">Filter:</span>
-                            <button class="filter-btn active" data-hours="1">1h</button>
+                            <button class="filter-btn" data-hours="1">1h</button>
                             <button class="filter-btn" data-hours="3">3h</button>
                             <button class="filter-btn" data-hours="12">12h</button>
-                            <button class="filter-btn" data-hours="24">24h</button>
+                            <button class="filter-btn active" data-hours="24">24h</button>
                             <button class="filter-btn" data-hours="72">3d</button>
                             <button class="filter-btn" data-hours="168">1w</button>
                         </div>
@@ -746,6 +746,10 @@
             <div style="display:flex; align-items:center; gap:0.5rem">
                 <i data-lucide="terminal" style="width:14px; color:var(--primary)"></i>
                 <span style="font-size:0.8rem; font-weight:600">System Logs</span>
+                <div id="live-indicator" class="live-indicator">
+                    <span class="dot"></span>
+                    LIVE
+                </div>
                 <span id="log-panel-last" class="log-panel-last"></span>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem">

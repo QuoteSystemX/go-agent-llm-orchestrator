@@ -31,6 +31,8 @@ type Engine struct {
 	contextSearch ContextSearchFunc
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
+	onTaskUpdate     func(taskID, status string)
+	onActivityUpdate func()
 }
 
 func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder) *Engine {
@@ -49,6 +51,18 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 // Jules prompts with semantically relevant repository context at dispatch time.
 func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
 	e.contextSearch = fn
+}
+
+func (e *Engine) SetNotifyFunc(fn func(taskID, status string)) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.onTaskUpdate = fn
+}
+
+func (e *Engine) SetActivityNotifyFunc(fn func()) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.onActivityUpdate = fn
 }
 
 func (e *Engine) Start() {
@@ -134,6 +148,23 @@ func (e *Engine) ResumeAutopaused(ctx context.Context) int {
 	}
 	n, _ := res.RowsAffected()
 	return int(n)
+}
+
+func (e *Engine) updateTaskStatus(ctx context.Context, taskID, status string, extraSQL string, args ...interface{}) {
+	query := "UPDATE tasks SET status = ?"
+	if extraSQL != "" {
+		query += ", " + extraSQL
+	}
+	query += " WHERE id = ?"
+	
+	allArgs := append([]interface{}{status}, args...)
+	allArgs = append(allArgs, taskID)
+	
+	e.db.ExecContext(ctx, query, allArgs...)
+	
+	if e.onTaskUpdate != nil {
+		e.onTaskUpdate(taskID, status)
+	}
 }
 
 func (e *Engine) TriggerTask(taskID string) {
@@ -260,7 +291,7 @@ func (e *Engine) runTask(taskID string) {
 			}
 
 			if !isService {
-				e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED', auto_paused = 1 WHERE id = ?", taskID)
+				e.updateTaskStatus(ctx, taskID, "PAUSED", "auto_paused = 1")
 			}
 
 			if logID > 0 {
@@ -272,6 +303,9 @@ func (e *Engine) runTask(taskID string) {
 
 		_, dbErr := e.db.ExecContext(ctx,
 			"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
+		if dbErr == nil && e.onTaskUpdate != nil {
+			e.onTaskUpdate(taskID, "RUNNING")
+		}
 		if dbErr != nil {
 			return dbErr
 		}
@@ -327,14 +361,14 @@ func (e *Engine) runTask(taskID string) {
 		execStatus = "FAILED"
 		execError = err.Error()
 		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'FAILED', failure_count = failure_count + 1 WHERE id = ?", taskID)
+		e.updateTaskStatus(ctx, taskID, "FAILED", "failure_count = failure_count + 1")
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
 		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
-		e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING', failure_count = 0 WHERE id = ?", taskID)
+		e.updateTaskStatus(ctx, taskID, "PENDING", "failure_count = 0")
 	}
 
 	if logID > 0 {
@@ -343,6 +377,10 @@ func (e *Engine) runTask(taskID string) {
 			SET status = ?, error = ?, duration_ms = ?
 			WHERE id = ?
 		`, execStatus, execError, duration.Milliseconds(), logID)
+		
+		if e.onActivityUpdate != nil {
+			e.onActivityUpdate()
+		}
 	}
 }
 
