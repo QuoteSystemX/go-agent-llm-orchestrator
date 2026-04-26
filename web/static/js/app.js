@@ -437,7 +437,7 @@ function editTask(id) {
 
 async function confirmDelete(id) {
     const task = tasks.find(t => t.id === id);
-    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer'];
+    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer', 'wiki_architect'];
     const isService = task && servicePatterns.includes(task.pattern);
 
     let msg = `Are you sure you want to delete task ${id}? This cannot be undone.`;
@@ -479,6 +479,7 @@ const BMAD_SUITE = [
     { pattern: 'discovery',      agent: 'analyst',       schedule: '0 8 * * *',   importance: 8, category: 'service', mission: '/discovery Analyze repository state and sync wiki/BRIEF.md' },
     { pattern: 'story_writer',   agent: 'analyst',       schedule: '0 9 * * *',   importance: 8, category: 'service', mission: '/stories Generate story cards from PRD and architecture artifacts' },
     { pattern: 'sprint_planner', agent: 'analyst',       schedule: '0 10 * * *',  importance: 8, category: 'service', mission: '/sprint Update sprint board from current story backlog' },
+    { pattern: 'wiki_architect', agent: 'wiki-architect', schedule: '0 11 * * *',  importance: 7, category: 'service', mission: 'Review codebase and maintain wiki/ directory following Karpathy method. Detect wiki-code drift.' },
     { pattern: 'full_cycle',     agent: 'orchestrator',  schedule: '0 */3 * * *', importance: 9, category: 'service', mission: 'Pick one story from tasks/ and implement it end-to-end, then open a PR' },
     { pattern: 'sprint_closer',  agent: 'analyst',       schedule: '50 23 * * *', importance: 7, category: 'service', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts' },
 ];
@@ -487,7 +488,7 @@ async function installBMAD(event, repoName, patternsToInstall) {
     event.stopPropagation();
 
     const count = patternsToInstall.length;
-    const label = count === 5 ? 'full BMAD suite (5 service tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
+    const label = count === 6 ? 'full BMAD suite (6 service tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
     if (!confirm(`Install ${label} for "${repoName}"?`)) return;
 
     const toCreate = BMAD_SUITE.filter(t => patternsToInstall.includes(t.pattern));
