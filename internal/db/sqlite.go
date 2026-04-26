@@ -251,9 +251,9 @@ func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 	var count int
 	// We count task_logs from the beginning of the current day (UTC)
 	err := db.history.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM task_logs 
+		SELECT COUNT(*) FROM task_logs
 		WHERE executed_at >= date('now', 'start of day')
-		AND status NOT IN ('FAILED', 'TRIGGERED') -- Only count those that actually started or finished
+		AND status != 'TRIGGERED'
 	`).Scan(&count)
 	return count, err
 }
