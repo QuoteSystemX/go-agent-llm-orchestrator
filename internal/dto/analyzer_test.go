@@ -26,7 +26,7 @@ func TestAnalyzer_IndexFile_UTF8(t *testing.T) {
 	
 	ctx := context.Background()
 	store := a.getRagStore("test-repo")
-	a.indexFile(ctx, tmpFile, store)
+	a.indexFile(ctx, tmpFile, store, "code")
 	
 	// Check chunks in ragStore
 	docs := a.getRagStore("test-repo").Search(ctx, "Я", 10)
@@ -70,7 +70,7 @@ func TestAnalyzer_BuildPrompt(t *testing.T) {
 	database, _ := db.InitDB(":memory:")
 	a := NewAnalyzer(context.Background(), database, nil, nil, nil)
 	
-	prompt := a.buildAnalysisPrompt("test-repo", "README content", nil, nil, 1000)
+	prompt := a.buildAnalysisPrompt(context.Background(), "test-repo", "README content", nil, nil, 1000)
 	
 	if !strings.Contains(prompt, "README content") {
 		t.Error("prompt should contain README content")
@@ -83,7 +83,7 @@ func TestAnalyzer_BuildPrompt_Truncation(t *testing.T) {
 	
 	largeReadme := strings.Repeat("A", 5000)
 	maxChars := 4000
-	prompt := a.buildAnalysisPrompt("test-repo", largeReadme, nil, nil, maxChars)
+	prompt := a.buildAnalysisPrompt(context.Background(), "test-repo", largeReadme, nil, nil, maxChars)
 	
 	if len(prompt) > maxChars {
 		t.Errorf("prompt exceeds maxChars: %d > %d", len(prompt), maxChars)
@@ -134,7 +134,7 @@ func TestAnalyzer_BuildPrompt_TemplateFiltering(t *testing.T) {
 		{Name: "T5", Content: "C5"},
 	}
 	
-	prompt := a.buildAnalysisPrompt("test", "", nil, templates, 10000)
+	prompt := a.buildAnalysisPrompt(context.Background(), "test", "", nil, templates, 10000)
 	
 	if !strings.Contains(prompt, "- T1:") {
 		t.Error("should contain T1")
