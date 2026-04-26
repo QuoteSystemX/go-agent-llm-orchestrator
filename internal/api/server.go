@@ -1333,12 +1333,13 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"last_analysis": lastAnalysis,
-		"is_running":    currentStatus.IsRunning,
-		"type":          currentStatus.Type,
-		"phase":         currentStatus.Phase,
-		"current_file":  currentStatus.CurrentFile,
-		"files_indexed": currentStatus.FilesIndexed,
-		"total_files":   currentStatus.TotalFiles,
+		"last_analysis":   lastAnalysis,
+		"is_running":      currentStatus.IsRunning,
+		"type":            currentStatus.Type,
+		"phase":           currentStatus.Phase,
+		"current_file":    currentStatus.CurrentFile,
+		"files_indexed":   currentStatus.FilesIndexed,
+		"already_indexed": currentStatus.AlreadyIndexed,
+		"total_files":     currentStatus.TotalFiles,
 	})
 }
