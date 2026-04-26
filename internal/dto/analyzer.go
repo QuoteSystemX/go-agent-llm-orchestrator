@@ -78,6 +78,31 @@ func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
 	return s
 }
 
+// DiscoverExistingStores scans the database for repositories and initializes
+// their RAG stores if they already exist on disk. This ensures they are visible
+// in the UI immediately after server restart.
+func (a *Analyzer) DiscoverExistingStores(ctx context.Context) {
+	repos, err := a.db.GetDistinctRepos(ctx)
+	if err != nil {
+		log.Printf("Analyzer: Failed to get repos for RAG discovery: %v", err)
+		return
+	}
+
+	basePath := filepath.Join(a.db.GetSetting("repo_base_path", "./data/repos"), "../chromem_db")
+	
+	for _, repoID := range repos {
+		safeID := strings.ReplaceAll(repoID, "/", "_")
+		dbPath := filepath.Join(basePath, safeID)
+		
+		// If the directory exists, it likely has an index.
+		// We use getRagStore to initialize and register it.
+		if _, err := os.Stat(dbPath); err == nil {
+			log.Printf("Analyzer: Auto-discovered existing RAG index for %s", repoID)
+			a.getRagStore(repoID)
+		}
+	}
+}
+
 func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total int) {
 	a.stateMutex.Lock()
 	defer a.stateMutex.Unlock()

@@ -102,6 +102,8 @@ func main() {
 
 	analyzer := dto.NewAnalyzer(ctx, database, router, promptBuilder, gitSyncer)
 	analyzer.SetInferencePriority(router)
+	// Auto-discover existing RAG stores on startup
+	analyzer.DiscoverExistingStores(ctx)
 	engine.SetContextSearcher(analyzer.SearchContext)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
