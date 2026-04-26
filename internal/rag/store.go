@@ -1,14 +1,18 @@
 package rag
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/philippgille/chromem-go"
 )
@@ -32,6 +36,52 @@ type MemoryStore struct {
 	inferMu *sync.RWMutex
 }
 
+// newOllamaEmbedFunc returns an EmbeddingFunc that calls the Ollama /api/embeddings
+// endpoint with num_ctx capped at 2048 to match nomic-embed-text's training context.
+// chromem-go's built-in NewEmbeddingFuncOllama does not expose this option, which
+// causes Ollama to default to 8192 and emit a WARN on every model load.
+func newOllamaEmbedFunc(modelName, baseURL string) chromem.EmbeddingFunc {
+	client := &http.Client{Timeout: 60 * time.Second}
+	return func(ctx context.Context, text string) ([]float32, error) {
+		payload := map[string]interface{}{
+			"model":  modelName,
+			"prompt": text,
+			"options": map[string]interface{}{
+				"num_ctx": 2048,
+			},
+		}
+		body, err := json.Marshal(payload)
+		if err != nil {
+			return nil, fmt.Errorf("embed marshal: %w", err)
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/embeddings", bytes.NewReader(body))
+		if err != nil {
+			return nil, fmt.Errorf("embed request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("embed call: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			b, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("embed status %d: %s", resp.StatusCode, b)
+		}
+
+		var result struct {
+			Embedding []float32 `json:"embedding"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			return nil, fmt.Errorf("embed decode: %w", err)
+		}
+		return result.Embedding, nil
+	}
+}
+
 // NewMemoryStore initializes a persistent chromem DB for a specific repository
 func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName string) *MemoryStore {
 	// sanitize repoID for filesystem
@@ -51,7 +101,7 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 		}
 		ollamaUrl = ollamaUrl + "/api"
 	}
-	embedFunc := chromem.NewEmbeddingFuncOllama(modelName, ollamaUrl)
+	embedFunc := newOllamaEmbedFunc(modelName, ollamaUrl)
 
 	collection, err := db.GetOrCreateCollection("repo_context", nil, embedFunc)
 	if err != nil {

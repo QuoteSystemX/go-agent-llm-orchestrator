@@ -155,6 +155,13 @@ func (s *Syncer) SyncCustom(ctx context.Context, rawUrl, branch, targetDir strin
 	if err := s.runGit(ctx, targetDir, "fetch", "--depth", "1", "origin", branch); err != nil {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
+
+	// Remove stale lock file that a previously killed git process may have left behind.
+	lockFile := filepath.Join(targetDir, ".git", "index.lock")
+	if err := os.Remove(lockFile); err != nil && !os.IsNotExist(err) {
+		log.Printf("git: warning: failed to remove stale index.lock in %s: %v", targetDir, err)
+	}
+
 	if err := s.runGit(ctx, targetDir, "reset", "--hard", "origin/"+branch); err != nil {
 		return fmt.Errorf("reset failed: %w", err)
 	}
