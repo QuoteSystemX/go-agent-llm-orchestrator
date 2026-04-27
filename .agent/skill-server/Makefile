@@ -6,7 +6,7 @@ LDFLAGS := -ldflags="-s -w"
 # Isolate from parent go.work so skill-server is always a standalone module
 export GOWORK := off
 
-.PHONY: build build-all build-linux deps clean
+.PHONY: build build-all build-linux build-darwin build-darwin-universal deps clean
 
 ## build: compile for the current platform
 build: deps
@@ -22,6 +22,19 @@ build-all: deps
 	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BIN)/$(NAME)-darwin-amd64  .
 	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BIN)/$(NAME)-darwin-arm64  .
 	@echo "All binaries built in $(BIN)/"
+
+## build-darwin: cross-compile only darwin targets (arch-specific)
+build-darwin: deps
+	@mkdir -p $(BIN)
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BIN)/$(NAME)-darwin-amd64 .
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BIN)/$(NAME)-darwin-arm64 .
+
+## build-darwin-universal: build a macOS universal (fat) binary via lipo
+build-darwin-universal: build-darwin
+	lipo -create -output $(BIN)/$(NAME)-darwin \
+		$(BIN)/$(NAME)-darwin-amd64 \
+		$(BIN)/$(NAME)-darwin-arm64
+	@echo "Universal binary: $(BIN)/$(NAME)-darwin"
 
 ## build-linux: cross-compile only linux targets (used in CI)
 build-linux: deps

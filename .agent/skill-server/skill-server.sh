@@ -16,13 +16,19 @@ esac
 
 BIN="$DIR/bin/skill-server-${OS}-${ARCH}"
 
+# On darwin prefer the universal (fat) binary if available
+if [ "$OS" = "darwin" ] && [ -x "$DIR/bin/skill-server-darwin" ]; then
+  BIN="$DIR/bin/skill-server-darwin"
+fi
+
 if [ ! -x "$BIN" ]; then
   cat >&2 <<EOF
 skill-server: binary not found for ${OS}-${ARCH}
   Expected: $BIN
 
   Build it with:
-    cd .agent/skill-server && make build
+    cd .agent/skill-server && make build-darwin-universal   # macOS
+    cd .agent/skill-server && make build-linux              # Linux
 EOF
   exit 1
 fi
