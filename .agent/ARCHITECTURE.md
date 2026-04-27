@@ -8,9 +8,10 @@
 
 Antigravity Kit is a modular system consisting of:
 
-- **24 Specialist Agents** - Role-based AI personas
-- **41 Skills** - Domain-specific knowledge modules
+- **31 Specialist Agents** - Role-based AI personas
+- **48 Skills** - Domain-specific knowledge modules
 - **18 Workflows** - Slash command procedures
+- **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 
 ---
 
@@ -20,21 +21,28 @@ Antigravity Kit is a modular system consisting of:
 .agent/
 ├── ARCHITECTURE.md          # This file
 ├── KNOWLEDGE.md             # Global Rules, Context, and Orchestration Standards
-├── agents/                  # Specialist Agents profiles (.md)
+├── agents/                  # Specialist Agents profiles (.md) — with profile: frontmatter
 ├── skills/                  # Skills (Domain-specific knowledge modules)
 ├── workflows/               # Slash Commands for Antigravity (+ Local triggers)
 ├── rules/                   # Global Rules (GEMINI.md)
-└── scripts/                 # Master Validation Scripts
+├── scripts/                 # Master Validation Scripts + sync_claude_agents.py
+└── skill-server/            # Go MCP binary (skills_load, skills_list, skills_search)
+    ├── main.go
+    ├── go.mod
+    ├── Makefile
+    ├── skill-server.sh      # Platform launcher (auto-detects OS/ARCH)
+    └── bin/                 # Pre-built binaries (linux-amd64, linux-arm64)
 
 # Prompt Library Hub Features (Repository Root)
 ├── prompt/patterns/         # Execution Methodologies (featureforge, bugcatcher, reviewer)
 ├── tasks/                   # Active Agent Task Queue
-└── .github/distribution.yml # CRON Task Distribution Map
+├── .github/distribution.yml # CRON Task Distribution Map
+└── .github/profiles.yml     # Distribution Profiles (go-service, web-app, data-platform, mobile, game)
 ```
 
 ---
 
-## 🤖 Agents (26)
+## 🤖 Agents (31)
 
 Specialist AI personas for different domains.
 
@@ -70,10 +78,11 @@ Specialist AI personas for different domains.
 | `ai-engineer`            | AI / LLM systems           | llm-patterns, python-patterns, api-patterns, systematic-debugging  |
 | `wiki-architect`         | Knowledge architecture     | wiki-writing, documentation-templates, brainstorming               |
 | `data-engineer`          | Data pipelines & analytics | data-patterns, database-design, python-patterns, bash-linux        |
+| `sre-engineer`           | Observability & reliability | observability-patterns, k8s-patterns, deployment-procedures       |
 
 ---
 
-## 🧩 Skills (42)
+## 🧩 Skills (48)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -106,10 +115,12 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 ### Cloud & Infrastructure
 
-| Skill                   | Description               |
-| ----------------------- | ------------------------- |
-| `deployment-procedures` | CI/CD, deploy workflows   |
-| `server-management`     | Infrastructure management |
+| Skill                    | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| `deployment-procedures`  | CI/CD, deploy workflows                                               |
+| `server-management`      | Infrastructure management                                             |
+| `terraform-patterns`     | HCL modules, state management, plan/apply safety, checkov, terratest  |
+| `observability-patterns` | OTel, Prometheus, Grafana, Loki, Jaeger, SLO/SLI, Alertmanager       |
 
 ### Testing & Quality
 
@@ -307,15 +318,18 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 
 - `CLAUDE.md` (repo root) — Claude Code entry point, @includes KNOWLEDGE.md + ARCHITECTURE.md
 - `.agent/templates/CLAUDE.md` — Template provisioned to target repos on first CI deploy
-- `.claude/settings.json` — MCP server config for Claude Code
-- `.claude/agents/*.md` — 24 specialist agents + 18 workflow agents (generated, @-invokable)
+- `.claude/settings.json` — MCP server config + `"agent": "orchestrator"` for auto-routing
+- `~/.claude/.mcp.json` — User-level MCP config (skill-server at absolute path)
+- `.claude/agents/*.md` — 31 specialist agents + 18 workflow agents (generated, @-invokable)
 - `.claude/commands/*.md` — 18 slash commands `/name` (generated, same source as workflows)
-- `.agent/scripts/sync_claude_agents.py` — Generator script
+- `.agent/scripts/sync_claude_agents.py` — Generator script (`--profile`, `--agent`, `--dry-run`)
+- `.agent/skill-server/` — Go MCP binary source + pre-built linux binaries
 
 ### Skill Loading: Antigravity vs Claude Code
 
 - **Antigravity**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
-- **Claude Code**: `skills:` field ignored → skill content embedded inline via `## Embedded Skills` section
+- **Claude Code (Variant A)**: dynamic loading — generated agents get a `> **Skills** — read these files` pointer block; no inline embedding. Eliminates duplication and the 100-line truncation limit.
+- **skill-server MCP** (Variant C): Go binary exposes `skills_load`, `skills_list`, `skills_search` tools via stdio JSON-RPC. Configured in `.claude/settings.json` (project) and `~/.claude/.mcp.json` (user).
 
 ### Slash Commands vs Subagents in Claude Code
 
@@ -338,18 +352,27 @@ python3 .agent/scripts/sync_claude_agents.py --agent debugger
 
 # Preview without writing:
 python3 .agent/scripts/sync_claude_agents.py --dry-run
+
+# Distribution profile — only agents relevant for the target repo type:
+python3 .agent/scripts/sync_claude_agents.py --profile go-service
+python3 .agent/scripts/sync_claude_agents.py --profile web-app
+python3 .agent/scripts/sync_claude_agents.py --profile data-platform
+python3 .agent/scripts/sync_claude_agents.py --profile mobile
 ```
 
 ### CI Distribution
 
-`distribute-agentic-kit.yml` runs `sync_claude_agents.py` before rsync and distributes:
+`distribute-agentic-kit.yml` runs `sync_claude_agents.py` (optionally with `--profile`) before rsync and distributes:
 
 - `.agent/` — Antigravity Kit (unchanged)
-- `.claude/agents/` — Claude Code subagents (generated)
+- `.claude/agents/` — Claude Code subagents (generated, filtered by profile if set)
 - `.claude/commands/` — Claude Code slash commands (generated)
+- `.agent/skill-server/bin/` — Pre-built Go binaries (linux-amd64, linux-arm64)
 - `CLAUDE.md` — first-time provisioning only (target repos own their copy after that)
 
-Triggers on changes to `.agent/**` or `.claude/**`.
+Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build-skill-server.yml` and committed to the repo, so distribution requires no Go toolchain in target repos.
+
+**Profile-based distribution** — add `--profile <name>` to the rsync step to exclude domain-irrelevant agents. Profiles defined in `.github/profiles.yml`.
 
 ### Naming Conventions in `.claude/`
 
@@ -360,14 +383,15 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 
 ## 📊 Statistics
 
-| Metric              | Value                         |
-| ------------------- | ----------------------------- |
-| **Total Agents**    | 31                            |
-| **Total Skills**    | 46                            |
-| **Total Workflows** | 18                            |
-| **Total Scripts**   | 2 (master) + 18 (skill-level) |
-| **Total Patterns**  | 10 (5 original + 5 BMAD)      |
-| **Coverage**        | ~95% web/mobile development   |
+| Metric              | Value                                           |
+| ------------------- | ----------------------------------------------- |
+| **Total Agents**    | 31                                              |
+| **Total Skills**    | 48                                              |
+| **Total Workflows** | 18                                              |
+| **Total Scripts**   | 2 (master) + 18 (skill-level)                   |
+| **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
+| **MCP Servers**     | 1 (`skill-server` Go binary — stdio transport)  |
+| **Coverage**        | ~95% web/mobile/backend/infra development       |
 
 ---
 
@@ -389,7 +413,8 @@ Triggers on changes to `.agent/**` or `.claude/**`.
 | Game               | `game-developer`         | game-development                                         |
 | Database           | `database-architect`     | database-design, prisma-expert                           |
 | DevOps / CI/CD     | `devops-engineer`        | deployment-procedures, docker-expert                     |
-| Kubernetes / K8s   | `k8s-engineer`           | k8s-patterns, deployment-procedures                      |
+| Kubernetes / K8s   | `k8s-engineer`           | k8s-patterns, deployment-procedures, terraform-patterns  |
+| Observability/SRE  | `sre-engineer`           | observability-patterns, k8s-patterns                     |
 | Git / Conflicts    | `git-master`             | git-master, bash-linux                                   |
 | AI / LLM           | `ai-engineer`            | llm-patterns, python-patterns                            |
 | Wiki / Knowledge   | `wiki-architect`         | wiki-writing, documentation-templates                    |
