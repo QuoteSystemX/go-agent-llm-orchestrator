@@ -34,6 +34,7 @@ type Monitor struct {
 	julesClient JulesClientIface
 	supervisor  SupervisorIface
 	EventBus    chan WebhookEvent
+	notifyFunc  func(taskID, status string)
 }
 
 func NewMonitor(database *db.DB, tm *traffic.TrafficManager, client JulesClientIface, sup SupervisorIface) *Monitor {
@@ -45,6 +46,11 @@ func NewMonitor(database *db.DB, tm *traffic.TrafficManager, client JulesClientI
 		EventBus:    make(chan WebhookEvent, 100),
 	}
 }
+
+func (m *Monitor) SetNotifyFunc(fn func(taskID, status string)) {
+	m.notifyFunc = fn
+}
+
 
 func (m *Monitor) Start(ctx context.Context) {
 	log.Println("Status monitor started (event-driven)")
@@ -101,15 +107,26 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 		triggerSet[s] = true
 	}
 
-	if triggerSet[event.Status] && event.Status != currentStatus {
-		log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
-		// Execute supervisor logic via traffic manager
-		m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
-			if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
-				log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
+	if event.Status != currentStatus {
+		if m.notifyFunc != nil {
+			// Find the task ID associated with this session to notify the UI
+			var taskID string
+			if err := m.db.QueryRowContext(ctx, "SELECT task_id FROM sessions WHERE id = ?", id).Scan(&taskID); err == nil {
+				m.notifyFunc(taskID, event.Status)
 			}
-			return nil
-		})
+		}
+
+		if triggerSet[event.Status] {
+			log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
+			// Execute supervisor logic via traffic manager
+			m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
+				if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
+					log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
+				}
+				return nil
+			})
+		}
 	}
 	return nil
 }
+

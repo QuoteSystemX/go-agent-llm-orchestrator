@@ -256,6 +256,13 @@ func main() {
 	go autopilotEngine.Start(ctx)
 
 	go statMonitor.Start(ctx)
+	statMonitor.SetNotifyFunc(func(taskID, status string) {
+		hub.Broadcast(api.TypeTask, map[string]string{
+			"id":     taskID,
+			"status": status,
+		})
+	})
+
 
 	// Periodic task sync (every 5 minutes)
 	go func() {

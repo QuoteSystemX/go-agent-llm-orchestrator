@@ -27,6 +27,17 @@
     to { transform: rotate(360deg); }
 }
 
+.task-status-update {
+    animation: statusPulse 2s ease-out;
+}
+
+@keyframes statusPulse {
+    0% { background: rgba(59, 130, 246, 0.2); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+    100% { background: transparent; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -807,10 +818,18 @@ body { padding-bottom: 40px; }
     margin-bottom: 0.4rem;
 }
 .failure-tooltip-error {
-    color: var(--text);
+    color: #fca5a5; /* Slightly lighter red/pink for better contrast on dark */
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.72rem;
-    overflow-wrap: break-word;
 }
 
 /* RAG Tab Styles */
@@ -905,19 +924,7 @@ body { padding-bottom: 40px; }
     font-size: 0.75rem;
     padding: 0.5rem;
 }
-    color: #fca5a5; /* Slightly lighter red/pink for better contrast on dark */
-    word-break: break-word;
-    white-space: pre-wrap;
-    max-height: 200px; /* Increased height */
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.4); /* Much darker background */
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 0.4rem;
-    padding: 0.6rem;
-    margin-bottom: 0.6rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-}
+/* failure-tooltip-error moved and consolidated above */
 .failure-tooltip-meta {
     color: var(--text-muted);
     font-size: 0.68rem;

@@ -94,8 +94,25 @@ class OrchestratorSocket {
     handleTask(payload) {
         const task = tasks.find(t => t.id === payload.id);
         if (task) {
+            const oldStatus = task.status;
             task.status = payload.status;
-            if (typeof renderTasks === 'function') renderTasks();
+            
+            if (oldStatus !== payload.status) {
+                if (typeof renderTasks === 'function') {
+                    renderTasks();
+                    // Add pulse effect to the updated task card
+                    setTimeout(() => {
+                        const card = document.querySelector(`[data-task-id="${payload.id}"]`);
+                        if (card) {
+                            card.classList.add('task-status-update');
+                            setTimeout(() => card.classList.remove('task-status-update'), 2000);
+                        }
+                    }, 50);
+                }
+            }
+        } else {
+            // New task discovered via event - refresh full list
+            if (typeof fetchTasks === 'function') fetchTasks();
         }
     }
 
@@ -285,7 +302,7 @@ function renderTasks() {
                             const noPrompt = !task.prompt_ready;
                             const dis = noPrompt ? 'disabled' : '';
                             return `
-                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''} ${isService ? 'service-task-card' : ''} ${task.status === 'DRAFT' ? 'draft-task-card' : ''}">
+                            <div class="task-card glass ${noPrompt ? 'no-prompt' : ''} ${isService ? 'service-task-card' : ''} ${task.status === 'DRAFT' ? 'draft-task-card' : ''}" data-task-id="${task.id}">
                                 <div class="task-info-block">
                                     <div class="task-header">
                                         <div class="task-title">${task.id.split(':').pop()}</div>
@@ -1312,7 +1329,8 @@ async function createSelectedTasks() {
     }
     
     showToast(`Successfully created ${selected.length} tasks!`, 'success');
-    runAnalysis(); // Refresh
+    if (typeof fetchTasks === 'function') fetchTasks();
+    runAnalysis(); // Refresh DTO view
 }
 
 async function runAnalysis() {
