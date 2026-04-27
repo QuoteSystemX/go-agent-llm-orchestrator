@@ -19,7 +19,7 @@ The existing legacy scheduler is limited to static templates and lacks awareness
 - **Latency**: Sub-second decision-making for routing using small local LLMs.
 
 ## 🛠️ Constraints
-- **Language**: Go 1.25+.
+- **Language**: Go 1.26+.
 - **Runtime**: Kubernetes (K8s).
 - **Storage**: SQLite (Local persistence within the pod/PVC).
 - **LLM Interface**: OpenAI-compatible API endpoint + API Key (pluggable for Ollama or others).

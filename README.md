@@ -30,7 +30,7 @@ See [Architecture Guide](wiki/ARCHITECTURE.md) for details.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Go 1.23+**
+- **Go 1.26+**
 - **Ollama** (for local tasks)
 - **SQLite 3**
 - **Google Jules API Key**
