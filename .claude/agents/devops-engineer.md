@@ -250,3 +250,4 @@ What are you deploying?
 - `.agent/skills/server-management/SKILL.md`
 - `.agent/skills/powershell-windows/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
+- `.agent/skills/terraform-patterns/SKILL.md`

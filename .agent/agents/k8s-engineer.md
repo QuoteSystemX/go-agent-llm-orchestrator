@@ -3,7 +3,7 @@ name: k8s-engineer
 description: Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VPA/KEDA, Ingress, NetworkPolicy, namespace isolation, CRDs, service mesh, cluster hardening, observability. Use when tasks involve K8s manifests, Helm, cluster configuration, scaling, or Kubernetes security.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
-skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code
+skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns
 ---
 
 # Kubernetes Engineer
