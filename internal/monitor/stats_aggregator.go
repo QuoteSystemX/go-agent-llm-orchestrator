@@ -12,21 +12,24 @@ type StatSample struct {
 }
 
 type StatsAggregator struct {
-	CPU    []StatSample `json:"cpu"`
-	Memory []StatSample `json:"memory"`
-	Tasks  []StatSample `json:"tasks"`
-	mu     sync.RWMutex
-	max    int
+	CPU       []StatSample `json:"cpu"`
+	Memory    []StatSample `json:"memory"`
+	Tasks     []StatSample `json:"tasks"`
+	mu        sync.RWMutex
+	max       int
+	startTime time.Time
 }
 
 func NewStatsAggregator(maxSamples int) *StatsAggregator {
 	return &StatsAggregator{
-		CPU:    make([]StatSample, 0, maxSamples),
-		Memory: make([]StatSample, 0, maxSamples),
-		Tasks:  make([]StatSample, 0, maxSamples),
-		max:    maxSamples,
+		CPU:       make([]StatSample, 0, maxSamples),
+		Memory:    make([]StatSample, 0, maxSamples),
+		Tasks:     make([]StatSample, 0, maxSamples),
+		max:       maxSamples,
+		startTime: time.Now(),
 	}
 }
+
 
 const collectInterval = 10 * time.Second
 
@@ -86,8 +89,9 @@ func (s *StatsAggregator) GetLatest() map[string]any {
 
 	return map[string]any{
 		"num_goroutine":   runtime.NumGoroutine(),
-		"memory_alloc_mb": float64(m.Alloc) / megabyte,
-		"memory_sys_mb":   float64(m.Sys) / megabyte,
-		"uptime_seconds":  0, // Optional: add start time to NewStatsAggregator for real uptime
+		"memory_alloc_mb": m.Alloc / megabyte,
+		"memory_sys_mb":   m.Sys / megabyte,
+		"uptime_seconds":  int(time.Since(s.startTime).Seconds()),
 	}
 }
+

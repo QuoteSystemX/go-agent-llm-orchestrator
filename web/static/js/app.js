@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initActivityFilters();
     setInterval(tickCountdown, 1000);
     loadChatHistory();
+    fetchSystemStats();
 
     const repoSelect = document.getElementById('dto-repo-select');
     if (repoSelect) {
@@ -441,6 +442,19 @@ function renderNextRunSlots() {
             <span class="next-run-slot-time">at ${at}</span>
         </div>`;
     }).join('');
+}
+
+function formatUptime(seconds) {
+    const s_int = Math.floor(seconds || 0);
+    const d = Math.floor(s_int / 86400);
+    const h = Math.floor((s_int % 86400) / 3600);
+    const m = Math.floor((s_int % 3600) / 60);
+    const s = s_int % 60;
+    
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
 }
 
 function formatCountdown(sec) {
@@ -991,7 +1005,7 @@ async function saveSettings() {
         alert('Settings saved successfully!');
         hideModal('settings-modal');
         fetchHealth(); // Refresh AI status
-        updateSystemStats(); // Refresh header
+        if (typeof fetchSystemStats === 'function') fetchSystemStats(); // Refresh header
     } catch (err) {
         console.error('Failed to save settings:', err);
         alert('Failed to save settings. Check console for details.');
@@ -1085,29 +1099,7 @@ function renderLogs() {
     }
 }
 
-function formatUptime(seconds) {
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return d > 0 ? `${d}d${h}h` : h > 0 ? `${h}h${m}m` : `${m}m`;
-}
-
-async function updateSystemStats() {
-    try {
-        const resp = await fetch('/api/v1/system/stats');
-        const stats = await resp.json();
-        document.getElementById('stat-cpu').innerText = `${stats.num_goroutine}`;
-        document.getElementById('stat-mem').innerText = `${stats.memory_alloc_mb}MB`;
-        document.getElementById('stat-uptime').innerText = formatUptime(stats.uptime_seconds);
-
-        if (stats.history) {
-            renderSparkline('cpu-sparkline', stats.history.cpu);
-            renderSparkline('mem-sparkline', stats.history.memory);
-        }
-    } catch (e) {
-        console.error('Failed to fetch stats', e);
-    }
-}
+/* formatUptime consolidated above */
 
 function renderSparkline(elementId, data) {
     const container = document.getElementById(elementId);
@@ -1147,17 +1139,27 @@ async function fetchSystemStats() {
 }
 
 function updateSysStatsUI(data) {
+    if (!data) return;
+    
     // Goroutines as load indicator
     const cpuEl = document.getElementById('stat-cpu');
     if (cpuEl) cpuEl.textContent = data.num_goroutine; 
     
     // Show Sys Memory (Total reserved) instead of just Alloc
     const memEl = document.getElementById('stat-mem');
-    if (memEl) memEl.textContent = data.memory_sys_mb + 'MB';
+    if (memEl && data.memory_sys_mb !== undefined) {
+        const val = typeof data.memory_sys_mb === 'number' ? data.memory_sys_mb.toFixed(1) : data.memory_sys_mb;
+        memEl.textContent = val + 'MB';
+    }
     
     const uptimeEl = document.getElementById('stat-uptime');
-    if (uptimeEl && data.uptime_seconds) {
+    if (uptimeEl && data.uptime_seconds !== undefined) {
         uptimeEl.textContent = formatUptime(data.uptime_seconds);
+    }
+
+    if (data.history) {
+        renderSparkline('cpu-sparkline', data.history.cpu);
+        renderSparkline('mem-sparkline', data.history.memory);
     }
 }
 
