@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"go-agent-llm-orchestrator/internal/db"
-	"go-agent-llm-orchestrator/internal/llm"
 )
 
 type JulesClient struct {
@@ -103,7 +102,7 @@ func (c *JulesClient) doRequest(ctx context.Context, method, path string, body i
 }
 
 // GetSession satisfies llm.JulesClientIface
-func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*llm.SessionInfo, error) {
+func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error) {
 	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions/"+sessionID, nil)
 	if err != nil {
 		return nil, err
@@ -118,7 +117,7 @@ func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*llm.Se
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
 		return nil, err
 	}
-	return &llm.SessionInfo{
+	return &db.SessionInfo{
 		Status:  sr.Status,
 		Message: sr.Message,
 		Result:  sr.Result,

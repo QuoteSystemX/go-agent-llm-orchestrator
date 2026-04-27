@@ -10,9 +10,16 @@ import (
 	"go-agent-llm-orchestrator/internal/traffic"
 )
 
+type SessionInfo struct {
+	Status  string
+	Message string
+	Result  string
+}
+
 // JulesClientIface is the subset of api.JulesClient the Monitor needs.
 type JulesClientIface interface {
 	GetStatus(ctx context.Context, sessionID string) (string, error)
+	GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error)
 }
 
 // SupervisorIface is the subset of llm.Supervisor the Monitor needs.
@@ -96,10 +103,29 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 		return fmt.Errorf("session not found in db: %w", err)
 	}
 
-	// Update DB
+	// Update session status in DB
 	_, err = m.db.ExecContext(ctx, "UPDATE sessions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", event.Status, id)
 	if err != nil {
 		return fmt.Errorf("updating session: %w", err)
+	}
+
+	// Always sync session status to the parent task
+	var taskID string
+	var lastError string
+	if err := m.db.QueryRowContext(ctx, "SELECT task_id FROM sessions WHERE id = ?", id).Scan(&taskID); err == nil {
+		// If session failed, try to get detailed error from Jules
+		if event.Status == "FAILED" {
+			if sess, err := m.julesClient.GetSession(ctx, event.SessionID); err == nil && sess.Message != "" {
+				lastError = sess.Message
+			}
+		}
+
+		// Update parent task with latest session info
+		_, _ = m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_session_id = ?, last_error = ? WHERE id = ?", event.Status, event.SessionID, lastError, taskID)
+		
+		if m.notifyFunc != nil && event.Status != currentStatus {
+			m.notifyFunc(taskID, event.Status)
+		}
 	}
 
 	triggerSet := make(map[string]bool)
@@ -107,25 +133,15 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 		triggerSet[s] = true
 	}
 
-	if event.Status != currentStatus {
-		if m.notifyFunc != nil {
-			// Find the task ID associated with this session to notify the UI
-			var taskID string
-			if err := m.db.QueryRowContext(ctx, "SELECT task_id FROM sessions WHERE id = ?", id).Scan(&taskID); err == nil {
-				m.notifyFunc(taskID, event.Status)
+	if event.Status != currentStatus && triggerSet[event.Status] {
+		log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
+		// Execute supervisor logic via traffic manager
+		m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
+			if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
+				log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
 			}
-		}
-
-		if triggerSet[event.Status] {
-			log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
-			// Execute supervisor logic via traffic manager
-			m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
-				if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
-					log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
-				}
-				return nil
-			})
-		}
+			return nil
+		})
 	}
 	return nil
 }

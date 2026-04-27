@@ -14,16 +14,9 @@ const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Pro
 // JulesClientIface is the subset of JulesClient the Supervisor needs.
 // api.JulesClient satisfies this interface via duck typing.
 type JulesClientIface interface {
-	GetSession(ctx context.Context, sessionID string) (*SessionInfo, error)
+	GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error)
 	SendMessage(ctx context.Context, sessionID, prompt string) error
 	ApprovePlan(ctx context.Context, sessionID string) error
-}
-
-// SessionInfo carries the minimal Jules session fields used by the supervisor.
-type SessionInfo struct {
-	Status  string
-	Message string
-	Result  string
 }
 
 type Supervisor struct {

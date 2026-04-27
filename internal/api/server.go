@@ -248,7 +248,8 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := s.db.QueryContext(r.Context(),
 		`SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, importance, category, last_run_at, created_at, failure_count,
-		        COALESCE((SELECT jules_session_id FROM sessions WHERE task_id = tasks.id ORDER BY updated_at DESC LIMIT 1), '') as last_session_id
+		        COALESCE((SELECT jules_session_id FROM sessions WHERE task_id = tasks.id ORDER BY updated_at DESC LIMIT 1), '') as last_session_id,
+		        COALESCE(last_error, '')
 		 FROM tasks ORDER BY created_at DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -259,7 +260,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []TaskResponse
 	for rows.Next() {
 		var t TaskResponse
-		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount, &t.LastSessionID); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount, &t.LastSessionID, &t.LastError); err != nil {
 			continue
 		}
 		t.JulesTasks = julesCounts[t.Name]

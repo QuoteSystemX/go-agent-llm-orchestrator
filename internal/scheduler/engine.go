@@ -361,14 +361,14 @@ func (e *Engine) runTask(taskID string) {
 		execStatus = "FAILED"
 		execError = err.Error()
 		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
-		e.updateTaskStatus(ctx, taskID, "FAILED", "failure_count = failure_count + 1")
+		e.updateTaskStatus(ctx, taskID, "FAILED", "failure_count = failure_count + 1, last_error = ?", execError)
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
 		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
-		e.updateTaskStatus(ctx, taskID, "PENDING", "failure_count = 0")
+		e.updateTaskStatus(ctx, taskID, "PENDING", "failure_count = 0, last_error = ''")
 	}
 
 	if logID > 0 {

@@ -145,33 +145,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // We move the tooltip to document.body the first time it is hovered to jump out of the card's stacking context.
     document.addEventListener('mouseover', e => {
         const badge = e.target.closest('.failure-badge-wrap .bg-failed');
+        const activeTooltip = e.target.closest('body > .failure-tooltip');
+
+        if (activeTooltip) {
+            activeTooltip.classList.add('visible');
+            return;
+        }
+
         if (!badge) return;
         
         const wrap = badge.closest('.failure-badge-wrap');
-        const tooltip = wrap ? wrap.querySelector('.failure-tooltip') : badge._tooltip;
+        const tooltip = badge._tooltip || wrap?.querySelector('.failure-tooltip');
         if (!tooltip) return;
         
-        // Ensure tooltip is at body level to bypass parent stacking contexts (z-index isolation)
+        // Move to body if not already there
         if (tooltip.parentElement !== document.body) {
             document.body.appendChild(tooltip);
-            badge._tooltip = tooltip; // Keep reference since it's no longer a child of the wrap
+            badge._tooltip = tooltip;
         }
 
         const rect = badge.getBoundingClientRect();
-        const tipWidth = 360; // Match CSS
+        const tipWidth = 360; 
         let left = rect.left;
         
-        // Horizontal clamping
         if (left + tipWidth > window.innerWidth - 12) {
             left = window.innerWidth - tipWidth - 12;
         }
         if (left < 12) left = 12;
 
-        // Vertical positioning
         let top = rect.bottom + 8;
-        // If it overflows the bottom, show it above the badge (using 250px as safe estimate)
         if (top + 250 > window.innerHeight) {
-            top = rect.top - 200 - 8; // Simple fallback height estimate
+            top = rect.top - 200 - 8; 
         }
 
         tooltip.style.top = top + 'px';
@@ -181,9 +185,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('mouseout', e => {
         const badge = e.target.closest('.failure-badge-wrap .bg-failed');
-        if (!badge) return;
-        const tooltip = badge._tooltip || badge.closest('.failure-badge-wrap')?.querySelector('.failure-tooltip');
-        if (tooltip) tooltip.classList.remove('visible');
+        const tooltipInBody = e.target.closest('body > .failure-tooltip');
+
+        if (badge) {
+            const tooltip = badge._tooltip || badge.closest('.failure-badge-wrap')?.querySelector('.failure-tooltip');
+            if (tooltip) {
+                // If moving into the tooltip, don't hide
+                if (e.relatedTarget && e.relatedTarget.closest('body > .failure-tooltip') === tooltip) {
+                    return;
+                }
+                tooltip.classList.remove('visible');
+            }
+        } else if (tooltipInBody) {
+            // If moving back to the badge, don't hide
+            if (e.relatedTarget && e.relatedTarget.closest('.failure-badge-wrap .bg-failed')) {
+                return;
+            }
+            tooltipInBody.classList.remove('visible');
+        }
     });
 });
 
