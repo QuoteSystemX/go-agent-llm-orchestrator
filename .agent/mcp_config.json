@@ -1,5 +1,9 @@
 {
     "mcpServers": {
+        "skills": {
+            "command": ".agent/skill-server/skill-server.sh",
+            "description": "Antigravity Kit skill loader — exposes skills_load, skills_list, skills_search"
+        },
         "context7": {
             "command": "npx",
             "args": [
