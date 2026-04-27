@@ -56,6 +56,7 @@ type AdminServer struct {
 	dtoMgr          *dto.TemplateManager
 	analyzer        *dto.Analyzer
 	hub             *Hub
+	webhookBus      chan<- monitor.WebhookEvent
 	startTime       time.Time
 }
 
@@ -84,6 +85,9 @@ func (s *AdminServer) SetHealthMonitor(hm *monitor.HealthMonitor) { s.healthMoni
 
 // SetHub attaches a websocket hub.
 func (s *AdminServer) SetHub(h *Hub) { s.hub = h }
+
+// SetWebhookBus attaches the event bus for webhooks.
+func (s *AdminServer) SetWebhookBus(bus chan<- monitor.WebhookEvent) { s.webhookBus = bus }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -147,6 +151,9 @@ func (s *AdminServer) Start(addr string) error {
 	// RAG API
 	mux.HandleFunc("/api/v1/rag/stats", s.handleRAGStats)
 	mux.HandleFunc("/api/v1/rag/action", s.handleRAGAction)
+
+	// Webhooks
+	mux.HandleFunc("/api/v1/webhooks/jules", s.handleJulesWebhook)
 
 	// Logs
 	mux.HandleFunc("/api/v1/logs", s.handleLogs)
@@ -1525,4 +1532,41 @@ func (s *AdminServer) BroadcastStatus(ctx context.Context) {
 		})
 		s.hub.Broadcast(TypeNextRuns, runs)
 	}
+}
+
+func (s *AdminServer) handleJulesWebhook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	secret := os.Getenv("JULES_WEBHOOK_SECRET")
+	if secret != "" {
+		if r.Header.Get("X-Jules-Signature") != secret {
+			http.Error(w, "invalid signature", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	var payload monitor.WebhookEvent
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if s.webhookBus != nil {
+		select {
+		case s.webhookBus <- payload:
+			// Pushed to event bus successfully
+		default:
+			log.Printf("Webhook event bus is full, dropping event for session %s", payload.SessionID)
+		}
+	}
+
+	// Trigger UI refresh immediately
+	if s.hub != nil {
+		s.hub.Broadcast(TypeActivity, nil)
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }

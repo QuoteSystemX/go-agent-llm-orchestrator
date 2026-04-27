@@ -122,6 +122,7 @@ func main() {
 		hub.Broadcast(api.TypeStats, status)
 	})
 	adminServer.SetHub(hub)
+	adminServer.SetWebhookBus(statMonitor.EventBus)
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
@@ -254,7 +255,7 @@ func main() {
 	// SyncTasks complete), so the initial Run() doesn't race with open transactions.
 	go autopilotEngine.Start(ctx)
 
-	go statMonitor.Start(ctx, 30*time.Second)
+	go statMonitor.Start(ctx)
 
 	// Periodic task sync (every 5 minutes)
 	go func() {

@@ -43,8 +43,8 @@ graph TD
 3. **DTO Indexing**: `internal/dto` pre-scans repositories and generates embeddings for the RAG store.
 4. **Autopilot Loop**: `internal/autopilot` checks `tasks/` in local repos → Activates workers if backlog > 0.
 5. **Execution**: Scheduler triggers task → `internal/traffic` queues request → Calls Jules API with RAG context.
-6. **Monitoring**: `internal/monitor` polls Jules API → Updates session statuses.
-7. **Supervision**: If session is in `AWAITING_USER_FEEDBACK`, `internal/llm` generates response via Supervisor.
+6. **Monitoring (Event-Driven)**: Jules API pushes Webhooks to `/api/v1/webhooks/jules` → Updates SQLite and pushes to UI via WebSocket Hub.
+7. **Supervision**: If session transitions to `AWAITING_USER_FEEDBACK`, `internal/llm` immediately generates response via Supervisor.
 8. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions.
 
 ## 4. Architecture Decision Records (ADRs)
@@ -56,8 +56,23 @@ graph TD
 
 ### ADR-006: Dedicated Status Monitor
 
-- **Status:** Accepted
+- **Status:** Deprecated (Superseded by ADR-007)
 - **Decision:** Use a separate background poller to sync Jules API statuses into local SQLite, decoupling execution from monitoring.
+
+### ADR-007: Event-Driven Webhook Sync
+
+- **Status:** Accepted
+- **Decision:** Transition from API polling to Webhooks/SSE. Orchestrator provides a secure endpoint `POST /api/v1/webhooks/jules` to receive real-time session status updates from Jules API.
+- **Payload Schema:** 
+  ```json
+  {
+    "event": "session.updated",
+    "session_id": "sess_123",
+    "task_id": "task_456",
+    "status": "AWAITING_USER_FEEDBACK",
+    "timestamp": "2026-04-27T10:00:00Z"
+  }
+  ```
 
 ## 5. Database Schema
 
