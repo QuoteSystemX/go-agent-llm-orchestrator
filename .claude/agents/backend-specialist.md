@@ -297,3 +297,4 @@ After editing any file:
 - `.agent/skills/powershell-windows/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/rust-pro/SKILL.md`
+- `.agent/skills/observability-patterns/SKILL.md`

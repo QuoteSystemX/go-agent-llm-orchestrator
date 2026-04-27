@@ -22,7 +22,13 @@ Usage:
     python3 .agent/scripts/sync_claude_agents.py --agent debugger
     python3 .agent/scripts/sync_claude_agents.py --no-commands
     python3 .agent/scripts/sync_claude_agents.py --no-workflows
+    python3 .agent/scripts/sync_claude_agents.py --profile go-service   # only profile agents
     python3 .agent/scripts/sync_claude_agents.py --patch-source-tools   # one-time migration
+
+Distribution Profiles (Option A):
+  Agents with no `profile:` frontmatter are universal — included in every profile.
+  Agents with `profile: go-service, web-app` are only included when that profile matches.
+  Available profiles: go-service, web-app, data-platform, mobile, game
 """
 
 import argparse
@@ -199,6 +205,19 @@ def parse_skills_list(value: str) -> list[str]:
     return [s.strip() for s in value.split(",") if s.strip()]
 
 
+def agent_matches_profile(fm: dict, profile: str) -> bool:
+    """Return True if this agent should be included in the given profile.
+
+    Agents with no `profile:` frontmatter are universal — included in every profile.
+    Agents with `profile: go-service, web-app` are only included when the requested
+    profile is in that list.
+    """
+    if not profile:
+        return True
+    agent_profiles = parse_skills_list(fm.get("profile", ""))
+    return not agent_profiles or profile in agent_profiles
+
+
 def skill_exists(skill_name: str) -> bool:
     return (SKILLS_SRC / skill_name / "SKILL.md").exists()
 
@@ -366,7 +385,7 @@ def patch_source_tools(dry_run: bool = False) -> None:
 # Sync functions
 # ---------------------------------------------------------------------------
 
-def sync_agents(dry_run: bool = False, only_agent: str = "") -> None:
+def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "") -> None:
     CLAUDE_AGENTS_OUT.mkdir(parents=True, exist_ok=True)
 
     agent_files = sorted(AGENTS_SRC.glob("*.md"))
@@ -376,7 +395,18 @@ def sync_agents(dry_run: bool = False, only_agent: str = "") -> None:
             print(f"ERROR: agent '{only_agent}' not found in {AGENTS_SRC}")
             sys.exit(1)
 
-    print(f"\n=== Syncing specialist agents ({len(agent_files)}) ===")
+    if profile:
+        filtered = []
+        for f in agent_files:
+            fm, _ = parse_frontmatter(f.read_text(encoding="utf-8"))
+            if agent_matches_profile(fm, profile):
+                filtered.append(f)
+        skipped = len(agent_files) - len(filtered)
+        agent_files = filtered
+        print(f"\n=== Syncing specialist agents ({len(agent_files)}, profile={profile!r}, skipped={skipped}) ===")
+    else:
+        print(f"\n=== Syncing specialist agents ({len(agent_files)}) ===")
+
     for src in agent_files:
         out_path = CLAUDE_AGENTS_OUT / src.name
         content = build_claude_agent(src, is_workflow=False)
@@ -437,6 +467,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sync .agent/ → .claude/agents/ and .claude/commands/")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be written without writing")
     parser.add_argument("--agent", metavar="NAME", help="Sync only one specialist agent by name")
+    parser.add_argument(
+        "--profile",
+        metavar="NAME",
+        help="Filter agents by distribution profile (go-service, web-app, data-platform, mobile, game). "
+             "Universal agents (no profile: frontmatter) are always included.",
+    )
     parser.add_argument("--no-workflows", action="store_true", help="Skip wf- workflow agents in .claude/agents/")
     parser.add_argument("--no-commands", action="store_true", help="Skip slash commands in .claude/commands/")
     parser.add_argument(
@@ -454,7 +490,7 @@ def main() -> None:
         patch_source_tools(dry_run=args.dry_run)
         return
 
-    sync_agents(dry_run=args.dry_run, only_agent=args.agent)
+    sync_agents(dry_run=args.dry_run, only_agent=args.agent, profile=args.profile or "")
 
     if not args.agent:
         if not args.no_workflows:

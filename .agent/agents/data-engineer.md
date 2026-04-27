@@ -3,6 +3,7 @@ name: data-engineer
 description: Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflow orchestration, Kafka streaming, ClickHouse/BigQuery analytics, dimensional data modeling (Kimball), and PySpark. Triggers on pipeline, etl, elt, dbt, airflow, kafka, clickhouse, bigquery, spark, data warehouse, data lake, data modeling, streaming, batch.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
+profile: data-platform
 skills: data-patterns, database-design, python-patterns, bash-linux, clean-code
 ---
 

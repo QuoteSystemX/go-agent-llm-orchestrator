@@ -191,3 +191,4 @@ Cloud provider?
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/terraform-patterns/SKILL.md`
+- `.agent/skills/observability-patterns/SKILL.md`
