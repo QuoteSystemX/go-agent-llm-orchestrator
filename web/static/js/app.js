@@ -1714,14 +1714,6 @@ function updateHealthUI(data) {
                 input.placeholder = "Ask anything about your agents or code...";
             }
         }
-
-    } catch (err) {
-        console.error('Health check failed:', err);
-        const dot = document.getElementById('ai-status-dot');
-        const text = document.getElementById('ai-status-text');
-        if (dot) dot.className = 'status-dot disconnected';
-        if (text) text.innerText = 'AI Error';
-    }
 }
 
 async function fetchSystemUsage() {
