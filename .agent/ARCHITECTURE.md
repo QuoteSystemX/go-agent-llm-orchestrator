@@ -8,8 +8,8 @@
 
 Antigravity Kit is a modular system consisting of:
 
-- **31 Specialist Agents** - Role-based AI personas
-- **48 Skills** - Domain-specific knowledge modules
+- **32 Specialist Agents** - Role-based AI personas
+- **49 Skills** - Domain-specific knowledge modules
 - **18 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 
@@ -78,7 +78,8 @@ Specialist AI personas for different domains.
 | `ai-engineer`            | AI / LLM systems           | llm-patterns, python-patterns, api-patterns, systematic-debugging  |
 | `wiki-architect`         | Knowledge architecture     | wiki-writing, documentation-templates, brainstorming               |
 | `data-engineer`          | Data pipelines & analytics | data-patterns, database-design, python-patterns, bash-linux        |
-| `sre-engineer`           | Observability & reliability | observability-patterns, k8s-patterns, deployment-procedures       |
+| `sre-engineer`           | Reliability engineering    | observability-patterns, k8s-patterns, deployment-procedures       |
+| `cloud-engineer`         | Multi-cloud infrastructure | cloud-patterns, terraform-patterns, deployment-procedures         |
 
 ---
 

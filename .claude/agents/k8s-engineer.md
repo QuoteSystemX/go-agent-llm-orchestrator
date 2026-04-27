@@ -192,3 +192,4 @@ Cloud provider?
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/terraform-patterns/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
+- `.agent/skills/cloud-patterns/SKILL.md`

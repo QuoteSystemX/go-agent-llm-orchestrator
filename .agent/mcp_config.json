@@ -1,7 +1,7 @@
 {
     "mcpServers": {
         "skills": {
-            "command": ".agent/skill-server/skill-server.sh",
+            "command": "/home/amudrykh/go/project/go-agent-llm-orchestrator/.agent/skill-server/skill-server.sh",
             "description": "Antigravity Kit skill loader — exposes skills_load, skills_list, skills_search"
         },
         "context7": {
