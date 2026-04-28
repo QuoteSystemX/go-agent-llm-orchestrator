@@ -1,0 +1,17 @@
+{
+  "limits": {
+    "max_consecutive_failures": 3,
+    "token_budget_per_task": 100000,
+    "cost_limit_per_task_usd": 2.0,
+    "max_retries_per_step": 3
+  },
+  "actions": {
+    "budget_exceeded": "warn_and_pause",
+    "loop_detected": "stop_and_notify",
+    "stale_context": "refresh"
+  },
+  "monitored_files": [
+    ".agent/bus/telemetry.json",
+    "tasks/*.md"
+  ]
+}

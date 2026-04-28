@@ -37,6 +37,11 @@ Show current project and agent status.
    - URL
    - Health check
 
+5. **Safety & Guardrails**
+   - Current token usage vs budget
+   - Watchdog status (OK/Alert)
+   - Stalled tasks report
+
 ---
 
 ## Example Output
@@ -88,6 +93,7 @@ Show current project and agent status.
 Status uses these scripts:
 - `python3 .agent/scripts/business_dashboard.py` (Business Progress)
 - `python3 .agent/scripts/drift_detector.py` (Documentation Drift)
+- `python3 .agent/scripts/guardrail_monitor.py` (Safety & Budget)
 - `python3 .agent/scripts/analyze_efficiency.py` (Performance/Cost)
 - `python3 .agent/scripts/session_manager.py status`
 - `python3 .agent/scripts/auto_preview.py status`
