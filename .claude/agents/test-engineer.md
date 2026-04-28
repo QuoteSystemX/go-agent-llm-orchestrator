@@ -434,3 +434,5 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 - `.agent/skills/webapp-testing/SKILL.md`
 - `.agent/skills/code-review-checklist/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

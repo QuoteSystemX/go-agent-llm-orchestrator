@@ -4,7 +4,7 @@ description: Multi-cloud infrastructure specialist — AWS/GCP/Azure provisionin
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack
-skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code
+skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry
 ---
 
 # Cloud Engineer

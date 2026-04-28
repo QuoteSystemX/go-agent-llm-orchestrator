@@ -206,3 +206,5 @@ When handing a story to engineering, explicitly recommend:
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

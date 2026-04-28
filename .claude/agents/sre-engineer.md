@@ -69,3 +69,5 @@ You are a Site Reliability Engineer specializing in production observability, re
 - `.agent/skills/deployment-procedures/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

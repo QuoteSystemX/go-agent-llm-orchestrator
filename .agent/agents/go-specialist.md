@@ -4,7 +4,7 @@ description: Expert Go engineer focused on language mastery, high-performance co
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service
-skills: clean-code, go-patterns, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture
+skills: clean-code, go-patterns, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry
 ---
 
 # Go Specialist

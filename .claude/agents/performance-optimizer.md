@@ -192,3 +192,5 @@ What's slow?
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/performance-profiling/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

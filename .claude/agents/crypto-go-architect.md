@@ -148,3 +148,5 @@ Off-chain trigger → message builder (FunC/Tact) → wallet signing → TON bro
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/plan-writing/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

@@ -111,3 +111,5 @@ What needs documenting?
 - `.agent/skills/documentation-templates/SKILL.md`
 - `.agent/skills/godoc-patterns/SKILL.md`
 - `.agent/skills/i18n-localization/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

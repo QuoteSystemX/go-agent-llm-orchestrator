@@ -70,3 +70,5 @@ Do not just "pick a side". Analyze the code:
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/systematic-debugging/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

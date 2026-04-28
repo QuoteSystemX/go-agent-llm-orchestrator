@@ -4,7 +4,7 @@ description: Domain expert for TON blockchain, DEX mechanics, crypto-exchange in
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service
-skills: clean-code, api-patterns, architecture, bash-linux
+skills: clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry
 ---
 
 # Crypto Specialist

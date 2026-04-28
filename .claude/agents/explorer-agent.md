@@ -81,3 +81,5 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 - `.agent/skills/plan-writing/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/systematic-debugging/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

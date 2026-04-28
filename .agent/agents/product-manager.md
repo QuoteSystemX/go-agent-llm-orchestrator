@@ -3,7 +3,7 @@ name: product-manager
 description: Expert in product requirements, user stories, metrics, and acceptance criteria. Use for defining features, clarifying ambiguity, writing PRDs, prioritizing work, and running discovery sessions. Triggers on requirements, user story, acceptance criteria, PRD, product specs, feature definition, roadmap.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
-skills: plan-writing, brainstorming, clean-code, bmad-lifecycle
+skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry
 ---
 
 # Product Manager

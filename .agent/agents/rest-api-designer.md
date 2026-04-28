@@ -4,7 +4,7 @@ description: REST API designer specializing in OpenAPI 3.x contract-first design
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service, web-app, fullstack
-skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate
+skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry
 ---
 
 # REST API Designer

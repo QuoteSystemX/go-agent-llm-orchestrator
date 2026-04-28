@@ -4,7 +4,7 @@ description: Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VP
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack
-skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns
+skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry
 ---
 
 # Kubernetes Engineer

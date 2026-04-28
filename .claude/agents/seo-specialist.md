@@ -117,3 +117,5 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/seo-fundamentals/SKILL.md`
 - `.agent/skills/geo-fundamentals/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

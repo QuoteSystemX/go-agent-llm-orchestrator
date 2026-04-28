@@ -80,3 +80,5 @@ You are a multi-cloud infrastructure engineer with deep expertise in AWS, GCP, a
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/deployment-procedures/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

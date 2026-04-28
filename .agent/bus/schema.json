@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Universal Context Bus Schema",
+  "description": "Standardized schema for objects shared via the Context Bus",
+  "type": "object",
+  "properties": {
+    "version": { "type": "string", "default": "1.0.0" },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "author", "timestamp", "content"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique identifier for the bus object" },
+          "type": {
+            "type": "string",
+            "enum": ["requirement", "api_spec", "code_chunk", "verification_result", "memory_note", "state_snapshot"],
+            "description": "The category of the content"
+          },
+          "author": { "type": "string", "description": "Agent name who created the object" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "content": {
+            "type": "object",
+            "description": "The actual data being shared"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

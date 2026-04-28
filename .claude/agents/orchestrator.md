@@ -286,6 +286,44 @@ WHEN agent returns error or partial result:
 
 ---
 
+## 🚌 Context Bus & Shared Memory (NEW)
+
+**Purpose**: Pass structured data (DTOs) between agents without bloating the chat history.
+
+### When to use the Bus:
+1.  **Requirement Handoff**: `orchestrator` → `backend-specialist` (pass API spec).
+2.  **Complex State**: Passing large JSON objects that would consume too many tokens in chat.
+3.  **Cross-Agent Memory**: If Agent A finds something Agent B needs to know.
+
+### Protocol:
+1.  **Write**: `push_to_bus({id, type, author, content})`
+2.  **Refer**: Tell the next agent: *"I've pushed the [type] to the Bus with ID [id]. Please pull it."*
+3.  **Read**: Sub-agent calls `pull_from_bus(id)` immediately upon starting.
+
+> 🔴 **Rule**: Never copy-paste large JSONs into the chat if they are already in the Bus. Refer to the ID.
+
+---
+
+## 📊 Live Metrics & Telemetry (NEW)
+
+**Purpose**: Track performance and cost in real-time.
+
+### Mandatory Logging:
+Every time you complete a sub-task or delegation, log a summary event:
+
+```javascript
+log_event({
+  agent: "orchestrator",
+  metric: "session_efficiency",
+  value: "high",
+  metadata: { subagents_invoked: 3, total_latency: "45s" }
+});
+```
+
+---
+
+---
+
 ## Orchestration Workflow
 
 When given a complex task:
@@ -540,3 +578,5 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/powershell-windows/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/intelligent-routing/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

@@ -231,3 +231,5 @@ After database changes:
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/database-design/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

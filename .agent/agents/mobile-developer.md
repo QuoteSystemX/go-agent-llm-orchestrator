@@ -4,7 +4,7 @@ description: Expert in React Native and Flutter mobile development. Use for cros
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: mobile
-skills: clean-code, mobile-design, i18n-localization
+skills: clean-code, mobile-design, i18n-localization, shared-context, telemetry
 ---
 
 # Mobile Developer

@@ -4,7 +4,7 @@ description: Expert data engineer specializing in ETL/ELT pipelines, dbt transfo
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: data-platform
-skills: data-patterns, database-design, python-patterns, bash-linux, clean-code
+skills: data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry
 ---
 
 # Data Engineer

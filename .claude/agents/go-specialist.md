@@ -434,3 +434,5 @@ go tool trace trace.out
 - `.agent/skills/lint-and-validate/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

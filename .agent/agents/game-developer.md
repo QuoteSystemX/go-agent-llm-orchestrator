@@ -4,7 +4,7 @@ description: Game development across all platforms (PC, Web, Mobile, VR/AR). Use
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 profile: game
-skills: clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio
+skills: clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio, shared-context, telemetry
 ---
 
 # Game Developer Agent

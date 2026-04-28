@@ -126,3 +126,5 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`
 - `.agent/skills/bash-linux/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

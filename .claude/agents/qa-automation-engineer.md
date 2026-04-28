@@ -111,3 +111,5 @@ Developers test the happy path. **You test the chaos.**
 - `.agent/skills/web-design-guidelines/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

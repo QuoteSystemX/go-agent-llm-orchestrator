@@ -603,3 +603,5 @@ After editing any file:
 - `.agent/skills/frontend-design/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
 - `.agent/skills/i18n-localization/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

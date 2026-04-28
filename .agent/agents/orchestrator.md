@@ -3,7 +3,7 @@ name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry
 ---
 
 # Orchestrator - Native Multi-Agent Coordination
@@ -283,6 +283,44 @@ WHEN agent returns error or partial result:
 | `seo-specialist` fails | ❌ No | Skip, note in report |
 | `documentation-writer` fails | ❌ No | Skip, note in report |
 | `test-engineer` fails | ✅ Yes — code changes need tests | Retry or escalate |
+
+---
+
+## 🚌 Context Bus & Shared Memory (NEW)
+
+**Purpose**: Pass structured data (DTOs) between agents without bloating the chat history.
+
+### When to use the Bus:
+1.  **Requirement Handoff**: `orchestrator` → `backend-specialist` (pass API spec).
+2.  **Complex State**: Passing large JSON objects that would consume too many tokens in chat.
+3.  **Cross-Agent Memory**: If Agent A finds something Agent B needs to know.
+
+### Protocol:
+1.  **Write**: `push_to_bus({id, type, author, content})`
+2.  **Refer**: Tell the next agent: *"I've pushed the [type] to the Bus with ID [id]. Please pull it."*
+3.  **Read**: Sub-agent calls `pull_from_bus(id)` immediately upon starting.
+
+> 🔴 **Rule**: Never copy-paste large JSONs into the chat if they are already in the Bus. Refer to the ID.
+
+---
+
+## 📊 Live Metrics & Telemetry (NEW)
+
+**Purpose**: Track performance and cost in real-time.
+
+### Mandatory Logging:
+Every time you complete a sub-task or delegation, log a summary event:
+
+```javascript
+log_event({
+  agent: "orchestrator",
+  metric: "session_efficiency",
+  value: "high",
+  metadata: { subagents_invoked: 3, total_latency: "45s" }
+});
+```
+
+---
 
 ---
 

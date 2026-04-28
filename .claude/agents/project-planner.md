@@ -413,3 +413,5 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 - `.agent/skills/app-builder/SKILL.md`
 - `.agent/skills/plan-writing/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`

@@ -4,7 +4,7 @@ description: Glue agent that bridges Go engineering and Crypto/TON domain expert
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 model: inherit
 profile: go-service
-skills: clean-code, go-patterns, api-patterns, architecture, brainstorming, plan-writing, bash-linux
+skills: clean-code, go-patterns, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry
 ---
 
 # Crypto Go Architect

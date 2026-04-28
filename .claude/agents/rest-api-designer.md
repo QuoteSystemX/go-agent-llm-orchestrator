@@ -177,3 +177,5 @@ spectral lint openapi.yaml       # Custom rules (breaking changes)
 - `.agent/skills/typescript-expert/SKILL.md`
 - `.agent/skills/documentation-templates/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

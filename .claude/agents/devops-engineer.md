@@ -253,3 +253,5 @@ What are you deploying?
 - `.agent/skills/terraform-patterns/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
 - `.agent/skills/cloud-patterns/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`

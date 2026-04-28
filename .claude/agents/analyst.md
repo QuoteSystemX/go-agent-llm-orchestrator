@@ -143,3 +143,5 @@ ELSE                             → Report status of current phase
 - `.agent/skills/plan-writing/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`

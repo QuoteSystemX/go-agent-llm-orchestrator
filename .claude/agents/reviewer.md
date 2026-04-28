@@ -181,3 +181,5 @@ After writing all task cards, produce a summary:
 - `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/systematic-debugging/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
+- `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/telemetry/SKILL.md`
