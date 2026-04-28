@@ -116,6 +116,18 @@ ELSE                             → Report status of current phase
 
 ---
 
+## Phase 6: Documentation Sync
+
+**Goal:** Address documentation drift and keep Karpathy-style Wiki updated.
+
+1. **Intake**: When the **Wiki Architect** or **Drift Detector** script flags a gap between code and docs.
+2. **Analysis**: Analyze the code changes that caused the drift (e.g., new API endpoints, database changes).
+3. **Task Creation**: Create a new `[STORY]` card in `tasks/` with the title `[STORY] Sync: Documentation for [Feature/File]`.
+4. **Format**: Follow the standard `STORY.md` template. The Acceptance Criteria must verify that `ARCHITECTURE.md` or the relevant `wiki/` file matches the current code implementation.
+5. **Assignment**: Notify the **Wiki Architect** to execute the task.
+
+---
+
 ## Handoffs to Other Agents
 
 | Agent | When to invoke | What to pass |

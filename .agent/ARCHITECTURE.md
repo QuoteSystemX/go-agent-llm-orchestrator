@@ -8,10 +8,11 @@
 
 Antigravity Kit is a modular system consisting of:
 
-- **32 Specialist Agents** - Role-based AI personas
-- **49 Skills** - Domain-specific knowledge modules
-- **18 Workflows** - Slash command procedures
+- **36 Specialist Agents** - Role-based AI personas
+- **52 Skills** - Domain-specific knowledge modules
+- **20 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
+- **Core Infrastructure** - Bus, Router, Telemetry, Dashboard
 
 ---
 
@@ -42,7 +43,7 @@ Antigravity Kit is a modular system consisting of:
 
 ---
 
-## 🤖 Agents (31)
+## 🤖 Agents (36)
 
 Specialist AI personas for different domains.
 
@@ -82,10 +83,12 @@ Specialist AI personas for different domains.
 | `data-engineer`          | Data pipelines & analytics | data-patterns, database-design, python-patterns, bash-linux        |
 | `sre-engineer`           | Reliability engineering    | observability-patterns, k8s-patterns, deployment-procedures       |
 | `cloud-engineer`         | Multi-cloud infrastructure | cloud-patterns, terraform-patterns, deployment-procedures         |
+| `visual-designer`      | UI/UX aesthetics          | frontend-design, web-design-guidelines                            |
+| `release-manager`     | Versioning & SemVer       | git-master, testing-patterns, lint-and-validate                   |
 
 ---
 
-## 🧩 Skills (48)
+## 🧩 Skills (52)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -196,12 +199,14 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `i18n-localization`       | Internationalization              |
 | `performance-profiling`   | Web Vitals, optimization          |
 | `systematic-debugging`    | Troubleshooting                   |
+| `shared-context`         | Context Bus & DTO management      |
+| `telemetry`              | Execution metrics & cost tracking |
 | `bmad-lifecycle`          | BMAD phase knowledge & contracts  |
 | `intelligent-routing`     | Task routing & agent coordination |
 
 ---
 
-## 🔄 Workflows (18)
+## 🔄 Workflows (20)
 
 Slash command procedures. Invoke with `/command`.
 
@@ -218,6 +223,7 @@ Slash command procedures. Invoke with `/command`.
 | `/status`             | Check project status                   |
 | `/test`               | Run tests                              |
 | `/ui-ux-pro-max`      | Design with 50 styles                  |
+| `/release`            | Production release cycle               |
 | `/reviewer`           | Scan code, generate task queue         |
 | `/discovery`          | BMAD Phase 1 — Socratic brief          |
 | `/prd`                | BMAD Phase 2 — PRD from brief          |
@@ -265,8 +271,15 @@ Master validation scripts that orchestrate skill-level scripts.
 
 | Script          | Purpose                                 | When to Use              |
 | --------------- | --------------------------------------- | ------------------------ |
-| `checklist.py`  | Priority-based validation (Core checks) | Development, pre-commit  |
-| `verify_all.py` | Comprehensive verification (All checks) | Pre-deployment, releases |
+| `checklist.py`        | Priority-based validation (Core checks) | Development, pre-commit  |
+| `verify_all.py`       | Comprehensive verification (All checks) | Pre-deployment, releases |
+| `model_router.py`     | Dynamic task complexity routing (L1-L3) | Every subagent call      |
+| `business_dashboard.py` | Feature-level progress tracking (Rich) | /status, sprint review   |
+| `metrics_dashboard.py`  | Technical observability (CLI Monitor)   | Monitoring               |
+| `drift_detector.py`   | Documentation lag detection             | /status, /release        |
+| `analyze_efficiency.py` | Performance & Cost (Token usage)       | Monthly audit            |
+| `distill_context.py`  | Long-context optimization (RAG/Extract) | Shared Context Bus       |
+| `batch_runner.py`     | Fan-out / Fan-in parallel execution    | Multi-agent tasks        |
 
 ### Usage
 

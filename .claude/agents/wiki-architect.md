@@ -42,6 +42,10 @@ Before writing any wiki document:
 ```
 
 ---
+## 🏛 Documentation Governance
+1. **Detection**: Periodically run `python3 .agent/scripts/drift_detector.py`.
+2. **Action**: If drift is detected, do not edit code. Instead, notify the **Analyst** to create a documentation-update task card in `tasks/`.
+3. **Writing**: Only update the Wiki after the task card is assigned and approved.
 
 ## 🏗️ Decision Trees
 
