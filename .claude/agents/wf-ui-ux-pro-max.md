@@ -2,12 +2,15 @@
 
 ---
 name: ui-ux-pro-max
+description: High-fidelity visual design workflow (discovery, tokens, mockups, handoff).
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-# /ui-ux-pro-max Workflow
+# /ui-ux-pro-max - High Fidelity Design
 
-// turbo-all
+_Context from user message is passed automatically by Claude Code._
+
+---
 
 ## Phase 1: Visual Discovery
 1. **Analyst** asks the user:

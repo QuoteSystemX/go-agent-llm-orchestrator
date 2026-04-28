@@ -1,4 +1,10 @@
+---
+description: Clean up experience base by archiving old lessons using experience_distiller.py.
+---
+
 # /distill-experience - Clean up experience base
+
+$ARGUMENTS
 
 ---
 

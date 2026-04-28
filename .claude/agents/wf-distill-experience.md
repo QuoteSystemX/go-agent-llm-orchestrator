@@ -2,10 +2,13 @@
 
 ---
 name: distill-experience
+description: Clean up experience base by archiving old lessons using experience_distiller.py.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 # /distill-experience - Clean up experience base
+
+_Context from user message is passed automatically by Claude Code._
 
 ---
 

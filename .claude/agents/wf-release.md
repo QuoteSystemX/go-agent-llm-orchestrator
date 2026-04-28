@@ -2,12 +2,15 @@
 
 ---
 name: release
+description: Production release procedure (audit, versioning, changelog, tagging).
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-# /release Workflow
+# /release - Production Release
 
-// turbo-all
+_Context from user message is passed automatically by Claude Code._
+
+---
 
 ## Phase 1: Pre-flight Audit
 1. **Release Manager** runs `python3 .agent/scripts/drift_detector.py`.

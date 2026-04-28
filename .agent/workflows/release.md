@@ -1,6 +1,12 @@
-# /release Workflow
+---
+description: Production release procedure (audit, versioning, changelog, tagging).
+---
 
-// turbo-all
+# /release - Production Release
+
+$ARGUMENTS
+
+---
 
 ## Phase 1: Pre-flight Audit
 1. **Release Manager** runs `python3 .agent/scripts/drift_detector.py`.

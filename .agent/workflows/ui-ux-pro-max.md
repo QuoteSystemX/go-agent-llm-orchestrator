@@ -1,6 +1,12 @@
-# /ui-ux-pro-max Workflow
+---
+description: High-fidelity visual design workflow (discovery, tokens, mockups, handoff).
+---
 
-// turbo-all
+# /ui-ux-pro-max - High Fidelity Design
+
+$ARGUMENTS
+
+---
 
 ## Phase 1: Visual Discovery
 1. **Analyst** asks the user:
