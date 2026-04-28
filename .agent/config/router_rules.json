@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "complexity": "L3",
+      "keywords": ["debug", "audit", "security", "architecture", "design", "refactor all", "optimization", "bottleneck"],
+      "skills": ["penetration-tester", "architecture", "security-auditor"]
+    },
+    {
+      "complexity": "L1",
+      "keywords": ["lint", "typo", "spellcheck", "formatting", "documentation", "readme", "comment", "list files", "check status"],
+      "skills": ["explorer-agent", "documentation-writer"]
+    },
+    {
+      "complexity": "L2",
+      "keywords": ["implement", "add feature", "create", "test", "fix", "refactor"],
+      "skills": ["backend-specialist", "frontend-specialist", "test-engineer"]
+    }
+  ],
+  "models": {
+    "L1": "claude-3-haiku-20240307",
+    "L2": "claude-3-5-sonnet-20240620",
+    "L3": "claude-3-opus-20240229"
+  },
+  "fallbacks": {
+    "L1": "L2",
+    "L2": "L3",
+    "L3": "L3"
+  }
+}

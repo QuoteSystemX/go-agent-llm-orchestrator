@@ -347,6 +347,24 @@ log_event({
 
 ---
 
+## 🤖 Dynamic Model Routing & Overrides
+
+### 1. Automatic Optimization
+Before delegating a task to a sub-agent, the `orchestrator` should determine the optimal model:
+1. **Analyze**: Use `python3 .agent/scripts/model_router.py "[task description]"` to get the recommended model.
+2. **Execute**: Pass the returned `model_id` to the `Agent` tool.
+3. **Announce**: The router script will automatically print an announcement like: *"🤖 Dynamic Routing: Selected haiku for L1 task"*.
+
+### 2. Manual Override (`--model`)
+If the user provides a `--model` flag (e.g., `/enhance add feature --model=opus`):
+1. **Priority**: Always honor the manual override.
+2. **Action**: Call `model_router.py "[task]" --model=[user_model]`.
+
+### 3. Fallback Chain
+If a sub-agent on Haiku fails to follow instructions (e.g., returns a parse error):
+1. **Escalate**: Retry the exact same task but using the next model in the chain (Sonnet).
+2. **Log**: Record the escalation in `telemetry`.
+
 ---
 
 ## Orchestration Workflow
