@@ -3,16 +3,9 @@ import json
 import os
 from pathlib import Path
 from datetime import datetime
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.live import Live
-from rich import box
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 METRICS_FILE = REPO_ROOT / ".agent" / "logs" / "metrics.jsonl"
-console = Console()
 
 def load_metrics():
     if not METRICS_FILE.exists():
@@ -26,49 +19,69 @@ def load_metrics():
                 pass
     return metrics
 
-def generate_dashboard():
+def format_text_dashboard():
     metrics = load_metrics()
+    if not metrics:
+        return "No metrics available."
     
-    # Summary stats
-    total_events = len(metrics)
-    agents = set(m.get("agent") for m in metrics)
+    header = f"{'Timestamp':<10} | {'Agent':<20} | {'Metric':<20} | {'Value':<10} | {'Status'}"
+    separator = "-" * len(header)
+    lines = [header, separator]
     
-    table = Table(title="🚀 Universal Live Metrics", box=box.ROUNDED, expand=True)
-    table.add_column("Timestamp", style="cyan")
-    table.add_column("Agent", style="magenta")
-    table.add_column("Metric", style="yellow")
-    table.add_column("Value", style="green")
-    table.add_column("Status", style="bold")
-
-    # Show last 10 events
-    for m in metrics[-10:]:
+    for m in metrics[-20:]:
         ts = m.get("ts", "").split("T")[-1][:8]
+        agent = m.get("agent", "unknown")
+        metric = m.get("metric", "N/A")
+        val = str(m.get("value", "N/A"))
         status = m.get("status", "N/A")
-        status_style = "green" if status == "success" else "red" if status == "error" else "white"
+        lines.append(f"{ts:<10} | {agent:<20} | {metric:<20} | {val:<10} | {status}")
+    
+    return "\n".join(lines)
+
+def run_rich_dashboard():
+    try:
+        from rich.console import Console
+        from rich.table import Table
+        from rich.live import Live
+        from rich import box
         
-        table.add_row(
-            ts,
-            m.get("agent", "unknown"),
-            m.get("metric", "N/A"),
-            str(m.get("value", "N/A")),
-            f"[{status_style}]{status}[/]"
-        )
+        console = Console()
+        
+        def generate_table():
+            metrics = load_metrics()
+            table = Table(title="🚀 Universal Live Metrics", box=box.ROUNDED, expand=True)
+            table.add_column("Timestamp", style="cyan")
+            table.add_column("Agent", style="magenta")
+            table.add_column("Metric", style="yellow")
+            table.add_column("Value", style="green")
+            table.add_column("Status", style="bold")
+            
+            for m in metrics[-15:]:
+                ts = m.get("ts", "").split("T")[-1][:8]
+                status = m.get("status", "N/A")
+                status_style = "green" if status == "success" else "red" if status == "error" else "white"
+                table.add_row(
+                    ts,
+                    m.get("agent", "unknown"),
+                    m.get("metric", "N/A"),
+                    str(m.get("value", "N/A")),
+                    f"[{status_style}]{status}[/]"
+                )
+            return table
 
-    return table
-
-def main():
-    if not METRICS_FILE.exists():
-        console.print("[red]No metrics found. Waiting for agent activity...[/]")
-        return
-
-    with Live(generate_dashboard(), refresh_per_second=1) as live:
-        try:
-            while True:
-                live.update(generate_dashboard())
-                import time
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        if os.environ.get("NON_INTERACTIVE"):
+            console.print(generate_table())
+        else:
+            with Live(generate_table(), refresh_per_second=1) as live:
+                try:
+                    while True:
+                        live.update(generate_table())
+                        import time
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    pass
+    except ImportError:
+        print(format_text_dashboard())
 
 if __name__ == "__main__":
-    main()
+    run_rich_dashboard()
