@@ -104,7 +104,8 @@ func main() {
 	analyzer.SetInferencePriority(router)
 	// Auto-discover existing RAG stores on startup in background
 	go analyzer.DiscoverExistingStores(ctx)
-	engine.SetContextSearcher(analyzer.SearchContext)
+	engine.SetContextSearcher(analyzer.SearchContextFiltered)
+	engine.SetVerifier(&scheduler.GitHubVerifier{})
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()

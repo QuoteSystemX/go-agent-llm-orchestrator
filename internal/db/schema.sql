@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     importance INTEGER DEFAULT 1,
     category TEXT DEFAULT 'worker',
     auto_paused INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    current_retry INTEGER DEFAULT 0,
+    last_error TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

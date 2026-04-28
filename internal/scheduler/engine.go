@@ -20,7 +20,7 @@ import (
 )
 
 // ContextSearchFunc queries the RAG vector store for semantically relevant chunks.
-type ContextSearchFunc func(ctx context.Context, repoName, query string, topK int) string
+type ContextSearchFunc func(ctx context.Context, repoName, query string, topK int, category string) string
 
 type Engine struct {
 	cron          *cron.Cron
@@ -31,6 +31,7 @@ type Engine struct {
 	promptBuilder *prompt.Builder
 	contextSearch ContextSearchFunc
 	tracer        monitor.Tracer
+	verifier      TaskVerifier
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 	onTaskUpdate     func(taskID, status string)
@@ -57,6 +58,10 @@ func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
 
 func (e *Engine) SetTracer(t monitor.Tracer) {
 	e.tracer = t
+}
+
+func (e *Engine) SetVerifier(v TaskVerifier) {
+	e.verifier = v
 }
 
 func (e *Engine) SetNotifyFunc(fn func(taskID, status string)) {
@@ -178,6 +183,16 @@ func (e *Engine) TriggerTask(taskID string) {
 	go e.runTask(taskID)
 }
 
+func (e *Engine) PauseTaskLoop(ctx context.Context, taskID string) error {
+	_, err := e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
+	return err
+}
+
+func (e *Engine) ForceTaskSuccess(ctx context.Context, taskID string) error {
+	_, err := e.db.ExecContext(ctx, "UPDATE tasks SET status = 'PENDING', current_retry = 0, failure_count = 0, last_error = '' WHERE id = ?", taskID)
+	return err
+}
+
 func (e *Engine) SyncTasks(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -224,6 +239,40 @@ func (e *Engine) SyncTasks(ctx context.Context) error {
 	return nil
 }
 
+func (e *Engine) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
+	rows, err := e.db.QueryContext(ctx, "SELECT id, name, mission, pattern, agent, schedule, status, importance, category, current_stage, progress, max_retries, current_retry, last_error FROM tasks WHERE name = ?", repoName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []map[string]any
+	for rows.Next() {
+		var id, name, mission, pattern, agent, schedule, status, category, currentStage, lastError string
+		var importance, progress, maxRetries, currentRetry int
+		if err := rows.Scan(&id, &name, &mission, &pattern, &agent, &schedule, &status, &importance, &category, &currentStage, &progress, &maxRetries, &currentRetry, &lastError); err != nil {
+			continue
+		}
+		tasks = append(tasks, map[string]any{
+			"id":             id,
+			"name":           name,
+			"mission":        mission,
+			"pattern":        pattern,
+			"agent":          agent,
+			"schedule":       schedule,
+			"status":         status,
+			"importance":     importance,
+			"category":       category,
+			"current_stage":  currentStage,
+			"progress":       progress,
+			"max_retries":    maxRetries,
+			"current_retry":  currentRetry,
+			"last_error":     lastError,
+		})
+	}
+	return tasks, nil
+}
+
 func (e *Engine) printSchedule() {
 	var active []string
 	for id := range e.entries {
@@ -251,10 +300,10 @@ func (e *Engine) runTask(taskID string) {
 	start := time.Now()
 
 	var status, mission, pattern, agent, repoName, category string
-	var importance int
+	var importance, maxRetries, currentRetry int
 	err := e.db.QueryRowContext(ctx,
-		"SELECT status, mission, pattern, COALESCE(agent,''), name, importance, category FROM tasks WHERE id = ?", taskID,
-	).Scan(&status, &mission, &pattern, &agent, &repoName, &importance, &category)
+		"SELECT status, mission, pattern, COALESCE(agent,''), name, importance, category, max_retries, current_retry FROM tasks WHERE id = ?", taskID,
+	).Scan(&status, &mission, &pattern, &agent, &repoName, &importance, &category, &maxRetries, &currentRetry)
 	if err != nil {
 		log.Printf("Task %s: FAILED to fetch from DB: %v", taskID, err)
 		return
@@ -278,88 +327,125 @@ func (e *Engine) runTask(taskID string) {
 		logID, _ = res.LastInsertId()
 	}
 
-	err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
-		if logID > 0 {
-			e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
-		}
-
-		// Build the full Jules prompt — pause the task if library is not ready yet
-		fullPrompt, err := e.buildPrompt(ctx, agent, pattern, mission, repoName)
-		if err != nil {
-			// Do not auto-pause service tasks
-			servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
-			isService := false
-			for _, p := range servicePatterns {
-				if p == pattern {
-					isService = true
-					break
-				}
-			}
-
-			if !isService {
-				e.updateTaskStatus(ctx, taskID, "PAUSED", "auto_paused = 1")
-			}
-
+	var lastVerificationError string
+	
+	for {
+		err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
 			if logID > 0 {
-				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID)
+				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 			}
-			return fmt.Errorf("prompt-library not ready, task %s: %w", taskID, err)
-		}
-		log.Printf("Task %s: Prompt assembled successfully", taskID)
 
-		_, dbErr := e.db.ExecContext(ctx,
-			"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
-		if dbErr == nil && e.onTaskUpdate != nil {
-			e.onTaskUpdate(taskID, "RUNNING")
-		}
-		if dbErr != nil {
-			return dbErr
-		}
+			// Build the full Jules prompt
+			fullPrompt, err := e.buildPrompt(ctx, agent, pattern, mission, repoName, lastVerificationError, category)
+			if err != nil {
+				// Do not auto-pause service tasks
+				servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
+				isService := false
+				for _, p := range servicePatterns {
+					if p == pattern {
+						isService = true
+						break
+					}
+				}
 
-		req := api.SessionRequest{
-			Prompt: fullPrompt,
-			SourceContext: api.SourceContext{
-				Source: "sources/github/" + repoName,
-				GithubRepoContext: api.GithubRepoContext{
-					StartingBranch: "main",
+				if !isService {
+					e.updateTaskStatus(ctx, taskID, "PAUSED", "auto_paused = 1")
+				}
+
+				if logID > 0 {
+					e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID)
+				}
+				return fmt.Errorf("prompt building failed, task %s: %w", taskID, err)
+			}
+			log.Printf("Task %s: Prompt assembled successfully", taskID)
+
+			_, dbErr := e.db.ExecContext(ctx,
+				"UPDATE tasks SET status = 'RUNNING', last_run_at = CURRENT_TIMESTAMP WHERE id = ?", taskID)
+			if dbErr == nil && e.onTaskUpdate != nil {
+				e.onTaskUpdate(taskID, "RUNNING")
+			}
+			if dbErr != nil {
+				return dbErr
+			}
+
+			req := api.SessionRequest{
+				Prompt: fullPrompt,
+				SourceContext: api.SourceContext{
+					Source: "sources/github/" + repoName,
+					GithubRepoContext: api.GithubRepoContext{
+						StartingBranch: "main",
+					},
 				},
-			},
-			AutomationMode: "AUTO_CREATE_PR",
-			Title:          fmt.Sprintf("[%s] %s for %s", agent, mission, repoName),
-		}
+				AutomationMode: "AUTO_CREATE_PR",
+				Title:          fmt.Sprintf("[%s] %s for %s", agent, mission, repoName),
+			}
 
-		reqJSON, _ := json.Marshal(req)
-		if logID > 0 {
-			e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID)
-		}
+			reqJSON, _ := json.Marshal(req)
+			if logID > 0 {
+				e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID)
+			}
 
-		log.Printf("Task %s: Sending request to Jules API...", taskID)
-		resp, rawOut, err := e.client.StartSession(ctx, req)
+			log.Printf("Task %s: Sending request to Jules API...", taskID)
+			resp, rawOut, err := e.client.StartSession(ctx, req)
+			if err != nil {
+				return err
+			}
+
+			sessionID = taskID
+			if resp != nil && resp.ID != "" {
+				sessionID = resp.ID
+			}
+
+			log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
+			if logID > 0 {
+				e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID)
+			}
+
+			_, sessErr := e.db.ExecContext(ctx,
+				"INSERT INTO sessions (id, task_id, jules_session_id, status) VALUES (?, ?, ?, ?)",
+				sessionID, taskID, sessionID, "RUNNING")
+			if sessErr == nil {
+				log.Printf("Task %s: Session %s registered for monitoring", taskID, sessionID)
+			} else {
+				log.Printf("Task %s: WARNING - failed to register session %s: %v", taskID, sessionID, sessErr)
+			}
+
+			return nil
+		})
+
 		if err != nil {
-			return err
+			break // System error, don't retry in loop
 		}
 
-		sessionID = taskID
-		if resp != nil && resp.ID != "" {
-			sessionID = resp.ID
+		// Phase 2: Verification
+		if e.verifier != nil {
+			e.updateTaskStatus(ctx, taskID, "VERIFYING", "")
+			res, vErr := e.verifier.Verify(ctx, repoName, sessionID)
+			if vErr == nil && !res.Success {
+				if currentRetry < maxRetries {
+					currentRetry++
+					lastVerificationError = res.Error
+					log.Printf("Task %s: Verification FAILED. Starting correction attempt %d/%d. Error: %s", taskID, currentRetry, maxRetries, res.Error)
+					e.updateTaskStatus(ctx, taskID, "CORRECTING", "current_retry = ?", currentRetry)
+					
+					if e.tracer != nil {
+						e.tracer.BroadcastTrace(monitor.AgentTraceEvent{
+							TaskID:    taskID,
+							Type:      monitor.TraceThought,
+							Content:   fmt.Sprintf("Verification failed: %s. Starting correction attempt %d.", res.Error, currentRetry),
+							Timestamp: time.Now(),
+						})
+					}
+					continue
+				} else {
+					err = fmt.Errorf("verification failed after %d retries: %s", maxRetries, res.Error)
+				}
+			} else if vErr != nil {
+				err = fmt.Errorf("verification error: %w", vErr)
+			}
 		}
-
-		log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
-		if logID > 0 {
-			e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID)
-		}
-
-		_, sessErr := e.db.ExecContext(ctx,
-			"INSERT INTO sessions (id, task_id, jules_session_id, status) VALUES (?, ?, ?, ?)",
-			sessionID, taskID, sessionID, "RUNNING")
-		if sessErr == nil {
-			log.Printf("Task %s: Session %s registered for monitoring", taskID, sessionID)
-		} else {
-			log.Printf("Task %s: WARNING - failed to register session %s: %v", taskID, sessionID, sessErr)
-		}
-
-		return nil
-	})
+		break
+	}
 
 	duration := time.Since(start)
 
@@ -367,14 +453,14 @@ func (e *Engine) runTask(taskID string) {
 		execStatus = "FAILED"
 		execError = err.Error()
 		log.Printf("Task %s: EXECUTION FAILED: %v", taskID, err)
-		e.updateTaskStatus(ctx, taskID, "FAILED", "failure_count = failure_count + 1, last_error = ?", execError)
+		e.updateTaskStatus(ctx, taskID, "FAILED", "failure_count = failure_count + 1, last_error = ?, current_retry = 0", execError)
 		if e.notifier != nil {
 			e.notifier.SendAlert(taskID, err.Error())
 		}
 	} else {
 		execStatus = "COMPLETED"
 		log.Printf("Task %s: COMPLETED in %v", taskID, duration)
-		e.updateTaskStatus(ctx, taskID, "PENDING", "failure_count = 0, last_error = ''")
+		e.updateTaskStatus(ctx, taskID, "PENDING", "failure_count = 0, last_error = '', current_retry = 0")
 	}
 
 	if logID > 0 {
@@ -392,14 +478,14 @@ func (e *Engine) runTask(taskID string) {
 
 // buildPrompt builds the Jules prompt from the prompt-library clone.
 // Returns an error (and causes the task to be paused) if the library is not ready.
-func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName string) (string, error) {
+func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName, lastError, category string) (string, error) {
 	if e.promptBuilder == nil || !e.promptBuilder.IsReady() {
 		return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
 	}
 	ragContext := ""
 	if e.contextSearch != nil {
 		query := fmt.Sprintf("%s %s %s", repoName, agent, mission)
-		ragContext = e.contextSearch(ctx, repoName, query, 5)
+		ragContext = e.contextSearch(ctx, repoName, query, 5, category)
 		if ragContext != "" {
 			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
 			
@@ -416,6 +502,16 @@ func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoN
 			}
 		}
 	}
-	return e.promptBuilder.Build(agent, pattern, mission, ragContext)
+	
+	prompt, err := e.promptBuilder.Build(agent, pattern, mission, ragContext)
+	if err != nil {
+		return "", err
+	}
+
+	if lastError != "" {
+		prompt = fmt.Sprintf("%s\n\nCRITICAL: Your previous attempt failed with the following error. Please analyze it and CORRECT your implementation:\nERROR: %s", prompt, lastError)
+	}
+
+	return prompt, nil
 }
 

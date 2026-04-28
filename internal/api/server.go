@@ -36,6 +36,8 @@ const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Pro
 type Scheduler interface {
 	SyncTasks(ctx context.Context) error
 	TriggerTask(taskID string)
+	PauseTaskLoop(ctx context.Context, taskID string) error
+	ForceTaskSuccess(ctx context.Context, taskID string) error
 }
 
 type GitSyncer interface {
@@ -123,6 +125,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/tasks/", s.handleTaskByID)
 	mux.HandleFunc("/api/v1/tasks/approve", s.handleApproveTask)
 	mux.HandleFunc("/api/v1/tasks/reject", s.handleRejectTask)
+	mux.HandleFunc("/api/v1/tasks/pause-loop", s.handlePauseTaskLoop)
+	mux.HandleFunc("/api/v1/tasks/force-success", s.handleForceTaskSuccess)
 
 	// Settings & Audit
 	mux.HandleFunc("/api/v1/settings/telegram", s.handleTelegramSettings)
@@ -215,6 +219,8 @@ type TaskResponse struct {
 	LastError     string     `json:"last_error"`
 	JulesTasks    int        `json:"jules_tasks"`
 	LastSessionID string     `json:"last_session_id"`
+	MaxRetries    int        `json:"max_retries"`
+	CurrentRetry  int        `json:"current_retry"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -251,7 +257,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(),
 		`SELECT id, name, COALESCE(agent,''), mission, pattern, schedule, status, importance, category, last_run_at, created_at, failure_count,
 		        COALESCE((SELECT jules_session_id FROM sessions WHERE task_id = tasks.id ORDER BY updated_at DESC LIMIT 1), '') as last_session_id,
-		        COALESCE(last_error, '')
+		        COALESCE(last_error, ''), max_retries, current_retry
 		 FROM tasks ORDER BY created_at DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -262,7 +268,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []TaskResponse
 	for rows.Next() {
 		var t TaskResponse
-		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount, &t.LastSessionID, &t.LastError); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount, &t.LastSessionID, &t.LastError, &t.MaxRetries, &t.CurrentRetry); err != nil {
 			continue
 		}
 		t.JulesTasks = julesCounts[t.Name]
@@ -393,6 +399,44 @@ func (s *AdminServer) deleteTask(w http.ResponseWriter, r *http.Request, id stri
 	}
 
 	s.scheduler.SyncTasks(r.Context())
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *AdminServer) handlePauseTaskLoop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		TaskID string `json:"task_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.scheduler.PauseTaskLoop(r.Context(), req.TaskID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *AdminServer) handleForceTaskSuccess(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		TaskID string `json:"task_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.scheduler.ForceTaskSuccess(r.Context(), req.TaskID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

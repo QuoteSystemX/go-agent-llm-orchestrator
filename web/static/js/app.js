@@ -363,11 +363,11 @@ function renderTasks() {
                                             <button class="btn-primary btn-sm" onclick="reviewTaskPlan('${task.id}')" style="margin-top:0.5rem; width:100%">Review Plan</button>
                                         </div>
                                     ` : ''}
-                                    ${task.status === 'RUNNING' ? `
+                                    ${task.status === 'RUNNING' || task.status === 'VERIFYING' || task.status === 'CORRECTING' ? `
                                         <div class="task-stage-info">
-                                            <div class="stage-label">${task.current_stage || 'initializing'}</div>
+                                            <div class="stage-label">${task.status === 'CORRECTING' ? `Correction Attempt ${task.current_retry}/${task.max_retries}` : (task.current_stage || 'initializing')}</div>
                                             <div class="stage-progress-bg">
-                                                <div class="stage-progress-fill" style="width: ${task.progress || 5}%"></div>
+                                                <div class="stage-progress-fill" style="width: ${task.progress || 5}%; ${task.status === 'CORRECTING' ? 'background:var(--warning)' : ''}"></div>
                                             </div>
                                         </div>
                                     ` : ''}
@@ -393,7 +393,10 @@ function renderTasks() {
                                            <button class="btn-secondary" onclick="editTask('${task.id}')" title="Edit" ${dis}><i data-lucide="edit-3"></i></button>
                                            ${task.status === 'PAUSED'
                                                ? `<button class="btn-primary" onclick="toggleTask('${task.id}', 'resume')" title="Resume" ${dis}><i data-lucide="play"></i></button>`
-                                               : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis || servicePatterns.includes(task.pattern) ? 'disabled' : ''}><i data-lucide="pause"></i></button>`
+                                               : task.status === 'CORRECTING'
+                                                   ? `<button class="btn-warning-small" onclick="pauseTaskLoop('${task.id}')" title="Pause Loop"><i data-lucide="pause-circle"></i> Pause Loop</button>
+                                                      <button class="btn-success-small" onclick="forceTaskSuccess('${task.id}')" title="Force Success"><i data-lucide="check-circle"></i> Force Success</button>`
+                                                   : `<button class="btn-secondary" onclick="toggleTask('${task.id}', 'pause')" title="Pause" ${dis || servicePatterns.includes(task.pattern) ? 'disabled' : ''}><i data-lucide="pause"></i></button>`
                                            }
                                            <button class="btn-danger-small" onclick="confirmDelete('${task.id}')" title="Delete" ${dis}><i data-lucide="trash-2"></i></button>
                                         `
@@ -410,6 +413,46 @@ function renderTasks() {
     container.innerHTML = html || '<div class="empty-state">No tasks scheduled. Create one to get started!</div>';
     lucide.createIcons();
     updateChatRepoSelector(Object.keys(grouped));
+}
+
+async function pauseTaskLoop(taskID) {
+    if (!confirm('Are you sure you want to pause the correction loop? The agent will stop trying to fix the result.')) return;
+    try {
+        const res = await fetch('/api/v1/tasks/pause-loop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_id: taskID })
+        });
+        if (res.ok) {
+            showToast('Correction loop paused.', 'info');
+            fetchTasks();
+        } else {
+            const err = await res.text();
+            showToast('Failed to pause loop: ' + err, 'error');
+        }
+    } catch (e) {
+        showToast('Network error while pausing loop.', 'error');
+    }
+}
+
+async function forceTaskSuccess(taskID) {
+    if (!confirm('FORCE SUCCESS: This will mark the task as successful and reset retry counters. Use only if you have manually fixed the issue.')) return;
+    try {
+        const res = await fetch('/api/v1/tasks/force-success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_id: taskID })
+        });
+        if (res.ok) {
+            showToast('Task marked as successful.', 'success');
+            fetchTasks();
+        } else {
+            const err = await res.text();
+            showToast('Failed to force success: ' + err, 'error');
+        }
+    } catch (e) {
+        showToast('Network error while forcing success.', 'error');
+    }
 }
 
 function updateChatRepoSelector(repos) {

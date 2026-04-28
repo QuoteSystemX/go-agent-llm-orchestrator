@@ -476,7 +476,37 @@ button {
     align-items: center;
     gap: 0.35rem;
 }
+.btn-warning-small {
+    background: rgba(245,158,11,0.1);
+    color: var(--warning);
+    border: 1px solid rgba(245,158,11,0.3);
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+}
+.btn-warning-small:hover { background: rgba(245,158,11,0.2); }
 
+.btn-success-small {
+    background: rgba(34,197,94,0.1);
+    color: var(--success);
+    border: 1px solid rgba(34,197,94,0.3);
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+}
+.btn-success-small:hover { background: rgba(34,197,94,0.2); }
 .last-session-link a {
     color: var(--primary);
     text-decoration: none;
@@ -763,8 +793,14 @@ body { padding-bottom: 40px; }
 .bg-paused   { background: rgba(148,163,184,0.12); color: var(--text-muted); border: 1px solid rgba(148,163,184,0.2); }
 .bg-success  { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
 .bg-failed   { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
-.bg-draft    { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px dashed #fbbf24; }
+.bg-verifying { background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid rgba(59,130,246,0.3); }
+.bg-correcting { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+.bg-draft    { background: rgba(148,163,184,0.15); color: var(--text-muted); border: 1px solid rgba(148,163,184,0.3); }
 .bg-waiting  { background: rgba(245,158,11,0.12); color: var(--warning); border: 1px dashed rgba(245,158,11,0.5); }
+
+.btn-primary-small { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+.btn-secondary-small { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+.btn-danger-small { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
 
 .draft-task-card {
     border-left: 2px dashed #fbbf24 !important;

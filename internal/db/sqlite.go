@@ -132,6 +132,8 @@ func InitDB(dbPath string) (*DB, error) {
 		category TEXT DEFAULT 'worker',
 		auto_paused INTEGER DEFAULT 0,
 		last_error TEXT,
+		max_retries INTEGER DEFAULT 3,
+		current_retry INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 	CREATE TABLE IF NOT EXISTS sessions (
@@ -163,6 +165,8 @@ func InitDB(dbPath string) (*DB, error) {
 		"ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1",
 		"ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'",
 		"ALTER TABLE tasks ADD COLUMN last_error TEXT",
+		"ALTER TABLE tasks ADD COLUMN max_retries INTEGER DEFAULT 3",
+		"ALTER TABLE tasks ADD COLUMN current_retry INTEGER DEFAULT 0",
 	}
 	for _, m := range migrations {
 		if _, err := main.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
