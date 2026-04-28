@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/internal/api"
+	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/internal/notifier"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/traffic"
@@ -32,6 +33,7 @@ type Engine struct {
 	contextSearch ContextSearchFunc
 	tracer        monitor.Tracer
 	verifier      TaskVerifier
+	budgetMgr     *budget.Manager
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 	onTaskUpdate     func(taskID, status string)
@@ -58,6 +60,10 @@ func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
 
 func (e *Engine) SetTracer(t monitor.Tracer) {
 	e.tracer = t
+}
+
+func (e *Engine) SetBudgetManager(bm *budget.Manager) {
+	e.budgetMgr = bm
 }
 
 func (e *Engine) SetVerifier(v TaskVerifier) {
@@ -314,6 +320,20 @@ func (e *Engine) runTask(taskID string) {
 		return
 	}
 
+	// Budget Check
+	if e.budgetMgr != nil {
+		ok, bErr := e.budgetMgr.CheckBudget(ctx, repoName)
+		if !ok {
+			msg := fmt.Sprintf("Budget exceeded: %v", bErr)
+			log.Printf("Task %s: %s", taskID, msg)
+			e.updateTaskStatus(ctx, taskID, "PAUSED", "auto_paused = 1, last_error = ?", msg)
+			if e.notifier != nil {
+				e.notifier.SendAlert(taskID, msg)
+			}
+			return
+		}
+	}
+
 	var logID int64
 	var sessionID string
 	var execError string
@@ -394,6 +414,10 @@ func (e *Engine) runTask(taskID string) {
 			sessionID = taskID
 			if resp != nil && resp.ID != "" {
 				sessionID = resp.ID
+			}
+
+			if e.budgetMgr != nil {
+				e.budgetMgr.TrackUsage(ctx, taskID, sessionID, 0, 0, "jules")
 			}
 
 			log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)

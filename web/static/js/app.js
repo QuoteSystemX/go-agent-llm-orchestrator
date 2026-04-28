@@ -1230,6 +1230,33 @@ function updateSysStatsUI(data) {
         renderSparkline('cpu-sparkline', data.history.cpu);
         renderSparkline('mem-sparkline', data.history.memory);
     }
+	
+	if (data.budget) {
+		const b = data.budget;
+		const quotaEl = document.getElementById('stat-quota');
+		if (quotaEl) {
+			quotaEl.textContent = `${b.daily_sessions_used} / ${b.daily_sessions_limit}`;
+			const quotaParent = quotaEl.parentElement;
+			if (quotaParent) {
+				quotaParent.title = `Sessions: ${b.daily_sessions_used}/${b.daily_sessions_limit} | Cost: $${b.monthly_cost_usd.toFixed(2)}/$${b.monthly_cost_limit.toFixed(2)}`;
+			}
+			
+			const pct = (b.daily_sessions_used / b.daily_sessions_limit) * 100;
+			const costPct = (b.monthly_cost_usd / b.monthly_cost_limit) * 100;
+			const maxPct = Math.max(pct, costPct);
+			
+			if (maxPct > 90) {
+				quotaEl.style.color = 'var(--danger)';
+				if (quotaParent) quotaParent.classList.add('pulse-danger');
+			} else if (maxPct > 70) {
+				quotaEl.style.color = 'var(--warning)';
+				if (quotaParent) quotaParent.classList.remove('pulse-danger');
+			} else {
+				quotaEl.style.color = 'inherit';
+				if (quotaParent) quotaParent.classList.remove('pulse-danger');
+			}
+		}
+	}
 }
 
 // ── Tabs Logic ────────────────────────────────────────────────

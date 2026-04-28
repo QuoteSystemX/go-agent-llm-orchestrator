@@ -27,12 +27,17 @@ CREATE TABLE IF NOT EXISTS task_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
     session_id TEXT,
+    jules_session_id TEXT,
     executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    input_data TEXT,        -- Request payload / prompt
-    output_data TEXT,       -- Response payload / result
-    status TEXT,            -- SUCCESS, FAILED
-    error TEXT,             -- Error message if failed
-    duration_ms INTEGER
+    input_data TEXT,
+    output_data TEXT,
+    status TEXT,
+    error TEXT,
+    duration_ms INTEGER,
+    prompt_tokens INTEGER DEFAULT 0,
+    completion_tokens INTEGER DEFAULT 0,
+    total_tokens INTEGER DEFAULT 0,
+    cost_usd REAL DEFAULT 0.0
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -78,6 +83,16 @@ CREATE TABLE IF NOT EXISTS web_chat_history (
     content TEXT NOT NULL,
     provider TEXT,
     repo TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS budgets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    target_type TEXT NOT NULL, -- "system", "project"
+    target_id TEXT,           -- repo name or empty for system
+    daily_session_limit INTEGER DEFAULT 100,
+    monthly_cost_limit REAL DEFAULT 50.0,
+    alert_threshold REAL DEFAULT 0.8,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

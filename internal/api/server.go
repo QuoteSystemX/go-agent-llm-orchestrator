@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/dto"
 	"go-agent-llm-orchestrator/internal/llm"
@@ -59,6 +60,7 @@ type AdminServer struct {
 	dtoMgr          *dto.TemplateManager
 	analyzer        *dto.Analyzer
 	hub             *Hub
+	budgetMgr       *budget.Manager
 	webhookBus      chan<- monitor.WebhookEvent
 	startTime       time.Time
 }
@@ -91,6 +93,9 @@ func (s *AdminServer) SetHub(h *Hub) { s.hub = h }
 
 // SetWebhookBus attaches the event bus for webhooks.
 func (s *AdminServer) SetWebhookBus(bus chan<- monitor.WebhookEvent) { s.webhookBus = bus }
+
+// SetBudgetManager attaches a budget manager.
+func (s *AdminServer) SetBudgetManager(bm *budget.Manager) { s.budgetMgr = bm }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -1279,6 +1284,12 @@ func (s *AdminServer) handleSystemStats(w http.ResponseWriter, r *http.Request) 
 			"memory": memHist,
 			"tasks":  taskHist,
 		},
+	}
+
+	if s.budgetMgr != nil {
+		if summary, err := s.budgetMgr.GetSummary(r.Context()); err == nil {
+			stats["budget"] = summary
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -153,6 +153,15 @@ func InitDB(dbPath string) (*DB, error) {
 		content TEXT NOT NULL,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
+	CREATE TABLE IF NOT EXISTS budgets (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		target_type TEXT NOT NULL,
+		target_id TEXT,
+		daily_session_limit INTEGER DEFAULT 100,
+		monthly_cost_limit REAL DEFAULT 50.0,
+		alert_threshold REAL DEFAULT 0.8,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
 	CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 	`
 	if _, err := main.Exec(mainSchema); err != nil {
@@ -180,12 +189,17 @@ func InitDB(dbPath string) (*DB, error) {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		task_id TEXT NOT NULL,
 		session_id TEXT,
+		jules_session_id TEXT,
 		executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		input_data TEXT,
 		output_data TEXT,
 		status TEXT,
 		error TEXT,
-		duration_ms INTEGER
+		duration_ms INTEGER,
+		prompt_tokens INTEGER DEFAULT 0,
+		completion_tokens INTEGER DEFAULT 0,
+		total_tokens INTEGER DEFAULT 0,
+		cost_usd REAL DEFAULT 0.0
 	);
 	CREATE TABLE IF NOT EXISTS task_run_details (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -216,6 +230,19 @@ func InitDB(dbPath string) (*DB, error) {
 	`
 	if _, err := history.Exec(historySchema); err != nil {
 		return nil, fmt.Errorf("init history schema: %w", err)
+	}
+
+	historyMigrations := []string{
+		"ALTER TABLE task_logs ADD COLUMN jules_session_id TEXT",
+		"ALTER TABLE task_logs ADD COLUMN prompt_tokens INTEGER DEFAULT 0",
+		"ALTER TABLE task_logs ADD COLUMN completion_tokens INTEGER DEFAULT 0",
+		"ALTER TABLE task_logs ADD COLUMN total_tokens INTEGER DEFAULT 0",
+		"ALTER TABLE task_logs ADD COLUMN cost_usd REAL DEFAULT 0.0",
+	}
+	for _, m := range historyMigrations {
+		if _, err := history.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			log.Printf("history db migration skipped (%s): %v", m, err)
+		}
 	}
 
 	log.Printf("Databases initialized: main and history")

@@ -12,6 +12,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/autopilot"
+	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/dto"
 	gitpkg "go-agent-llm-orchestrator/internal/git"
@@ -106,6 +107,9 @@ func main() {
 	go analyzer.DiscoverExistingStores(ctx)
 	engine.SetContextSearcher(analyzer.SearchContextFiltered)
 	engine.SetVerifier(&scheduler.GitHubVerifier{})
+	
+	budgetMgr := budget.NewManager(database)
+	engine.SetBudgetManager(budgetMgr)
 	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
@@ -130,6 +134,7 @@ func main() {
 	adminServer.SetLogBuffer(logBuf)
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
+	adminServer.SetBudgetManager(budgetMgr)
 
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 
