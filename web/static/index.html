@@ -216,6 +216,23 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Knowledge Hub Search -->
+                    <div class="knowledge-hub glass">
+                        <div class="search-bar">
+                            <div class="search-input-wrapper">
+                                <i data-lucide="search" class="search-icon"></i>
+                                <input type="text" id="rag-search-input" placeholder="Search the Knowledge Hub (Code + Wiki)..." 
+                                       onkeydown="if(event.key==='Enter') performRAGSearch()">
+                            </div>
+                            <button class="btn-primary" onclick="performRAGSearch()" id="btn-rag-search">
+                                <span>Search</span>
+                            </button>
+                        </div>
+                        <div id="rag-search-results" class="rag-search-results" style="display: none;">
+                            <!-- Results will be injected here -->
+                        </div>
+                    </div>
                     
                     <div class="rag-content">
                         <div id="rag-stats-container" class="rag-stats-grid">

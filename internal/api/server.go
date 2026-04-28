@@ -17,6 +17,7 @@ import (
 	"go-agent-llm-orchestrator/internal/dto"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
+	"go-agent-llm-orchestrator/internal/rag"
 	"go-agent-llm-orchestrator/web"
 	"github.com/gorilla/websocket"
 	"github.com/robfig/cron/v3"
@@ -151,6 +152,7 @@ func (s *AdminServer) Start(addr string) error {
 	// RAG API
 	mux.HandleFunc("/api/v1/rag/stats", s.handleRAGStats)
 	mux.HandleFunc("/api/v1/rag/action", s.handleRAGAction)
+	mux.HandleFunc("/api/v1/rag/search", s.handleRAGSearch)
 
 	// Webhooks
 	mux.HandleFunc("/api/v1/webhooks/jules", s.handleJulesWebhook)
@@ -1570,4 +1572,68 @@ func (s *AdminServer) handleJulesWebhook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *AdminServer) handleRAGSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Query  string `json:"query"`
+		RepoID string `json:"repo_id"`
+		TopK   int    `json:"top_k"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	if req.Query == "" {
+		http.Error(w, "query is required", http.StatusBadRequest)
+		return
+	}
+	if req.TopK <= 0 {
+		req.TopK = 5
+	}
+
+	if s.analyzer == nil || s.analyzer.GetRagManager() == nil {
+		http.Error(w, "RAG system not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	mgr := s.analyzer.GetRagManager()
+
+	var results []rag.Document
+	if req.RepoID != "" {
+		store := mgr.GetStore(req.RepoID)
+		if store == nil {
+			http.Error(w, "repo not found in RAG index", http.StatusNotFound)
+			return
+		}
+		results = store.Search(r.Context(), req.Query, req.TopK)
+	} else {
+		// Search across all repos if no repo_id specified
+		allStats := mgr.GetAllStats()
+		for _, stat := range allStats {
+			store := mgr.GetStore(stat.RepoID)
+			if store != nil {
+				res := store.Search(r.Context(), req.Query, req.TopK)
+				results = append(results, res...)
+			}
+		}
+		// Sort and limit if searching multiple
+		sort.Slice(results, func(i, j int) bool {
+			// Note: chromem-go results don't expose similarity score in the Document struct directly
+			// in this implementation, so we just keep them appended. 
+			// In a more advanced version we'd rank them.
+			return false 
+		})
+		if len(results) > req.TopK {
+			results = results[:req.TopK]
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }

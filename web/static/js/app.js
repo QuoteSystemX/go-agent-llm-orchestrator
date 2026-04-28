@@ -2240,3 +2240,81 @@ async function scrubAllRAG() {
         showToast(`RAG Error: ${err.message}`, 'error');
     }
 }
+
+// Knowledge Hub Search
+async function performRAGSearch() {
+    const input = document.getElementById('rag-search-input');
+    const container = document.getElementById('rag-search-results');
+    const btn = document.getElementById('btn-rag-search');
+    const query = input.value.trim();
+
+    if (!query) {
+        showToast('Please enter a search query', 'warning');
+        return;
+    }
+
+    // Show loading state
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="no-results">
+            <div class="loading-shimmer" style="height: 100px; margin-bottom: 1rem;"></div>
+            <div class="loading-shimmer" style="height: 100px;"></div>
+        </div>
+    `;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Searching...';
+    lucide.createIcons();
+
+    try {
+        const response = await fetch('/api/v1/rag/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, top_k: 10 })
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const results = await response.json();
+        renderRAGSearchResults(results);
+    } catch (err) {
+        showToast(`Search Error: ${err.message}`, 'error');
+        container.innerHTML = `<div class="no-results">Error: ${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Search</span>';
+        lucide.createIcons();
+    }
+}
+
+function renderRAGSearchResults(results) {
+    const container = document.getElementById('rag-search-results');
+    if (!results || results.length === 0) {
+        container.innerHTML = '<div class="no-results">No relevant knowledge found. Try adjusting your query.</div>';
+        return;
+    }
+
+    container.innerHTML = results.map(doc => `
+        <div class="search-result-card">
+            <div class="result-header">
+                <div class="result-source">
+                    <i data-lucide="${doc.Category === 'meta' ? 'book-open' : 'file-code'}"></i>
+                    <span>${doc.Source}</span>
+                </div>
+                <div class="result-category">${doc.Category}</div>
+            </div>
+            <div class="result-content">
+                <pre><code>${escapeHTML(doc.Content)}</code></pre>
+            </div>
+        </div>
+    `).join('');
+    
+    lucide.createIcons();
+}
+
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
