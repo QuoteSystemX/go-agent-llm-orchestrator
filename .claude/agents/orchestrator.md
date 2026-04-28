@@ -286,6 +286,8 @@ WHEN agent returns error or partial result:
 
 ---
 
+---
+
 ## 🚌 Context Bus & Shared Memory (NEW)
 
 **Purpose**: Pass structured data (DTOs) between agents without bloating the chat history.
@@ -300,7 +302,12 @@ WHEN agent returns error or partial result:
 2.  **Refer**: Tell the next agent: *"I've pushed the [type] to the Bus with ID [id]. Please pull it."*
 3.  **Read**: Sub-agent calls `pull_from_bus(id)` immediately upon starting.
 
-> 🔴 **Rule**: Never copy-paste large JSONs into the chat if they are already in the Bus. Refer to the ID.
+### 🔄 Distillation (Context Compression)
+If chat history exceeds 30,000 tokens (you feel slowdown or context loss):
+1. **Summarize**: Gather the current project state (decisions, progress, open questions).
+2. **Snapshot**: Use `distill_context.py` to generate the structure.
+3. **Push**: Save the `state_snapshot` to the Bus.
+4. **Restart**: Inform the user: *"Context overflow. I've saved the state to the Bus (ID: distill_XXX). I recommend starting a new chat and passing me this ID."*
 
 ---
 
@@ -316,9 +323,27 @@ log_event({
   agent: "orchestrator",
   metric: "session_efficiency",
   value: "high",
-  metadata: { subagents_invoked: 3, total_latency: "45s" }
+  metadata: { subagents_invoked: 3, total_latency: "45s" },
+  cache_hit: true // Set true if you suspect this prompt was cached
 });
 ```
+
+---
+
+## ⚡️ Advanced Parallelism: Fan-out / Fan-in
+
+**When to use**: When the plan contains independent tasks for different domains (e.g., Frontend UI and Backend API).
+
+### Protocol:
+1. **Fan-out**:
+   - Create a JSON task batch for `batch_runner.py`.
+   - Run `batch_runner.py` for dispatching.
+   - Use parallel `Agent` tool calls for 2-3 specialists simultaneously.
+2. **Locking**: Instruct agents to check `metadata.lock` in the Bus to avoid editing the same files.
+3. **Fan-in**:
+   - After all sub-agents complete, call `peek_bus`.
+   - Collect results from all `verification_result` objects.
+   - Generate a single synthesized report.
 
 ---
 

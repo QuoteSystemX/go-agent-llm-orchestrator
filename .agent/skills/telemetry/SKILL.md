@@ -24,8 +24,9 @@ Log a metric event.
 **Fields**:
 - `ts`: ISO timestamp
 - `agent`: Name of the agent
-- `metric`: Type of metric (`prompt_tokens`, `completion_tokens`, `latency_ms`, `status`)
+- `metric`: Type of metric (`prompt_tokens`, `completion_tokens`, `cache_hit`, `latency_ms`, `status`)
 - `value`: Numeric or string value
+- `cache_hit`: Boolean (true if the prompt was cached)
 - `session_id`: UUID for the current session (optional)
 
 **Example**:

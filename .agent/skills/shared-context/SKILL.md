@@ -54,7 +54,22 @@ Wipe the current context (usually done at the start of a new major task by the O
 1. **Keep it Small**: Don't put huge files in the bus; put summaries or references.
 2. **Type Safety**: Follow the `schema.json` types.
 3. **Traceability**: Always include the `author` agent name.
-4. **Handoff**: When delegating, tell the next agent: *"I've pushed the [type] to the Bus with ID [id]"*.
+4. **Handoff**: When delegating, tell the next agent: *"I've pushed the data to the Bus with ID [id]. Please use it."*
+5. **Distillation**: If the chat context becomes too large (>30k tokens), use `distill_context.py` to create a state snapshot and start a new cycle, referencing this snapshot.
+
+---
+
+## Advanced Patterns
+
+### 1. Distillation (Compression)
+- **Trigger**: Context overflow.
+- **Action**: `orchestrator` -> `distill_context.py` -> Push `state_snapshot` to Bus.
+- **Resume**: A new agent reads the `state_snapshot` and continues work without losing context.
+
+### 2. Fan-out / Fan-in (Parallelism)
+- **Fan-out**: The orchestrator puts a task array or specification into the Bus. Launches multiple agents in parallel.
+- **Locking**: If Agent A edits a file, it sets a `lock: file_path` marker in the Bus object metadata.
+- **Fan-in**: The orchestrator collects all `verification_result` items from the Bus and generates the final report.
 
 ---
 
