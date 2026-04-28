@@ -116,6 +116,9 @@ func main() {
 	go hub.Run()
 	logBuf.SetHub(hub)
 
+	router.SetTracer(hub)
+	engine.SetTracer(hub)
+
 	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer, statsAggregator)
 	adminServer.SetHealthMonitor(healthMonitor)
 	healthMonitor.SetNotifyFunc(func(status monitor.HealthStatus) {

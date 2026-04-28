@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"go-agent-llm-orchestrator/internal/monitor"
 	"github.com/gorilla/websocket"
 )
 
@@ -20,6 +21,7 @@ const (
 	TypeNextRuns     = "next_runs"
 	TypeRepoAnalysis = "repo_analysis"
 	TypeNotify       = "notify"
+	TypeAgentTrace   = "agent_trace"
 )
 
 // WSMessage represents a generic message sent over WebSocket
@@ -106,6 +108,11 @@ func (h *Hub) Broadcast(msgType string, payload interface{}) {
 	default:
 		// Drop message if broadcast channel is full
 	}
+}
+
+// BroadcastTrace implements monitor.Tracer
+func (h *Hub) BroadcastTrace(event monitor.AgentTraceEvent) {
+	h.Broadcast(TypeAgentTrace, event)
 }
 
 // writePump pumps messages from the hub to the websocket connection.

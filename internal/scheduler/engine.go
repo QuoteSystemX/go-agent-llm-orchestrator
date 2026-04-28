@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/notifier"
@@ -29,6 +30,7 @@ type Engine struct {
 	notifier      *notifier.TelegramNotifier
 	promptBuilder *prompt.Builder
 	contextSearch ContextSearchFunc
+	tracer        monitor.Tracer
 	mu            sync.Mutex
 	entries       map[string]cron.EntryID
 	onTaskUpdate     func(taskID, status string)
@@ -51,6 +53,10 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 // Jules prompts with semantically relevant repository context at dispatch time.
 func (e *Engine) SetContextSearcher(fn ContextSearchFunc) {
 	e.contextSearch = fn
+}
+
+func (e *Engine) SetTracer(t monitor.Tracer) {
+	e.tracer = t
 }
 
 func (e *Engine) SetNotifyFunc(fn func(taskID, status string)) {
@@ -241,7 +247,7 @@ func (e *Engine) addTask(id, schedule string) error {
 func (e *Engine) runTask(taskID string) {
 	log.Printf("Task %s: TRIGGERED", taskID)
 
-	ctx := context.Background()
+	ctx := monitor.WithTaskID(context.Background(), taskID)
 	start := time.Now()
 
 	var status, mission, pattern, agent, repoName, category string
@@ -396,6 +402,18 @@ func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoN
 		ragContext = e.contextSearch(ctx, repoName, query, 5)
 		if ragContext != "" {
 			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
+			
+			if e.tracer != nil {
+				e.tracer.BroadcastTrace(monitor.AgentTraceEvent{
+					TaskID:    monitor.GetTaskID(ctx),
+					Type:      monitor.TraceRAG,
+					Content:   fmt.Sprintf("Injected %d chars of repository context", len(ragContext)),
+					Timestamp: time.Now(),
+					Metadata: map[string]string{
+						"repo": repoName,
+					},
+				})
+			}
 		}
 	}
 	return e.promptBuilder.Build(agent, pattern, mission, ragContext)

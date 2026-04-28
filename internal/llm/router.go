@@ -31,6 +31,8 @@ type Router struct {
 	// modelCtxMu protects modelCtxCache across goroutines.
 	modelCtxMu    sync.Mutex
 	modelCtxCache map[string]int // model name → detected context window
+
+	tracer monitor.Tracer
 }
 
 // InferenceMutex returns the Ollama priority gate so the embedding pipeline
@@ -45,6 +47,10 @@ func NewRouter(database *db.DB) *Router {
 		RemoteAPIKey:   os.Getenv("LLM_REMOTE_API_KEY"),
 		modelCtxCache:  make(map[string]int),
 	}
+}
+
+func (r *Router) SetTracer(t monitor.Tracer) {
+	r.tracer = t
 }
 
 // GetModelContextWindow returns the practical context window for the current local
@@ -366,6 +372,19 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 	}
 
 	content := result.Choices[0].Message.Content
+	
+	if r.tracer != nil {
+		taskID := monitor.GetTaskID(ctx)
+		if taskID != "" {
+			r.tracer.BroadcastTrace(monitor.AgentTraceEvent{
+				TaskID:    taskID,
+				Type:      monitor.TraceThought,
+				Content:   fmt.Sprintf("Classified task as %s", content),
+				Timestamp: time.Now(),
+			})
+		}
+	}
+
 	if content == "COMPLEX" {
 		return Complex, nil
 	}
@@ -531,6 +550,23 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		monitor.LLMCalls.WithLabelValues("local", string(classification)).Inc()
 		content, err = tryEndpoint(r.LocalEndpoint, r.getLocalModel(), "", "local")
 	}
+
+	if err == nil && r.tracer != nil {
+		taskID := monitor.GetTaskID(ctx)
+		if taskID != "" {
+			r.tracer.BroadcastTrace(monitor.AgentTraceEvent{
+				TaskID:    taskID,
+				Type:      monitor.TraceOutput,
+				Content:   fmt.Sprintf("[%s] %s response generated", provider, classification),
+				Timestamp: time.Now(),
+				Metadata: map[string]string{
+					"model":    model,
+					"provider": provider,
+				},
+			})
+		}
+	}
+
 	if err != nil {
 		return "", err
 	}

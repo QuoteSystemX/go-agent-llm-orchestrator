@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/rag.css">
+    <link rel="stylesheet" href="/static/css/flow.css">
 </head>
 <body>
     <div class="app-container">
@@ -59,6 +60,9 @@
                 </button>
                 <button id="tab-btn-rag" class="tab-btn" onclick="switchTab('rag')">
                     <i data-lucide="database"></i> RAG
+                </button>
+                <button id="tab-btn-flow" class="tab-btn" onclick="switchTab('flow')">
+                    <i data-lucide="map"></i> Agent Flow
                 </button>
             </div>
 
@@ -238,6 +242,28 @@
                         <div id="rag-stats-container" class="rag-stats-grid">
                             <!-- RAG stats cards will be injected here -->
                             <div class="empty-state">No repositories indexed in RAG yet.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-flow" class="tab-pane">
+                <section class="flow-section glass">
+                    <div class="flow-header">
+                        <div class="flow-title">
+                            <i data-lucide="map" style="color:var(--primary)"></i>
+                            <h3>Agent Flow Visualizer</h3>
+                        </div>
+                        <div class="flow-controls">
+                            <button class="btn-help" onclick="clearFlowMap()" title="Clear visualization">
+                                <i data-lucide="trash-2"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flow-container glass">
+                        <canvas id="flow-canvas"></canvas>
+                        <div id="flow-overlay" class="flow-overlay">
+                            <div class="empty-state">No active agent flows detected. Run a task to see traces.</div>
                         </div>
                     </div>
                 </section>
@@ -779,6 +805,7 @@
         </div>
     </div>
 
+    <script src="/static/js/flow.js"></script>
     <script src="/static/js/app.js"></script>
     <script>lucide.createIcons();</script>
 </body>

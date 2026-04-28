@@ -78,6 +78,11 @@ class OrchestratorSocket {
             case 'repo_analysis':
                 if (typeof handleRepoAnalysisUpdate === 'function') handleRepoAnalysisUpdate(msg.payload);
                 break;
+            case 'agent_trace':
+                if (typeof flowManager !== 'undefined' && flowManager) {
+                    flowManager.addTrace(msg.payload);
+                }
+                break;
             default:
                 console.warn('WS: Unknown message type', msg.type);
         }
@@ -204,6 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltipInBody.classList.remove('visible');
         }
     });
+
+    if (typeof initFlow === 'function') initFlow();
 });
 
 async function fetchTasks() {
