@@ -129,13 +129,13 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
 
   | Task Tag | Commit Type | Primary Agent(s) | Secondary Agent(s) | Notes |
   | :--- | :--- | :--- | :--- | :--- |
-  | `[FEAT]` | `feat` | `backend-specialist`, `frontend-specialist` | `crypto-go-specialist`, `orchestrator` | Primary implementors by domain |
-  | `[STORY]` | `feat` | `backend-specialist`, `frontend-specialist`, `orchestrator` | `crypto-go-specialist` | Treat identically to `[FEAT]` |
+  | `[FEAT]` | `feat` | `backend-specialist`, `frontend-specialist` | `go-specialist`, `crypto-go-architect`, `orchestrator` | Primary implementors by domain |
+  | `[STORY]` | `feat` | `backend-specialist`, `frontend-specialist`, `orchestrator` | `go-specialist`, `crypto-go-architect` | Treat identically to `[FEAT]` |
   | `[BUG]` | `fix` | `debugger` | `backend-specialist`, `test-engineer`, `qa-automation-engineer` | test-engineer writes regression after fix; qa validates E2E |
   | `[TEST]` | `test` | `test-engineer` | `qa-automation-engineer` | qa-automation for E2E/Playwright suites |
-  | `[PERF]` | `perf` | `performance-optimizer` | `backend-specialist`, `crypto-go-specialist` | crypto-go for Go-specific profiling |
+  | `[PERF]` | `perf` | `performance-optimizer` | `backend-specialist`, `go-specialist` | go-specialist for Go-specific profiling |
   | `[SECURITY]` | `chore` | `security-auditor` | `penetration-tester` | pentest for active exploit validation |
-  | `[REFACTOR]` | `refactor` | `crypto-go-specialist`, `code-archaeologist` | `backend-specialist` | code-archaeologist for legacy/unknown code |
+  | `[REFACTOR]` | `refactor` | `go-specialist`, `code-archaeologist` | `backend-specialist` | code-archaeologist for legacy/unknown code |
   | `[DOCS]` | `docs` | `documentation-writer` | `explorer-agent` | explorer discovers gaps; writer fills them |
   | `[DB]` | `feat` | `database-architect` | `backend-specialist` | schema, migration, index, query optimization |
   | `[INFRA]` | `chore` | `devops-engineer` | `security-auditor` | CI/CD, deploy, server, monitoring |
@@ -149,7 +149,9 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | :--- | :--- | :--- |
   | `backend-specialist` | `[FEAT]`, `[STORY]`, `[BUG]`, `[PERF]` | Core implementor for server/API logic |
   | `frontend-specialist` | `[FEAT]`, `[STORY]` | UI/UX implementation, React/Next.js |
-  | `crypto-go-specialist` | `[FEAT]`, `[PERF]`, `[REFACTOR]` | Go/TON/blockchain, high-perf concurrency |
+  | `go-specialist` | `[FEAT]`, `[PERF]`, `[REFACTOR]` | Go language, gRPC, concurrency, high-performance services |
+  | `crypto-specialist` | `[FEAT]`, `[SECURITY]` | TON/blockchain, DEX, exchange integration, financial math |
+  | `crypto-go-architect` | `[FEAT]`, `[STORY]` | Go + Crypto system design, pipeline architecture, glue layer |
   | `debugger` | `[BUG]` | Root cause analysis, systematic investigation |
   | `test-engineer` | `[TEST]`, `[BUG]` (regression) | Unit/integration tests, TDD |
   | `qa-automation-engineer` | `[QA]`, `[TEST]`, `[BUG]` (E2E) | Playwright, Cypress, E2E regression pipelines |

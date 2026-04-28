@@ -56,7 +56,9 @@ Specialist AI personas for different domains.
 | `database-architect`     | Schema, SQL                | database-design                                                   |
 | `mobile-developer`       | iOS, Android, RN           | mobile-design, i18n-localization                                  |
 | `game-developer`         | Game logic, mechanics      | game-development                                                  |
-| `crypto-go-specialist`   | Go, Microservices, Perf    | go-patterns, api-patterns, architecture                           |
+| `go-specialist`          | Go, gRPC, Concurrency, Perf | go-patterns, godoc-patterns, api-patterns, architecture          |
+| `crypto-specialist`      | TON, DEX, Exchange, Trading | api-patterns, architecture                                       |
+| `crypto-go-architect`    | Go + Crypto system design   | go-patterns, api-patterns, architecture, brainstorming           |
 | `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                          |
 | `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                           |
 | `penetration-tester`     | Offensive security         | red-team-tactics                                                  |
@@ -409,7 +411,9 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 | ------------------ | ------------------------ | -------------------------------------------------------- |
 | Web App            | `frontend-specialist`    | react-best-practices, frontend-design, tailwind-patterns |
 | API / Backend      | `backend-specialist`     | api-patterns, nodejs-best-practices, database-design     |
-| Go / Microservices | `crypto-go-specialist`   | go-patterns, api-patterns, architecture                  |
+| Go / Microservices | `go-specialist`          | go-patterns, godoc-patterns, api-patterns, architecture  |
+| Crypto / TON / DEX | `crypto-specialist`      | api-patterns, architecture                               |
+| Go + Crypto system | `crypto-go-architect`    | go-patterns, api-patterns, architecture, brainstorming   |
 | Mobile             | `mobile-developer`       | mobile-design                                            |
 | Game               | `game-developer`         | game-development                                         |
 | Database           | `database-architect`     | database-design, prisma-expert                           |

@@ -48,7 +48,10 @@ graph TD
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
 | **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
 | **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
-| **Go Docs**         | "godoc", "go doc", "doc comment", "pkg.go.dev", "doc.go", "go documentation", "document go package" | `crypto-go-specialist` | ✅ YES |
+| **Go (pure)**       | "golang", "go", "grpc", "protobuf", "gin", "echo", "fiber", "xsync", "pprof", "goroutine" | `go-specialist` | ✅ YES |
+| **Crypto (pure)**   | "ton", "crypto", "exchange", "trading", "blockchain", "dex", "amm", "jetton", "func", "tact", "mev" | `crypto-specialist` | ✅ YES |
+| **Go + Crypto**     | Go signals AND crypto signals together, OR architecture/pipeline/design in crypto-go context | `crypto-go-architect` | ✅ YES |
+| **Go Docs**         | "godoc", "go doc", "doc comment", "pkg.go.dev", "doc.go", "go documentation", "document go package" | `go-specialist` | ✅ YES |
 | **Security Review** | "security", "vulnerability", "exploit"                   | `security-auditor` + `penetration-tester` | ✅ YES       |
 | **Performance**     | "slow", "optimize", "performance", "speed"               | `performance-optimizer`                   | ✅ YES       |
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
@@ -99,7 +102,10 @@ graph TD
 | **Audit**       | audit, scan, tech debt, task queue             | `reviewer`              |
 | **Data**        | pipeline, etl, elt, dbt, airflow, kafka, spark, clickhouse, data lake | `data-engineer` |
 | **Git**         | git, conflict, merge, rebase, reflog, branch, bisect | `git-master`      |
-| **Go Docs**     | godoc, go doc, doc comment, pkg.go.dev, doc.go, document go | `crypto-go-specialist` |
+| **Go (pure)**   | golang, go, grpc, protobuf, gin, echo, fiber, xsync, pprof, goroutine | `go-specialist` |
+| **Crypto (pure)** | ton, crypto, exchange, trading, blockchain, dex, amm, jetton, func, tact, mev | `crypto-specialist` |
+| **Go + Crypto** | Go signals AND crypto signals together, OR architecture/pipeline/design in crypto-go context | `crypto-go-architect` |
+| **Go Docs**     | godoc, go doc, doc comment, pkg.go.dev, doc.go, document go | `go-specialist` |
 
 <!-- EMBED_END -->
 
@@ -332,7 +338,7 @@ Any routing decision that results in **code being written or modified** MUST aut
 ### Code-Change Detection
 
 A routing is a **code-change** if the selected agent is any of:
-`backend-specialist`, `frontend-specialist`, `crypto-go-specialist`, `mobile-developer`,
+`backend-specialist`, `frontend-specialist`, `go-specialist`, `crypto-specialist`, `crypto-go-architect`, `mobile-developer`,
 `database-architect`, `devops-engineer`, `k8s-engineer`, `ai-engineer`, `data-engineer`, `debugger`, `performance-optimizer`,
 `code-archaeologist`, `rest-api-designer`, `grpc-architect`, `game-developer`
 
