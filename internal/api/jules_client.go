@@ -72,10 +72,29 @@ type GithubRepoContext struct {
 
 type SessionResponse struct {
 	ID      string `json:"id"`
-	Name    string `json:"name"`   // Jules returns "name" as the session identifier
+	Name    string `json:"name"` // Jules returns "name" as the session identifier
 	Status  string `json:"state"`
 	Result  string `json:"result,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+// Activity represents a single Jules session activity.
+type Activity struct {
+	Name          string         `json:"name"`
+	ID            string         `json:"id"`
+	Description   string         `json:"description"`
+	CreateTime    string         `json:"createTime"`
+	SessionFailed *SessionFailed `json:"sessionFailed,omitempty"`
+}
+
+// SessionFailed is the union-type variant for a failed session activity.
+type SessionFailed struct {
+	Reason string `json:"reason"`
+}
+
+type activitiesResponse struct {
+	Activities    []Activity `json:"activities"`
+	NextPageToken string     `json:"nextPageToken"`
 }
 
 // doRequest is a helper for making authenticated HTTP requests to the Jules API
@@ -101,7 +120,9 @@ func (c *JulesClient) doRequest(ctx context.Context, method, path string, body i
 	return c.client.Do(req)
 }
 
-// GetSession satisfies llm.JulesClientIface
+// GetSession satisfies llm.JulesClientIface. When the session is FAILED it
+// enriches the returned SessionInfo.Message by fetching the activities list
+// and extracting the sessionFailed reason from the Jules API.
 func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error) {
 	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions/"+sessionID, nil)
 	if err != nil {
@@ -117,11 +138,48 @@ func (c *JulesClient) GetSession(ctx context.Context, sessionID string) (*db.Ses
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
 		return nil, err
 	}
-	return &db.SessionInfo{
-		Status:  sr.Status,
-		Message: sr.Message,
-		Result:  sr.Result,
-	}, nil
+
+	info := &db.SessionInfo{
+		Status: sr.Status,
+		Result: sr.Result,
+	}
+
+	// Jules does not return a message field on the session resource.
+	// Fetch activities to extract the failure reason from sessionFailed activity.
+	if sr.Status == "FAILED" {
+		if reason := c.getSessionFailureReason(ctx, sessionID); reason != "" {
+			info.Message = reason
+		}
+	}
+
+	return info, nil
+}
+
+// getSessionFailureReason fetches the session's activities and returns the
+// failure reason from the first sessionFailed activity found.
+func (c *JulesClient) getSessionFailureReason(ctx context.Context, sessionID string) string {
+	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions/"+sessionID+"/activities?pageSize=100", nil)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var ar activitiesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+		return ""
+	}
+
+	for _, a := range ar.Activities {
+		if a.SessionFailed != nil {
+			if a.SessionFailed.Reason != "" {
+				return a.SessionFailed.Reason
+			}
+			if a.Description != "" {
+				return a.Description
+			}
+		}
+	}
+	return ""
 }
 
 // StartSession creates a Jules session with the full prompt and source context.
