@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,6 +72,19 @@ func (m *HealthMonitor) GetStatus() HealthStatus {
 	return m.status
 }
 
+// ollamaModelMatches returns true if the Ollama model name (which may include
+// a ":latest" or other tag) matches the configured name (which may omit the tag).
+func ollamaModelMatches(ollamaName, configured string) bool {
+	if ollamaName == configured {
+		return true
+	}
+	// "nomic-embed-text:latest" should match configured "nomic-embed-text"
+	if !strings.Contains(configured, ":") {
+		return strings.HasPrefix(ollamaName, configured+":")
+	}
+	return false
+}
+
 func (m *HealthMonitor) check() {
 	newStatus := HealthStatus{Status: "ERROR"}
 	newStatus.Components.Ollama.Status = "NOT_READY"
@@ -107,11 +121,11 @@ func (m *HealthMonitor) check() {
 			for _, model := range tags.Models {
 				// We need a local copy for safe pointer reference
 				mCopy := model
-				if mCopy.Name == targetModel || mCopy.Model == targetModel {
+				if ollamaModelMatches(mCopy.Name, targetModel) || ollamaModelMatches(mCopy.Model, targetModel) {
 					hasMain = true
 					newStatus.Components.Ollama.Model = &mCopy
 				}
-				if mCopy.Name == embeddingModel || mCopy.Model == embeddingModel {
+				if ollamaModelMatches(mCopy.Name, embeddingModel) || ollamaModelMatches(mCopy.Model, embeddingModel) {
 					hasEmbed = true
 					newStatus.Components.Ollama.EmbeddingModel = &mCopy
 				}
