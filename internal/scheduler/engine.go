@@ -432,7 +432,7 @@ func (e *Engine) runTask(taskID string) {
 			e.updateTaskStatus(ctx, taskID, "CORRECTING", "current_stage = ?", fmt.Sprintf("Escalated to %s (RAG 15)", effectiveAgent))
 		}
 
-		err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
+		err = e.tm.Execute(ctx, taskID, traffic.PriorityHigh, importance, category, func() error {
 			if logID > 0 {
 				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 			}

@@ -136,7 +136,7 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 	if event.Status != currentStatus && triggerSet[event.Status] {
 		log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
 		// Execute supervisor logic via traffic manager
-		m.tm.Execute(ctx, traffic.PriorityLow, 0, "", func() error {
+		m.tm.Execute(ctx, "monitor:drift", traffic.PriorityLow, 0, "", func() error {
 			if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
 				log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
 			}

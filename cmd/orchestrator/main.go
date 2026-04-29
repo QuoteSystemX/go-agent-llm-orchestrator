@@ -139,6 +139,7 @@ func main() {
 	adminServer.SetPromptChecker(promptBuilder)
 	adminServer.SetBudgetManager(budgetMgr)
 	adminServer.SetDriftDetector(driftDetector)
+	adminServer.SetTrafficManager(tm)
 
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 

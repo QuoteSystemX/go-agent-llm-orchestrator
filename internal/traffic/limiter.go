@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 )
@@ -24,12 +25,18 @@ type UsageChecker interface {
 	GetDailyLimit(ctx context.Context) (int, error)
 }
 
+type QueueItem struct {
+	TaskID    string    `json:"task_id"`
+	WaitSince time.Time `json:"wait_since"`
+}
+
 // TrafficManager handles rate limiting with priority awareness and daily quotas
 type TrafficManager struct {
 	limiter *rate.Limiter
 	checker UsageChecker
 	mu      sync.Mutex
 	sem     chan struct{} // Semaphore for worker pool
+	waiting map[string]time.Time
 }
 
 // NewTrafficManager creates a new limiter with given requests per second, burst size and worker limit
@@ -42,7 +49,23 @@ func NewTrafficManager(rps float64, burst int, workers int, checker UsageChecker
 		limiter: rate.NewLimiter(rate.Limit(rps), burst),
 		checker: checker,
 		sem:     sem,
+		waiting: make(map[string]time.Time),
 	}
+}
+
+// GetQueue returns the list of tasks currently waiting for a worker slot
+func (tm *TrafficManager) GetQueue() []QueueItem {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	
+	items := make([]QueueItem, 0, len(tm.waiting))
+	for id, since := range tm.waiting {
+		items = append(items, QueueItem{
+			TaskID:    id,
+			WaitSince: since,
+		})
+	}
+	return items
 }
 
 // Wait blocks until the rate limiter allows the call based on priority.
@@ -86,12 +109,22 @@ func (tm *TrafficManager) Wait(ctx context.Context, p Priority, importance int, 
 }
 
 // Execute wraps a function call with rate limiting and worker pool management
-func (tm *TrafficManager) Execute(ctx context.Context, p Priority, importance int, category string, fn func() error) error {
+func (tm *TrafficManager) Execute(ctx context.Context, taskID string, p Priority, importance int, category string, fn func() error) error {
 	if err := tm.Wait(ctx, p, importance, category); err != nil {
 		return err
 	}
 
 	if tm.sem != nil {
+		tm.mu.Lock()
+		tm.waiting[taskID] = time.Now()
+		tm.mu.Unlock()
+
+		defer func() {
+			tm.mu.Lock()
+			delete(tm.waiting, taskID)
+			tm.mu.Unlock()
+		}()
+
 		select {
 		case tm.sem <- struct{}{}:
 			defer func() { <-tm.sem }()

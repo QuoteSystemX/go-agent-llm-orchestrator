@@ -55,6 +55,15 @@
                 <button id="tab-btn-activity" class="tab-btn" onclick="switchTab('activity')">
                     <i data-lucide="activity"></i> Activity
                 </button>
+                <button id="tab-btn-traffic" class="tab-btn" onclick="switchTab('traffic')">
+                    <i data-lucide="list"></i> Queue
+                </button>
+                <button id="tab-btn-audit" class="tab-btn" onclick="switchTab('audit')">
+                    <i data-lucide="shield"></i> Audit
+                </button>
+                <button id="tab-btn-budgets" class="tab-btn" onclick="switchTab('budgets')">
+                    <i data-lucide="piggy-bank"></i> Budgets
+                </button>
                 <button id="tab-btn-dto" class="tab-btn" onclick="switchTab('dto')">
                     <i data-lucide="layers"></i> DTO
                 </button>
@@ -122,23 +131,61 @@
 
             <div id="tab-activity" class="tab-pane">
                 <section class="activity-section glass">
-                    <div class="activity-controls">
-                        <div class="filter-group">
-                            <span class="filter-label">Filter:</span>
-                            <button class="filter-btn" data-hours="1">1h</button>
-                            <button class="filter-btn" data-hours="3">3h</button>
-                            <button class="filter-btn" data-hours="12">12h</button>
-                            <button class="filter-btn active" data-hours="24">24h</button>
-                            <button class="filter-btn" data-hours="72">3d</button>
-                            <button class="filter-btn" data-hours="168">1w</button>
+                    <div class="activity-header">
+                        <div class="activity-title">
+                            <i data-lucide="activity" style="color:var(--primary)"></i>
+                            <h3>System Activity Logs</h3>
                         </div>
-                        <button class="btn-secondary" onclick="downloadActivityJSON()">
-                            <i data-lucide="download"></i> Export JSON
+                        <div class="activity-filters">
+                            <select id="activity-filter-hours" class="glass" onchange="filterActivity()">
+                                <option value="1">Last Hour</option>
+                                <option value="24" selected>Last 24 Hours</option>
+                                <option value="168">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="activity-content">
+                        <div id="activity-list" class="activity-list">
+                            <!-- Activity items injected here -->
+                            <div class="empty-state">No activity in the selected period</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-traffic" class="tab-pane">
+                <section class="activity-section glass">
+                    <div class="activity-header">
+                        <div class="activity-title">
+                            <i data-lucide="list" style="color:var(--primary)"></i>
+                            <h3>Traffic Queue & Priority</h3>
+                        </div>
+                        <button class="btn-secondary" onclick="fetchTrafficQueue()">
+                            <i data-lucide="refresh-cw"></i> Refresh
                         </button>
                     </div>
-                    <div id="activity-list" class="activity-list">
-                        <!-- Activity logs will be injected here -->
-                        <div class="empty-state">No activity in the selected period</div>
+                    <div class="activity-content">
+                        <div id="traffic-list" class="activity-list">
+                            <!-- Queue items injected here -->
+                            <div class="empty-state">No tasks waiting in the queue.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="tab-audit" class="tab-pane">
+                <section class="activity-section glass">
+                    <div class="activity-controls">
+                        <div class="dto-title">
+                            <i data-lucide="shield" style="color:var(--primary)"></i>
+                            <h3>System Audit Logs</h3>
+                        </div>
+                        <button class="btn-secondary" onclick="fetchAuditLogs()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="audit-list" class="activity-list">
+                        <div class="empty-state">No audit logs found.</div>
                     </div>
                 </section>
             </div>
@@ -268,6 +315,26 @@
                     </div>
                 </section>
             </div>
+
+            <div id="tab-budgets" class="tab-pane">
+                <section class="rag-section glass">
+                    <div class="rag-header">
+                        <div class="rag-title">
+                            <i data-lucide="piggy-bank" style="color:var(--primary)"></i>
+                            <h3>Governance & Financial Control</h3>
+                        </div>
+                        <button class="btn-primary btn-sm" onclick="showBudgetModal()">
+                            <i data-lucide="plus"></i> New Budget
+                        </button>
+                    </div>
+                    <div class="rag-content">
+                        <div id="budget-list" class="rag-stats-grid">
+                            <!-- Budgets will be injected here -->
+                            <div class="empty-state">No budgets configured.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- Task Modal (Create/Edit) -->
@@ -367,6 +434,53 @@
                     <!-- Logs injected here -->
                 </div>
                 <button class="btn-cancel" onclick="hideModal('log-modal')">Close</button>
+            </div>
+        </div>
+
+        <!-- Budget Modal -->
+        <div id="budget-modal" class="modal">
+            <div class="modal-content glass">
+                <h2 id="budget-modal-title">Configure Budget</h2>
+                <input type="hidden" id="budget-id-field">
+                
+                <div class="form-group">
+                    <label>Target Type</label>
+                    <select id="budget-target-type" onchange="toggleBudgetTargetID()">
+                        <option value="system">Global (System-wide)</option>
+                        <option value="project">Project (Repository-specific)</option>
+                    </select>
+                </div>
+                
+                <div id="budget-target-id-group" class="form-group" style="display:none">
+                    <label>Repository Name</label>
+                    <select id="budget-target-id" class="glass">
+                        <!-- Repos injected here -->
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Daily Session Limit</label>
+                        <input type="number" id="budget-daily-limit" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Cost Limit ($)</label>
+                        <input type="number" id="budget-monthly-limit" value="50" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Alert Threshold (0.1 - 1.0)</label>
+                    <input type="number" id="budget-alert-threshold" value="0.8" step="0.1" min="0.1" max="1.0">
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                        Trigger alerts when usage reaches this percentage of the limit.
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveBudget()">Save Budget</button>
+                    <button class="btn-cancel" onclick="hideModal('budget-modal')">Cancel</button>
+                </div>
             </div>
         </div>
 

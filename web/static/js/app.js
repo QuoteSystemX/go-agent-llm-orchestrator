@@ -320,6 +320,7 @@ function renderTasks() {
 
                     <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
                     ${allProjectTasks[0].jules_tasks > 0 ? `<span class="jules-badge">${allProjectTasks[0].jules_tasks} Jules</span>` : ''}
+                    ${allProjectTasks[0].has_drift ? `<span class="service-badge bmad-partial" title="Documentation drift detected in this repository. Wiki may be out of sync."><i data-lucide="alert-triangle" style="width:11px"></i> DRIFT</span>` : `<span class="service-badge bmad-complete" style="opacity:0.6; background:rgba(34, 197, 94, 0.1); color:#22c55e" title="Documentation is in sync."><i data-lucide="check" style="width:11px"></i> SYNCED</span>`}
                     <div class="project-line"></div>
                 </div>
                 <div class="project-content">
@@ -714,27 +715,32 @@ async function installBMAD(event, repoName, patternsToInstall) {
 }
 
 // Logs Logic
-async function viewLogs(id, name) {
-    document.getElementById('log-task-name').innerText = name;
-    const modal = document.getElementById('log-modal');
-    const list = document.getElementById('log-list');
-    list.innerHTML = '<p style="text-align:center; padding:2rem;">Loading history...</p>';
-    modal.style.display = 'flex';
+let currentLogTaskID = null;
+let currentLogOffset = 0;
+const LOG_LIMIT = 10;
+
+async function viewLogs(id, name, reset = true) {
+    if (reset) {
+        currentLogTaskID = id;
+        currentLogOffset = 0;
+        document.getElementById('log-task-name').innerText = name;
+        const list = document.getElementById('log-list');
+        list.innerHTML = '<p style="text-align:center; padding:2rem;">Loading history...</p>';
+        document.getElementById('log-modal').style.display = 'flex';
+    }
 
     try {
-        const resp = await fetch(`/api/v1/tasks/${id}/logs`);
+        const resp = await fetch(`/api/v1/tasks/${currentLogTaskID}/logs?limit=${LOG_LIMIT}&offset=${currentLogOffset}`);
         const logs = await resp.json();
         
-        if (!logs || logs.length === 0) {
+        const list = document.getElementById('log-list');
+        if (reset && (!logs || logs.length === 0)) {
             list.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-muted)">No execution history found for this task.</p>';
             return;
         }
 
-        // Only show last 5
-        const recentLogs = logs.slice(0, 5);
-
-        list.innerHTML = recentLogs.map((log, idx) => `
-            <div class="log-accordion-item ${idx === 0 ? 'active' : ''}">
+        const html = logs.map((log, idx) => `
+            <div class="log-accordion-item ${(reset && idx === 0) ? 'active' : ''}">
                 <div class="log-accordion-header" onclick="toggleLogAccordion(this)">
                     <div class="log-status-group">
                         <i data-lucide="${log.status === 'SUCCESS' ? 'check-circle' : 'alert-circle'}" 
@@ -762,9 +768,41 @@ async function viewLogs(id, name) {
                 </div>
             </div>
         `).join('');
+
+        if (reset) {
+            list.innerHTML = html;
+        } else {
+            // Append
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            while (div.firstChild) {
+                list.appendChild(div.firstChild);
+            }
+        }
+
+        // Add Load More button if we got exactly LIMIT logs
+        let loadMoreBtn = document.getElementById('btn-load-more-logs');
+        if (loadMoreBtn) loadMoreBtn.remove();
+
+        if (logs.length === LOG_LIMIT) {
+            currentLogOffset += LOG_LIMIT;
+            const btn = document.createElement('button');
+            btn.id = 'btn-load-more-logs';
+            btn.className = 'btn-secondary';
+            btn.style.width = '100%';
+            btn.style.marginTop = '1rem';
+            btn.innerHTML = '<i data-lucide="chevron-down"></i> Load More';
+            btn.onclick = () => viewLogs(currentLogTaskID, name, false);
+            list.appendChild(btn);
+        }
+
         lucide.createIcons();
     } catch (err) {
-        list.innerHTML = `<p style="color:var(--danger)">Failed to load logs: ${err.message}</p>`;
+        if (reset) {
+            document.getElementById('log-list').innerHTML = `<p style="color:var(--danger)">Failed to load logs: ${err.message}</p>`;
+        } else {
+            showToast('Failed to load more logs', 'error');
+        }
     }
 }
 
@@ -1278,8 +1316,230 @@ function switchTab(tabName) {
         populateRepoSelect();
     } else if (tabName === 'rag') {
         fetchRAGStats();
+    } else if (tabName === 'audit') {
+        fetchAuditLogs();
+    } else if (tabName === 'budgets') {
+        fetchBudgets();
+    } else if (tabName === 'traffic') {
+        fetchTrafficQueue();
     }
     lucide.createIcons();
+}
+
+async function fetchTrafficQueue() {
+    try {
+        const resp = await fetch('/api/v1/system/traffic');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        renderTrafficQueue(data.queue);
+    } catch (err) {
+        console.error('Failed to fetch traffic queue:', err);
+    }
+}
+
+function renderTrafficQueue(queue) {
+    const list = document.getElementById('traffic-list');
+    if (!list) return;
+
+    if (!queue || queue.length === 0) {
+        list.innerHTML = '<div class="empty-state">No tasks waiting in the queue. Everything is running smoothly.</div>';
+        return;
+    }
+
+    list.innerHTML = queue.map(item => {
+        const waitTime = Math.round((Date.now() - new Date(item.wait_since).getTime()) / 1000);
+        return `
+            <div class="activity-item glass">
+                <div class="activity-meta">
+                    <span class="activity-time">Waiting for ${waitTime}s</span>
+                </div>
+                <div class="activity-main">
+                    <div class="activity-task">${item.task_id}</div>
+                    <div class="activity-status badge-pending">PENDING SLOT</div>
+                </div>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem">
+                    <button class="btn-primary btn-sm" onclick="runTaskNow('${item.task_id}')">
+                        <i data-lucide="zap"></i> Bump Priority
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    lucide.createIcons();
+}
+
+async function fetchBudgets() {
+    try {
+        const resp = await fetch('/api/v1/budgets');
+        if (!resp.ok) return;
+        const budgets = await resp.json();
+        renderBudgets(budgets);
+    } catch (err) {
+        console.error('Failed to fetch budgets:', err);
+    }
+}
+
+function renderBudgets(budgets) {
+    const list = document.getElementById('budget-list');
+    if (!list) return;
+
+    if (!budgets || budgets.length === 0) {
+        list.innerHTML = '<div class="empty-state">No budgets configured.</div>';
+        return;
+    }
+
+    list.innerHTML = budgets.map(b => `
+        <div class="rag-stats-card glass">
+            <div class="rag-stats-header">
+                <i data-lucide="${b.target_type === 'system' ? 'globe' : 'folder'}" style="color:var(--primary)"></i>
+                <div class="rag-stats-title">${b.target_type === 'system' ? 'Global Limit' : b.target_id}</div>
+            </div>
+            <div class="rag-stats-body">
+                <div class="rag-stat-row">
+                    <span>Daily Sessions:</span>
+                    <strong>${b.daily_session_limit}</strong>
+                </div>
+                <div class="rag-stat-row">
+                    <span>Monthly Cost:</span>
+                    <strong>$${b.monthly_cost_limit.toFixed(2)}</strong>
+                </div>
+                <div class="rag-stat-row">
+                    <span>Alert at:</span>
+                    <strong>${(b.alert_threshold * 100).toFixed(0)}%</strong>
+                </div>
+            </div>
+            <div class="rag-stats-footer">
+                <button class="btn-secondary btn-sm" onclick="editBudget(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+                    <i data-lucide="edit-2"></i> Edit
+                </button>
+                <button class="btn-danger-small" onclick="deleteBudget(${b.id})">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function showBudgetModal() {
+    document.getElementById('budget-modal-title').innerText = 'New Budget';
+    document.getElementById('budget-id-field').value = '';
+    document.getElementById('budget-target-type').value = 'project';
+    document.getElementById('budget-target-type').disabled = false;
+    
+    // Populate repo selector
+    const repoSelect = document.getElementById('budget-target-id');
+    const uniqueRepos = [...new Set(tasks.map(t => t.name))];
+    repoSelect.innerHTML = uniqueRepos.map(r => `<option value="${r}">${r}</option>`).join('');
+    
+    toggleBudgetTargetID();
+    document.getElementById('budget-modal').style.display = 'flex';
+}
+
+function toggleBudgetTargetID() {
+    const type = document.getElementById('budget-target-type').value;
+    document.getElementById('budget-target-id-group').style.display = type === 'project' ? 'block' : 'none';
+}
+
+function editBudget(b) {
+    document.getElementById('budget-modal-title').innerText = 'Edit Budget';
+    document.getElementById('budget-id-field').value = b.id;
+    document.getElementById('budget-target-type').value = b.target_type;
+    document.getElementById('budget-target-type').disabled = true;
+    
+    if (b.target_type === 'project') {
+        const repoSelect = document.getElementById('budget-target-id');
+        repoSelect.innerHTML = `<option value="${b.target_id}">${b.target_id}</option>`;
+    }
+    
+    document.getElementById('budget-daily-limit').value = b.daily_session_limit;
+    document.getElementById('budget-monthly-limit').value = b.monthly_cost_limit;
+    document.getElementById('budget-alert-threshold').value = b.alert_threshold;
+    
+    toggleBudgetTargetID();
+    document.getElementById('budget-modal').style.display = 'flex';
+}
+
+async function saveBudget() {
+    const id = document.getElementById('budget-id-field').value;
+    const data = {
+        target_type: document.getElementById('budget-target-type').value,
+        target_id: document.getElementById('budget-target-type').value === 'project' ? document.getElementById('budget-target-id').value : '',
+        daily_session_limit: parseInt(document.getElementById('budget-daily-limit').value),
+        monthly_cost_limit: parseFloat(document.getElementById('budget-monthly-limit').value),
+        alert_threshold: parseFloat(document.getElementById('budget-alert-threshold').value)
+    };
+
+    try {
+        const method = id ? 'PUT' : 'POST';
+        if (id) data.id = parseInt(id);
+        
+        const resp = await fetch('/api/v1/budgets', {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (resp.ok) {
+            showToast('Budget saved successfully', 'success');
+            hideModal('budget-modal');
+            fetchBudgets();
+        } else {
+            const err = await resp.text();
+            showToast('Failed to save budget: ' + err, 'error');
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+    }
+}
+
+async function deleteBudget(id) {
+    if (!confirm('Are you sure you want to delete this budget rule?')) return;
+    try {
+        const resp = await fetch(`/api/v1/budgets?id=${id}`, { method: 'DELETE' });
+        if (resp.ok) {
+            showToast('Budget deleted', 'info');
+            fetchBudgets();
+        }
+    } catch (err) { /* silent */ }
+}
+
+async function fetchAuditLogs() {
+    try {
+        const resp = await fetch('/api/v1/audit');
+        if (!resp.ok) return;
+        const logs = await resp.json();
+        renderAuditLogs(logs);
+    } catch (err) {
+        console.error('Failed to fetch audit logs:', err);
+    }
+}
+
+function renderAuditLogs(logs) {
+    const list = document.getElementById('audit-list');
+    if (!list) return;
+
+    if (!logs || logs.length === 0) {
+        list.innerHTML = '<div class="empty-state">No audit logs found.</div>';
+        return;
+    }
+
+    list.innerHTML = logs.map(log => {
+        const time = new Date(log.created_at).toLocaleString();
+        return `
+            <div class="activity-item glass">
+                <div class="activity-meta">
+                    <span class="activity-time">${time}</span>
+                    <span class="activity-duration">ID: ${log.id}</span>
+                </div>
+                <div class="activity-main">
+                    <div class="activity-task" style="color:var(--primary)">${log.action}</div>
+                    <div class="activity-status" style="font-size:0.7rem; color:var(--text-muted)">Session: ${log.session_id || 'N/A'}</div>
+                </div>
+                <div class="activity-details" style="font-size:0.8rem; margin-top:0.5rem; color:var(--text)">${log.details}</div>
+            </div>
+        `;
+    }).join('');
 }
 
 function populateRepoSelect() {

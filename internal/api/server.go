@@ -18,6 +18,7 @@ import (
 	"go-agent-llm-orchestrator/internal/dto"
 	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
+	"go-agent-llm-orchestrator/internal/traffic"
 	"go-agent-llm-orchestrator/internal/rag"
 	"go-agent-llm-orchestrator/web"
 	"github.com/gorilla/websocket"
@@ -64,6 +65,7 @@ type AdminServer struct {
 	hub             *Hub
 	budgetMgr       *budget.Manager
 	driftDetector   *monitor.DriftDetector
+	trafficManager  *traffic.TrafficManager
 	webhookBus      chan<- monitor.WebhookEvent
 	startTime       time.Time
 }
@@ -102,6 +104,9 @@ func (s *AdminServer) SetBudgetManager(bm *budget.Manager) { s.budgetMgr = bm }
 
 // SetDriftDetector attaches a drift detector.
 func (s *AdminServer) SetDriftDetector(dd *monitor.DriftDetector) { s.driftDetector = dd }
+
+// SetTrafficManager attaches a traffic manager.
+func (s *AdminServer) SetTrafficManager(tm *traffic.TrafficManager) { s.trafficManager = tm }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -158,6 +163,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
 	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
 	mux.HandleFunc("/api/v1/system/drift", s.handleDriftStatus)
+	mux.HandleFunc("/api/v1/system/traffic", s.handleTrafficStatus)
 
 	// DTO API
 	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
@@ -169,6 +175,9 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/rag/stats", s.handleRAGStats)
 	mux.HandleFunc("/api/v1/rag/action", s.handleRAGAction)
 	mux.HandleFunc("/api/v1/rag/search", s.handleRAGSearch)
+
+	// Budgets API
+	mux.HandleFunc("/api/v1/budgets", s.handleBudgets)
 
 	// Webhooks
 	mux.HandleFunc("/api/v1/webhooks/jules", s.handleJulesWebhook)
@@ -233,6 +242,7 @@ type TaskResponse struct {
 	LastSessionID string     `json:"last_session_id"`
 	MaxRetries    int        `json:"max_retries"`
 	CurrentRetry  int        `json:"current_retry"`
+	HasDrift      bool       `json:"has_drift"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -315,6 +325,17 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 			tasks[i].PromptReady = true
 		}
 		tasks[i].LastError = lastErrors[tasks[i].ID]
+	}
+
+	// Enrich with drift info
+	driftResults := map[string]bool{}
+	if s.driftDetector != nil {
+		for _, d := range s.driftDetector.GetLastResults() {
+			driftResults[d.RepoName] = d.HasDrift
+		}
+	}
+	for i := range tasks {
+		tasks[i].HasDrift = driftResults[tasks[i].Name]
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -463,7 +484,16 @@ type LogResponse struct {
 }
 
 func (s *AdminServer) listTaskLogs(w http.ResponseWriter, r *http.Request, taskID string) {
-	rows, err := s.db.History().QueryContext(r.Context(), "SELECT id, executed_at, input_data, output_data, status, error, duration_ms FROM task_logs WHERE task_id = ? ORDER BY executed_at DESC LIMIT 50", taskID)
+	limit := 50
+	offset := 0
+	if l := r.URL.Query().Get("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+	if o := r.URL.Query().Get("offset"); o != "" {
+		fmt.Sscanf(o, "%d", &offset)
+	}
+
+	rows, err := s.db.History().QueryContext(r.Context(), "SELECT id, executed_at, input_data, output_data, status, error, duration_ms FROM task_logs WHERE task_id = ? ORDER BY executed_at DESC LIMIT ? OFFSET ?", taskID, limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -513,8 +543,42 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 }
 
 func (s *AdminServer) handleListAudit(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.db.History().QueryContext(r.Context(), "SELECT id, session_id, action, details, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 100")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var logs []map[string]any
+	for rows.Next() {
+		var id int
+		var sessionID, action, details, createdAt string
+		if err := rows.Scan(&id, &sessionID, &action, &details, &createdAt); err == nil {
+			logs = append(logs, map[string]any{
+				"id":         id,
+				"session_id": sessionID,
+				"action":     action,
+				"details":    details,
+				"created_at": createdAt,
+			})
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "message": "Audit logs moved to task history"})
+	json.NewEncoder(w).Encode(logs)
+}
+
+func (s *AdminServer) handleTrafficStatus(w http.ResponseWriter, r *http.Request) {
+	if s.trafficManager == nil {
+		http.Error(w, "Traffic Manager not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	queue := s.trafficManager.GetQueue()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"queue": queue,
+	})
 }
 
 // handleTelegramSettings handles GET (get bot info) and POST (save token).
@@ -605,6 +669,83 @@ func (s *AdminServer) handleWS(w http.ResponseWriter, r *http.Request) {
 	// Start pumps
 	go client.writePump()
 	go client.readPump()
+}
+
+type BudgetResponse struct {
+	ID                int     `json:"id"`
+	TargetType        string  `json:"target_type"`
+	TargetID          string  `json:"target_id"`
+	DailySessionLimit int     `json:"daily_session_limit"`
+	MonthlyCostLimit  float64 `json:"monthly_cost_limit"`
+	AlertThreshold    float64 `json:"alert_threshold"`
+}
+
+func (s *AdminServer) handleBudgets(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rows, err := s.db.QueryContext(r.Context(), "SELECT id, target_type, COALESCE(target_id, ''), daily_session_limit, monthly_cost_limit, alert_threshold FROM budgets")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var budgets []BudgetResponse
+		for rows.Next() {
+			var b BudgetResponse
+			if err := rows.Scan(&b.ID, &b.TargetType, &b.TargetID, &b.DailySessionLimit, &b.MonthlyCostLimit, &b.AlertThreshold); err == nil {
+				budgets = append(budgets, b)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(budgets)
+
+	case http.MethodPost:
+		var b BudgetResponse
+		if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_, err := s.db.ExecContext(r.Context(), 
+			"INSERT INTO budgets (target_type, target_id, daily_session_limit, monthly_cost_limit, alert_threshold) VALUES (?, ?, ?, ?, ?)",
+			b.TargetType, b.TargetID, b.DailySessionLimit, b.MonthlyCostLimit, b.AlertThreshold)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+
+	case http.MethodPut:
+		var b BudgetResponse
+		if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_, err := s.db.ExecContext(r.Context(), 
+			"UPDATE budgets SET daily_session_limit = ?, monthly_cost_limit = ?, alert_threshold = ? WHERE id = ?",
+			b.DailySessionLimit, b.MonthlyCostLimit, b.AlertThreshold, b.ID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+
+	case http.MethodDelete:
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			http.Error(w, "missing id", http.StatusBadRequest)
+			return
+		}
+		_, err := s.db.ExecContext(r.Context(), "DELETE FROM budgets WHERE id = ?", id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (s *AdminServer) handleLLMSettings(w http.ResponseWriter, r *http.Request) {
