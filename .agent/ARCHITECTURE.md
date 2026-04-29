@@ -413,10 +413,10 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| **Total Agents**    | 31                                              |
-| **Total Skills**    | 48                                              |
-| **Total Workflows** | 18                                              |
-| **Total Scripts**   | 2 (master) + 18 (skill-level)                   |
+| **Total Agents**    | 36                                              |
+| **Total Skills**    | 53                                              |
+| **Total Workflows** | 21                                              |
+| **Total Scripts**   | 2 (master) + 16 (skill-level)                   |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
 | **MCP Servers**     | 1 (`skill-server` Go binary — stdio transport)  |
 | **Coverage**        | ~95% web/mobile/backend/infra development       |

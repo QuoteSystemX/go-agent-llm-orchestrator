@@ -2,7 +2,8 @@
 
 ---
 description: Manage project knowledge, detect documentation drift, and create mental models using the Wiki Architect.
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit
+argument-hint: [audit|update|model]
+allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 
 # /wiki — Knowledge & Architecture Management

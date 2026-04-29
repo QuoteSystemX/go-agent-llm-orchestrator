@@ -143,7 +143,7 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `[CHORE]` | `chore` | `project-planner` | `analyst`, `code-archaeologist` | Planning cards, tech debt, architecture ADRs |
   | `[EPIC]` | `feat` | `analyst` | — | Grouping card only, NOT directly executable |
 
-- **Agent Capability Map** (all 24 agents):
+- **Agent Capability Map** (all 36 agents):
 
   | Agent | Primary Labels | Role in Ecosystem |
   | :--- | :--- | :--- |

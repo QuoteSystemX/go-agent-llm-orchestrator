@@ -2,6 +2,7 @@
 
 ---
 description: Production release procedure (audit, versioning, changelog, tagging).
+argument-hint: [version: patch|minor|major]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

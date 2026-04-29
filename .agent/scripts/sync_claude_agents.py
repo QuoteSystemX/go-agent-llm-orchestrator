@@ -161,6 +161,18 @@ COMMAND_META: dict[str, dict] = {
         "argument-hint": "[target path or scope]",
         "allowed-tools": "Read, Grep, Glob, Write, Bash",
     },
+    "distill-experience": {
+        "argument-hint": "",
+        "allowed-tools": "Read, Grep, Glob, Bash, Write, Edit",
+    },
+    "release": {
+        "argument-hint": "[version: patch|minor|major]",
+        "allowed-tools": "Read, Grep, Glob, Bash, Write, Edit",
+    },
+    "wiki": {
+        "argument-hint": "[audit|update|model]",
+        "allowed-tools": "Read, Write, Edit, Grep, Glob",
+    },
 }
 
 
