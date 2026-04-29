@@ -256,9 +256,8 @@ func main() {
 	}
 
 	// Initial task sync
-	if err := engine.SyncTasks(ctx); err != nil {
-		log.Printf("Failed to sync initial tasks: %v", err)
-	}
+	engine.NotifyAllTasksChange()
+
 
 	// Start Autopilot Engine after DB is fully initialised (ImportDistribution +
 	// SyncTasks complete), so the initial Run() doesn't race with open transactions.
@@ -280,9 +279,8 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				if err := engine.SyncTasks(ctx); err != nil {
-					log.Printf("Failed to sync tasks: %v", err)
-				}
+				engine.NotifyAllTasksChange()
+
 			case <-ctx.Done():
 				return
 			}

@@ -35,7 +35,9 @@ Respond with ONLY the word SIMPLE or COMPLEX.`
 const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Provide a decision to unblock.`
 
 type Scheduler interface {
-	SyncTasks(ctx context.Context) error
+	NotifyTaskChange(taskID string)
+	NotifyAllTasksChange()
+	RemoveTaskFromScheduler(taskID string)
 	TriggerTask(taskID string)
 	PauseTaskLoop(ctx context.Context, taskID string) error
 	ForceTaskSuccess(ctx context.Context, taskID string) error
@@ -334,7 +336,7 @@ func (s *AdminServer) createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.scheduler.SyncTasks(r.Context())
+	s.scheduler.NotifyTaskChange(t.ID)
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -392,7 +394,7 @@ func (s *AdminServer) updateTask(w http.ResponseWriter, r *http.Request, id stri
 		return
 	}
 
-	s.scheduler.SyncTasks(r.Context())
+	s.scheduler.NotifyTaskChange(id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -403,7 +405,7 @@ func (s *AdminServer) deleteTask(w http.ResponseWriter, r *http.Request, id stri
 		return
 	}
 
-	s.scheduler.SyncTasks(r.Context())
+	s.scheduler.RemoveTaskFromScheduler(id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -494,11 +496,11 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 		}
 
 		s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
-		s.scheduler.SyncTasks(r.Context())
+		s.scheduler.NotifyTaskChange(taskID)
 		w.WriteHeader(http.StatusNoContent)
 	case "resume":
 		s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
-		s.scheduler.SyncTasks(r.Context())
+		s.scheduler.NotifyTaskChange(taskID)
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "unknown action", http.StatusBadRequest)

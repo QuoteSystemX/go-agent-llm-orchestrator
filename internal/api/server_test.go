@@ -11,8 +11,12 @@ import (
 )
 
 type mockScheduler struct{}
-func (m *mockScheduler) SyncTasks(ctx context.Context) error { return nil }
-func (m *mockScheduler) TriggerTask(taskID string) {}
+func (m *mockScheduler) NotifyTaskChange(taskID string)     {}
+func (m *mockScheduler) NotifyAllTasksChange()            {}
+func (m *mockScheduler) RemoveTaskFromScheduler(taskID string) {}
+func (m *mockScheduler) TriggerTask(taskID string)          {}
+func (m *mockScheduler) PauseTaskLoop(ctx context.Context, taskID string) error { return nil }
+func (m *mockScheduler) ForceTaskSuccess(ctx context.Context, taskID string) error { return nil }
 
 func TestAdminServer_handleListTasks(t *testing.T) {
 	database, _ := db.InitDB(":memory:")

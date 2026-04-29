@@ -108,5 +108,6 @@ func (e *Engine) ImportDistribution(path string) error {
 	}
 
 	log.Printf("Imported distribution from %s", path)
-	return e.SyncTasks(ctx)
+	e.NotifyAllTasksChange()
+	return nil
 }

@@ -34,8 +34,9 @@ type Engine struct {
 	tracer        monitor.Tracer
 	verifier      TaskVerifier
 	budgetMgr     *budget.Manager
-	mu            sync.Mutex
+	mu            sync.RWMutex
 	entries       map[string]cron.EntryID
+	syncChan      chan string
 	onTaskUpdate     func(taskID, status string)
 	onActivityUpdate func()
 }
@@ -49,6 +50,7 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 		notifier:      nt,
 		promptBuilder: pb,
 		entries:       make(map[string]cron.EntryID),
+		syncChan:      make(chan string, 100),
 	}
 }
 
@@ -84,6 +86,7 @@ func (e *Engine) SetActivityNotifyFunc(fn func()) {
 
 func (e *Engine) Start() {
 	e.cron.Start()
+	go e.watchSync()
 
 	// Register daily cleanup task (default 02:00 AM, configurable via env)
 	cleanupSchedule := os.Getenv("CLEANUP_SCHEDULE")
@@ -98,7 +101,111 @@ func (e *Engine) Start() {
 		log.Printf("scheduler: failed to register cleanup task with schedule %s: %v", cleanupSchedule, err)
 	}
 
-	log.Println("Scheduler engine started")
+	log.Println("Scheduler engine started with background sync worker")
+}
+
+func (e *Engine) watchSync() {
+	for id := range e.syncChan {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if id == "*" {
+			log.Println("scheduler: full sync triggered via background channel")
+			// Although user said no fallback, internal '*' signal can be useful for mass imports.
+			// However, for now we keep it focused on incremental updates.
+			e.syncAllInternal(ctx)
+		} else {
+			e.syncTaskInternal(ctx, id)
+		}
+		cancel()
+	}
+}
+
+// syncTaskInternal performs the actual synchronization for a single task.
+func (e *Engine) syncTaskInternal(ctx context.Context, id string) {
+	var schedule string
+	err := e.db.QueryRowContext(ctx, "SELECT schedule FROM tasks WHERE id = ?", id).Scan(&schedule)
+	
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if err != nil {
+		// Task likely deleted
+		if entryID, exists := e.entries[id]; exists {
+			e.cron.Remove(entryID)
+			delete(e.entries, id)
+			log.Printf("scheduler: removed task %s from cron", id)
+		}
+		return
+	}
+
+	// Update or Add
+	if entryID, exists := e.entries[id]; exists {
+		e.cron.Remove(entryID)
+	}
+	
+	if err := e.addTaskLocked(id, schedule); err != nil {
+		log.Printf("scheduler: failed to add/update task %s: %v", id, err)
+	}
+}
+
+func (e *Engine) syncAllInternal(ctx context.Context) {
+	rows, err := e.db.QueryContext(ctx, "SELECT id, schedule FROM tasks")
+	if err != nil {
+		log.Printf("scheduler: failed to query tasks for full sync: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	activeIDs := make(map[string]bool)
+	for rows.Next() {
+		var id, schedule string
+		if err := rows.Scan(&id, &schedule); err != nil {
+			continue
+		}
+		activeIDs[id] = true
+		
+		if _, exists := e.entries[id]; !exists {
+			e.addTaskLocked(id, schedule)
+		}
+	}
+
+	for id, entryID := range e.entries {
+		if !activeIDs[id] {
+			e.cron.Remove(entryID)
+			delete(e.entries, id)
+		}
+	}
+}
+
+// addTaskLocked adds a task to cron. MUST be called with mu.Lock held.
+func (e *Engine) addTaskLocked(id, schedule string) error {
+	entryID, err := e.cron.AddFunc(schedule, func() {
+		e.runTask(id)
+	})
+	if err != nil {
+		return err
+	}
+	e.entries[id] = entryID
+	log.Printf("Scheduled task %s with cron %s", id, schedule)
+	return nil
+}
+
+func (e *Engine) NotifyTaskChange(id string) {
+	select {
+	case e.syncChan <- id:
+	default:
+		log.Printf("scheduler: sync channel full, dropping notification for %s", id)
+	}
+}
+
+func (e *Engine) NotifyAllTasksChange() {
+	select {
+	case e.syncChan <- "*":
+	default:
+		log.Printf("scheduler: sync channel full, dropping full sync notification")
+	}
 }
 
 func (e *Engine) Cleanup(ctx context.Context) {
@@ -199,50 +306,14 @@ func (e *Engine) ForceTaskSuccess(ctx context.Context, taskID string) error {
 	return err
 }
 
-func (e *Engine) SyncTasks(ctx context.Context) error {
+func (e *Engine) RemoveTaskFromScheduler(id string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-
-	rows, err := e.db.QueryContext(ctx, "SELECT id, schedule FROM tasks")
-	if err != nil {
-		return err
+	if entryID, exists := e.entries[id]; exists {
+		e.cron.Remove(entryID)
+		delete(e.entries, id)
+		log.Printf("scheduler: removed task %s manually", id)
 	}
-	defer rows.Close()
-
-	activeIDs := make(map[string]bool)
-	addedCount := 0
-
-	for rows.Next() {
-		var id, schedule string
-		if err := rows.Scan(&id, &schedule); err != nil {
-			continue
-		}
-		activeIDs[id] = true
-
-		if _, exists := e.entries[id]; !exists {
-			if err := e.addTask(id, schedule); err != nil {
-				log.Printf("Failed to add task %s: %v", id, err)
-			} else {
-				addedCount++
-			}
-		}
-	}
-
-	removedCount := 0
-	for id, entryID := range e.entries {
-		if !activeIDs[id] {
-			e.cron.Remove(entryID)
-			delete(e.entries, id)
-			log.Printf("Removed task %s from scheduler", id)
-			removedCount++
-		}
-	}
-
-	if addedCount > 0 || removedCount > 0 {
-		e.printSchedule()
-	}
-
-	return nil
 }
 
 func (e *Engine) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string]any, error) {
@@ -288,15 +359,9 @@ func (e *Engine) printSchedule() {
 }
 
 func (e *Engine) addTask(id, schedule string) error {
-	entryID, err := e.cron.AddFunc(schedule, func() {
-		e.runTask(id)
-	})
-	if err != nil {
-		return err
-	}
-	e.entries[id] = entryID
-	log.Printf("Scheduled task %s with cron %s", id, schedule)
-	return nil
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.addTaskLocked(id, schedule)
 }
 
 func (e *Engine) runTask(taskID string) {
