@@ -25,6 +25,35 @@ Click the **"Logs"** button on any task card to open the history.
 - **Phase Breakdown**: Complex tasks show individual phases (Analysis, Planning, etc.) with timing.
 - **Status tracking**: Monitor real-time status updates from Jules.
 - **Jules Link**: Clicking the session ID in the task list now opens the native Jules UI at `jules.google.com`.
+- **Paginated History**: Task logs now support infinite history via "Load More", enabling deep forensics for older sessions.
+
+## 🛡️ Command Center & Transparency
+
+The **Command Center** provides deep visibility into the orchestrator's autonomous operations via specialized tabs:
+
+### 1. 🛡️ Audit Logs
+Track every significant system action that happens behind the scenes.
+- **Auto-Responses**: See when the Supervisor responded to a blocked session.
+- **Routing Decisions**: Track when tasks are escalated to more powerful models.
+- **Governance Events**: See when a budget limit was hit or adjusted.
+
+### 2. 📋 Traffic Queue
+Monitor real-time execution queuing.
+- **Waiting Tasks**: View all tasks currently waiting for a free worker slot.
+- **Wait Duration**: See exactly how long a task has been pending.
+- **Bump Priority**: Manually prioritize a specific task to move it to the front of the queue.
+
+### 3. 💰 Budgets & Governance
+Enforce financial and operational safety limits.
+- **System Quota**: Global daily session and monthly cost limits.
+- **Project Budgets**: Specific limits for individual repositories to prevent "experiment" repos from consuming the main quota.
+- **Alerts**: Configure thresholds (e.g., 80%) for Telegram notifications.
+
+### 4. 🧭 Documentation Drift
+Maintain a healthy relationship between code and documentation.
+- **Drift Badges**: Repositories show **🍏 SYNCED** or **⚠️ DRIFT** badges.
+- **Automated Check**: The system hashes `ARCHITECTURE.md` and core Wiki pages vs. the source code.
+- **Resolution**: Use the `wiki-architect` agent to reconcile documentation if drift is detected.
 
 ## 🤖 Autopilot & Backlog Management
 

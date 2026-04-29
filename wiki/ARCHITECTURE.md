@@ -30,9 +30,10 @@ graph TD
 | **Scheduler** | Watches task schedules and triggers executions. | Go (robfig/cron) | `internal/scheduler` |
 | **Autopilot** | Monitors backlogs and scales workers dynamically. | Go | `internal/autopilot` |
 | **DTO/RAG** | Repository analysis and code search indexing. | Go (chromem-go) | `internal/dto`, `internal/rag` |
-| **Traffic Manager** | Priority-based LLM request queuing. | Go | `internal/traffic` |
-| **Monitor** | Polls Jules API for status updates and triggers supervisor. | Go | `internal/monitor` |
+| **Traffic Manager** | Priority-based LLM request queuing and observability. | Go | `internal/traffic` |
+| **Monitor** | Polls Jules API, triggers supervisor, and detects Doc-Drift. | Go | `internal/monitor` |
 | **Supervisor** | Generates automated responses for blocked agent sessions. | Go | `internal/llm` |
+| **Budget Manager** | Enforces cost and session limits across tasks. | Go | `internal/budget` |
 | **Storage Engine** | Manages persistent data in SQLite (Main & History). | SQLite3 | `internal/db` |
 | **Git Syncer** | Keeps local repos and prompt-library in sync. | Go (go-git) | `internal/git` |
 
@@ -73,6 +74,16 @@ graph TD
     "timestamp": "2026-04-27T10:00:00Z"
   }
   ```
+
+### ADR-008: Governance & Budgets
+
+- **Status:** Accepted
+- **Decision:** Implement a centralized `BudgetManager` to enforce daily session limits and monthly cost quotas. Limits are stored in the `budgets` table and checked by `TrafficManager` before task execution.
+
+### ADR-009: Command Center Transparency
+
+- **Status:** Accepted
+- **Decision:** Expose internal states (audit logs, traffic queues, drift status) directly to the Web UI via new API endpoints to reduce operational "blind spots" in autonomous mode.
 
 ## 5. Database Schema
 
@@ -133,6 +144,24 @@ CREATE TABLE task_logs (
     status TEXT,
     error TEXT,
     duration_ms INTEGER
+);
+
+CREATE TABLE audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    action TEXT,
+    details TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE budgets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    target_type TEXT NOT NULL, -- "system", "project"
+    target_id TEXT,           -- repo name
+    daily_session_limit INTEGER,
+    monthly_cost_limit REAL,
+    alert_threshold REAL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE web_chat_history (
