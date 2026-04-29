@@ -280,6 +280,10 @@ Master validation scripts that orchestrate skill-level scripts.
 | `analyze_efficiency.py` | Performance & Cost (Token usage)       | Monthly audit            |
 | `distill_context.py`  | Long-context optimization (RAG/Extract) | Shared Context Bus       |
 | `batch_runner.py`     | Fan-out / Fan-in parallel execution    | Multi-agent tasks        |
+| `experience_distiller.py` | Lesson learned archiving (30 days)    | Maintenance              |
+| `guardrail_monitor.py` | Budget & Token safety watchdog         | Runtime monitoring       |
+| `post_mortem_runner.py` | Failure analysis & Lesson generation   | After task failure       |
+| `lint_runner.py`      | Unified linting & workspace cleanup     | Pre-commit, linting      |
 
 ### Usage
 
