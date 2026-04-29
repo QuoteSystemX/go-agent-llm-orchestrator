@@ -415,13 +415,30 @@ func (e *Engine) runTask(taskID string) {
 	var lastVerificationError string
 	
 	for {
+		// Smart Resilience: Adjust conditions based on retry count
+		effectiveAgent := agent
+		ragTopK := 5
+
+		if currentRetry == 1 {
+			// Baseline + Error context
+		} else if currentRetry == 2 {
+			// Increase RAG depth
+			ragTopK = 12
+			e.updateTaskStatus(ctx, taskID, "CORRECTING", "current_stage = ?", "Deep Context Analysis (RAG 12)")
+		} else if currentRetry >= 3 {
+			// Agent Escalation + Max RAG depth
+			ragTopK = 15
+			effectiveAgent = e.escalateAgent(agent)
+			e.updateTaskStatus(ctx, taskID, "CORRECTING", "current_stage = ?", fmt.Sprintf("Escalated to %s (RAG 15)", effectiveAgent))
+		}
+
 		err = e.tm.Execute(ctx, traffic.PriorityHigh, importance, category, func() error {
 			if logID > 0 {
 				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
 			}
 
 			// Build the full Jules prompt
-			fullPrompt, err := e.buildPrompt(ctx, agent, pattern, mission, repoName, lastVerificationError, category)
+			fullPrompt, err := e.buildPrompt(ctx, effectiveAgent, pattern, mission, repoName, lastVerificationError, category, ragTopK)
 			if err != nil {
 				// Do not auto-pause service tasks
 				servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
@@ -462,7 +479,7 @@ func (e *Engine) runTask(taskID string) {
 					},
 				},
 				AutomationMode: "AUTO_CREATE_PR",
-				Title:          fmt.Sprintf("[%s] %s for %s", agent, mission, repoName),
+				Title:          fmt.Sprintf("[%s] %s for %s (Attempt %d)", effectiveAgent, mission, repoName, currentRetry+1),
 			}
 
 			reqJSON, _ := json.Marshal(req)
@@ -567,14 +584,17 @@ func (e *Engine) runTask(taskID string) {
 
 // buildPrompt builds the Jules prompt from the prompt-library clone.
 // Returns an error (and causes the task to be paused) if the library is not ready.
-func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName, lastError, category string) (string, error) {
+func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName, lastError, category string, ragTopK int) (string, error) {
 	if e.promptBuilder == nil || !e.promptBuilder.IsReady() {
 		return "", fmt.Errorf("prompt-library not ready (git sync pending) — task paused until library is available")
 	}
 	ragContext := ""
 	if e.contextSearch != nil {
 		query := fmt.Sprintf("%s %s %s", repoName, agent, mission)
-		ragContext = e.contextSearch(ctx, repoName, query, 5, category)
+		if ragTopK <= 0 {
+			ragTopK = 5
+		}
+		ragContext = e.contextSearch(ctx, repoName, query, ragTopK, category)
 		if ragContext != "" {
 			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
 			
@@ -602,5 +622,20 @@ func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoN
 	}
 
 	return prompt, nil
+}
+
+func (e *Engine) escalateAgent(agent string) string {
+	mapping := map[string]string{
+		"go-specialist":       "crypto-go-architect",
+		"frontend-specialist": "ai-engineer",
+		"backend-specialist":  "ai-engineer",
+		"analyst":             "orchestrator",
+		"project-planner":     "orchestrator",
+		"test-engineer":       "ai-engineer",
+	}
+	if next, ok := mapping[agent]; ok {
+		return next
+	}
+	return "orchestrator" // Default escalation target
 }
 

@@ -363,14 +363,17 @@ function renderTasks() {
                                             <button class="btn-primary btn-sm" onclick="reviewTaskPlan('${task.id}')" style="margin-top:0.5rem; width:100%">Review Plan</button>
                                         </div>
                                     ` : ''}
-                                    ${task.status === 'RUNNING' || task.status === 'VERIFYING' || task.status === 'CORRECTING' ? `
-                                        <div class="task-stage-info">
-                                            <div class="stage-label">${task.status === 'CORRECTING' ? `Correction Attempt ${task.current_retry}/${task.max_retries}` : (task.current_stage || 'initializing')}</div>
-                                            <div class="stage-progress-bg">
-                                                <div class="stage-progress-fill" style="width: ${task.progress || 5}%; ${task.status === 'CORRECTING' ? 'background:var(--warning)' : ''}"></div>
-                                            </div>
-                                        </div>
-                                    ` : ''}
+                                     ${task.status === 'RUNNING' || task.status === 'VERIFYING' || task.status === 'CORRECTING' ? `
+                                         <div class="task-stage-info">
+                                             <div class="stage-label">
+                                                 ${task.status === 'CORRECTING' ? `<span style="font-weight:700">Attempt ${task.current_retry}/${task.max_retries}</span>` : (task.current_stage || 'initializing')}
+                                                 ${task.status === 'CORRECTING' && task.current_stage && task.current_stage !== 'idle' ? `<div style="font-size:0.6rem; opacity:0.8; margin-top:2px">${task.current_stage}</div>` : ''}
+                                             </div>
+                                             <div class="stage-progress-bg">
+                                                 <div class="stage-progress-fill" style="width: ${task.progress || 5}%; ${task.status === 'CORRECTING' ? 'background:var(--warning)' : ''}"></div>
+                                             </div>
+                                         </div>
+                                     ` : ''}
                                     ${servicePatterns.includes(task.pattern) ? `<span class="task-badge service-task-badge" title="Core BMAD Service Task — essential for project lifecycle">SERVICE</span>` : ''}
                                     ${noPrompt ? `<span class="task-badge no-prompt-badge" title="No agent profile, pattern methodology, or workflow protocol found in prompt library">no prompt</span>` : ''}
                                     <div class="task-mission" title="${task.mission}">${task.mission || 'No mission defined.'}</div>
