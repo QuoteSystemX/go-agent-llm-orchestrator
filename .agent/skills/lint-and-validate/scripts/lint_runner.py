@@ -29,8 +29,8 @@ except:
 
 # Garbage file tiers:
 # AUTO_DELETE  — OS/editor trash, always safe to delete silently
-# SOFT_DELETE  — Agent artifacts (*.orig, *.diff, PLAN.md) — delete + create [CHORE] task
-# WARN_ONLY    — Files that might be intentional (*.log, *.tmp) — report only
+# SOFT_DELETE  — Agent artifacts (*.orig, *.diff, PLAN.md, reports, logs) — delete + create [CHORE] task
+# WARN_ONLY    — Files that might be intentional but suspicious — report only
 
 AUTO_DELETE_PATTERNS = [
     ".DS_Store", "Thumbs.db",
@@ -42,12 +42,18 @@ AUTO_DELETE_DIRS = ["__pycache__"]
 SOFT_DELETE_PATTERNS = [
     "*.orig", "*.bak",
     "*.diff", "*.patch",
+    "*.log", "*.tmp", "*.temp",
+    "report-*.json", "audit-*.json", "scan-*.json", "quality-*.json",
+    "scratch_*.py", "temp_*.py", "tmp_*.py",
 ]
-SOFT_DELETE_NAMES = {"PLAN.md"}  # Root-level exact matches
+SOFT_DELETE_DIRS = ["reports", "logs", "temp", "tmp", ".jules"]
+SOFT_DELETE_NAMES = {
+    "PLAN.md", "SCRATCH.md", "DEBUG.md", 
+    "todo.txt", "notes.txt"
+}  # Root-level exact matches
 
 WARN_PATTERNS = [
-    "*.log",
-    "*.tmp",
+    "*.bak", # Duplicate but kept for safety in case of deep rglob
 ]
 
 
@@ -153,6 +159,12 @@ def scan_garbage_files(project_path: Path) -> dict:
         candidate = project_path / name
         if candidate.exists() and _delete_file(candidate):
             soft_deleted.append(name)
+
+    for dir_name in SOFT_DELETE_DIRS:
+        for p in project_path.rglob(dir_name):
+            if ".git" not in p.parts and p.is_dir():
+                shutil.rmtree(p, ignore_errors=True)
+                soft_deleted.append(str(p.relative_to(project_path)) + "/")
 
     # --- Tier 3: Warn only (*.log, *.tmp — might be intentional) ---
     for pattern in WARN_PATTERNS:
