@@ -114,6 +114,9 @@ func main() {
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
 
+	repoBasePath := database.GetSetting("repo_base_path", "./data/repos")
+	driftDetector := monitor.NewDriftDetector(database, cacheDir, repoBasePath)
+
 	statsAggregator := monitor.NewStatsAggregator(60)
 	statsAggregator.Start()
 
@@ -135,6 +138,7 @@ func main() {
 	adminServer.SetGitSyncer(gitSyncer)
 	adminServer.SetPromptChecker(promptBuilder)
 	adminServer.SetBudgetManager(budgetMgr)
+	adminServer.SetDriftDetector(driftDetector)
 
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 
@@ -205,6 +209,49 @@ func main() {
 				if err := dtoMgr.SyncFromDir(ctx, tplDir); err != nil {
 					log.Printf("Background Template Sync Error: %v", err)
 				}
+			}
+		}
+	}()
+
+	// Background Drift Detection (every 6 hours)
+	go func() {
+		ticker := time.NewTicker(6 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				log.Println("Background Drift Detection: Starting check...")
+				results, err := driftDetector.CheckDrift(ctx)
+				if err != nil {
+					log.Printf("Background Drift Detection Error: %v", err)
+					continue
+				}
+
+				hasDrift := false
+				for _, r := range results {
+					if r.HasDrift {
+						hasDrift = true
+						break
+					}
+				}
+
+				if hasDrift {
+					hub.Broadcast(api.TypeStats, map[string]any{
+						"component": "drift",
+						"status":    "diverged",
+						"details":   results,
+					})
+
+					// Send Telegram alerts
+					for _, r := range results {
+						if r.HasDrift {
+							telegramNotifier.SendDriftAlert(r.RepoName, r.DriftedFiles)
+						}
+					}
+				}
+				log.Println("Background Drift Detection: Check finished.")
 			}
 		}
 	}()

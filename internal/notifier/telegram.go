@@ -78,6 +78,19 @@ func (n *TelegramNotifier) SendDailySummary(success, failed, supervised int) err
 	return n.SendMessage(msg)
 }
 
+func (n *TelegramNotifier) SendDriftAlert(repoName string, files []string) error {
+	fileList := ""
+	for i, f := range files {
+		if i > 5 {
+			fileList += "\n...and more"
+			break
+		}
+		fileList += "\n- " + f
+	}
+	msg := fmt.Sprintf("⚠️ *Drift Detected* in `%s`\n\nThe local kit has diverged from the Hub (prompt-library). Affected files:%s\n\n_Action required: Sync the repository kit._", repoName, fileList)
+	return n.SendMessage(msg)
+}
+
 func (n *TelegramNotifier) StartPolling() {
 	go func() {
 		offset := 0

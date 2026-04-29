@@ -63,6 +63,7 @@ type AdminServer struct {
 	analyzer        *dto.Analyzer
 	hub             *Hub
 	budgetMgr       *budget.Manager
+	driftDetector   *monitor.DriftDetector
 	webhookBus      chan<- monitor.WebhookEvent
 	startTime       time.Time
 }
@@ -98,6 +99,9 @@ func (s *AdminServer) SetWebhookBus(bus chan<- monitor.WebhookEvent) { s.webhook
 
 // SetBudgetManager attaches a budget manager.
 func (s *AdminServer) SetBudgetManager(bm *budget.Manager) { s.budgetMgr = bm }
+
+// SetDriftDetector attaches a drift detector.
+func (s *AdminServer) SetDriftDetector(dd *monitor.DriftDetector) { s.driftDetector = dd }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -153,6 +157,7 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/v1/system/usage", s.handleSystemUsage)
 	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
+	mux.HandleFunc("/api/v1/system/drift", s.handleDriftStatus)
 
 	// DTO API
 	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
@@ -1554,6 +1559,30 @@ func (s *AdminServer) BroadcastStatus(ctx context.Context) {
 		s.hub.Broadcast(TypeSysStats, s.statsAggregator.GetLatest())
 	}
 
+	// 3. Drift Status
+	if s.driftDetector != nil {
+		results := s.driftDetector.GetLastResults()
+		hasDrift := false
+		for _, r := range results {
+			if r.HasDrift {
+				hasDrift = true
+				break
+			}
+		}
+		if hasDrift {
+			s.hub.Broadcast(TypeStats, map[string]any{
+				"component": "drift",
+				"status":    "diverged",
+				"details":   results,
+			})
+		} else if len(results) > 0 {
+			s.hub.Broadcast(TypeStats, map[string]any{
+				"component": "drift",
+				"status":    "synced",
+			})
+		}
+	}
+
 	// 3. System Usage (Quota)
 	usage, _ := s.db.GetDailyUsage(ctx)
 	limit, _ := s.db.GetDailyLimit(ctx)
@@ -1689,6 +1718,22 @@ func (s *AdminServer) handleRAGSearch(w http.ResponseWriter, r *http.Request) {
 		if len(results) > req.TopK {
 			results = results[:req.TopK]
 		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
+func (s *AdminServer) handleDriftStatus(w http.ResponseWriter, r *http.Request) {
+	if s.driftDetector == nil {
+		http.Error(w, "drift detector not initialized", http.StatusServiceUnavailable)
+		return
+	}
+
+	results, err := s.driftDetector.CheckDrift(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
