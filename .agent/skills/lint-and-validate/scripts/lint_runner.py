@@ -183,6 +183,7 @@ def scan_garbage_files(project_path: Path) -> dict:
         "soft_deleted": soft_deleted,
         "warnings": warnings,
         "chore_task": task_card,
+        "found": auto_deleted + soft_deleted + warnings,
         "output": "; ".join(summary_parts) if summary_parts else "Clean.",
         "error": "",
     }
