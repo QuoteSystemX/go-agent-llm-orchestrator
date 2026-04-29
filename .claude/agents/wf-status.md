@@ -91,6 +91,7 @@ Show current project and agent status.
 ## Technical
 
 Status uses these scripts:
+- `python3 .agent/scripts/status_report.py` (Unified Dashboard)
 - `python3 .agent/scripts/business_dashboard.py` (Business Progress)
 - `python3 .agent/scripts/drift_detector.py` (Documentation Drift)
 - `python3 .agent/scripts/guardrail_monitor.py` (Safety & Budget)

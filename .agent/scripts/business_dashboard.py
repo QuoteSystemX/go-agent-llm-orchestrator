@@ -9,9 +9,11 @@ try:
     from rich.progress import ProgressBar
     from rich.panel import Panel
     from rich import box
+    HAS_RICH = True
 except ImportError:
-    print("Error: 'rich' library required. Run 'pip install rich'.")
-    exit(1)
+    HAS_RICH = False
+    class Console:
+        def print(self, msg, **kwargs): print(msg)
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 TASKS_DIR = REPO_ROOT / "tasks"
@@ -52,6 +54,21 @@ def show_dashboard():
         console.print("[yellow]No tasks found in tasks/ directory.[/yellow]")
         return
 
+    total_tasks = sum(f['total'] for f in features.values())
+    completed_tasks = sum(f['completed'] for f in features.values())
+    overall_percent = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+
+    if not HAS_RICH:
+        console.print("=== Business Progress Dashboard ===")
+        for feat, stats in features.items():
+            total = stats["total"]
+            done = stats["completed"]
+            percent = (done / total * 100) if total > 0 else 0
+            console.print(f"{feat}: {percent:.1f}% ({done}/{total} Tasks)")
+        console.print(f"\nOverall Progress: {overall_percent:.1f}%")
+        console.print(f"Velocity: {completed_tasks} / {total_tasks} Story Cards")
+        return
+
     table = Table(title="📈 Business Progress Dashboard", box=box.DOUBLE_EDGE, expand=True)
     table.add_column("Feature Area", style="cyan", no_wrap=True)
     table.add_column("Progress", style="magenta")
@@ -76,7 +93,15 @@ def show_dashboard():
         )
 
     console.print(table)
-    console.print(f"\n[bold]Total Velocity:[/] [green]{sum(f['completed'] for f in features.values())}[/] / {sum(f['total'] for f in features.values())} Story Cards")
+    
+    # Velocity & Forecast
+    console.print(Panel(
+        f"[bold]Total Progress:[/] [green]{overall_percent:.1f}%[/]\n"
+        f"[bold]Velocity:[/] {completed_tasks} / {total_tasks} Tasks\n"
+        f"[bold]Estimated Remaining:[/] {total_tasks - completed_tasks} Tasks",
+        title="🏁 Velocity & Forecast",
+        box=box.ROUNDED
+    ))
 
 if __name__ == "__main__":
     show_dashboard()

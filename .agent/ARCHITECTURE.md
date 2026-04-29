@@ -39,6 +39,14 @@ Antigravity Kit is a modular system consisting of:
 ├── tasks/                   # Active Agent Task Queue
 ├── .github/distribution.yml # CRON Task Distribution Map
 └── .github/profiles.yml     # Distribution Profiles (go-service, web-app, data-platform, mobile, game)
+
+## 🛠️ Workspace Management & Hygiene
+- `python3 .agent/scripts/status_report.py` - Unified Dashboard (Tech + Business)
+- `python3 .agent/scripts/task_helper.py` - Task card generator for `tasks/`
+- `python3 .agent/scripts/drift_detector.py` - Wiki vs Code drift detection
+- `python3 .agent/scripts/metrics_dashboard.py` - Real-time agent telemetry
+- `python3 .agent/scripts/business_dashboard.py` - Story card progress tracking
+- `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 ```
 
 ---

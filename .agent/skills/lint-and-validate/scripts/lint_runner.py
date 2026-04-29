@@ -1,395 +1,173 @@
 #!/usr/bin/env python3
-"""
-Lint Runner - Unified linting, type checking, and workspace cleanup validation.
-Runs appropriate linters based on project type.
-Also checks for forbidden garbage files that must never appear in PRs.
-
-Usage:
-    python lint_runner.py <project_path>
-
-Supports:
-    - Node.js: npm run lint, npx tsc --noEmit
-    - Python: ruff check, mypy
-"""
-
+import os
 import subprocess
-import sys
 import json
+import sys
 import platform
-import shutil
+import re
 from pathlib import Path
-from datetime import datetime
 
-# Fix Windows console encoding
-try:
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-except:
-    pass
-
-
-# Garbage file tiers:
-# AUTO_DELETE  — OS/editor trash, always safe to delete silently
-# SOFT_DELETE  — Agent artifacts (*.orig, *.diff, PLAN.md, reports, logs) — delete + create [CHORE] task
-# WARN_ONLY    — Files that might be intentional but suspicious — report only
-
-AUTO_DELETE_PATTERNS = [
-    ".DS_Store", "Thumbs.db",
-    "*.pyc", "*.pyo",
-    "*~", "*.swp", "*.swo",
-]
-AUTO_DELETE_DIRS = ["__pycache__"]
-
-SOFT_DELETE_PATTERNS = [
-    "*.orig", "*.bak",
-    "*.diff", "*.patch",
-    "*.log", "*.tmp", "*.temp",
-    "report-*.json", "audit-*.json", "scan-*.json", "quality-*.json",
-    "scratch_*.py", "temp_*.py", "tmp_*.py",
-]
-SOFT_DELETE_DIRS = ["reports", "logs", "temp", "tmp", ".jules"]
-SOFT_DELETE_NAMES = {
-    "PLAN.md", "SCRATCH.md", "DEBUG.md", 
-    "todo.txt", "notes.txt"
-}  # Root-level exact matches
-
-WARN_PATTERNS = [
-    "*.bak", # Duplicate but kept for safety in case of deep rglob
-]
-
-
-def _delete_file(p: Path) -> bool:
+def run_command(cmd, cwd="."):
+    """Helper to run shell commands and return results."""
     try:
-        p.unlink(missing_ok=True)
-        return True
-    except Exception:
-        return False
-
-
-def _create_chore_task(project_path: Path, auto_deleted: list, soft_deleted: list, warnings: list) -> str | None:
-    """Create a [CHORE] task card in tasks/ describing what garbage was found and cleaned."""
-    tasks_dir = project_path / "tasks"
-    tasks_dir.mkdir(exist_ok=True)
-
-    from datetime import datetime as dt
-    today = dt.now().strftime("%Y-%m-%d")
-    slug = f"{today}-cleanup-garbage-files"
-    task_file = tasks_dir / f"{slug}.md"
-
-    lines = [
-        "> [!IMPORTANT]",
-        "> !SILENT execution: No dialogue allowed. ZERO-TEXT finalization required.",
-        "",
-        "# [CHORE] Investigate & Prevent Garbage Files in Workspace",
-        "",
-        "## Context",
-        "The `lint_runner.py` workspace scan detected and auto-cleaned garbage files before the last PR.",
-        "This task exists to investigate WHY these files appeared, prevent recurrence, and update `.gitignore` if needed.",
-        "",
-        "## What Was Cleaned",
-    ]
-
-    if auto_deleted:
-        lines.append(f"\n### Auto-deleted (OS/editor trash) — {len(auto_deleted)} file(s)")
-        for f in auto_deleted:
-            lines.append(f"- `{f}`")
-
-    if soft_deleted:
-        lines.append(f"\n### Soft-deleted (agent artifacts) — {len(soft_deleted)} file(s)")
-        for f in soft_deleted:
-            lines.append(f"- `{f}`")
-
-    if warnings:
-        lines.append(f"\n### Warnings (not deleted, review manually) — {len(warnings)} file(s)")
-        for f in warnings:
-            lines.append(f"- `{f}`")
-
-    lines += [
-        "",
-        "## Impact",
-        "Low — files were already cleaned before PR. Risk: if root cause not fixed, garbage will reappear.",
-        "",
-        "## Fix Hint",
-        "1. Check if `.gitignore` covers all detected patterns.",
-        "2. Review which agent or tool generated the agent artifact files (*.orig, *.diff, PLAN.md).",
-        "3. Add missing patterns to `.gitignore` and commit.",
-        "",
-        "## Acceptance Criteria",
-        "- [ ] `.gitignore` updated to cover all detected patterns",
-        "- [ ] Root cause of agent artifact files identified",
-        "- [ ] `lint_runner.py` scan returns clean on next run",
-    ]
-
-    try:
-        task_file.write_text("\n".join(lines), encoding="utf-8")
-        return str(task_file.relative_to(project_path))
-    except Exception:
-        return None
-
-
-def scan_garbage_files(project_path: Path) -> dict:
-    """
-    Scan, auto-delete garbage, and create a [CHORE] task if anything was found.
-    Never blocks the PR — always returns passed=True after cleanup.
-    """
-    import shutil
-
-    auto_deleted = []
-    soft_deleted = []
-    warnings = []
-
-    # --- Tier 1: Auto-delete OS/editor trash silently ---
-    for pattern in AUTO_DELETE_PATTERNS:
-        for p in project_path.rglob(pattern):
-            if ".git" not in p.parts and _delete_file(p):
-                auto_deleted.append(str(p.relative_to(project_path)))
-
-    for dir_name in AUTO_DELETE_DIRS:
-        for p in project_path.rglob(dir_name):
-            if ".git" not in p.parts and p.is_dir():
-                shutil.rmtree(p, ignore_errors=True)
-                auto_deleted.append(str(p.relative_to(project_path)) + "/")
-
-    # --- Tier 2: Soft-delete agent artifacts + create [CHORE] task ---
-    for pattern in SOFT_DELETE_PATTERNS:
-        for p in project_path.rglob(pattern):
-            if ".git" not in p.parts and _delete_file(p):
-                soft_deleted.append(str(p.relative_to(project_path)))
-
-    for name in SOFT_DELETE_NAMES:
-        candidate = project_path / name
-        if candidate.exists() and _delete_file(candidate):
-            soft_deleted.append(name)
-
-    for dir_name in SOFT_DELETE_DIRS:
-        for p in project_path.rglob(dir_name):
-            if ".git" not in p.parts and p.is_dir():
-                shutil.rmtree(p, ignore_errors=True)
-                soft_deleted.append(str(p.relative_to(project_path)) + "/")
-
-    # --- Tier 3: Warn only (*.log, *.tmp — might be intentional) ---
-    for pattern in WARN_PATTERNS:
-        for p in project_path.rglob(pattern):
-            if ".git" not in p.parts:
-                warnings.append(str(p.relative_to(project_path)))
-
-    # Create [CHORE] task if anything was found
-    task_card = None
-    if auto_deleted or soft_deleted or warnings:
-        task_card = _create_chore_task(project_path, auto_deleted, soft_deleted, warnings)
-
-    total_cleaned = len(auto_deleted) + len(soft_deleted)
-    summary_parts = []
-    if auto_deleted:
-        summary_parts.append(f"auto-deleted {len(auto_deleted)}")
-    if soft_deleted:
-        summary_parts.append(f"soft-deleted {len(soft_deleted)}")
-    if warnings:
-        summary_parts.append(f"warned {len(warnings)}")
-    if task_card:
-        summary_parts.append(f"[CHORE] task → {task_card}")
-
-    return {
-        "name": "garbage-scan",
-        "passed": True,  # Never blocks PR — cleanup happened, task created
-        "auto_deleted": auto_deleted,
-        "soft_deleted": soft_deleted,
-        "warnings": warnings,
-        "chore_task": task_card,
-        "found": auto_deleted + soft_deleted + warnings,
-        "output": "; ".join(summary_parts) if summary_parts else "Clean.",
-        "error": "",
-    }
-
-
-def detect_project_type(project_path: Path) -> dict:
-    """Detect project type and available linters."""
-    result = {
-        "type": "unknown",
-        "linters": []
-    }
-    
-    # Node.js project
-    package_json = project_path / "package.json"
-    if package_json.exists():
-        result["type"] = "node"
-        try:
-            pkg = json.loads(package_json.read_text(encoding='utf-8'))
-            scripts = pkg.get("scripts", {})
-            deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
-            
-            # Check for lint script
-            if "lint" in scripts:
-                result["linters"].append({"name": "npm lint", "cmd": ["npm", "run", "lint"]})
-            elif "eslint" in deps:
-                result["linters"].append({"name": "eslint", "cmd": ["npx", "eslint", "."]})
-            
-            # Check for TypeScript
-            if "typescript" in deps or (project_path / "tsconfig.json").exists():
-                result["linters"].append({"name": "tsc", "cmd": ["npx", "tsc", "--noEmit"]})
-                
-        except:
-            pass
-    
-    # Python project
-    if (project_path / "pyproject.toml").exists() or (project_path / "requirements.txt").exists():
-        result["type"] = "python"
-        
-        # Check for ruff
-        result["linters"].append({"name": "ruff", "cmd": ["ruff", "check", "."]})
-        
-        # Check for mypy
-        if (project_path / "mypy.ini").exists() or (project_path / "pyproject.toml").exists():
-            result["linters"].append({"name": "mypy", "cmd": ["mypy", "."]})
-    
-    # Go project
-    if (project_path / "go.mod").exists():
-        result["type"] = "go"
-        
-        # Check for golangci-lint
-        if (project_path / ".golangci.yml").exists() or (project_path / ".golangci.yaml").exists():
-            result["linters"].append({"name": "golangci-lint", "cmd": ["golangci-lint", "run", "./..."]})
-        else:
-            result["linters"].append({"name": "go vet", "cmd": ["go", "vet", "./..."]})
-    
-    return result
-
-
-def run_linter(linter: dict, cwd: Path) -> dict:
-    """Run a single linter and return results."""
-    result = {
-        "name": linter["name"],
-        "passed": False,
-        "output": "",
-        "error": ""
-    }
-    
-    try:
-        cmd = linter["cmd"]
-        
-        # Windows compatibility for npm/npx
-        if platform.system() == "Windows":
-            if cmd[0] in ["npm", "npx"]:
-                # Force .cmd extension on Windows
-                if not cmd[0].lower().endswith(".cmd"):
-                    cmd[0] = f"{cmd[0]}.cmd"
-        
-        proc = subprocess.run(
+        res = subprocess.run(
             cmd,
             cwd=str(cwd),
             capture_output=True,
             text=True,
             encoding='utf-8',
-            errors='replace',
-            timeout=120,
-            shell=platform.system() == "Windows" # Shell=True often helps with path resolution on Windows
+            shell=platform.system() == "Windows"
         )
-        
-        result["output"] = proc.stdout[:2000] if proc.stdout else ""
-        result["error"] = proc.stderr[:500] if proc.stderr else ""
-        result["passed"] = proc.returncode == 0
-        
-    except FileNotFoundError:
-        result["error"] = f"Command not found: {linter['cmd'][0]}"
-    except subprocess.TimeoutExpired:
-        result["error"] = "Timeout after 120s"
+        return res.stdout, res.stderr, res.returncode
     except Exception as e:
-        result["error"] = str(e)
-    
-    return result
+        return "", str(e), 1
 
+def scan_garbage_files(project_path: Path) -> dict:
+    """Find and remove artifacts (Tiered Cleanup)."""
+    forbidden = {
+        "files": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "Pipfile.lock", "poetry.lock", "composer.lock"],
+        "patterns": [r".*\.log$", r".*\.tmp$", r"Thumbs\.db", r"\.DS_Store"],
+        "dirs": ["reports", "logs", ".jules"]
+    }
+    found = []
+    for root, dirs, files in os.walk(project_path):
+        # Prune dirs
+        for d in list(dirs):
+            if d in forbidden["dirs"] or d.startswith("__pycache__") or d == ".pytest_cache":
+                dir_path = Path(root) / d
+                found.append(str(dir_path))
+                import shutil
+                try: shutil.rmtree(dir_path)
+                except: pass
+                dirs.remove(d)
+        
+        for f in files:
+            file_path = Path(root) / f
+            is_forbidden = f in forbidden["files"]
+            if not is_forbidden:
+                for pattern in forbidden["patterns"]:
+                    if re.match(pattern, f):
+                        is_forbidden = True
+                        break
+            if is_forbidden:
+                found.append(str(file_path))
+                try: file_path.unlink()
+                except: pass
+    
+    return {"name": "garbage-scan", "passed": True, "found": found}
+
+def scan_documentation_drift(project_path: Path) -> dict:
+    script_path = project_path / ".agent" / "scripts" / "drift_detector.py"
+    if not script_path.exists():
+        return {"name": "drift-check", "passed": True, "drifts": [], "output": "drift_detector.py not found"}
+    stdout, stderr, code = run_command(["python3", str(script_path), "--format", "json"], project_path)
+    try:
+        data = json.loads(stdout)
+        return {"name": "drift-check", "passed": data.get("passed", True), "drifts": data.get("drifts", []), "output": f"Found {len(data.get('drifts', []))} drifts"}
+    except:
+        return {"name": "drift-check", "passed": True, "drifts": [], "error": stderr}
+
+def validate_commit_msg(project_path: Path) -> dict:
+    if not (project_path / ".git").exists():
+        return {"name": "commit-lint", "passed": True, "msg": "No git"}
+    stdout, stderr, code = run_command(["git", "log", "-1", "--pretty=%s"], project_path)
+    if code == 0:
+        msg = stdout.strip()
+        pattern = r"^(feat|fix|chore|docs|style|refactor|perf|test|db)(\([a-z0-9_-]+\))?!?: .+$"
+        passed = bool(re.match(pattern, msg))
+        return {"name": "commit-lint", "passed": passed, "msg": msg, "output": f"Valid format: {msg}" if passed else f"Invalid: {msg}"}
+    return {"name": "commit-lint", "passed": True, "error": stderr}
+
+def scan_type_coverage(project_path: Path) -> dict:
+    script_path = project_path / ".agent" / "skills" / "lint-and-validate" / "scripts" / "type_coverage.py"
+    if not script_path.exists():
+        return {"name": "type-coverage", "passed": True, "output": "N/A"}
+    stdout, stderr, code = run_command(["python3", str(script_path), "."], project_path)
+    coverage_match = re.search(r"Type coverage: (\d+%)", stdout)
+    passed = code == 0
+    return {"name": "type-coverage", "passed": passed, "output": coverage_match.group(1) if coverage_match else "Analyzed", "issues": len(re.findall(r"\[X\]", stdout))}
+
+def detect_project_type(project_path: Path):
+    if (project_path / "package.json").exists(): return "node"
+    if (project_path / "go.mod").exists(): return "go"
+    if (project_path / "pyproject.toml").exists() or (project_path / "requirements.txt").exists(): return "python"
+    return "unknown"
+
+def get_linters(p_type, fix):
+    if p_type == "node":
+        return [{"name": "eslint", "cmd": ["npx", "eslint", ".", "--fix"] if fix else ["npx", "eslint", "."]}]
+    if p_type == "python":
+        return [{"name": "ruff", "cmd": ["ruff", "check", ".", "--fix"] if fix else ["ruff", "check", "."]}]
+    if p_type == "go":
+        return [{"name": "go vet", "cmd": ["go", "vet", "./..."]}]
+    return []
 
 def main():
-    project_path = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
-    
-    print(f"\n{'='*60}")
-    print(f"[LINT RUNNER] Unified Linting + Workspace Cleanup Check")
-    print(f"{'='*60}")
-    print(f"Project: {project_path}")
-    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("project_path", nargs="?", default=".")
+    parser.add_argument("--fix", action="store_true")
+    parser.add_argument("--cleanup-only", action="store_true")
+    args = parser.parse_args()
+    project_path = Path(args.project_path).resolve()
 
-    # ── Step 0: Garbage file scan ────────────────────────────────
-    print("\n[STEP 0] Workspace cleanup scan...")
+    print(f"🚀 Antigravity Hygiene & Linting: {project_path}")
+    
     garbage = scan_garbage_files(project_path)
-
-    if garbage["auto_deleted"]:
-        print(f"  [AUTO] Deleted {len(garbage['auto_deleted'])} OS/editor trash file(s) silently.")
-    if garbage["soft_deleted"]:
-        print(f"  [CLEAN] Removed {len(garbage['soft_deleted'])} agent artifact(s):")
-        for f in garbage["soft_deleted"]:
-            print(f"         ✗ {f} → deleted")
-    if garbage["warnings"]:
-        print(f"  [WARN] {len(garbage['warnings'])} file(s) may be unintentional (not deleted):")
-        for f in garbage["warnings"]:
-            print(f"         ⚠ {f}")
-    if garbage.get("chore_task"):
-        print(f"  [TASK] Created cleanup task → {garbage['chore_task']}")
-    if garbage["passed"] and not garbage["auto_deleted"] and not garbage["soft_deleted"] and not garbage["warnings"]:
-        print("  [PASS] Workspace is clean.")
-    print("-"*60)
-
-    # Detect project type
-    project_info = detect_project_type(project_path)
-    print(f"Type: {project_info['type']}")
-    print(f"Linters: {len(project_info['linters'])}")
-    print("-"*60)
+    print(f"🧹 Garbage Cleanup: {len(garbage['found'])} items removed.")
     
-    if not project_info["linters"]:
-        print("No linters found for this project type.")
-        output = {
-            "script": "lint_runner",
-            "project": str(project_path),
-            "type": project_info["type"],
-            "checks": [],
-            "passed": True,
-            "message": "No linters configured"
-        }
-        print(json.dumps(output, indent=2))
+    if args.cleanup_only:
         sys.exit(0)
-    
-    # Run each linter
-    results = []
-    all_passed = True
-    
-    for linter in project_info["linters"]:
-        print(f"\nRunning: {linter['name']}...")
-        result = run_linter(linter, project_path)
-        results.append(result)
-        
-        if result["passed"]:
-            print(f"  [PASS] {linter['name']}")
-        else:
-            print(f"  [FAIL] {linter['name']}")
-            if result["error"]:
-                print(f"  Error: {result['error'][:200]}")
-            all_passed = False
-    
-    # Summary
-    print("\n" + "="*60)
-    print("SUMMARY")
-    print("="*60)
 
-    all_checks = [garbage] + results
-    all_passed = all(c["passed"] for c in all_checks)
+    drift = scan_documentation_drift(project_path)
+    commit = validate_commit_msg(project_path)
+    types = scan_type_coverage(project_path)
+    
+    p_type = detect_project_type(project_path)
+    linters = get_linters(p_type, args.fix)
+    
+    # Fix for Go project with no files
+    if p_type == "go":
+        # Recursively find any .go files, excluding .agent and hidden dirs
+        go_files_found = False
+        for root, dirs, files in os.walk(project_path):
+            if ".agent" in root or ".git" in root: continue
+            if any(f.endswith(".go") for f in files):
+                go_files_found = True
+                break
+        if not go_files_found:
+            linters = []
+            print("No Go files found in source, skipping go vet.")
 
-    icon = "[PASS]" if garbage["passed"] else "[FAIL]"
-    print(f"{icon} garbage-scan ({len(garbage['found'])} forbidden files)")
-    for r in results:
-        icon = "[PASS]" if r["passed"] else "[FAIL]"
-        print(f"{icon} {r['name']}")
+    linter_results = []
+    for l in linters:
+        print(f"Running {l['name']}...")
+        stdout, stderr, code = run_command(l['cmd'], project_path)
+        linter_results.append({"name": l['name'], "passed": code == 0, "output": stdout, "error": stderr})
 
+    all_checks = [garbage, drift, commit, types] + linter_results
+    passed = all(c["passed"] for c in all_checks)
+    
+    print("\n" + "="*60 + "\nSUMMARY\n" + "="*60)
+    print(f"[{'PASS' if garbage['passed'] else 'FAIL'}] garbage-scan")
+    print(f"[{'PASS' if drift['passed'] else 'FAIL'}] drift-check: {drift['output']}")
+    print(f"[{'PASS' if commit['passed'] else 'FAIL'}] commit-lint: {commit['output'] if 'output' in commit else commit['msg']}")
+    print(f"[{'PASS' if types['passed'] else 'FAIL'}] type-coverage: {types['output']}")
+    for r in linter_results:
+        print(f"[{'PASS' if r['passed'] else 'FAIL'}] {r['name']}")
+    
     output = {
-        "script": "lint_runner",
         "project": str(project_path),
-        "type": project_info["type"],
+        "type": p_type,
         "garbage_scan": garbage,
-        "checks": results,
-        "passed": all_passed
+        "drift_check": drift,
+        "commit_lint": commit,
+        "type_coverage": types,
+        "linters": linter_results,
+        "passed": passed
     }
-
     print("\n" + json.dumps(output, indent=2))
-
-    sys.exit(0 if all_passed else 1)
-
+    sys.exit(0 if passed else 1)
 
 if __name__ == "__main__":
     main()

@@ -21,11 +21,23 @@ version: 1.0.0
 2. **Security (Bandit):** `bandit -r "path" -ll`
 3. **Types (MyPy):** `mypy "path"`
 
+## 🛠 Self-Healing Protocol (MANDATORY)
+
+If any linting or formatting check fails, you MUST attempt self-healing before making manual edits:
+
+1. **Invoke Self-Heal**: `python3 .agent/scripts/self_heal.py .`
+2. **Review Result**: If it returns `SUCCESS`, verify that the code still functions correctly.
+3. **Manual Fix**: Only if `self_heal.py` cannot fix the remaining errors, proceed with manual code corrections.
+
+---
+
 ## The Quality Loop
 1. **Write/Edit Code**
-2. **Run Audit:** `npm run lint && npx tsc --noEmit`
-3. **Analyze Report:** Check the "FINAL AUDIT REPORT" section.
-4. **Fix & Repeat:** Submitting code with "FINAL AUDIT" failures is NOT allowed.
+2. **Run Self-Heal**: `python3 .agent/scripts/self_heal.py .`
+3. **Analyze Master Checklist**: `python3 .agent/scripts/checklist.py .`
+4. **Fix & Repeat**: Submitting code with failures in the Master Checklist is NOT allowed.
+
+---
 
 ## Error Handling
 - If `lint` fails: Fix the style or syntax issues immediately.
