@@ -397,7 +397,28 @@ def patch_source_tools(dry_run: bool = False) -> None:
 # Sync functions
 # ---------------------------------------------------------------------------
 
-def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "") -> None:
+_drift: list[str] = []  # populated in check mode
+
+
+def _write_file(out_path: "Path", content: str, dry_run: bool, check: bool) -> None:
+    """Write content to out_path, or in check/dry-run mode just report."""
+    rel = out_path.relative_to(REPO_ROOT)
+    if dry_run:
+        print(f"  [DRY] {rel}")
+        return
+    if check:
+        existing = out_path.read_text(encoding="utf-8") if out_path.exists() else ""
+        if existing != content:
+            print(f"  [DRIFT] {rel}")
+            _drift.append(str(rel))
+        else:
+            print(f"  [OK]    {rel}")
+        return
+    out_path.write_text(content, encoding="utf-8")
+    print(f"  ✓ {rel}")
+
+
+def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "", check: bool = False) -> None:
     CLAUDE_AGENTS_OUT.mkdir(parents=True, exist_ok=True)
 
     agent_files = sorted(AGENTS_SRC.glob("*.md"))
@@ -422,14 +443,10 @@ def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "") 
     for src in agent_files:
         out_path = CLAUDE_AGENTS_OUT / src.name
         content = build_claude_agent(src, is_workflow=False)
-        if dry_run:
-            print(f"  [DRY] {out_path.relative_to(REPO_ROOT)}")
-        else:
-            out_path.write_text(content, encoding="utf-8")
-            print(f"  ✓ {out_path.relative_to(REPO_ROOT)}")
+        _write_file(out_path, content, dry_run, check)
 
 
-def sync_workflows(dry_run: bool = False) -> None:
+def sync_workflows(dry_run: bool = False, check: bool = False) -> None:
     CLAUDE_AGENTS_OUT.mkdir(parents=True, exist_ok=True)
 
     workflow_files = sorted(WORKFLOWS_SRC.glob("*.md"))
@@ -437,14 +454,10 @@ def sync_workflows(dry_run: bool = False) -> None:
     for src in workflow_files:
         out_path = CLAUDE_AGENTS_OUT / f"wf-{src.name}"
         content = build_claude_agent(src, is_workflow=True)
-        if dry_run:
-            print(f"  [DRY] {out_path.relative_to(REPO_ROOT)}")
-        else:
-            out_path.write_text(content, encoding="utf-8")
-            print(f"  ✓ {out_path.relative_to(REPO_ROOT)}")
+        _write_file(out_path, content, dry_run, check)
 
 
-def sync_commands(dry_run: bool = False) -> None:
+def sync_commands(dry_run: bool = False, check: bool = False) -> None:
     """Generate .claude/commands/ from .agent/workflows/.
 
     Each workflow becomes a /slash-command in Claude Code.
@@ -464,11 +477,7 @@ def sync_commands(dry_run: bool = False) -> None:
     for src in workflow_files:
         out_path = CLAUDE_COMMANDS_OUT / src.name
         content = build_command(src)
-        if dry_run:
-            print(f"  [DRY] {out_path.relative_to(REPO_ROOT)}")
-        else:
-            out_path.write_text(content, encoding="utf-8")
-            print(f"  ✓ {out_path.relative_to(REPO_ROOT)}")
+        _write_file(out_path, content, dry_run, check)
 
 
 # ---------------------------------------------------------------------------
@@ -478,6 +487,7 @@ def sync_commands(dry_run: bool = False) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sync .agent/ → .claude/agents/ and .claude/commands/")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be written without writing")
+    parser.add_argument("--check", action="store_true", help="Exit with code 1 if any file would change (CI mode)")
     parser.add_argument("--agent", metavar="NAME", help="Sync only one specialist agent by name")
     parser.add_argument(
         "--profile",
@@ -502,15 +512,24 @@ def main() -> None:
         patch_source_tools(dry_run=args.dry_run)
         return
 
-    sync_agents(dry_run=args.dry_run, only_agent=args.agent, profile=args.profile or "")
+    check = args.check
+    dry_run = args.dry_run
+
+    sync_agents(dry_run=dry_run, only_agent=args.agent, profile=args.profile or "", check=check)
 
     if not args.agent:
         if not args.no_workflows:
-            sync_workflows(dry_run=args.dry_run)
+            sync_workflows(dry_run=dry_run, check=check)
         if not args.no_commands:
-            sync_commands(dry_run=args.dry_run)
+            sync_commands(dry_run=dry_run, check=check)
 
-    if not args.dry_run:
+    if check:
+        if _drift:
+            print(f"\nERROR: {len(_drift)} file(s) out of sync. Run 'make sync' to fix.")
+            sys.exit(1)
+        else:
+            print("\nAll files in sync.")
+    elif not dry_run:
         n_agents   = len(list(CLAUDE_AGENTS_OUT.glob("*.md")))
         n_commands = len(list(CLAUDE_COMMANDS_OUT.glob("*.md")))
         print(f"\nDone. agents: {n_agents}  commands: {n_commands}")

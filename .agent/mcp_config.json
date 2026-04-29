@@ -1,4 +1,5 @@
 {
+    "_readme": "Template config for Antigravity (Gemini). Copy to your Antigravity workspace and replace YOUR_API_KEY placeholders. The 'skills' server is required; 'context7' and 'shadcn' are optional extras.",
     "mcpServers": {
         "skills": {
             "command": "sh",
