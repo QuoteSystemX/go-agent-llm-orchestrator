@@ -220,7 +220,28 @@ func (e *Engine) Cleanup(ctx context.Context) {
 
 	log.Printf("cleanup: removing data older than %d days", days)
 
-	// 1. Clean up sessions (completed or failed)
+	// 1. Clean up sessions (completed or failed): cancel in Jules first, then DB.
+	if e.client != nil {
+		rows, err := e.db.QueryContext(ctx,
+			"SELECT jules_session_id FROM sessions WHERE status IN ('COMPLETED', 'FAILED') AND jules_session_id != '' AND updated_at < datetime('now', '-' || ? || ' days')",
+			days)
+		if err == nil {
+			var ids []string
+			for rows.Next() {
+				var sid string
+				if rows.Scan(&sid) == nil {
+					ids = append(ids, sid)
+				}
+			}
+			rows.Close()
+			for _, sid := range ids {
+				if err := e.client.DeleteSession(ctx, sid); err != nil {
+					log.Printf("cleanup: Jules session %s delete failed (ignoring): %v", sid, err)
+				}
+			}
+		}
+	}
+
 	res, err := e.db.ExecContext(ctx, "DELETE FROM sessions WHERE status IN ('COMPLETED', 'FAILED') AND updated_at < datetime('now', '-' || ? || ' days')", days)
 	if err != nil {
 		log.Printf("cleanup: failed to clean sessions: %v", err)

@@ -253,6 +253,23 @@ func (c *JulesClient) ApprovePlan(ctx context.Context, sessionID string) error {
 	return nil
 }
 
+// DeleteSession removes a Jules session via DELETE /sessions/{id}.
+// Jules does not document this endpoint but it exists and is used by the
+// cleanup workflow (.github/workflows/cleanup-jules-sessions.yml).
+// Returns nil if the session was deleted or did not exist (404).
+func (c *JulesClient) DeleteSession(ctx context.Context, sessionID string) error {
+	resp, err := c.doRequest(ctx, http.MethodDelete, "/sessions/"+sessionID, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+	return fmt.Errorf("jules DeleteSession: unexpected status %d", resp.StatusCode)
+}
+
 func (c *JulesClient) ListSessions(ctx context.Context) ([]SessionResponse, error) {
 	resp, err := c.doRequest(ctx, http.MethodGet, "/sessions", nil)
 	if err != nil {

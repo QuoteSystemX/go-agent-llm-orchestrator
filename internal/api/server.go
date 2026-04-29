@@ -48,6 +48,10 @@ type GitSyncer interface {
 	Sync(ctx context.Context) error
 }
 
+type JulesDeleter interface {
+	DeleteSession(ctx context.Context, sessionID string) error
+}
+
 type PromptChecker interface {
 	HasPrompt(agent, pattern, mission string) bool
 }
@@ -55,6 +59,7 @@ type PromptChecker interface {
 type AdminServer struct {
 	db              *db.DB
 	scheduler       Scheduler
+	julesDeleter    JulesDeleter
 	statsAggregator *monitor.StatsAggregator
 	gitSyncer       GitSyncer
 	promptChecker   PromptChecker
@@ -98,6 +103,7 @@ func (s *AdminServer) SetHub(h *Hub) { s.hub = h }
 
 // SetWebhookBus attaches the event bus for webhooks.
 func (s *AdminServer) SetWebhookBus(bus chan<- monitor.WebhookEvent) { s.webhookBus = bus }
+func (s *AdminServer) SetJulesDeleter(jd JulesDeleter)               { s.julesDeleter = jd }
 
 // SetBudgetManager attaches a budget manager.
 func (s *AdminServer) SetBudgetManager(bm *budget.Manager) { s.budgetMgr = bm }
@@ -425,6 +431,22 @@ func (s *AdminServer) updateTask(w http.ResponseWriter, r *http.Request, id stri
 }
 
 func (s *AdminServer) deleteTask(w http.ResponseWriter, r *http.Request, id string) {
+	// Cancel all Jules sessions associated with this task before removing it locally.
+	if s.julesDeleter != nil {
+		rows, err := s.db.QueryContext(r.Context(), "SELECT jules_session_id FROM sessions WHERE task_id = ? AND jules_session_id != ''", id)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var sessionID string
+				if rows.Scan(&sessionID) == nil && sessionID != "" {
+					if err := s.julesDeleter.DeleteSession(r.Context(), sessionID); err != nil {
+						log.Printf("deleteTask: Jules session %s delete failed (ignoring): %v", sessionID, err)
+					}
+				}
+			}
+		}
+	}
+
 	_, err := s.db.ExecContext(r.Context(), "DELETE FROM tasks WHERE id = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

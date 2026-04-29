@@ -140,6 +140,7 @@ func main() {
 	adminServer.SetBudgetManager(budgetMgr)
 	adminServer.SetDriftDetector(driftDetector)
 	adminServer.SetTrafficManager(tm)
+	adminServer.SetJulesDeleter(julesClient)
 
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 
