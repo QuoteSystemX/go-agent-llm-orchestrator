@@ -361,11 +361,11 @@ function renderTasks() {
                         <span class="service-badge bmad-partial" title="Partial BMAD. Missing: ${missingPatterns.join(', ')}">
                             <i data-lucide="shield-alert" style="width:12px"></i> BMAD
                         </span>
-                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName)}, ${JSON.stringify(missingPatterns)})" title="Install missing BMAD tasks: ${missingPatterns.join(', ')}">
+                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName).replace(/"/g, '&quot;')}, ${JSON.stringify(missingPatterns).replace(/"/g, '&quot;')})" title="Install missing BMAD tasks: ${missingPatterns.join(', ')}">
                             <i data-lucide="plus-circle" style="width:11px"></i> Add missing
                         </button>
                     ` : `
-                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName)}, ${JSON.stringify(servicePatterns)})" title="Install BMAD maintenance tasks (Closer & Wiki Architect)">
+                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName).replace(/"/g, '&quot;')}, ${JSON.stringify(servicePatterns).replace(/"/g, '&quot;')})" title="Install BMAD maintenance tasks (Closer & Wiki Architect)">
                             <i data-lucide="shield-plus" style="width:11px"></i> Install BMAD
                         </button>
                     `}
@@ -745,6 +745,7 @@ async function installBMAD(event, repoName, patternsToInstall) {
         event.preventDefault();
         event.stopPropagation();
     }
+    console.log('installBMAD triggered for:', repoName, 'patterns:', patternsToInstall);
 
     const count = patternsToInstall.length;
     const label = count === 2 ? 'full BMAD suite (2 maintenance tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
