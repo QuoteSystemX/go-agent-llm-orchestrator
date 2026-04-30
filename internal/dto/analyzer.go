@@ -317,6 +317,13 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	if isBackground {
 		if head := gitHead(repoPath); head != "" && head == a.db.GetSetting("dto_last_commit_"+repoName, "") {
 			log.Printf("DTO [%s]: repo unchanged since last analysis (%s), skipping LLM call", repoName, head[:8])
+			// Return cached proposals so callers can still display stage/progress.
+			a.stateMutex.RLock()
+			cached := a.state[repoName]
+			a.stateMutex.RUnlock()
+			if cached != nil && cached.Proposals != nil {
+				return cached.Proposals, nil
+			}
 			return &AnalysisResult{LastAnalysis: a.db.GetSetting("dto_last_analysis_"+repoName, "")}, nil
 		}
 	}
@@ -722,15 +729,25 @@ func (a *Analyzer) runScheduledAnalysis(ctx context.Context) {
 	}
 	for _, repo := range repos {
 		fmt.Printf("DTO: Running scheduled analysis for %s\n", repo)
-		// AnalyzeRepo handles the unchanged-repo skip internally (after sync).
 		result, err := a.AnalyzeRepo(ctx, repo, true)
 		if err != nil {
 			fmt.Printf("DTO: Scheduled analysis failed for %s: %v\n", repo, err)
 			continue
 		}
+
+		a.stateMutex.Lock()
+		s, ok := a.state[repo]
+		if !ok {
+			s = &RepoAnalysisState{}
+			a.state[repo] = s
+		}
+		// Only overwrite proposals when the LLM actually returned new ones.
+		// The "unchanged commit" fast-path returns an empty Proposals slice.
 		if len(result.Proposals) > 0 {
+			s.Proposals = result
 			fmt.Printf("DTO: Found %d proposals for %s\n", len(result.Proposals), repo)
 		}
+		a.stateMutex.Unlock()
 	}
 }
 

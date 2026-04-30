@@ -1623,9 +1623,8 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 
 	lastAnalysis := s.db.GetSetting("dto_last_analysis_"+repoName, "")
 	currentStatus := s.analyzer.GetStatus(repoName)
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+
+	resp := map[string]any{
 		"last_analysis":   lastAnalysis,
 		"is_running":      currentStatus.IsRunning,
 		"type":            currentStatus.Type,
@@ -1634,7 +1633,16 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 		"files_indexed":   currentStatus.FilesIndexed,
 		"already_indexed": currentStatus.AlreadyIndexed,
 		"total_files":     currentStatus.TotalFiles,
-	})
+	}
+	if p := currentStatus.Proposals; p != nil {
+		resp["current_stage"] = p.CurrentStage
+		resp["progress"] = int(p.Progress)
+		resp["proposals"] = p.Proposals
+		resp["warnings"] = p.Warnings
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (s *AdminServer) handleRAGStats(w http.ResponseWriter, r *http.Request) {
