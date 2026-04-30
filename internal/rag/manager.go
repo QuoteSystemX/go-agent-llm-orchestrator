@@ -60,3 +60,30 @@ func (m *Manager) ScrubAll(ctx context.Context) (int, error) {
 	}
 	return totalRemoved, nil
 }
+
+// VerifyAll checks the health of all managed repositories.
+func (m *Manager) VerifyAll(ctx context.Context) map[string]error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	results := make(map[string]error)
+	for repoID, store := range m.stores {
+		if err := store.Verify(ctx); err != nil {
+			results[repoID] = err
+		}
+	}
+	return results
+}
+
+// RecoverRepo triggers recovery for a specific repository.
+func (m *Manager) RecoverRepo(ctx context.Context, repoID string) error {
+	m.mu.RLock()
+	store, ok := m.stores[repoID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("store not found for %s", repoID)
+	}
+
+	return store.Recover(ctx)
+}

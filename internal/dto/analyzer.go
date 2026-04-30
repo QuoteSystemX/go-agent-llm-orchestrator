@@ -780,6 +780,13 @@ func (a *Analyzer) ScrubAllRepos(ctx context.Context) (int, error) {
 	return a.ragManager.ScrubAll(ctx)
 }
 
+func (a *Analyzer) VerifyAllRepos(ctx context.Context) map[string]error {
+	if a.ragManager == nil {
+		return nil
+	}
+	return a.ragManager.VerifyAll(ctx)
+}
+
 type SearchResult struct {
 	Content string
 	Sources []string

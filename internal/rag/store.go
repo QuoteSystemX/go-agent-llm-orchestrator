@@ -36,6 +36,8 @@ type RAGStats struct {
 	IndexPath       string    `json:"index_path"`
 	OllamaEndpoint  string    `json:"ollama_endpoint"`
 	EmbeddingModel  string    `json:"embedding_model"`
+	StorageMode     string    `json:"storage_mode"` // "persistent" or "memory"
+	Status          string    `json:"status"`       // "ok", "corrupted"
 }
 
 // MemoryStore is an in-memory/persistent storage for RAG using chromem-go
@@ -45,9 +47,12 @@ type MemoryStore struct {
 	collection *chromem.Collection
 	indexed    map[string]int64
 	indexPath  string
+	dbPath     string
 	repoID     string
 	ollamaUrl  string
 	modelName  string
+	status      string // "ok", "corrupted"
+	storageMode string // "persistent", "memory"
 	// inferMu is the shared Ollama priority gate owned by llm.Router.
 	inferMu *sync.RWMutex
 }
@@ -105,10 +110,18 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 	dbPath := filepath.Join(basePath, safeRepoID)
 	os.MkdirAll(dbPath, 0755)
 
+	storageMode := "persistent"
+	status := "ok"
+
 	db, err := chromem.NewPersistentDB(dbPath, false)
 	if err != nil {
 		log.Printf("RAG Error: Failed to init chromem DB for %s: %v. Falling back to in-memory.", repoID, err)
+		// Check if it's the specific "magic number" error which indicates corruption
+		if strings.Contains(err.Error(), "magic number") || strings.Contains(err.Error(), "EOF") {
+			status = "corrupted"
+		}
 		db = chromem.NewDB()
+		storageMode = "memory"
 	}
 
 	if ollamaUrl != "" && !strings.HasSuffix(ollamaUrl, "/api") {
@@ -141,13 +154,16 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 	}
 
 	return &MemoryStore{
-		db:         db,
-		collection: collection,
-		indexed:    indexed,
-		indexPath:  indexPath,
-		repoID:     repoID,
-		ollamaUrl:  ollamaUrl,
-		modelName:  modelName,
+		db:          db,
+		collection:  collection,
+		indexed:     indexed,
+		indexPath:   indexPath,
+		dbPath:      dbPath,
+		repoID:      repoID,
+		ollamaUrl:   ollamaUrl,
+		modelName:   modelName,
+		status:      status,
+		storageMode: storageMode,
 	}
 }
 
@@ -243,11 +259,68 @@ func (s *MemoryStore) SearchFiltered(ctx context.Context, query string, topK int
 func (s *MemoryStore) Reset(ctx context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.resetLocked(ctx)
+}
+
+func (s *MemoryStore) resetLocked(ctx context.Context) {
 	s.indexed = make(map[string]int64)
 	if s.db != nil {
 		s.db.DeleteCollection("repo_context")
 	}
 	os.Remove(s.indexPath)
+}
+
+// Recover attempts to fix a corrupted database by deleting the local folder and resetting the store.
+func (s *MemoryStore) Recover(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Printf("RAG Recovery [%s]: Attempting to recover from %s state...", s.repoID, s.status)
+
+	// 1. Wipe local data
+	s.resetLocked(ctx)
+	if s.dbPath != "" {
+		os.RemoveAll(s.dbPath)
+	}
+
+	// 2. Re-initialize
+	os.MkdirAll(s.dbPath, 0755)
+	db, err := chromem.NewPersistentDB(s.dbPath, false)
+	if err != nil {
+		return fmt.Errorf("recovery failed to create new DB: %w", err)
+	}
+
+	embedFunc := newOllamaEmbedFunc(s.modelName, s.ollamaUrl)
+	collection, err := db.GetOrCreateCollection("repo_context", nil, embedFunc)
+	if err != nil {
+		return fmt.Errorf("recovery failed to create collection: %w", err)
+	}
+
+	s.db = db
+	s.collection = collection
+	s.status = "ok"
+	s.storageMode = "persistent"
+
+	log.Printf("RAG Recovery [%s]: Store reset and re-initialized successfully.", s.repoID)
+	return nil
+}
+
+// Verify checks the health of the vector database by performing a lightweight operation.
+func (s *MemoryStore) Verify(ctx context.Context) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.status == "corrupted" {
+		return fmt.Errorf("store is in corrupted state")
+	}
+
+	if s.collection == nil {
+		return fmt.Errorf("collection not initialized")
+	}
+
+	// Just try to count documents as a health check
+	_ = s.collection.Count()
+	return nil
 }
 
 // RemoveDocumentsBySource deletes all chunks for a given source file from the vector DB.
@@ -325,6 +398,8 @@ func (s *MemoryStore) GetStats() RAGStats {
 		IndexPath:      s.indexPath,
 		OllamaEndpoint: s.ollamaUrl,
 		EmbeddingModel: s.modelName,
+		StorageMode:    s.storageMode,
+		Status:         s.status,
 	}
 }
 

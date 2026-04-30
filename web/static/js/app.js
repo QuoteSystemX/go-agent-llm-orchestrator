@@ -285,6 +285,40 @@ function renderTasks() {
             .map(([status, count]) => `<span class="repo-status-badge repo-status-${status}">${count} ${status}</span>`)
             .join('');
 
+        // RAG Status
+        let ragBadgeHtml = '';
+        const firstTask = allProjectTasks[0];
+        if (firstTask.rag_status) {
+            const status = firstTask.rag_status;
+            const mode = firstTask.rag_mode;
+            let icon = 'database';
+            let color = 'var(--text-muted)';
+            let title = `RAG: ${status.toUpperCase()} (${mode})`;
+
+            if (status === 'corrupted') {
+                icon = 'alert-octagon';
+                color = '#ef4444'; // Red
+            } else if (mode === 'memory') {
+                icon = 'zap';
+                color = '#eab308'; // Yellow
+            } else if (status === 'ok') {
+                icon = 'check-circle';
+                color = '#22c55e'; // Green
+            }
+
+            ragBadgeHtml = `
+                <div class="rag-status-badge rag-status-${status}" title="${title}">
+                    <i data-lucide="${icon}" style="width:12px; height:12px; color:${color}"></i>
+                    <span>RAG: ${status.toUpperCase()}</span>
+                    ${status === 'corrupted' ? `
+                        <button class="btn-rag-recover" onclick="recoverRAG(event, '${projectName}')" title="Repair corrupted index">
+                            <i data-lucide="refresh-cw" style="width:11px"></i> Repair
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
         // BMAD suite check (using ALL tasks)
         const missingPatterns = servicePatterns.filter(p => !allProjectTasks.some(t => t.pattern === p));
         const hasBMAD = missingPatterns.length === 0;
@@ -316,6 +350,7 @@ function renderTasks() {
 
                     <div class="repo-status-container">
                         ${statusBadgesHtml}
+                        ${ragBadgeHtml}
                     </div>
 
                     <span class="task-count ${promptBadgeClass}">${promptCount}/${projectTasks.length} prompts</span>
@@ -1652,6 +1687,28 @@ function updateAnalysisProgress(status) {
             badge.innerText = 'System Ready';
         }
         lucide.createIcons();
+    }
+}
+
+async function recoverRAG(event, repoID) {
+    if (event) event.stopPropagation();
+    if (!confirm(`Are you sure you want to attempt recovery for ${repoID}? This will clear the current index and trigger a full re-index.`)) return;
+
+    try {
+        const resp = await fetch('/api/v1/rag/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'recover_repo', repo_id: repoID })
+        });
+        if (resp.ok) {
+            showToast(`Recovery started for ${repoID}`, 'success');
+            loadTasks(); // Refresh UI
+        } else {
+            const err = await resp.text();
+            showToast(`Recovery failed: ${err}`, 'error');
+        }
+    } catch (e) {
+        showToast(`Recovery error: ${e.message}`, 'error');
     }
 }
 

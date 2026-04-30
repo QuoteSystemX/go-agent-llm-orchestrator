@@ -326,6 +326,56 @@ button {
 .repo-status-waiting { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px dashed var(--warning); }
 .repo-status-draft   { background: rgba(148, 163, 184, 0.1); color: #fbbf24; border: 1px dotted #fbbf24; }
 
+/* RAG Status Styles */
+.rag-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.15rem 0.6rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.rag-status-corrupted {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    animation: pulse-danger-light 2s infinite;
+}
+
+@keyframes pulse-danger-light {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.btn-rag-recover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    padding: 0.05rem 0.4rem;
+    font-size: 0.6rem;
+    border-radius: 0.3rem;
+    margin-left: 0.3rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: all 0.2s;
+}
+
+.btn-rag-recover:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.rag-status-corrupted span {
+    color: #fca5a5;
+}
+
 .project-name-text {
     flex-shrink: 0;
 }

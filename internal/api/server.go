@@ -249,6 +249,8 @@ type TaskResponse struct {
 	MaxRetries    int        `json:"max_retries"`
 	CurrentRetry  int        `json:"current_retry"`
 	HasDrift      bool       `json:"has_drift"`
+	RAGStatus     string     `json:"rag_status"`
+	RAGMode       string     `json:"rag_mode"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -323,7 +325,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Enrich tasks with prompt status and last error outside of the DB iteration
+	// Enrich tasks with prompt status, last error, and RAG status outside of the DB iteration
 	for i := range tasks {
 		if s.promptChecker != nil {
 			tasks[i].PromptReady = s.promptChecker.HasPrompt(tasks[i].Agent, tasks[i].Pattern, tasks[i].Mission)
@@ -331,6 +333,15 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 			tasks[i].PromptReady = true
 		}
 		tasks[i].LastError = lastErrors[tasks[i].ID]
+
+		// RAG health info
+		if s.analyzer != nil && s.analyzer.GetRagManager() != nil {
+			if store := s.analyzer.GetRagManager().GetStore(tasks[i].Name); store != nil {
+				stats := store.GetStats()
+				tasks[i].RAGStatus = stats.Status
+				tasks[i].RAGMode = stats.StorageMode
+			}
+		}
 	}
 
 	// Enrich with drift info
@@ -1634,6 +1645,17 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 		"already_indexed": currentStatus.AlreadyIndexed,
 		"total_files":     currentStatus.TotalFiles,
 	}
+
+	// Add RAG status if available
+	if s.analyzer != nil && s.analyzer.GetRagManager() != nil {
+		if store := s.analyzer.GetRagManager().GetStore(repoName); store != nil {
+			ragStats := store.GetStats()
+			resp["rag_status"] = ragStats.Status
+			resp["rag_mode"] = ragStats.StorageMode
+			resp["rag_chunks"] = ragStats.ChunkCount
+		}
+	}
+
 	if p := currentStatus.Proposals; p != nil {
 		resp["current_stage"] = p.CurrentStage
 		resp["progress"] = int(p.Progress)
@@ -1678,15 +1700,22 @@ func (s *AdminServer) handleRAGAction(w http.ResponseWriter, r *http.Request) {
 
 	switch data.Action {
 	case "scrub_all":
-		go func() {
-			removed, err := mgr.ScrubAll(context.Background())
-			if err != nil {
-				log.Printf("API: Global RAG scrub failed: %v", err)
-			} else {
-				log.Printf("API: Global RAG scrub completed: removed %d orphaned chunks", removed)
-			}
-		}()
-		w.WriteHeader(http.StatusAccepted)
+		removed, err := mgr.ScrubAll(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"removed": removed})
+	case "recover_repo":
+		if data.RepoID == "" {
+			http.Error(w, "missing repo_id", http.StatusBadRequest)
+			return
+		}
+		if err := mgr.RecoverRepo(r.Context(), data.RepoID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"status": "ok", "message": "Recovery successful"})
 	case "scrub":
 		if data.RepoID == "" {
 			http.Error(w, "repo_id required", http.StatusBadRequest)

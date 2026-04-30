@@ -31,7 +31,15 @@ func StartRAGScrubbingJob(ctx context.Context, analyzer *dto.Analyzer, interval 
 }
 
 func runScrub(ctx context.Context, analyzer *dto.Analyzer) {
-	log.Println("Scheduler: Running scheduled RAG scrubbing...")
+	log.Println("Scheduler: Running scheduled RAG health check and scrubbing...")
+	
+	// 1. Health check
+	healthResults := analyzer.VerifyAllRepos(ctx)
+	for repoID, err := range healthResults {
+		log.Printf("Scheduler Warning: RAG store for %s is unhealthy: %v", repoID, err)
+	}
+
+	// 2. Scrubbing
 	removed, err := analyzer.ScrubAllRepos(ctx)
 	if err != nil {
 		log.Printf("Scheduler Error: RAG scrubbing failed: %v", err)
