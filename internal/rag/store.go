@@ -296,7 +296,7 @@ func (s *MemoryStore) Scrub(ctx context.Context) (int, error) {
 	}
 
 	if removed > 0 {
-		s.SaveIndex()
+		s.saveIndexLocked()
 	}
 
 	return removed, nil
@@ -353,12 +353,17 @@ func (s *MemoryStore) MarkIndexed(source string, modTime int64) {
 func (s *MemoryStore) SaveIndex() {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	s.saveIndexLocked()
+}
+
+// saveIndexLocked writes the index to disk; caller must hold at least a read lock.
+func (s *MemoryStore) saveIndexLocked() {
 	data, err := json.Marshal(s.indexed)
 	if err == nil {
 		os.MkdirAll(filepath.Dir(s.indexPath), 0755)
 		tmpPath := s.indexPath + ".tmp"
 		if err := os.WriteFile(tmpPath, data, 0644); err == nil {
-			os.Rename(tmpPath, s.indexPath) // Atomic replacement
+			os.Rename(tmpPath, s.indexPath)
 		} else {
 			log.Printf("RAG Error: Failed to write temp index file: %v", err)
 		}
