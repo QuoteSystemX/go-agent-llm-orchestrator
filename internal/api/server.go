@@ -1743,12 +1743,24 @@ func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
 	userMsg := dto.DialogueMessage{Role: "user", Content: data.Message}
 	session.Context = append(session.Context, userMsg)
 	session.Status = "DIALOGUE"
+
+	// 1.1 Handle Slash Commands
+	if strings.HasPrefix(data.Message, "/") {
+		command := strings.ToLower(strings.TrimPrefix(data.Message, "/"))
+		validStages := []string{"discovery", "prd", "architecture", "stories", "sprint", "worker", "testing", "regression", "docs_update", "closure"}
+		for _, v := range validStages {
+			if command == v {
+				session.CurrentStage = command
+				break
+			}
+		}
+	}
+	
 	mgr.SaveSession(r.Context(), session)
 
 	// 2. Prepare prompt for LLM
 	// We use the internal router to generate a response
-	systemPrompt := "You are a Project Discovery Agent. Help the user define their project requirements.\n" +
-		"Use the provided code context from the repository to ask relevant questions and provide accurate technical feedback."
+	systemPrompt := s.analyzer.GetStagePrompt(session.CurrentStage)
 
 	// 2b. Add RAG Context if available
 	var ragContext string
@@ -1814,8 +1826,17 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fileStatus := s.analyzer.GetBMADFileStatus(repo)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(session)
+	json.NewEncoder(w).Encode(map[string]any{
+		"repo_name":     session.RepoName,
+		"context":       session.Context,
+		"current_stage": session.CurrentStage,
+		"llm_provider":  session.LLMProvider,
+		"status":        session.Status,
+		"file_status":   fileStatus,
+	})
 }
 
 func (s *AdminServer) handleDTOClearSession(w http.ResponseWriter, r *http.Request) {

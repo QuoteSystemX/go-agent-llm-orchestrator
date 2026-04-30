@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    initBMADClickHandlers();
     lucide.createIcons();
 
     // Position failure tooltips via fixed positioning to escape backdrop-filter stacking contexts.
@@ -1740,10 +1741,10 @@ async function loadDTOSession(repo) {
                 }
             });
         } else {
-            addChatMessage('assistant', `Hello! I'm ready to help with the **${session.current_stage || 'Discovery'}** stage for **${repo}**. What are our main goals for this project?`, false);
+            addChatMessage('assistant', `Hello! I am your **Orchestration Operator**. I'm ready to assist with the **${session.current_stage || 'Discovery'}** stage for **${repo}**. How should we proceed?`, false);
         }
 
-        updateBMADTracker(session.current_stage);
+        updateBMADTracker(session);
         
         // Show finalize button if session is ACTIVE
         finalizeContainer.style.display = 'block';
@@ -1838,6 +1839,22 @@ async function finalizeCurrentStage() {
     }
 }
 
+function initBMADClickHandlers() {
+    document.querySelectorAll('.bmad-stage').forEach(el => {
+        el.onclick = () => {
+            const stage = el.getAttribute('data-stage');
+            triggerStageCommand(stage);
+        };
+    });
+}
+
+function triggerStageCommand(stage) {
+    const input = document.getElementById('dto-chat-input');
+    if (!input) return;
+    input.value = `/${stage}`;
+    sendDTOMessage();
+}
+
 async function clearDTOSession() {
     const repo = document.getElementById('dto-repo-select').value;
     if (!repo || !confirm('Clear all dialogue history for this repository?')) return;
@@ -1852,19 +1869,37 @@ async function clearDTOSession() {
     }
 }
 
-function updateBMADTracker(activeStage) {
+function updateBMADTracker(session) {
+    const activeStage = session.current_stage || 'discovery';
+    const fileStatus = session.file_status || {};
     const stages = ['discovery', 'prd', 'architecture', 'stories', 'sprint', 'worker', 'testing', 'regression', 'docs_update', 'closure'];
+    const interactiveStages = ['discovery', 'prd', 'architecture', 'stories', 'sprint'];
+    
     const activeIdx = stages.indexOf(activeStage.toLowerCase());
     
     document.querySelectorAll('.bmad-stage').forEach(el => {
         const stage = el.getAttribute('data-stage');
         const idx = stages.indexOf(stage);
+        const isInteractive = interactiveStages.includes(stage);
+        const hasFile = fileStatus[stage];
         
-        el.classList.remove('active', 'completed');
-        if (idx < activeIdx) {
+        el.classList.remove('active', 'completed', 'non-interactive', 'locked');
+        
+        if (hasFile) {
             el.classList.add('completed');
-        } else if (idx === activeIdx) {
+        }
+        
+        if (stage === activeStage.toLowerCase()) {
             el.classList.add('active');
+        }
+
+        if (!isInteractive) {
+            el.classList.add('non-interactive');
+        } else {
+            // Interactive stage logic: cannot click future stages
+            if (idx > activeIdx) {
+                el.classList.add('locked');
+            }
         }
     });
 

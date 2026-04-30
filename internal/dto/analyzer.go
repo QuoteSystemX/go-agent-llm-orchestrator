@@ -254,6 +254,68 @@ func (a *Analyzer) GenerateDialogueResponse(ctx context.Context, classification 
 	return a.router.GenerateChat(ctx, classification, messages, "")
 }
 
+// GetStagePrompt returns the system prompt for a specific BMAD stage.
+func (a *Analyzer) GetStagePrompt(stage string) string {
+	rolePrefix := "You are the Orchestration Operator. Your goal is to assist the user in the "
+	roleSuffix := " phase using the provided repository context."
+
+	switch strings.ToLower(stage) {
+	case "discovery":
+		return rolePrefix + "Project Discovery (Discovery)" + roleSuffix + "\nHelp the user define their project requirements and goals."
+	case "prd":
+		return rolePrefix + "Product Requirements (PRD)" + roleSuffix + "\nFocus on user stories, functional requirements, and success criteria."
+	case "architecture":
+		return rolePrefix + "System Architecture" + roleSuffix + "\nDiscuss tech stack, data flow, and component relationships."
+	case "stories":
+		return rolePrefix + "Task Decomposition (Stories)" + roleSuffix + "\nHelp the user decompose requirements into atomic tasks."
+	case "sprint":
+		return rolePrefix + "Sprint Planning" + roleSuffix + "\nHelp the user plan the immediate development cycle."
+	case "worker":
+		return rolePrefix + "Implementation (Worker)" + roleSuffix + "\nDiscuss technical implementation details and code refinement."
+	case "testing":
+		return rolePrefix + "Quality Assurance (Testing)" + roleSuffix + "\nDefine a test plan and verify the implementation."
+	case "regression":
+		return rolePrefix + "Regression Testing" + roleSuffix + "\nEnsure stability and prevent regressions in existing features."
+	case "docs_update":
+		return rolePrefix + "Documentation Update" + roleSuffix + "\nReview and update project documentation (README, etc.)."
+	case "closure":
+		return rolePrefix + "Project Closure" + roleSuffix + "\nSummarize the cycle and perform a retrospective."
+	default:
+		return "You are the Orchestration Operator. Help the user with their current task."
+	}
+}
+
+// GetBMADFileStatus checks for the existence of wiki artifacts for each stage.
+func (a *Analyzer) GetBMADFileStatus(repoName string) map[string]bool {
+	repoBasePath := a.db.GetSetting("repo_base_path", "./data/repos")
+	repoPath := filepath.Join(repoBasePath, repoName)
+	wikiDir := filepath.Join(repoPath, "wiki")
+
+	status := make(map[string]bool)
+	mapping := map[string]string{
+		"discovery":    "BRIEF.md",
+		"prd":          "PRD.md",
+		"architecture": "ARCHITECTURE.md",
+		"stories":      "STORIES.md",
+		"sprint":       "SPRINT.md",
+		"worker":       "IMPLEMENTATION.md",
+		"testing":      "TEST_REPORT.md",
+		"regression":   "REGRESSION_REPORT.md",
+		"docs_update":  "CHANGELOG.md",
+		"closure":      "CLOSURE.md",
+	}
+
+	for stage, file := range mapping {
+		filePath := filepath.Join(wikiDir, file)
+		if _, err := os.Stat(filePath); err == nil {
+			status[stage] = true
+		} else {
+			status[stage] = false
+		}
+	}
+	return status
+}
+
 // FinalizeStage generates an artifact based on the dialogue session and pushes it to git.
 func (a *Analyzer) FinalizeStage(ctx context.Context, repoName string, stage string) error {
 	if a.sessionMgr == nil {
@@ -277,6 +339,15 @@ func (a *Analyzer) FinalizeStage(ctx context.Context, repoName string, stage str
 	case "architecture":
 		artifactName = "ARCHITECTURE.md"
 		artifactContent = a.generateArchFromSession(session)
+	case "stories":
+		artifactName = "STORIES.md"
+		artifactContent = a.generateStoriesFromSession(session)
+	case "sprint":
+		artifactName = "SPRINT.md"
+		artifactContent = a.generateSprintFromSession(session)
+	case "worker":
+		artifactName = "IMPLEMENTATION.md"
+		artifactContent = a.generateImplementationFromSession(session)
 	case "testing":
 		artifactName = "TEST_REPORT.md"
 		artifactContent = a.generateTestReportFromSession(session)
@@ -286,6 +357,9 @@ func (a *Analyzer) FinalizeStage(ctx context.Context, repoName string, stage str
 	case "docs_update":
 		artifactName = "CHANGELOG.md"
 		artifactContent = a.generateChangelogFromSession(session)
+	case "closure":
+		artifactName = "CLOSURE.md"
+		artifactContent = a.generateClosureFromSession(session)
 	default:
 		return fmt.Errorf("unsupported stage for finalization: %s", stage)
 	}
@@ -403,6 +477,22 @@ func (a *Analyzer) generateRegressionReportFromSession(s *DialogueSession) strin
 
 func (a *Analyzer) generateChangelogFromSession(s *DialogueSession) string {
 	return "# Changelog\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateStoriesFromSession(s *DialogueSession) string {
+	return "# User Stories & Tasks\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateSprintFromSession(s *DialogueSession) string {
+	return "# Sprint Plan\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateImplementationFromSession(s *DialogueSession) string {
+	return "# Implementation Notes\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateClosureFromSession(s *DialogueSession) string {
+	return "# Project Closure & Retro\n\n" + a.generateBriefFromSession(s)
 }
 
 type Proposal struct {
