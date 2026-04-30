@@ -104,9 +104,9 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 	}
 
 	// Update session status in DB
-	_, err = m.db.ExecContext(ctx, "UPDATE sessions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", event.Status, id)
-	if err != nil {
-		return fmt.Errorf("updating session: %w", err)
+	if _, err = m.db.ExecContext(ctx, "UPDATE sessions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", event.Status, id); err != nil {
+		log.Printf("Monitor: failed to update session %s status to %s: %v", id, event.Status, err)
+		return fmt.Errorf("updating session status: %w", err)
 	}
 
 	// Always sync session status to the parent task
@@ -122,7 +122,9 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 
 		// Update parent task status. last_session_id is a computed field (subquery
 		// from sessions table in the API layer) and must not be written here.
-		_, _ = m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_error = ? WHERE id = ?", event.Status, lastError, taskID)
+		if _, err := m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_error = ? WHERE id = ?", event.Status, lastError, taskID); err != nil {
+			log.Printf("Monitor: failed to update task %s status to %s: %v", taskID, event.Status, err)
+		}
 		
 		if m.notifyFunc != nil && event.Status != currentStatus {
 			m.notifyFunc(taskID, event.Status)

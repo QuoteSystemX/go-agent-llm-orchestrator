@@ -48,10 +48,14 @@ func (m *Manager) GetAllStats() []RAGStats {
 // ScrubAll triggers scrubbing for all managed repositories.
 func (m *Manager) ScrubAll(ctx context.Context) (int, error) {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	stores := make(map[string]*MemoryStore)
+	for k, v := range m.stores {
+		stores[k] = v
+	}
+	m.mu.RUnlock()
 
 	totalRemoved := 0
-	for repoID, store := range m.stores {
+	for repoID, store := range stores {
 		removed, err := store.Scrub(ctx)
 		if err != nil {
 			return totalRemoved, fmt.Errorf("scrub failed for %s: %w", repoID, err)
@@ -64,10 +68,14 @@ func (m *Manager) ScrubAll(ctx context.Context) (int, error) {
 // VerifyAll checks the health of all managed repositories.
 func (m *Manager) VerifyAll(ctx context.Context) map[string]error {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	stores := make(map[string]*MemoryStore)
+	for k, v := range m.stores {
+		stores[k] = v
+	}
+	m.mu.RUnlock()
 
 	results := make(map[string]error)
-	for repoID, store := range m.stores {
+	for repoID, store := range stores {
 		if err := store.Verify(ctx); err != nil {
 			results[repoID] = err
 		}

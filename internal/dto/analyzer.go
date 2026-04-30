@@ -426,7 +426,10 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 				a.updateState(repoName, "Indexing Files", filepath.Base(path), fileCount, -1)
 				// Remove stale chunks before reindexing so modified files don't
 				// leave orphaned chunks from the previous (longer) version.
-				_ = ragStore.RemoveDocumentsBySource(ctx, path)
+				if err := ragStore.RemoveDocumentsBySource(ctx, path); err != nil {
+					log.Printf("DTO [%s]: FAILED to remove stale chunks for %s: %v. Skipping reindexing to avoid duplicates.", repoName, path, err)
+					return nil
+				}
 				if err := a.indexFile(ctx, path, ragStore, category); err == nil {
 					ragStore.MarkIndexed(path, modTime)
 					fileCount++

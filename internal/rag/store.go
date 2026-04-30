@@ -105,8 +105,8 @@ func newOllamaEmbedFunc(modelName, baseURL string) chromem.EmbeddingFunc {
 
 // NewMemoryStore initializes a persistent chromem DB for a specific repository
 func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName string) *MemoryStore {
-	// sanitize repoID for filesystem
-	safeRepoID := strings.ReplaceAll(repoID, "/", "_")
+	// sanitize repoID for filesystem to prevent path traversal
+	safeRepoID := SanitizeID(repoID)
 	dbPath := filepath.Join(basePath, safeRepoID)
 	os.MkdirAll(dbPath, 0755)
 
@@ -443,4 +443,22 @@ func (s *MemoryStore) saveIndexLocked() {
 			log.Printf("RAG Error: Failed to write temp index file: %v", err)
 		}
 	}
+}
+// SanitizeID removes potentially dangerous characters from a repository ID
+// to prevent path traversal when used in file paths.
+func SanitizeID(id string) string {
+	// Replace any sequence of dots, slashes or backslashes with underscore
+	id = strings.ReplaceAll(id, "..", "_")
+	id = strings.ReplaceAll(id, "/", "_")
+	id = strings.ReplaceAll(id, "\\", "_")
+	// Keep only alphanumeric, underscore, and dash
+	var result strings.Builder
+	for _, r := range id {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+			result.WriteRune(r)
+		} else {
+			result.WriteRune('_')
+		}
+	}
+	return result.String()
 }

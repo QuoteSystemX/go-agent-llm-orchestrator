@@ -162,6 +162,9 @@ func InitDB(dbPath string) (*DB, error) {
 		alert_threshold REAL DEFAULT 0.8,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
+	CREATE TABLE IF NOT EXISTS schema_migrations (
+		version INTEGER PRIMARY KEY
+	);
 	CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 	`
 	if _, err := main.Exec(mainSchema); err != nil {
@@ -169,18 +172,15 @@ func InitDB(dbPath string) (*DB, error) {
 	}
 
 	// Runtime migrations for existing databases
-	migrations := []string{
+	if err := runMigrations(main, []string{
 		"ALTER TABLE tasks ADD COLUMN auto_paused INTEGER DEFAULT 0",
 		"ALTER TABLE tasks ADD COLUMN importance INTEGER DEFAULT 1",
 		"ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'worker'",
 		"ALTER TABLE tasks ADD COLUMN last_error TEXT",
 		"ALTER TABLE tasks ADD COLUMN max_retries INTEGER DEFAULT 3",
 		"ALTER TABLE tasks ADD COLUMN current_retry INTEGER DEFAULT 0",
-	}
-	for _, m := range migrations {
-		if _, err := main.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
-			log.Printf("db migration skipped (%s): %v", m, err)
-		}
+	}); err != nil {
+		log.Printf("Main DB migrations failed: %v", err)
 	}
 
 	// Initialize History Schema
@@ -232,21 +232,58 @@ func InitDB(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("init history schema: %w", err)
 	}
 
-	historyMigrations := []string{
+	// History DB migrations
+	if _, err := history.Exec("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)"); err != nil {
+		return nil, fmt.Errorf("init history migrations table: %w", err)
+	}
+
+	if err := runMigrations(history, []string{
 		"ALTER TABLE task_logs ADD COLUMN jules_session_id TEXT",
 		"ALTER TABLE task_logs ADD COLUMN prompt_tokens INTEGER DEFAULT 0",
 		"ALTER TABLE task_logs ADD COLUMN completion_tokens INTEGER DEFAULT 0",
 		"ALTER TABLE task_logs ADD COLUMN total_tokens INTEGER DEFAULT 0",
 		"ALTER TABLE task_logs ADD COLUMN cost_usd REAL DEFAULT 0.0",
-	}
-	for _, m := range historyMigrations {
-		if _, err := history.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
-			log.Printf("history db migration skipped (%s): %v", m, err)
-		}
+	}); err != nil {
+		log.Printf("History DB migrations failed: %v", err)
 	}
 
 	log.Printf("Databases initialized: main and history")
 	return &DB{main: main, history: history}, nil
+}
+
+func runMigrations(db *sql.DB, queries []string) error {
+	for i, q := range queries {
+		version := i + 1
+		var exists int
+		err := db.QueryRow("SELECT COUNT(*) FROM schema_migrations WHERE version = ?", version).Scan(&exists)
+		if err == nil && exists > 0 {
+			continue
+		}
+
+		log.Printf("Applying migration version %d: %s", version, q)
+		tx, err := db.Begin()
+		if err != nil {
+			return err
+		}
+
+		if _, err := tx.Exec(q); err != nil {
+			// If it's a duplicate column error, we still mark it as migrated
+			if !strings.Contains(err.Error(), "duplicate column") {
+				tx.Rollback()
+				return fmt.Errorf("migration %d failed: %w", version, err)
+			}
+		}
+
+		if _, err := tx.Exec("INSERT INTO schema_migrations (version) VALUES (?)", version); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to record migration %d: %w", version, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Close closes both database connections
