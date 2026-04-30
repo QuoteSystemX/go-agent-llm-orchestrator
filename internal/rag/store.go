@@ -242,6 +242,10 @@ func (s *MemoryStore) SearchFiltered(ctx context.Context, query string, topK int
 		where = map[string]string{"category": category}
 	}
 
+	if s.collection.Count() == 0 {
+		return nil
+	}
+
 	results, err := s.collection.Query(ctx, query, topK, where, nil)
 	if err != nil {
 		log.Printf("RAG Error: query failed (category=%q): %v", category, err)

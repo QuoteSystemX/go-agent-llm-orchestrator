@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -197,6 +198,8 @@ func (c *JulesClient) StartSession(ctx context.Context, req SessionRequest) (*Se
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("Jules API Error (Status %d): %s", resp.StatusCode, string(respBody))
 		return nil, data, fmt.Errorf("unexpected status: %d", resp.StatusCode)
 	}
 
