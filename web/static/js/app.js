@@ -361,11 +361,11 @@ function renderTasks() {
                         <span class="service-badge bmad-partial" title="Partial BMAD. Missing: ${missingPatterns.join(', ')}">
                             <i data-lucide="shield-alert" style="width:12px"></i> BMAD
                         </span>
-                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(missingPatterns)})" title="Install missing BMAD tasks: ${missingPatterns.join(', ')}">
+                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName)}, ${JSON.stringify(missingPatterns)})" title="Install missing BMAD tasks: ${missingPatterns.join(', ')}">
                             <i data-lucide="plus-circle" style="width:11px"></i> Add missing
                         </button>
                     ` : `
-                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(servicePatterns)})" title="Install BMAD maintenance tasks (Closer & Wiki Architect)">
+                        <button class="btn-install-bmad" onclick="event.stopPropagation(); installBMAD(event, ${JSON.stringify(projectName)}, ${JSON.stringify(servicePatterns)})" title="Install BMAD maintenance tasks (Closer & Wiki Architect)">
                             <i data-lucide="shield-plus" style="width:11px"></i> Install BMAD
                         </button>
                     `}
@@ -736,12 +736,15 @@ async function approveDraft(id) {
 }
 
 const BMAD_SUITE = [
-    { pattern: 'wiki_architect', agent: 'wiki-architect', schedule: '0 11 * * *',  importance: 7, category: 'service', mission: 'Review codebase and maintain wiki/ directory following Karpathy method. Detect wiki-code drift.' },
-    { pattern: 'sprint_closer',  agent: 'analyst',       schedule: '50 23 * * *', importance: 7, category: 'service', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts' },
+    { pattern: 'sprint_closer', agent: 'orchestrator', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts', schedule: '50 23 * * *', importance: 7, category: 'service' },
+    { pattern: 'wiki_architect', agent: 'orchestrator', mission: '/wiki maintain wiki/ directory following Karpathy method. Detect wiki-code drift.', schedule: '0 11 * * *', importance: 7, category: 'service' }
 ];
 
 async function installBMAD(event, repoName, patternsToInstall) {
-    event.stopPropagation();
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
     const count = patternsToInstall.length;
     const label = count === 2 ? 'full BMAD suite (2 maintenance tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
