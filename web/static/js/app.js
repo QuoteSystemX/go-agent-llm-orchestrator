@@ -2825,9 +2825,18 @@ async function fetchRAGStats() {
                     </div>
                     <div class="rag-metric-item">
                         <span class="rag-metric-label">Files</span>
-                        <span class="rag-metric-value">${s.files_indexed.toLocaleString()}</span>
+                        <span class="rag-metric-value">
+                            ${s.files_indexed.toLocaleString()}
+                            ${s.total_files > 0 ? `<span class="metric-total">/ ${s.total_files.toLocaleString()}</span>` : ''}
+                        </span>
                     </div>
                 </div>
+
+                ${s.total_files > 0 ? `
+                <div class="rag-progress-container" title="${Math.round((s.files_indexed / s.total_files) * 100)}% Indexed">
+                    <div class="rag-progress-bar" style="width: ${Math.min(100, (s.files_indexed / s.total_files) * 100)}%"></div>
+                </div>
+                ` : ''}
 
                 <div class="rag-actions">
                     <button class="btn-primary" onclick="runRAGAction('scrub', '${s.repo_id}')" title="Remove chunks for deleted files">
