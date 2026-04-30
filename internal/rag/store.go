@@ -153,6 +153,11 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 		os.Remove(indexPath)
 	}
 
+	displayStatus := status
+	if displayStatus == "ok" && len(indexed) == 0 {
+		displayStatus = "initial"
+	}
+
 	return &MemoryStore{
 		db:          db,
 		collection:  collection,
@@ -162,7 +167,7 @@ func NewMemoryStore(basePath string, repoID string, ollamaUrl string, modelName 
 		repoID:      repoID,
 		ollamaUrl:   ollamaUrl,
 		modelName:   modelName,
-		status:      status,
+		status:      displayStatus,
 		storageMode: storageMode,
 	}
 }
@@ -305,7 +310,7 @@ func (s *MemoryStore) Recover(ctx context.Context) error {
 
 	s.db = db
 	s.collection = collection
-	s.status = "ok"
+	s.status = "initial"
 	s.storageMode = "persistent"
 
 	log.Printf("RAG Recovery [%s]: Store reset and re-initialized successfully.", s.repoID)
@@ -397,6 +402,11 @@ func (s *MemoryStore) GetStats() RAGStats {
 		chunkCount = s.collection.Count()
 	}
 
+	status := s.status
+	if status == "ok" && len(s.indexed) == 0 {
+		status = "initial"
+	}
+
 	return RAGStats{
 		RepoID:         s.repoID,
 		FilesIndexed:   len(s.indexed),
@@ -406,7 +416,7 @@ func (s *MemoryStore) GetStats() RAGStats {
 		OllamaEndpoint: s.ollamaUrl,
 		EmbeddingModel: s.modelName,
 		StorageMode:    s.storageMode,
-		Status:         s.status,
+		Status:         status,
 	}
 }
 
@@ -429,6 +439,10 @@ func (s *MemoryStore) MarkIndexed(source string, modTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.indexed[source] = modTime
+	if s.status == "initial" {
+		s.status = "ok"
+	}
+	s.saveIndexLocked()
 }
 
 // SaveIndex saves the indexing state to disk safely

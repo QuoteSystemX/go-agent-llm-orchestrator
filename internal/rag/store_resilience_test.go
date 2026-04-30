@@ -27,8 +27,8 @@ func TestMemoryStore_Resilience(t *testing.T) {
 		t.Fatal("failed to create store")
 	}
 	stats := store.GetStats()
-	if stats.Status != "ok" {
-		t.Errorf("expected status ok, got %s", stats.Status)
+	if stats.Status != "initial" {
+		t.Errorf("expected status initial, got %s", stats.Status)
 	}
 	if stats.StorageMode != "persistent" {
 		t.Errorf("expected mode persistent, got %s", stats.StorageMode)
@@ -52,8 +52,8 @@ func TestMemoryStore_Resilience(t *testing.T) {
 	}
 
 	stats = store.GetStats()
-	if stats.Status != "ok" {
-		t.Errorf("expected status ok after recovery, got %s", stats.Status)
+	if stats.Status != "initial" {
+		t.Errorf("expected status initial after recovery, got %s", stats.Status)
 	}
 	if stats.StorageMode != "persistent" {
 		t.Errorf("expected mode persistent after recovery, got %s", stats.StorageMode)

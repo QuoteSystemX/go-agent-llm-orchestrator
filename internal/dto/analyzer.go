@@ -111,7 +111,21 @@ func (a *Analyzer) RecoverRepo(ctx context.Context, repoID string) error {
 	if store == nil {
 		return fmt.Errorf("failed to initialize RAG store for %s", repoID)
 	}
-	return store.Recover(ctx)
+	
+	if err := store.Recover(ctx); err != nil {
+		return err
+	}
+
+	// Trigger background analysis to repopulate the RAG store
+	go func() {
+		log.Printf("Analyzer: Triggering background re-analysis for %s after recovery", repoID)
+		_, err := a.AnalyzeRepo(context.Background(), repoID, true)
+		if err != nil {
+			log.Printf("Analyzer: Background re-analysis failed for %s: %v", repoID, err)
+		}
+	}()
+
+	return nil
 }
 
 func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total int) {

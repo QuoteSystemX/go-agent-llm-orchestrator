@@ -298,6 +298,10 @@ function renderTasks() {
             if (status === 'corrupted') {
                 icon = 'alert-octagon';
                 color = '#ef4444'; // Red
+            } else if (status === 'initial') {
+                icon = 'loader';
+                color = '#3b82f6'; // Blue
+                title = `RAG: Initializing / Empty (Awaiting Analysis)`;
             } else if (mode === 'memory') {
                 icon = 'zap';
                 color = '#eab308'; // Yellow
