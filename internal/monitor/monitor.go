@@ -120,8 +120,9 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 			}
 		}
 
-		// Update parent task with latest session info
-		_, _ = m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_session_id = ?, last_error = ? WHERE id = ?", event.Status, event.SessionID, lastError, taskID)
+		// Update parent task status. last_session_id is a computed field (subquery
+		// from sessions table in the API layer) and must not be written here.
+		_, _ = m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_error = ? WHERE id = ?", event.Status, lastError, taskID)
 		
 		if m.notifyFunc != nil && event.Status != currentStatus {
 			m.notifyFunc(taskID, event.Status)
