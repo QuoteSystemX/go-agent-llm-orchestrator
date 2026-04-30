@@ -543,7 +543,9 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 	case "pause":
 		// Protect service tasks from manual pause
 		var pattern string
-		s.db.QueryRowContext(r.Context(), "SELECT pattern FROM tasks WHERE id = ?", taskID).Scan(&pattern)
+		if err := s.db.QueryRowContext(r.Context(), "SELECT pattern FROM tasks WHERE id = ?", taskID).Scan(&pattern); err != nil {
+			log.Printf("pauseTask: failed to look up pattern for task %s: %v", taskID, err)
+		}
 		servicePatterns := []string{"discovery", "story_writer", "sprint_planner", "full_cycle", "sprint_closer"}
 		for _, p := range servicePatterns {
 			if p == pattern {
@@ -552,11 +554,17 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 			}
 		}
 
-		s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID)
+		if _, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PAUSED' WHERE id = ?", taskID); err != nil {
+			http.Error(w, "failed to pause task: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 		s.scheduler.NotifyTaskChange(taskID)
 		w.WriteHeader(http.StatusNoContent)
 	case "resume":
-		s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID)
+		if _, err := s.db.ExecContext(r.Context(), "UPDATE tasks SET status = 'PENDING' WHERE id = ?", taskID); err != nil {
+			http.Error(w, "failed to resume task: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 		s.scheduler.NotifyTaskChange(taskID)
 		w.WriteHeader(http.StatusNoContent)
 	default:

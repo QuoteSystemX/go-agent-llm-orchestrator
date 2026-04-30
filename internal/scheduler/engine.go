@@ -305,8 +305,10 @@ func (e *Engine) updateTaskStatus(ctx context.Context, taskID, status string, ex
 	allArgs := append([]interface{}{status}, args...)
 	allArgs = append(allArgs, taskID)
 	
-	e.db.ExecContext(ctx, query, allArgs...)
-	
+	if _, err := e.db.ExecContext(ctx, query, allArgs...); err != nil {
+		log.Printf("updateTaskStatus: failed to set task %s to %s: %v", taskID, status, err)
+	}
+
 	if e.onTaskUpdate != nil {
 		e.onTaskUpdate(taskID, status)
 	}
@@ -455,7 +457,9 @@ func (e *Engine) runTask(taskID string) {
 
 		err = e.tm.Execute(ctx, taskID, traffic.PriorityHigh, importance, category, func() error {
 			if logID > 0 {
-				e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID)
+				if _, err := e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID); err != nil {
+					log.Printf("task_log %d: failed to set PROMPTING: %v", logID, err)
+				}
 			}
 
 			// Build the full Jules prompt
@@ -476,7 +480,9 @@ func (e *Engine) runTask(taskID string) {
 				}
 
 				if logID > 0 {
-					e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID)
+					if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID); dbErr != nil {
+						log.Printf("task_log %d: failed to set FAILED: %v", logID, dbErr)
+					}
 				}
 				return fmt.Errorf("prompt building failed, task %s: %w", taskID, err)
 			}
@@ -503,9 +509,14 @@ func (e *Engine) runTask(taskID string) {
 				Title:          fmt.Sprintf("[%s] %s for %s (Attempt %d)", effectiveAgent, mission, repoName, currentRetry+1),
 			}
 
-			reqJSON, _ := json.Marshal(req)
+			reqJSON, jsonErr := json.Marshal(req)
+			if jsonErr != nil {
+				log.Printf("Task %s: failed to marshal request for logging: %v", taskID, jsonErr)
+			}
 			if logID > 0 {
-				e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID)
+				if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID); dbErr != nil {
+					log.Printf("task_log %d: failed to write input_data: %v", logID, dbErr)
+				}
 			}
 
 			log.Printf("Task %s: Sending request to Jules API...", taskID)
@@ -525,7 +536,9 @@ func (e *Engine) runTask(taskID string) {
 
 			log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
 			if logID > 0 {
-				e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID)
+				if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID); dbErr != nil {
+					log.Printf("task_log %d: failed to write session_id/output: %v", logID, dbErr)
+				}
 			}
 
 			_, sessErr := e.db.ExecContext(ctx,
@@ -591,12 +604,14 @@ func (e *Engine) runTask(taskID string) {
 	}
 
 	if logID > 0 {
-		e.db.ExecContext(ctx, `
-			UPDATE task_logs 
+		if _, dbErr := e.db.ExecContext(ctx, `
+			UPDATE task_logs
 			SET status = ?, error = ?, duration_ms = ?
 			WHERE id = ?
-		`, execStatus, execError, duration.Milliseconds(), logID)
-		
+		`, execStatus, execError, duration.Milliseconds(), logID); dbErr != nil {
+			log.Printf("task_log %d: failed to write final status %s: %v", logID, execStatus, dbErr)
+		}
+
 		if e.onActivityUpdate != nil {
 			e.onActivityUpdate()
 		}
