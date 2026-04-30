@@ -213,9 +213,19 @@
                             <i data-lucide="brain" style="color:var(--primary)"></i>
                             <h3>Dynamic Task Orchestration</h3>
                         </div>
-                        <button class="btn-primary btn-sm" onclick="showTemplateModal()">
-                            <i data-lucide="file-code"></i> Edit Templates
-                        </button>
+                        <div class="dto-header-actions">
+                            <div class="repo-picker-compact">
+                                <select id="dto-repo-select" class="glass">
+                                    <option value="">Select Repository...</option>
+                                </select>
+                                <button class="btn-primary btn-sm" onclick="runAnalysis()" id="btn-run-analysis">
+                                    <i data-lucide="search"></i> Analyze
+                                </button>
+                            </div>
+                            <button class="btn-ghost btn-sm" onclick="showTemplateModal()" title="Edit Templates">
+                                <i data-lucide="file-code"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="dto-bmad-tracker glass">
                         <div class="bmad-stages">
@@ -272,18 +282,6 @@
                     <div class="dto-info-card glass">
                         <h4>Repository Analysis</h4>
                         <p>DTO analyzes your repository state (wiki, readme, tasks) and proposes tasks based on BMAD methodology.</p>
-                        
-                        <div class="form-row" style="margin-bottom: 1rem; align-items: flex-end;">
-                            <div class="form-group">
-                                <label>Select Repository</label>
-                                <select id="dto-repo-select" class="glass">
-                                    <!-- Repositories injected here -->
-                                </select>
-                            </div>
-                            <button class="btn-primary" onclick="runAnalysis()" id="btn-run-analysis">
-                                <i data-lucide="search"></i> Analyze Repository
-                            </button>
-                        </div>
 
                         <div class="dto-status">
                             <span id="dto-system-status" class="status-badge active">System Ready</span>

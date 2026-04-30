@@ -1487,6 +1487,39 @@ body { padding-bottom: 40px; }
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--glass-border);
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dto-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.repo-picker-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--glass-border);
+}
+
+.repo-picker-compact select {
+    background: transparent;
+    border: none;
+    color: var(--text-bright);
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    min-width: 240px;
+    outline: none;
+}
+
+.repo-picker-compact select option {
+    background: var(--card-bg);
+    color: var(--text-bright);
 }
 
 .dto-title {
