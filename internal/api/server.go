@@ -1748,7 +1748,20 @@ func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
 	// 2. Prepare prompt for LLM
 	// We use the internal router to generate a response
 	systemPrompt := "You are a Project Discovery Agent. Help the user define their project requirements.\n" +
-		"Use the provided context about the repository to ask relevant questions."
+		"Use the provided code context from the repository to ask relevant questions and provide accurate technical feedback."
+
+	// 2b. Add RAG Context if available
+	var ragContext string
+	if ragStore := s.analyzer.GetRagStore(data.Repo); ragStore != nil {
+		results := ragStore.SearchFiltered(r.Context(), data.Message, 5, "")
+		if len(results) > 0 {
+			ragContext = "\n\nRelevant Code Context for the current query:\n---\n"
+			for _, doc := range results {
+				ragContext += fmt.Sprintf("File: %s\nContent: %s\n---\n", doc.Source, doc.Content)
+			}
+			systemPrompt += ragContext
+		}
+	}
 	
 	// Convert session context to LLM messages
 	llmMessages := []map[string]string{

@@ -74,7 +74,7 @@ func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb
 }
 
 
-func (a *Analyzer) getRagStore(repoID string) *rag.MemoryStore {
+func (a *Analyzer) GetRagStore(repoID string) *rag.MemoryStore {
 	if s := a.ragManager.GetStore(repoID); s != nil {
 		return s
 	}
@@ -112,13 +112,13 @@ func (a *Analyzer) DiscoverExistingStores(ctx context.Context) {
 		// We use getRagStore to initialize and register it.
 		if _, err := os.Stat(dbPath); err == nil {
 			log.Printf("Analyzer: Auto-discovered existing RAG index for %s", repoID)
-			a.getRagStore(repoID)
+			a.GetRagStore(repoID)
 		}
 	}
 }
 
 func (a *Analyzer) RecoverRepo(ctx context.Context, repoID string) error {
-	store := a.getRagStore(repoID)
+	store := a.GetRagStore(repoID)
 	if store == nil {
 		return fmt.Errorf("failed to initialize RAG store for %s", repoID)
 	}
@@ -551,7 +551,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	}
 
 	fileCount := 0
-	ragStore := a.getRagStore(repoName)
+	ragStore := a.GetRagStore(repoName)
 	batchSizeStr := a.db.GetSetting("dto_batch_size", "500")
 	maxFiles := 500
 	fmt.Sscanf(batchSizeStr, "%d", &maxFiles)
@@ -1024,7 +1024,7 @@ func (a *Analyzer) SearchContext(ctx context.Context, repoName, query string, to
 
 // SearchContextFull queries the RAG store and returns both content and sources.
 func (a *Analyzer) SearchContextFull(ctx context.Context, repoName, query string, topK int, category string) SearchResult {
-	ragStore := a.getRagStore(repoName)
+	ragStore := a.GetRagStore(repoName)
 	log.Printf("DTO [%s]: Querying RAG (category=%q) for top %d chunks: '%s'", repoName, category, topK, query)
 	docs := ragStore.SearchFiltered(ctx, query, topK, category)
 	log.Printf("DTO [%s]: RAG found %d chunks (category=%q)", repoName, len(docs), category)

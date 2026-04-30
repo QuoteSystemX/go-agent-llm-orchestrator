@@ -25,11 +25,11 @@ func TestAnalyzer_IndexFile_UTF8(t *testing.T) {
 	os.WriteFile(tmpFile, []byte(content), 0644)
 	
 	ctx := context.Background()
-	store := a.getRagStore("test-repo")
+	store := a.GetRagStore("test-repo")
 	a.indexFile(ctx, tmpFile, store, "code")
 	
 	// Check chunks in ragStore
-	docs := a.getRagStore("test-repo").Search(ctx, "Я", 10)
+	docs := a.GetRagStore("test-repo").Search(ctx, "Я", 10)
 	if len(docs) == 0 {
 		t.Skip("skipping test: expected to find chunk with 'Я' but RAG returned 0 results (likely due to Ollama not running)")
 	}

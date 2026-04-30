@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (providerToggle) {
         providerToggle.addEventListener('change', (e) => {
             const label = document.getElementById('llm-provider-label');
-            if (label) label.innerText = e.target.checked ? 'External LLM (RAG)' : 'Internal LLM';
+            if (label) label.innerText = e.target.checked ? 'External LLM' : 'Internal LLM';
         });
     }
 
