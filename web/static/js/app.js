@@ -2366,7 +2366,7 @@ function renderActivityLogs() {
                         <div class="timeline-repo">${log.repo_name || log.repo || 'System'}</div>
                         <div class="timeline-time">${new Date(log.executed_at || log.created_at).toLocaleString()}</div>
                     </div>
-                    <div class="timeline-body">${log.pattern}: ${log.mission}</div>
+                    <div class="timeline-body">${log.pattern ? `<strong>${log.pattern}</strong>: ` : ''}${log.mission || 'No description'}</div>
                     <div class="timeline-status ${colorClass}">
                         ${statusLabel} • ${log.agent}
                         <button class="btn-secondary btn-sm" style="margin-left:auto; padding: 0.1rem 0.5rem; font-size: 0.65rem" onclick="toggleLogDetails(${log.id}, event)">

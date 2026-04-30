@@ -1382,7 +1382,7 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	}
 
 	// 1. Fetch all tasks to a map for joining in Go (cross-DB JOIN not possible)
-	taskRows, err := s.db.Main().QueryContext(r.Context(), "SELECT id, name, agent, mission FROM tasks")
+	taskRows, err := s.db.Main().QueryContext(r.Context(), "SELECT id, name, agent, mission, pattern FROM tasks")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1392,15 +1392,17 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 		Name    string
 		Agent   string
 		Mission string
+		Pattern string
 	})
 	for taskRows.Next() {
-		var id, name, agent, mission string
-		if err := taskRows.Scan(&id, &name, &agent, &mission); err == nil {
+		var id, name, agent, mission, pattern string
+		if err := taskRows.Scan(&id, &name, &agent, &mission, &pattern); err == nil {
 			taskMap[id] = struct {
 				Name    string
 				Agent   string
 				Mission string
-			}{name, agent, mission}
+				Pattern string
+			}{name, agent, mission, pattern}
 		}
 	}
 
@@ -1440,6 +1442,7 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 			"repo_name":    tInfo.Name,
 			"agent":        tInfo.Agent,
 			"mission":      tInfo.Mission,
+			"pattern":      tInfo.Pattern,
 		})
 	}
 

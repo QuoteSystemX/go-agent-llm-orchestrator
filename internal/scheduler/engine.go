@@ -427,12 +427,14 @@ func (e *Engine) runTask(taskID string) {
 	var execError string
 	execStatus := "SUCCESS"
 
-	res, logErr := e.db.ExecContext(ctx, `
+	res, logErr := e.db.History().ExecContext(ctx, `
 		INSERT INTO task_logs (task_id, status, duration_ms)
 		VALUES (?, ?, ?)
 	`, taskID, "TRIGGERED", 0)
 	if logErr == nil {
 		logID, _ = res.LastInsertId()
+	} else {
+		log.Printf("Task %s: FAILED to insert log entry into history DB: %v", taskID, logErr)
 	}
 
 	var lastVerificationError string
@@ -457,7 +459,7 @@ func (e *Engine) runTask(taskID string) {
 
 		err = e.tm.Execute(ctx, taskID, traffic.PriorityHigh, importance, category, func() error {
 			if logID > 0 {
-				if _, err := e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID); err != nil {
+				if _, err := e.db.History().ExecContext(ctx, "UPDATE task_logs SET status = 'PROMPTING' WHERE id = ?", logID); err != nil {
 					log.Printf("task_log %d: failed to set PROMPTING: %v", logID, err)
 				}
 			}
@@ -480,7 +482,7 @@ func (e *Engine) runTask(taskID string) {
 				}
 
 				if logID > 0 {
-					if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID); dbErr != nil {
+					if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET status = 'FAILED', error = ? WHERE id = ?", err.Error(), logID); dbErr != nil {
 						log.Printf("task_log %d: failed to set FAILED: %v", logID, dbErr)
 					}
 				}
@@ -514,7 +516,7 @@ func (e *Engine) runTask(taskID string) {
 				log.Printf("Task %s: failed to marshal request for logging: %v", taskID, jsonErr)
 			}
 			if logID > 0 {
-				if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID); dbErr != nil {
+				if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID); dbErr != nil {
 					log.Printf("task_log %d: failed to write input_data: %v", logID, dbErr)
 				}
 			}
@@ -536,7 +538,7 @@ func (e *Engine) runTask(taskID string) {
 
 			log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
 			if logID > 0 {
-				if _, dbErr := e.db.ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID); dbErr != nil {
+				if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID); dbErr != nil {
 					log.Printf("task_log %d: failed to write session_id/output: %v", logID, dbErr)
 				}
 			}
@@ -604,7 +606,7 @@ func (e *Engine) runTask(taskID string) {
 	}
 
 	if logID > 0 {
-		if _, dbErr := e.db.ExecContext(ctx, `
+		if _, dbErr := e.db.History().ExecContext(ctx, `
 			UPDATE task_logs
 			SET status = ?, error = ?, duration_ms = ?
 			WHERE id = ?
