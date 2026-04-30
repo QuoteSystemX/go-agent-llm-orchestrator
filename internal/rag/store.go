@@ -275,18 +275,25 @@ func (s *MemoryStore) Recover(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf("RAG Recovery [%s]: Attempting to recover from %s state...", s.repoID, s.status)
+	log.Printf("RAG Recovery [%s]: Attempting to recover from %s state... (Storage: %s)", s.repoID, s.status, s.dbPath)
 
 	// 1. Wipe local data
 	s.resetLocked(ctx)
 	if s.dbPath != "" {
-		os.RemoveAll(s.dbPath)
+		if err := os.RemoveAll(s.dbPath); err != nil {
+			log.Printf("RAG Recovery [%s] Error: failed to remove DB dir %s: %v", s.repoID, s.dbPath, err)
+			return fmt.Errorf("failed to clear corrupted data: %w", err)
+		}
 	}
 
 	// 2. Re-initialize
-	os.MkdirAll(s.dbPath, 0755)
+	if err := os.MkdirAll(s.dbPath, 0755); err != nil {
+		return fmt.Errorf("recovery failed to create directory: %w", err)
+	}
+	
 	db, err := chromem.NewPersistentDB(s.dbPath, false)
 	if err != nil {
+		log.Printf("RAG Recovery [%s] Error: failed to create new DB: %v", s.repoID, err)
 		return fmt.Errorf("recovery failed to create new DB: %w", err)
 	}
 

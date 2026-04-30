@@ -1714,7 +1714,9 @@ func (s *AdminServer) handleRAGAction(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "missing repo_id", http.StatusBadRequest)
 			return
 		}
-		if err := mgr.RecoverRepo(r.Context(), data.RepoID); err != nil {
+		// Use analyzer to recover, as it can auto-initialize the store if needed
+		if err := s.analyzer.RecoverRepo(r.Context(), data.RepoID); err != nil {
+			log.Printf("API: RAG recovery failed for %s: %v", data.RepoID, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

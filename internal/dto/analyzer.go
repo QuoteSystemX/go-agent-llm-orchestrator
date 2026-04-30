@@ -93,7 +93,8 @@ func (a *Analyzer) DiscoverExistingStores(ctx context.Context) {
 	basePath := filepath.Join(a.db.GetSetting("repo_base_path", "./data/repos"), "../chromem_db")
 	
 	for _, repoID := range repos {
-		safeID := strings.ReplaceAll(repoID, "/", "_")
+		// Use the same sanitization as NewMemoryStore
+		safeID := rag.SanitizeID(repoID)
 		dbPath := filepath.Join(basePath, safeID)
 		
 		// If the directory exists, it likely has an index.
@@ -103,6 +104,14 @@ func (a *Analyzer) DiscoverExistingStores(ctx context.Context) {
 			a.getRagStore(repoID)
 		}
 	}
+}
+
+func (a *Analyzer) RecoverRepo(ctx context.Context, repoID string) error {
+	store := a.getRagStore(repoID)
+	if store == nil {
+		return fmt.Errorf("failed to initialize RAG store for %s", repoID)
+	}
+	return store.Recover(ctx)
 }
 
 func (a *Analyzer) updateState(repoName, phase, file string, indexed int, total int) {
