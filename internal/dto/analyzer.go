@@ -559,6 +559,12 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 	maxFileSize := int64(100 * 1024) // 100 KB
 
 	// Capture how many files are already in the persistent index before this run.
+	// Scrub first to remove stale entries from deleted files or other branches.
+	log.Printf("DTO [%s]: Scrubbing RAG index...", repoName)
+	if _, err := ragStore.Scrub(ctx); err != nil {
+		log.Printf("DTO [%s]: Scrub failed: %v", repoName, err)
+	}
+
 	alreadyIndexed := ragStore.IndexedCount()
 	a.stateMutex.Lock()
 	if s, ok := a.state[repoName]; ok {

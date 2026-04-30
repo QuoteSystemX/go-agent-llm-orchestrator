@@ -1900,14 +1900,8 @@ function updateAnalysisProgress(status) {
                          </div>`;
             }
             if (status.files_indexed >= 0) {
-                let progressText = `${status.files_indexed}`;
-                if (status.already_indexed > 0 || status.total_files > 0) {
-                    progressText += ` / ${status.already_indexed || 0}`;
-                }
-                if (status.total_files > 0) {
-                    progressText += ` / ${status.total_files}`;
-                }
-                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem" title="current session / already indexed / total files">
+                let progressText = `${status.files_indexed} / ${status.already_indexed || 0} / ${status.total_files || 0}`;
+                html += `<div style="font-size:0.8rem; color:var(--text-muted); margin-left:1.5rem" title="New indexed / Already in index / Total files on disk">
                             <i data-lucide="database" style="width:12px;height:12px;margin-right:2px"></i> ${progressText} files
                          </div>`;
             }
@@ -1936,6 +1930,11 @@ function updateAnalysisProgress(status) {
             badge.innerText = 'System Ready';
         }
         lucide.createIcons();
+        
+        // Refresh repository list to update RAG badges and prompt status
+        if (typeof loadTasks === 'function') {
+            loadTasks();
+        }
     }
 }
 
