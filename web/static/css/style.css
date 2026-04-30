@@ -1474,6 +1474,12 @@ body { padding-bottom: 40px; }
 }
 
 /* DTO Tab */
+.dto-section {
+    padding: 2rem;
+    height: 100%;
+    overflow-y: auto;
+}
+
 .dto-header {
     display: flex;
     justify-content: space-between;
@@ -1494,7 +1500,7 @@ body { padding-bottom: 40px; }
     font-weight: 600;
 }
 .dto-bmad-tracker {
-    margin: 0 1.5rem 1.5rem 1.5rem;
+    margin-bottom: 1.5rem;
     padding: 1rem;
     border-radius: 0.75rem;
 }
@@ -2126,7 +2132,7 @@ body { padding-bottom: 40px; }
     overflow: hidden;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
-    margin: 0 1.5rem 1.5rem 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .dto-interactive-panel .panel-header {

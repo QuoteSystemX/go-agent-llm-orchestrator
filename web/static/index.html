@@ -239,7 +239,6 @@
                             </button>
                         </div>
                     </div>
-                    </div>
 
                     <!-- Interactive Dialogue Panel (Moved here) -->
                     <div id="dto-interactive-panel" class="dto-interactive-panel glass" style="display:none;">
@@ -270,41 +269,39 @@
                         </div>
                     </div>
 
-                    <div class="dto-content">
-                        <div class="dto-info-card glass">
-                            <h4>Repository Analysis</h4>
-                            <p>DTO analyzes your repository state (wiki, readme, tasks) and proposes tasks based on BMAD methodology.</p>
-                            
-                            <div class="form-row" style="margin-bottom: 1rem; align-items: flex-end;">
-                                <div class="form-group">
-                                    <label>Select Repository</label>
-                                    <select id="dto-repo-select" class="glass">
-                                        <!-- Repositories injected here -->
-                                    </select>
-                                </div>
-                                <button class="btn-primary" onclick="runAnalysis()" id="btn-run-analysis">
-                                    <i data-lucide="search"></i> Analyze Repository
-                                </button>
+                    <div class="dto-info-card glass">
+                        <h4>Repository Analysis</h4>
+                        <p>DTO analyzes your repository state (wiki, readme, tasks) and proposes tasks based on BMAD methodology.</p>
+                        
+                        <div class="form-row" style="margin-bottom: 1rem; align-items: flex-end;">
+                            <div class="form-group">
+                                <label>Select Repository</label>
+                                <select id="dto-repo-select" class="glass">
+                                    <!-- Repositories injected here -->
+                                </select>
                             </div>
-
-                            <div class="dto-status">
-                                <span id="dto-system-status" class="status-badge active">System Ready</span>
-                                <span id="dto-last-analysis" class="last-analysis">Last analysis: never</span>
-                            </div>
-                            <div id="dto-status-container" style="display:none; margin-top:1rem; padding:1rem; border-radius:0.5rem; background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.2)"></div>
-                            <div id="dto-metadata" class="dto-metadata" style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
-                        </div>
-                        <div id="dto-warnings" class="dto-warnings" style="margin-bottom: 1.5rem;"></div>
-                        <div id="dto-proposals-header" class="dto-proposals-header" style="display:none">
-                            <h4>Active Proposals</h4>
-                            <button class="btn-success btn-sm" onclick="createSelectedTasks()">
-                                <i data-lucide="plus-circle"></i> Create Selected
+                            <button class="btn-primary" onclick="runAnalysis()" id="btn-run-analysis">
+                                <i data-lucide="search"></i> Analyze Repository
                             </button>
                         </div>
-                        <div id="dto-proposals" class="dto-proposals">
-                            <!-- Proposals injected here -->
-                            <div class="empty-state">No active proposals. Run analysis to see suggestions.</div>
+
+                        <div class="dto-status">
+                            <span id="dto-system-status" class="status-badge active">System Ready</span>
+                            <span id="dto-last-analysis" class="last-analysis">Last analysis: never</span>
                         </div>
+                        <div id="dto-status-container" style="display:none; margin-top:1rem; padding:1rem; border-radius:0.5rem; background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.2)"></div>
+                        <div id="dto-metadata" class="dto-metadata" style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                    </div>
+                    <div id="dto-warnings" class="dto-warnings" style="margin-bottom: 1.5rem;"></div>
+                    <div id="dto-proposals-header" class="dto-proposals-header" style="display:none">
+                        <h4>Active Proposals</h4>
+                        <button class="btn-success btn-sm" onclick="createSelectedTasks()">
+                            <i data-lucide="plus-circle"></i> Create Selected
+                        </button>
+                    </div>
+                    <div id="dto-proposals" class="dto-proposals">
+                        <!-- Proposals injected here -->
+                        <div class="empty-state">No active proposals. Run analysis to see suggestions.</div>
                     </div>
                 </section>
             </div>
