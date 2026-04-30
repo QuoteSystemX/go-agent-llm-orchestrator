@@ -416,6 +416,7 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		return nil
 	})
 	a.updateState(repoName, "", "", -1, totalAllFiles)
+	ragStore.SetTotalFiles(totalAllFiles)
 
 	log.Printf("DTO [%s]: Scanning repository files (%d new files to index, %d total, %d already indexed)...", repoName, totalToIndex, totalAllFiles, alreadyIndexed)
 	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {

@@ -31,13 +31,14 @@ type Document struct {
 type RAGStats struct {
 	RepoID          string    `json:"repo_id"`
 	FilesIndexed    int       `json:"files_indexed"`
+	TotalFiles      int       `json:"total_files"`
 	ChunkCount      int       `json:"chunk_count"`
 	LastScrubbedAt  time.Time `json:"last_scrubbed_at"`
 	IndexPath       string    `json:"index_path"`
 	OllamaEndpoint  string    `json:"ollama_endpoint"`
 	EmbeddingModel  string    `json:"embedding_model"`
 	StorageMode     string    `json:"storage_mode"` // "persistent" or "memory"
-	Status          string    `json:"status"`       // "ok", "corrupted"
+	Status          string    `json:"status"`       // "ok", "indexing", "initial", "corrupted"
 }
 
 // MemoryStore is an in-memory/persistent storage for RAG using chromem-go
@@ -51,8 +52,9 @@ type MemoryStore struct {
 	repoID     string
 	ollamaUrl  string
 	modelName  string
-	status      string // "ok", "corrupted"
+	status      string // "ok", "indexing", "initial", "corrupted"
 	storageMode string // "persistent", "memory"
+	totalFiles  int
 	// inferMu is the shared Ollama priority gate owned by llm.Router.
 	inferMu *sync.RWMutex
 }
@@ -407,13 +409,22 @@ func (s *MemoryStore) GetStats() RAGStats {
 	}
 
 	status := s.status
-	if status == "ok" && len(s.indexed) == 0 {
-		status = "initial"
+	indexedCount := len(s.indexed)
+	
+	if status == "ok" || status == "initial" || status == "indexing" {
+		if indexedCount == 0 {
+			status = "initial"
+		} else if s.totalFiles > 0 && indexedCount < s.totalFiles {
+			status = "indexing"
+		} else {
+			status = "ok"
+		}
 	}
 
 	return RAGStats{
 		RepoID:         s.repoID,
-		FilesIndexed:   len(s.indexed),
+		FilesIndexed:   indexedCount,
+		TotalFiles:     s.totalFiles,
 		ChunkCount:     chunkCount,
 		LastScrubbedAt: lastScrubbed,
 		IndexPath:      s.indexPath,
@@ -443,10 +454,19 @@ func (s *MemoryStore) MarkIndexed(source string, modTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.indexed[source] = modTime
+	// Status is now dynamically calculated in GetStats, 
+	// but we keep the internal field updated for legacy reasons.
 	if s.status == "initial" {
-		s.status = "ok"
+		s.status = "indexing"
 	}
 	s.saveIndexLocked()
+}
+
+// SetTotalFiles updates the expected total number of files for this repository.
+func (s *MemoryStore) SetTotalFiles(count int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.totalFiles = count
 }
 
 // SaveIndex saves the indexing state to disk safely

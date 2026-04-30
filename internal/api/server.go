@@ -249,8 +249,10 @@ type TaskResponse struct {
 	MaxRetries    int        `json:"max_retries"`
 	CurrentRetry  int        `json:"current_retry"`
 	HasDrift      bool       `json:"has_drift"`
-	RAGStatus     string     `json:"rag_status"`
-	RAGMode       string     `json:"rag_mode"`
+	RAGStatus       string     `json:"rag_status"`
+	RAGMode         string     `json:"rag_mode"`
+	RAGFilesIndexed int        `json:"rag_files_indexed"`
+	RAGTotalFiles   int        `json:"rag_total_files"`
 }
 
 func (s *AdminServer) handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -340,6 +342,8 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 				stats := store.GetStats()
 				tasks[i].RAGStatus = stats.Status
 				tasks[i].RAGMode = stats.StorageMode
+				tasks[i].RAGFilesIndexed = stats.FilesIndexed
+				tasks[i].RAGTotalFiles = stats.TotalFiles
 			}
 		}
 	}

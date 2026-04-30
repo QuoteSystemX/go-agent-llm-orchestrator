@@ -302,6 +302,12 @@ function renderTasks() {
                 icon = 'loader';
                 color = '#3b82f6'; // Blue
                 title = `RAG: Initializing / Empty (Awaiting Analysis)`;
+            } else if (status === 'indexing') {
+                icon = 'refresh-cw';
+                color = '#3b82f6'; // Blue
+                const indexed = firstTask.rag_files_indexed || 0;
+                const total = firstTask.rag_total_files || 0;
+                title = `RAG: Syncing Index (${indexed}/${total} files)`;
             } else if (mode === 'memory') {
                 icon = 'zap';
                 color = '#eab308'; // Yellow
@@ -310,10 +316,12 @@ function renderTasks() {
                 color = '#22c55e'; // Green
             }
 
+            const progressText = status === 'indexing' ? ` (${firstTask.rag_files_indexed}/${firstTask.rag_total_files})` : '';
+
             ragBadgeHtml = `
                 <div class="rag-status-badge rag-status-${status}" title="${title}">
-                    <i data-lucide="${icon}" style="width:12px; height:12px; color:${color}"></i>
-                    <span>RAG: ${status.toUpperCase()}</span>
+                    <i data-lucide="${icon}" class="${status === 'indexing' ? 'spin' : ''}" style="width:12px; height:12px; color:${color}"></i>
+                    <span>RAG: ${status.toUpperCase()}${progressText}</span>
                     ${status === 'corrupted' ? `
                         <button class="btn-rag-recover" onclick="recoverRAG(event, '${projectName}')" title="Repair corrupted index">
                             <i data-lucide="refresh-cw" style="width:11px"></i> Repair

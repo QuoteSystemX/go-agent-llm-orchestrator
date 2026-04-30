@@ -346,7 +346,7 @@ button {
     animation: pulse-danger-light 2s infinite;
 }
 
-.rag-status-initial {
+.rag-status-initial, .rag-status-indexing {
     background: rgba(59, 130, 246, 0.1);
     border-color: rgba(59, 130, 246, 0.3);
     animation: pulse-info-light 3s infinite;
