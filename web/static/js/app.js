@@ -778,7 +778,7 @@ async function viewLogs(id, name, reset = true) {
             return;
         }
 
-        const html = logs.map((log, idx) => `
+        const html = (logs || []).map((log, idx) => `
             <div class="log-accordion-item ${(reset && idx === 0) ? 'active' : ''}">
                 <div class="log-accordion-header" onclick="toggleLogAccordion(this)">
                     <div class="log-status-group">
@@ -2438,19 +2438,25 @@ async function toggleLogDetails(logId, event) {
             try {
                 const resp = await fetch(`/api/v1/audit/logs/details?log_id=${logId}`);
                 const details = await resp.json();
-                detailDiv.innerHTML = details.map(d => `
-                    <div class="phase-detail">
-                        <div class="phase-detail-header">
-                            <div style="display:flex; gap:0.5rem; align-items:center">
-                                <span class="phase-badge">${d.phase.toUpperCase()}</span>
-                                <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
+                
+                if (!Array.isArray(details) || details.length === 0) {
+                    detailDiv.innerHTML = `<div class="empty-state" style="padding:1rem; font-size:0.7rem">No execution phases recorded for this run yet.</div>`;
+                    lucide.createIcons();
+                } else {
+                    detailDiv.innerHTML = details.map(d => `
+                        <div class="phase-detail">
+                            <div class="phase-detail-header">
+                                <div style="display:flex; gap:0.5rem; align-items:center">
+                                    <span class="phase-badge">${d.phase.toUpperCase()}</span>
+                                    <span class="phase-time" style="opacity:0.6"><i data-lucide="timer" style="width:10px; height:10px; vertical-align:middle"></i> ${d.duration_ms}ms</span>
+                                </div>
+                                <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
                             </div>
-                            <span class="phase-time">${new Date(d.created_at).toLocaleTimeString()}</span>
+                            <div class="phase-content">${escapeHtml(d.content)}</div>
                         </div>
-                        <div class="phase-content">${escapeHtml(d.content)}</div>
-                    </div>
-                `).join('');
-                lucide.createIcons();
+                    `).join('');
+                    lucide.createIcons();
+                }
                 
                 // Auto-refresh if the log status indicates it's still running
                 const logItem = document.querySelector(`.timeline-item[data-log-id="${logId}"]`);

@@ -295,7 +295,7 @@ func (s *AdminServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tasks []TaskResponse
+	tasks := []TaskResponse{}
 	for rows.Next() {
 		var t TaskResponse
 		if err := rows.Scan(&t.ID, &t.Name, &t.Agent, &t.Mission, &t.Pattern, &t.Schedule, &t.Status, &t.Importance, &t.Category, &t.LastRunAt, &t.CreatedAt, &t.FailureCount, &t.LastSessionID, &t.LastError, &t.MaxRetries, &t.CurrentRetry); err != nil {
@@ -533,7 +533,7 @@ func (s *AdminServer) listTaskLogs(w http.ResponseWriter, r *http.Request, taskI
 	}
 	defer rows.Close()
 
-	var logs []LogResponse
+	logs := []LogResponse{}
 	for rows.Next() {
 		var l LogResponse
 		if err := rows.Scan(&l.ID, &l.ExecutedAt, &l.Input, &l.Output, &l.Status, &l.Error, &l.Duration); err != nil {
@@ -591,7 +591,7 @@ func (s *AdminServer) handleListAudit(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var logs []map[string]any
+	logs := []map[string]any{}
 	for rows.Next() {
 		var id int
 		var sessionID, action, details, createdAt string
@@ -731,7 +731,7 @@ func (s *AdminServer) handleBudgets(w http.ResponseWriter, r *http.Request) {
 		}
 		defer rows.Close()
 
-		var budgets []BudgetResponse
+		budgets := []BudgetResponse{}
 		for rows.Next() {
 			var b BudgetResponse
 			if err := rows.Scan(&b.ID, &b.TargetType, &b.TargetID, &b.DailySessionLimit, &b.MonthlyCostLimit, &b.AlertThreshold); err == nil {
@@ -1084,7 +1084,7 @@ func (s *AdminServer) handleNextRuns(w http.ResponseWriter, r *http.Request) {
 
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	now := time.Now()
-	var results []NextRun
+	results := []NextRun{}
 
 	for rows.Next() {
 		var id, name, schedule, status string
@@ -1419,7 +1419,7 @@ func (s *AdminServer) handleListAuditLogs(w http.ResponseWriter, r *http.Request
 	}
 	defer rows.Close()
 
-	var logs []map[string]any
+	logs := []map[string]any{}
 	for rows.Next() {
 		var id int
 		var taskID, executedAt, status string
@@ -1903,7 +1903,7 @@ func (s *AdminServer) handleRAGSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	mgr := s.analyzer.GetRagManager()
 
-	var results []rag.Document
+	results := []rag.Document{}
 	if req.RepoID != "" {
 		store := mgr.GetStore(req.RepoID)
 		if store == nil {

@@ -333,7 +333,7 @@ func (db *DB) GetDistinctRepos(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var repos []string
+	repos := []string{}
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err == nil {
@@ -364,7 +364,7 @@ func (db *DB) GetTasksByRepo(ctx context.Context, repoName string) ([]map[string
 	}
 	defer rows.Close()
 
-	var tasks []map[string]any
+	tasks := []map[string]any{}
 	for rows.Next() {
 		var id, name, mission, pattern, agent, schedule, status, category, currentStage string
 		var importance, progress int
@@ -413,7 +413,7 @@ func (db *DB) GetTaskRunDetails(ctx context.Context, logID int64) ([]map[string]
 	}
 	defer rows.Close()
 
-	var details []map[string]any
+	details := []map[string]any{}
 	for rows.Next() {
 		var phase, content, createdAt string
 		var duration int64
@@ -460,7 +460,7 @@ func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map
 	}
 	defer rows.Close()
 
-	var history []map[string]any
+	history := []map[string]any{}
 	for rows.Next() {
 		var role, content, provider, repoName, createdAt string
 		if err := rows.Scan(&role, &content, &provider, &repoName, &createdAt); err == nil {
