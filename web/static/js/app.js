@@ -144,6 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
         repoSelect.addEventListener('change', loadRepoStatus);
     }
 
+    const providerToggle = document.getElementById('llm-provider-toggle');
+    if (providerToggle) {
+        providerToggle.addEventListener('change', (e) => {
+            const label = document.getElementById('llm-provider-label');
+            if (label) label.innerText = e.target.checked ? 'External LLM (RAG)' : 'Internal LLM';
+        });
+    }
+
     lucide.createIcons();
 
     // Position failure tooltips via fixed positioning to escape backdrop-filter stacking contexts.
@@ -248,7 +256,7 @@ function renderTasks() {
     );
 
     // Define service patterns
-    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer'];
+    const servicePatterns = ['sprint_closer', 'wiki_architect'];
 
     // Group tasks by name (repository)
     if (!tasks) tasks = [];
@@ -355,7 +363,7 @@ function renderTasks() {
                             <i data-lucide="plus-circle" style="width:11px"></i> Add missing
                         </button>
                     ` : `
-                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(servicePatterns)})" title="Install full BMAD suite (5 service tasks)">
+                        <button class="btn-install-bmad" onclick="installBMAD(event, '${projectName}', ${JSON.stringify(servicePatterns)})" title="Install BMAD maintenance tasks (Closer & Wiki Architect)">
                             <i data-lucide="shield-plus" style="width:11px"></i> Install BMAD
                         </button>
                     `}
@@ -687,7 +695,7 @@ function editTask(id) {
 
 async function confirmDelete(id) {
     const task = tasks.find(t => t.id === id);
-    const servicePatterns = ['discovery', 'story_writer', 'sprint_planner', 'full_cycle', 'sprint_closer', 'wiki_architect'];
+    const servicePatterns = ['sprint_closer', 'wiki_architect'];
     const isService = task && servicePatterns.includes(task.pattern);
 
     let msg = `Are you sure you want to delete task ${id}? This cannot be undone.`;
@@ -726,11 +734,7 @@ async function approveDraft(id) {
 }
 
 const BMAD_SUITE = [
-    { pattern: 'discovery',      agent: 'analyst',       schedule: '0 8 * * *',   importance: 8, category: 'service', mission: '/discovery Analyze repository state and sync wiki/BRIEF.md' },
-    { pattern: 'story_writer',   agent: 'analyst',       schedule: '0 9 * * *',   importance: 8, category: 'service', mission: '/stories Generate story cards from PRD and architecture artifacts' },
-    { pattern: 'sprint_planner', agent: 'analyst',       schedule: '0 10 * * *',  importance: 8, category: 'service', mission: '/sprint Update sprint board from current story backlog' },
     { pattern: 'wiki_architect', agent: 'wiki-architect', schedule: '0 11 * * *',  importance: 7, category: 'service', mission: 'Review codebase and maintain wiki/ directory following Karpathy method. Detect wiki-code drift.' },
-    { pattern: 'full_cycle',     agent: 'orchestrator',  schedule: '0 */3 * * *', importance: 9, category: 'service', mission: 'Pick one story from tasks/ and implement it end-to-end, then open a PR' },
     { pattern: 'sprint_closer',  agent: 'analyst',       schedule: '50 23 * * *', importance: 7, category: 'service', mission: '/close-sprint Close sprint if all tasks are done and archive artifacts' },
 ];
 
@@ -738,7 +742,7 @@ async function installBMAD(event, repoName, patternsToInstall) {
     event.stopPropagation();
 
     const count = patternsToInstall.length;
-    const label = count === 6 ? 'full BMAD suite (6 service tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
+    const label = count === 2 ? 'full BMAD suite (2 maintenance tasks)' : `${count} missing BMAD task${count > 1 ? 's' : ''}: ${patternsToInstall.join(', ')}`;
     if (!confirm(`Install ${label} for "${repoName}"?`)) return;
 
     const toCreate = BMAD_SUITE.filter(t => patternsToInstall.includes(t.pattern));
@@ -1618,6 +1622,9 @@ async function loadRepoStatus() {
             updateLastAnalysisDisplay(status.last_analysis);
             updateAnalysisProgress(status);
         }
+        
+        // Load DTO session for this repo
+        loadDTOSession(repo);
     } catch (e) {
         console.error('Failed to load repo status:', e);
     }
@@ -1630,6 +1637,170 @@ function handleRepoAnalysisUpdate(payload) {
     if (!select || select.value !== repo) return;
     
     updateAnalysisProgress(state);
+
+    // Update BMAD tracker if status is provided
+    if (state.bmad_stage) {
+        updateBMADTracker(state.bmad_stage);
+    }
+}
+
+// ── DTO Interactive Logic ──────────────────────────────────
+async function loadDTOSession(repo) {
+    const panel = document.getElementById('dto-interactive-panel');
+    const messagesContainer = document.getElementById('dto-chat-messages');
+    const finalizeContainer = document.getElementById('dto-finalize-container');
+    
+    if (!repo) {
+        panel.style.display = 'none';
+        finalizeContainer.style.display = 'none';
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/api/v1/dto/session?repo=${encodeURIComponent(repo)}`);
+        const session = await resp.json();
+        
+        panel.style.display = 'flex';
+        messagesContainer.innerHTML = '';
+        
+        if (session.context && session.context.length > 0) {
+            session.context.forEach(msg => {
+                if (msg.role !== 'system') {
+                    addChatMessage(msg.role, msg.content, false);
+                }
+            });
+        } else {
+            addChatMessage('assistant', `Hello! I'm ready to help with the **${session.current_stage || 'Discovery'}** stage for **${repo}**. What are our main goals for this project?`, false);
+        }
+
+        updateBMADTracker(session.current_stage);
+        
+        // Show finalize button if session is ACTIVE
+        finalizeContainer.style.display = 'block';
+        finalizeContainer.querySelector('button').innerHTML = `<i data-lucide="check-circle"></i> Finalize ${session.current_stage} & Push`;
+        lucide.createIcons();
+
+    } catch (e) {
+        console.error('DTO: Failed to load session', e);
+    }
+}
+
+function addChatMessage(role, content, animate = true) {
+    const container = document.getElementById('dto-chat-messages');
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+    div.innerHTML = content.replace(/\n/g, '<br>');
+    if (!animate) div.style.animation = 'none';
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function sendDTOMessage() {
+    const repo = document.getElementById('dto-repo-select').value;
+    const input = document.getElementById('dto-chat-input');
+    const text = input.value.trim();
+    const providerToggle = document.getElementById('llm-provider-toggle');
+    const provider = providerToggle && providerToggle.checked ? 'external' : 'internal';
+    
+    if (!text || !repo) return;
+
+    addChatMessage('user', text);
+    input.value = '';
+    
+    // Add loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message assistant loading';
+    loadingDiv.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px"></i> Thinking...';
+    document.getElementById('dto-chat-messages').appendChild(loadingDiv);
+    lucide.createIcons();
+
+    try {
+        const resp = await fetch('/api/v1/dto/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo, message: text, provider })
+        });
+        
+        loadingDiv.remove();
+        
+        if (resp.ok) {
+            const data = await resp.json();
+            addChatMessage('assistant', data.response);
+        } else {
+            const err = await resp.text();
+            addChatMessage('assistant', `Error: ${err}`);
+        }
+    } catch (e) {
+        loadingDiv.remove();
+        addChatMessage('assistant', `Network error: ${e.message}`);
+    }
+}
+
+async function finalizeCurrentStage() {
+    const repo = document.getElementById('dto-repo-select').value;
+    const stages = document.querySelectorAll('.bmad-stage');
+    let currentStage = 'discovery';
+    
+    stages.forEach(s => {
+        if (s.classList.contains('active')) {
+            currentStage = s.getAttribute('data-stage');
+        }
+    });
+
+    if (!confirm(`Are you sure you want to finalize the ${currentStage} stage? This will generate a document and push it to Git.`)) return;
+
+    try {
+        const resp = await fetch('/api/v1/dto/finalize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo, stage: currentStage })
+        });
+
+        if (resp.ok) {
+            showToast(`Stage ${currentStage} finalized and pushed to Git!`, 'success');
+            loadDTOSession(repo); // Refresh session and tracker
+        } else {
+            const err = await resp.text();
+            showToast(`Finalization failed: ${err}`, 'error');
+        }
+    } catch (e) {
+        showToast(`Network error during finalization: ${e.message}`, 'error');
+    }
+}
+
+async function clearDTOSession() {
+    const repo = document.getElementById('dto-repo-select').value;
+    if (!repo || !confirm('Clear all dialogue history for this repository?')) return;
+
+    try {
+        const resp = await fetch(`/api/v1/dto/session/clear?repo=${encodeURIComponent(repo)}`, { method: 'POST' });
+        if (resp.ok) {
+            loadDTOSession(repo);
+        }
+    } catch (e) {
+        showToast('Failed to clear session', 'error');
+    }
+}
+
+function updateBMADTracker(activeStage) {
+    const stages = ['discovery', 'prd', 'architecture', 'stories', 'sprint', 'worker', 'testing', 'regression', 'docs_update', 'closure'];
+    const activeIdx = stages.indexOf(activeStage.toLowerCase());
+    
+    document.querySelectorAll('.bmad-stage').forEach(el => {
+        const stage = el.getAttribute('data-stage');
+        const idx = stages.indexOf(stage);
+        
+        el.classList.remove('active', 'completed');
+        if (idx < activeIdx) {
+            el.classList.add('completed');
+        } else if (idx === activeIdx) {
+            el.classList.add('active');
+        }
+    });
+
+    const progress = activeIdx >= 0 ? (activeIdx / (stages.length - 1)) * 100 : 0;
+    const fill = document.getElementById('bmad-progress-fill');
+    if (fill) fill.style.width = `${progress}%`;
 }
 
 function updateAnalysisProgress(status) {

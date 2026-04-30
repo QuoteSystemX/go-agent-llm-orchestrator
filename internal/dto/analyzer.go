@@ -47,9 +47,18 @@ type Analyzer struct {
 	sem    chan struct{}
 
 	onUpdate func(repoURL string, state *RepoAnalysisState)
+
+	sessionMgr *SessionManager
+	pusher     *git.Pusher
 }
 
 func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb *prompt.Builder, syncer *git.Syncer) *Analyzer {
+	dbDir := filepath.Dir(database.GetSetting("repo_base_path", "./data/repos"))
+	sm, err := NewSessionManager(dbDir)
+	if err != nil {
+		log.Printf("Analyzer: Failed to initialize SessionManager: %v", err)
+	}
+
 	return &Analyzer{
 		db:            database,
 		router:        router,
@@ -59,6 +68,8 @@ func NewAnalyzer(appCtx context.Context, database *db.DB, router *llm.Router, pb
 		state:         make(map[string]*RepoAnalysisState),
 		appCtx:        appCtx,
 		sem:           make(chan struct{}, 1), // Only 1 manual analysis at a time
+		sessionMgr:    sm,
+		pusher:        git.NewPusher(database, filepath.Dir(database.GetSetting("repo_base_path", "./data/repos"))),
 	}
 }
 
@@ -229,6 +240,169 @@ func (a *Analyzer) TriggerManualAnalysis(requestCtx context.Context, repoName st
 			}
 		}
 	}()
+}
+
+// GetSessionManager returns the underlying session manager for interactive dialogues.
+func (a *Analyzer) GetSessionManager() *SessionManager {
+	return a.sessionMgr
+}
+
+// GenerateDialogueResponse uses the LLM router to generate a response for an interactive session.
+func (a *Analyzer) GenerateDialogueResponse(ctx context.Context, classification llm.Classification, messages []map[string]string) (string, error) {
+	// If it's a DTO classification, it will default to local. 
+	// If it's Complex, it might go to remote depending on configuration.
+	return a.router.GenerateChat(ctx, classification, messages, "")
+}
+
+// FinalizeStage generates an artifact based on the dialogue session and pushes it to git.
+func (a *Analyzer) FinalizeStage(ctx context.Context, repoName string, stage string) error {
+	if a.sessionMgr == nil {
+		return fmt.Errorf("session manager not initialized")
+	}
+
+	session, err := a.sessionMgr.GetSession(ctx, repoName)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+
+	// 1. Generate Artifact Content
+	var artifactName, artifactContent string
+	switch strings.ToLower(stage) {
+	case "discovery":
+		artifactName = "BRIEF.md"
+		artifactContent = a.generateBriefFromSession(session)
+	case "prd":
+		artifactName = "PRD.md"
+		artifactContent = a.generatePRDFromSession(session)
+	case "architecture":
+		artifactName = "ARCHITECTURE.md"
+		artifactContent = a.generateArchFromSession(session)
+	case "testing":
+		artifactName = "TEST_REPORT.md"
+		artifactContent = a.generateTestReportFromSession(session)
+	case "regression":
+		artifactName = "REGRESSION_REPORT.md"
+		artifactContent = a.generateRegressionReportFromSession(session)
+	case "docs_update":
+		artifactName = "CHANGELOG.md"
+		artifactContent = a.generateChangelogFromSession(session)
+	default:
+		return fmt.Errorf("unsupported stage for finalization: %s", stage)
+	}
+
+	// 2. Save to local repository
+	repoBasePath := a.db.GetSetting("repo_base_path", "./data/repos")
+	repoPath := filepath.Join(repoBasePath, repoName)
+	wikiDir := filepath.Join(repoPath, "wiki")
+	if err := os.MkdirAll(wikiDir, 0755); err != nil {
+		return fmt.Errorf("failed to create wiki directory: %w", err)
+	}
+
+	artifactPath := filepath.Join(wikiDir, artifactName)
+	if err := os.WriteFile(artifactPath, []byte(artifactContent), 0644); err != nil {
+		return fmt.Errorf("failed to write artifact file: %w", err)
+	}
+
+	// 2.5 Validate Artifact (Tester Agent Role)
+	if err := a.validateArtifact(ctx, artifactName, artifactContent); err != nil {
+		return fmt.Errorf("artifact validation failed: %w", err)
+	}
+
+	// 3. Git Commit & Push
+	branch := "main" // TODO: Detect default branch or use setting
+	commitMsg := fmt.Sprintf("docs: finalize %s stage for BMAD", stage)
+	relativeFilePath := filepath.Join("wiki", artifactName)
+	
+	if err := a.pusher.CommitAndPush(ctx, repoPath, branch, []string{relativeFilePath}, commitMsg); err != nil {
+		return fmt.Errorf("git push failed: %w", err)
+	}
+
+	// 4. Update session status
+	session.Status = "IDLE"
+	session.CurrentStage = a.getNextStage(stage)
+	a.sessionMgr.SaveSession(ctx, session)
+
+	log.Printf("DTO: Finalized %s for %s and pushed to git", stage, repoName)
+	return nil
+}
+
+func (a *Analyzer) validateArtifact(ctx context.Context, name string, content string) error {
+	// In a real scenario, this would call an LLM (test-engineer) to audit the doc.
+	// For now, we'll do basic structural checks.
+	if len(content) < 100 {
+		return fmt.Errorf("artifact %s is too short (possible generation failure)", name)
+	}
+	if !strings.HasPrefix(content, "# ") {
+		return fmt.Errorf("artifact %s must start with an H1 header", name)
+	}
+	
+	log.Printf("DTO: Artifact %s validated successfully", name)
+	return nil
+}
+
+func (a *Analyzer) getNextStage(current string) string {
+	switch strings.ToLower(current) {
+	case "discovery":
+		return "prd"
+	case "prd":
+		return "architecture"
+	case "architecture":
+		return "stories"
+	case "stories":
+		return "sprint"
+	case "sprint":
+		return "worker"
+	case "worker":
+		return "testing"
+	case "testing":
+		return "regression"
+	case "regression":
+		return "docs_update"
+	case "docs_update":
+		return "closure"
+	default:
+		return current
+	}
+}
+
+func (a *Analyzer) generateBriefFromSession(s *DialogueSession) string {
+	var sb strings.Builder
+	sb.WriteString("# Project Brief: " + s.RepoName + "\n\n")
+	sb.WriteString("## Discovery Dialogue Summary\n\n")
+	for _, m := range s.Context {
+		if m.Role == "system" {
+			continue
+		}
+		role := "User"
+		if m.Role == "assistant" {
+			role = "Agent"
+		}
+		sb.WriteString(fmt.Sprintf("**%s**: %s\n\n", role, m.Content))
+	}
+	sb.WriteString("\n---\n*Generated by Jules DTO Orchestrator*\n")
+	return sb.String()
+}
+
+func (a *Analyzer) generatePRDFromSession(s *DialogueSession) string {
+	// Simple implementation for now
+	return "# Product Requirements Document\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateArchFromSession(s *DialogueSession) string {
+	// Simple implementation for now
+	return "# System Architecture\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateTestReportFromSession(s *DialogueSession) string {
+	return "# Test Report\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateRegressionReportFromSession(s *DialogueSession) string {
+	return "# Regression Report\n\n" + a.generateBriefFromSession(s)
+}
+
+func (a *Analyzer) generateChangelogFromSession(s *DialogueSession) string {
+	return "# Changelog\n\n" + a.generateBriefFromSession(s)
 }
 
 type Proposal struct {
@@ -583,23 +757,24 @@ func (a *Analyzer) readDir(path string, ext string) (string, error) {
 
 func (a *Analyzer) buildAnalysisPrompt(ctx context.Context, repoName, readme string, currentTasks []map[string]any, templates []Template, maxChars int) string {
 	// 1. Define Instructions
-	instructions := "Your goal: Propose 3-5 new tasks or updates. Focus on the FULL BMAD methodology cycle:\n" +
-		"1. Planning: /discovery -> /prd -> /architecture -> /stories -> /sprint\n" +
-		"2. Execution: Worker tasks (implementing features/fixes)\n" +
-		"3. Maintenance: /sprint-closer and Wiki/Docs actualization.\n\n" +
+	instructions := "Your goal: Propose 3-5 new IMPLEMENTATION or MAINTENANCE tasks. DO NOT propose planning tasks (/discovery, /prd, /architecture, /stories, /sprint) as they are handled interactively in the chat.\n" +
+		"Focus on:\n" +
+		"1. Implementation: Worker tasks using patterns like featureforge, bugfix, or refactor.\n" +
+		"2. Quality: Testing and regression tasks.\n" +
+		"3. Maintenance: Documentation updates and /sprint-closer.\n\n" +
 		"Return ONLY a JSON object with this EXACT schema:\n" +
 		"{\n" +
-		"  \"current_stage\": \"string (discovery|prd|architecture|stories|sprint|worker|closure)\",\n" +
+		"  \"current_stage\": \"string (discovery|prd|architecture|stories|sprint|worker|testing|regression|docs_update|closure)\",\n" +
 		"  \"progress\": \"integer (0-100)\",\n" +
 		"  \"proposals\": [\n" +
 		"    {\n" +
-		"      \"pattern\": \"string (name of the workflow/pattern)\",\n" +
-		"      \"agent\": \"string (name of the agent, e.g. backend-specialist)\",\n" +
+		"      \"pattern\": \"string (name of the implementation workflow, e.g. featureforge)\",\n" +
+		"      \"agent\": \"string (e.g. backend-specialist)\",\n" +
 		"      \"mission\": \"string (detailed task description)\",\n" +
-		"      \"schedule\": \"string (CRON or frequency, e.g. '@daily')\",\n" +
+		"      \"schedule\": \"string (CRON or @once)\",\n" +
 		"      \"importance\": \"integer (1-10)\",\n" +
 		"      \"category\": \"string (code|docs|test|infra)\",\n" +
-		"      \"reason\": \"string (why this task is needed)\"\n" +
+		"      \"reason\": \"string (why this specific implementation is needed)\"\n" +
 		"    }\n" +
 		"  ]\n" +
 		"}\n"

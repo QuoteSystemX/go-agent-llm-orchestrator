@@ -176,6 +176,10 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/dto/templates/", s.handleTemplateByID)
 	mux.HandleFunc("/api/v1/dto/analyze", s.handleAnalyze)
 	mux.HandleFunc("/api/v1/dto/status", s.handleDTOStatus)
+	mux.HandleFunc("/api/v1/dto/chat", s.handleDTOChat)
+	mux.HandleFunc("/api/v1/dto/session", s.handleDTOSession)
+	mux.HandleFunc("/api/v1/dto/session/clear", s.handleDTOClearSession)
+	mux.HandleFunc("/api/v1/dto/finalize", s.handleDTOFinalize)
 	
 	// RAG API
 	mux.HandleFunc("/api/v1/rag/stats", s.handleRAGStats)
@@ -1672,6 +1676,165 @@ func (s *AdminServer) handleDTOStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var data struct {
+		Repo     string `json:"repo"`
+		Message  string `json:"message"`
+		Provider string `json:"provider"` // "internal" or "external"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	if data.Repo == "" || data.Message == "" {
+		http.Error(w, "missing repo or message", http.StatusBadRequest)
+		return
+	}
+
+	mgr := s.analyzer.GetSessionManager()
+	if mgr == nil {
+		http.Error(w, "session manager not initialized", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := mgr.GetSession(r.Context(), data.Repo)
+	if err != nil {
+		http.Error(w, "failed to get session", http.StatusInternalServerError)
+		return
+	}
+
+	// Update provider if specified
+	if data.Provider != "" {
+		session.LLMProvider = data.Provider
+	}
+
+	// 1. Save user message
+	userMsg := dto.DialogueMessage{Role: "user", Content: data.Message}
+	session.Context = append(session.Context, userMsg)
+	session.Status = "DIALOGUE"
+	mgr.SaveSession(r.Context(), session)
+
+	// 2. Prepare prompt for LLM
+	// We use the internal router to generate a response
+	systemPrompt := "You are a Project Discovery Agent. Help the user define their project requirements.\n" +
+		"Use the provided context about the repository to ask relevant questions."
+	
+	// Convert session context to LLM messages
+	llmMessages := []map[string]string{
+		{"role": "system", "content": systemPrompt},
+	}
+	for _, m := range session.Context {
+		llmMessages = append(llmMessages, map[string]string{"role": m.Role, "content": m.Content})
+	}
+
+	// Choose provider
+	llmType := llm.DTO
+	if session.LLMProvider == "external" {
+		llmType = llm.Complex // Use Complex tier for higher quality external LLM
+	}
+
+	response, err := s.analyzer.GenerateDialogueResponse(r.Context(), llmType, llmMessages)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("LLM error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Save assistant message
+	asstMsg := dto.DialogueMessage{Role: "assistant", Content: response}
+	session.Context = append(session.Context, asstMsg)
+	mgr.SaveSession(r.Context(), session)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"response": response,
+		"session":  session,
+	})
+}
+
+func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
+	repo := r.URL.Query().Get("repo")
+	if repo == "" {
+		http.Error(w, "missing repo parameter", http.StatusBadRequest)
+		return
+	}
+
+	mgr := s.analyzer.GetSessionManager()
+	if mgr == nil {
+		http.Error(w, "session manager not initialized", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := mgr.GetSession(r.Context(), repo)
+	if err != nil {
+		http.Error(w, "failed to get session", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
+}
+
+func (s *AdminServer) handleDTOClearSession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	repo := r.URL.Query().Get("repo")
+	if repo == "" {
+		http.Error(w, "missing repo parameter", http.StatusBadRequest)
+		return
+	}
+
+	mgr := s.analyzer.GetSessionManager()
+	if mgr == nil {
+		http.Error(w, "session manager not initialized", http.StatusInternalServerError)
+		return
+	}
+
+	if err := mgr.ClearSession(r.Context(), repo); err != nil {
+		http.Error(w, "failed to clear session", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *AdminServer) handleDTOFinalize(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var data struct {
+		Repo  string `json:"repo"`
+		Stage string `json:"stage"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	if data.Repo == "" || data.Stage == "" {
+		http.Error(w, "missing repo or stage", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.analyzer.FinalizeStage(r.Context(), data.Repo, data.Stage); err != nil {
+		http.Error(w, fmt.Sprintf("Finalization failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func (s *AdminServer) handleRAGStats(w http.ResponseWriter, r *http.Request) {

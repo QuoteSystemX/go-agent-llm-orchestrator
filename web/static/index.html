@@ -209,12 +209,51 @@
                             <div class="bmad-stage" data-stage="stories">Stories</div>
                             <div class="bmad-stage" data-stage="sprint">Sprint</div>
                             <div class="bmad-stage" data-stage="worker">Worker</div>
+                            <div class="bmad-stage" data-stage="testing">Testing</div>
+                            <div class="bmad-stage" data-stage="regression">Regression</div>
+                            <div class="bmad-stage" data-stage="docs_update">Docs Update</div>
                             <div class="bmad-stage" data-stage="closure">Closure</div>
                         </div>
                         <div class="bmad-progress-bg">
                             <div id="bmad-progress-fill" class="bmad-progress-fill"></div>
                         </div>
+                        <div id="dto-finalize-container" style="display:none; margin-top: 1rem; text-align: center;">
+                            <button class="btn-success btn-sm" onclick="finalizeCurrentStage()">
+                                <i data-lucide="check-circle"></i> Finalize Stage & Push to Git
+                            </button>
+                        </div>
                     </div>
+                    </div>
+
+                    <!-- Interactive Dialogue Panel (Moved here) -->
+                    <div id="dto-interactive-panel" class="dto-interactive-panel glass" style="display:none;">
+                        <div class="panel-header">
+                            <h4><i data-lucide="messages-square"></i> Interactive Discovery</h4>
+                            <div class="llm-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" id="llm-provider-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span id="llm-provider-label">Internal LLM</span>
+                            </div>
+                        </div>
+                        <div id="dto-chat-messages" class="chat-messages">
+                            <!-- Messages injected here -->
+                            <div class="message assistant">
+                                Hello! Select a repository to begin the Discovery process.
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <textarea id="dto-chat-input" placeholder="Type your message here..." rows="1"></textarea>
+                            <button class="btn-primary" onclick="sendDTOMessage()">
+                                <i data-lucide="send"></i>
+                            </button>
+                            <button class="btn-cancel btn-sm" onclick="clearDTOSession()" title="Clear Session">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="dto-content">
                         <div class="dto-info-card glass">
                             <h4>Repository Analysis</h4>
