@@ -1922,7 +1922,7 @@ func (s *AdminServer) handleRAGAction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go func() {
-			removed, err := store.Scrub(context.Background())
+			removed, err := store.Scrub(context.Background(), nil)
 			if err != nil {
 				log.Printf("API: RAG scrub failed for %s: %v", data.RepoID, err)
 			} else {

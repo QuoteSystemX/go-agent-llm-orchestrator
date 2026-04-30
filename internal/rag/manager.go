@@ -56,7 +56,7 @@ func (m *Manager) ScrubAll(ctx context.Context) (int, error) {
 
 	totalRemoved := 0
 	for repoID, store := range stores {
-		removed, err := store.Scrub(ctx)
+		removed, err := store.Scrub(ctx, nil)
 		if err != nil {
 			return totalRemoved, fmt.Errorf("scrub failed for %s: %w", repoID, err)
 		}

@@ -560,8 +560,25 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 
 	// Capture how many files are already in the persistent index before this run.
 	// Scrub first to remove stale entries from deleted files or other branches.
+	// Scrub first to remove stale entries from deleted files or other branches,
+	// AND remove files that no longer pass our indexing criteria (extensions, ignored dirs, size).
 	log.Printf("DTO [%s]: Scrubbing RAG index...", repoName)
-	if _, err := ragStore.Scrub(ctx); err != nil {
+	scrubFilter := func(path string) bool {
+		info, err := os.Stat(path)
+		if err != nil { return false }
+		if info.IsDir() { return false }
+		if info.Size() > maxFileSize { return false }
+		
+		ignoredDirs := []string{"/node_modules/", "/.git/", "/vendor/", "/dist/", "/build/", "/target/", "/bin/", "/obj/", "/.idea/", "/.vscode/", "/.venv/", "/__pycache__/", "/pkg/", "/.agent/", "/.claude/"}
+		for _, dir := range ignoredDirs {
+			if strings.Contains(path, dir) { return false }
+		}
+
+		ext := filepath.Ext(path)
+		return targetExts[ext]
+	}
+
+	if _, err := ragStore.Scrub(ctx, scrubFilter); err != nil {
 		log.Printf("DTO [%s]: Scrub failed: %v", repoName, err)
 	}
 

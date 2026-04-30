@@ -355,8 +355,8 @@ func (s *MemoryStore) RemoveDocumentsBySource(ctx context.Context, source string
 	return err
 }
 
-// Scrub checks all indexed files and removes those that no longer exist on disk.
-func (s *MemoryStore) Scrub(ctx context.Context) (int, error) {
+// Scrub checks all indexed files and removes those that no longer exist on disk or don't match the optional filter.
+func (s *MemoryStore) Scrub(ctx context.Context, filter func(string) bool) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -365,18 +365,24 @@ func (s *MemoryStore) Scrub(ctx context.Context) (int, error) {
 	}
 
 	removed := 0
-	var missingSources []string
+	var staleSources []string
 
-	// 1. Identify missing files
+	// 1. Identify missing or filtered out files
 	for source := range s.indexed {
+		// Remove if file no longer exists
 		if _, err := os.Stat(source); os.IsNotExist(err) {
-			missingSources = append(missingSources, source)
+			staleSources = append(staleSources, source)
+			continue
+		}
+		// Remove if it doesn't match the filter
+		if filter != nil && !filter(source) {
+			staleSources = append(staleSources, source)
 		}
 	}
 
 	// 2. Remove from vector DB and local cache
-	for _, source := range missingSources {
-		log.Printf("RAG Scrub [%s]: Removing deleted file from index: %s", s.repoID, source)
+	for _, source := range staleSources {
+		log.Printf("RAG Scrub [%s]: Removing stale/deleted file from index: %s", s.repoID, source)
 		err := s.collection.Delete(ctx, map[string]string{"source": source}, nil)
 		if err != nil {
 			log.Printf("RAG Scrub [%s] Error: failed to delete %s: %v", s.repoID, source, err)

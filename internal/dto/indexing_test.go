@@ -46,13 +46,33 @@ func TestIndexingProgressAccuracy(t *testing.T) {
 	}
 
 	// 3. Run a "Scrub" (This is what we should call before starting analysis)
-	removed, _ := store.Scrub(context.Background())
+	removed, _ := store.Scrub(context.Background(), nil)
 	if removed != 2 { // a.go and stale.go
 		t.Errorf("Expected 2 files to be scrubbed, got %d", removed)
 	}
 
 	if store.IndexedCount() != 1 { // Only b.go remains
 		t.Errorf("Expected 1 indexed file after scrub, got %d", store.IndexedCount())
+	}
+
+	// 3b. Test Filter-based scrubbing (The new feature)
+	// Currently b.go is indexed and exists on disk.
+	// Let's index c.go too.
+	store.MarkIndexed(filepath.Join(repoDir, "c.go"), modTime)
+	if store.IndexedCount() != 2 {
+		t.Errorf("Expected 2 indexed files, got %d", store.IndexedCount())
+	}
+	
+	// Run scrub with a filter that only allows .py files (so b.go and c.go should be removed)
+	filter := func(path string) bool {
+		return filepath.Ext(path) == ".py"
+	}
+	removed, _ = store.Scrub(context.Background(), filter)
+	if removed != 2 {
+		t.Errorf("Expected 2 files to be removed by filter, got %d", removed)
+	}
+	if store.IndexedCount() != 0 {
+		t.Errorf("Expected 0 indexed files after filter scrub, got %d", store.IndexedCount())
 	}
 	
 	// 4. Verify total count calculation logic used in Analyzer
