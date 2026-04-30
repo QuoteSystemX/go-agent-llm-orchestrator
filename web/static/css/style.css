@@ -2277,3 +2277,74 @@ input:checked + .slider:before {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Audit Enhancements */
+.audit-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.audit-badge.class {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.audit-badge.status-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.audit-badge.status-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.audit-card-complex {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.audit-response-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+    margin-top: 0.5rem;
+}
+
+.audit-response-text strong {
+    color: var(--primary);
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.glass-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.5rem;
+    color: var(--text);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.glass-select:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+}
+
+.glass-select option {
+    background: #1a1a1a;
+    color: var(--text);
+}

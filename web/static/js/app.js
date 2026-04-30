@@ -3,6 +3,8 @@ let showServiceTasks = false;
 let logEntries = [];
 const MAX_LOGS = 100;
 let _ws = null;
+let auditPage = 0;
+const auditLimit = 50;
 
 class OrchestratorSocket {
     constructor() {
@@ -1557,7 +1559,9 @@ async function deleteBudget(id) {
 
 async function fetchAuditLogs() {
     try {
-        const resp = await fetch('/api/v1/audit');
+        const hours = document.getElementById('audit-filter-hours')?.value || 24;
+        const offset = auditPage * auditLimit;
+        const resp = await fetch(`/api/v1/audit?limit=${auditLimit}&offset=${offset}&hours=${hours}`);
         if (!resp.ok) return;
         const logs = await resp.json();
         renderAuditLogs(logs);
@@ -1566,17 +1570,38 @@ async function fetchAuditLogs() {
     }
 }
 
+function resetAuditAndFetch() {
+    auditPage = 0;
+    fetchAuditLogs();
+}
+
+function prevAuditPage() {
+    if (auditPage > 0) {
+        auditPage--;
+        fetchAuditLogs();
+    }
+}
+
+function nextAuditPage() {
+    auditPage++;
+    fetchAuditLogs();
+}
+
 function renderAuditLogs(logs) {
     const list = document.getElementById('audit-list');
     if (!list) return;
 
     if (!logs || logs.length === 0) {
-        list.innerHTML = '<div class="empty-state">No audit logs found.</div>';
+        list.innerHTML = auditPage === 0 
+            ? '<div class="empty-state">No audit logs found for this period.</div>'
+            : '<div class="empty-state">No more logs found.</div>';
         return;
     }
 
     list.innerHTML = logs.map(log => {
         const time = new Date(log.created_at).toLocaleString();
+        const friendlyDetails = formatAuditDetails(log.details);
+        
         return `
             <div class="activity-item glass">
                 <div class="activity-meta">
@@ -1584,13 +1609,54 @@ function renderAuditLogs(logs) {
                     <span class="activity-duration">ID: ${log.id}</span>
                 </div>
                 <div class="activity-main">
-                    <div class="activity-task" style="color:var(--primary)">${log.action}</div>
+                    <div class="activity-task" style="color:var(--primary); font-weight:600">${log.action}</div>
                     <div class="activity-status" style="font-size:0.7rem; color:var(--text-muted)">Session: ${log.session_id || 'N/A'}</div>
                 </div>
-                <div class="activity-details" style="font-size:0.8rem; margin-top:0.5rem; color:var(--text)">${log.details}</div>
+                <div class="activity-details-container">
+                    ${friendlyDetails}
+                </div>
             </div>
         `;
     }).join('');
+}
+
+function formatAuditDetails(details) {
+    if (!details) return '';
+
+    // Check if it's a structured LLM response (Class: ... | Status: ... | Response: ...)
+    if (details.includes('Class:') && details.includes('Status:') && details.includes('Response:')) {
+        const parts = details.split('|');
+        let html = '<div class="audit-card-complex">';
+        
+        parts.forEach(p => {
+            const [key, ...valParts] = p.split(':');
+            const value = valParts.join(':').trim();
+            const cleanKey = key.trim();
+
+            if (cleanKey === 'Class') {
+                html += `<span class="audit-badge class">${value}</span>`;
+            } else if (cleanKey === 'Status') {
+                const statusClass = value === 'AWAITING_USER_FEEDBACK' ? 'warning' : 'info';
+                html += `<span class="audit-badge status-${statusClass}">${value}</span>`;
+            } else if (cleanKey === 'Response') {
+                // Parse the response for Decision, Justification, Steps
+                let responseBody = value;
+                
+                // Highlight keywords
+                responseBody = responseBody.replace(/(Decision:|Justification:|Steps:)/g, '<br><strong>$1</strong>');
+                // Numbered lists
+                responseBody = responseBody.replace(/(\d+\.\s)/g, '<br>$1');
+                
+                html += `<div class="audit-response-text">${responseBody}</div>`;
+            }
+        });
+        
+        html += '</div>';
+        return html;
+    }
+
+    // Default formatting (newlines to breaks)
+    return `<div class="activity-details" style="font-size:0.8rem; margin-top:0.5rem; color:var(--text)">${details.replace(/\n/g, '<br>')}</div>`;
 }
 
 function populateRepoSelect() {

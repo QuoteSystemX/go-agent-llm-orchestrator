@@ -592,7 +592,30 @@ func (s *AdminServer) handleTaskAction(w http.ResponseWriter, r *http.Request, t
 }
 
 func (s *AdminServer) handleListAudit(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.History().QueryContext(r.Context(), "SELECT id, session_id, action, details, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 100")
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	hoursStr := r.URL.Query().Get("hours")
+
+	limit := 50
+	offset := 0
+	hours := 0 // 0 means all time
+
+	if limitStr != "" { fmt.Sscanf(limitStr, "%d", &limit) }
+	if offsetStr != "" { fmt.Sscanf(offsetStr, "%d", &offset) }
+	if hoursStr != "" { fmt.Sscanf(hoursStr, "%d", &hours) }
+
+	query := "SELECT id, session_id, action, details, created_at FROM audit_logs "
+	args := []any{}
+
+	if hours > 0 {
+		query += "WHERE created_at > datetime('now', '-' || ? || ' hours') "
+		args = append(args, hours)
+	}
+
+	query += "ORDER BY created_at DESC LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := s.db.History().QueryContext(r.Context(), query, args...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

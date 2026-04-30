@@ -175,14 +175,30 @@
 
             <div id="tab-audit" class="tab-pane">
                 <section class="activity-section glass">
-                    <div class="activity-controls">
+                    <div class="activity-controls" style="flex-wrap: wrap; gap: 1rem;">
                         <div class="dto-title">
                             <i data-lucide="shield" style="color:var(--primary)"></i>
                             <h3>System Audit Logs</h3>
                         </div>
-                        <button class="btn-secondary" onclick="fetchAuditLogs()">
-                            <i data-lucide="refresh-cw"></i> Refresh
-                        </button>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto;">
+                            <select id="audit-filter-hours" class="glass-select" onchange="resetAuditAndFetch()">
+                                <option value="0">All Time</option>
+                                <option value="1">Last Hour</option>
+                                <option value="24" selected>Last 24 Hours</option>
+                                <option value="168">Last 7 Days</option>
+                            </select>
+                            <div class="pagination-controls" style="display: flex; gap: 0.25rem;">
+                                <button class="btn-cancel btn-sm" onclick="prevAuditPage()" title="Previous Page">
+                                    <i data-lucide="chevron-left" style="width:14px"></i>
+                                </button>
+                                <button class="btn-cancel btn-sm" onclick="nextAuditPage()" title="Next Page">
+                                    <i data-lucide="chevron-right" style="width:14px"></i>
+                                </button>
+                            </div>
+                            <button class="btn-secondary" onclick="fetchAuditLogs()">
+                                <i data-lucide="refresh-cw"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div id="audit-list" class="activity-list">
                         <div class="empty-state">No audit logs found.</div>
