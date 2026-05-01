@@ -1728,7 +1728,7 @@ func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := mgr.GetSession(r.Context(), data.Repo)
+	session, _, err := mgr.GetSession(r.Context(), data.Repo)
 	if err != nil {
 		http.Error(w, "failed to get session", http.StatusInternalServerError)
 		return
@@ -1825,7 +1825,7 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := mgr.GetSession(r.Context(), repo)
+	session, exists, err := mgr.GetSession(r.Context(), repo)
 	if err != nil {
 		http.Error(w, "failed to get session", http.StatusInternalServerError)
 		return
@@ -1869,7 +1869,13 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 			response, err = s.analyzer.GenerateDialogueResponse(r.Context(), llm.DTO, llmMessages)
 			if err == nil {
 				session.Context = append(session.Context, dto.DialogueMessage{Role: "assistant", Content: response})
-				mgr.SaveSession(r.Context(), session)
+				if exists {
+					if err := mgr.UpdateSession(r.Context(), session); err != nil {
+						log.Printf("DTO: Session cleared during initialization, skipping save: %v", err)
+					}
+				} else {
+					mgr.SaveSession(r.Context(), session)
+				}
 			} else {
 				log.Printf("DTO: Auto-initialization failed: %v", err)
 			}

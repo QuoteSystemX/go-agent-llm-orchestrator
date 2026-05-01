@@ -357,7 +357,8 @@ func (a *Analyzer) FinalizeStage(ctx context.Context, repoName string, stage str
 		return fmt.Errorf("session manager not initialized")
 	}
 
-	session, err := a.sessionMgr.GetSession(ctx, repoName)
+	// Get existing session context or start fresh
+	session, _, err := a.sessionMgr.GetSession(ctx, repoName)
 	if err != nil {
 		return fmt.Errorf("failed to get session: %w", err)
 	}

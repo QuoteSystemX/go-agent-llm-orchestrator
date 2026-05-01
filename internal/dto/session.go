@@ -64,7 +64,7 @@ func NewSessionManager(dbDir string) (*SessionManager, error) {
 	return &SessionManager{db: db}, nil
 }
 
-func (m *SessionManager) GetSession(ctx context.Context, repoName string) (*DialogueSession, error) {
+func (m *SessionManager) GetSession(ctx context.Context, repoName string) (*DialogueSession, bool, error) {
 	var ctxJson, currentStage, llmProvider, status string
 	var updatedAt time.Time
 
@@ -80,9 +80,9 @@ func (m *SessionManager) GetSession(ctx context.Context, repoName string) (*Dial
 			LLMProvider:  "internal",
 			Status:       "IDLE",
 			UpdatedAt:    time.Now(),
-		}, nil
+		}, false, nil
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var messages []DialogueMessage
@@ -97,7 +97,7 @@ func (m *SessionManager) GetSession(ctx context.Context, repoName string) (*Dial
 		LLMProvider:  llmProvider,
 		Status:       status,
 		UpdatedAt:    updatedAt,
-	}, nil
+	}, true, nil
 }
 
 func (m *SessionManager) SaveSession(ctx context.Context, s *DialogueSession) error {
@@ -115,14 +115,40 @@ func (m *SessionManager) SaveSession(ctx context.Context, s *DialogueSession) er
 	return err
 }
 
+// UpdateSession only updates the session if it already exists in the database.
+// This prevents race conditions where a background process recreates a cleared session.
+func (m *SessionManager) UpdateSession(ctx context.Context, s *DialogueSession) error {
+	ctxJson, _ := json.Marshal(s.Context)
+	res, err := m.db.ExecContext(ctx, `
+		UPDATE dialogue_sessions SET
+			context = ?,
+			current_stage = ?,
+			llm_provider = ?,
+			status = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE repo_name = ?`,
+		string(ctxJson), s.CurrentStage, s.LLMProvider, s.Status, s.RepoName)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return fmt.Errorf("session not found for repo %s (likely cleared)", s.RepoName)
+	}
+	return nil
+}
+
 func (m *SessionManager) AddMessage(ctx context.Context, repoName string, msg DialogueMessage) error {
-	session, err := m.GetSession(ctx, repoName)
+	session, exists, err := m.GetSession(ctx, repoName)
 	if err != nil {
 		return err
 	}
 	session.Context = append(session.Context, msg)
 	session.Status = "DIALOGUE"
-	return m.SaveSession(ctx, session)
+	if !exists {
+		return m.SaveSession(ctx, session)
+	}
+	return m.UpdateSession(ctx, session)
 }
 
 func (m *SessionManager) ClearSession(ctx context.Context, repoName string) error {
