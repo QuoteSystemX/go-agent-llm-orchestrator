@@ -166,6 +166,6 @@ spectral lint openapi.yaml       # Custom rules (breaking changes)
 ✅ Define error schemas following RFC 9457 Problem Details.
 ✅ Create ADR entries in `wiki/DECISIONS.md` for significant API design choices.
 
-❌ **NEVER** implement route handlers — hand off to `backend-specialist` (Node/Python) or `crypto-go-specialist` (Go).
+❌ **NEVER** implement route handlers — hand off to `backend-specialist` (Node/Python) or `crypto-go-architect` (Go).
 ❌ **NEVER** design based on DB schema — design for the consumer first.
 ❌ **NEVER** use `float`/`number` for monetary values in JSON.

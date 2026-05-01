@@ -5,10 +5,93 @@
     "cost_limit_per_task_usd": 2.0,
     "max_retries_per_step": 3
   },
-  "actions": {
-    "budget_exceeded": "warn_and_pause",
-    "loop_detected": "stop_and_notify",
-    "stale_context": "refresh"
+  "dangerous_operations": {
+    "commands": {
+      "block": [
+        "rm -rf /",
+        "rm -rf /*",
+        "rm -rf .",
+        "DROP DATABASE",
+        "TRUNCATE TABLE",
+        "git push --force origin main",
+        "git push --force origin master",
+        "git reset --hard HEAD~",
+        "chmod 777",
+        "curl | bash",
+        "curl | sh",
+        "wget | bash",
+        "wget | sh",
+        ":(){ :|:& };:",
+        "echo $PASSWORD",
+        "echo $SECRET",
+        "echo $API_KEY",
+        "printenv | grep",
+        "cat .env",
+        "base64 --decode",
+        "mkfs",
+        "dd if=/dev/zero"
+      ],
+      "warn": [
+        "rm -rf",
+        "DROP TABLE",
+        "DELETE FROM",
+        "ALTER TABLE",
+        "git push --force",
+        "git push -f",
+        "git reset --hard",
+        "git rebase",
+        "git filter-branch",
+        "npm publish",
+        "go release",
+        "docker system prune",
+        "kubectl delete namespace",
+        "kubectl delete -f",
+        "helm uninstall",
+        "aws s3 rm",
+        "aws s3 rb",
+        "aws ec2 terminate",
+        "gcloud compute instances delete",
+        "gcloud projects delete",
+        "az group delete",
+        "terraform destroy",
+        "terraform apply -auto-approve",
+        "docker rmi",
+        "docker volume prune",
+        "pg_dump",
+        "mongodump",
+        "redis-cli FLUSHALL",
+        "redis-cli FLUSHDB"
+      ]
+    },
+    "files": {
+      "protected": [
+        ".env",
+        ".env.*",
+        "go.mod",
+        "go.sum",
+        "package-lock.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        ".agent/config/*",
+        ".agent/KNOWLEDGE.md",
+        "Dockerfile",
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        ".github/workflows/*",
+        "*.pem",
+        "*.key",
+        "*credentials*",
+        "*secret*",
+        "terraform.tfstate",
+        "terraform.tfstate.backup",
+        "*.tfvars"
+      ]
+    },
+    "actions": {
+      "on_block": "stop_and_notify",
+      "on_warn": "log_and_continue",
+      "on_protected_file_edit": "require_explicit_confirmation"
+    }
   },
   "monitored_files": [
     ".agent/bus/telemetry.json",

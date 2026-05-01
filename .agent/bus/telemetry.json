@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "total_tokens": 0,
+  "total_cost_usd": 0.0,
+  "events": [],
+  "_note": "Tracks cumulative token usage and cost. Updated by telemetry skill and read by guardrail_monitor.py for budget enforcement."
+}

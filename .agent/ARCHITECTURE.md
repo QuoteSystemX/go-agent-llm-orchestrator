@@ -96,7 +96,7 @@ Specialist AI personas for different domains.
 
 ---
 
-## 🧩 Skills (52)
+## 🧩 Skills (53)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -214,7 +214,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 ---
 
-## 🔄 Workflows (20)
+## 🔄 Workflows (21)
 
 Slash command procedures. Invoke with `/command`.
 
@@ -271,19 +271,20 @@ skill-name/
 
 ---
 
-## � Scripts (2)
+## 📜 Scripts (23)
 
 Master validation scripts that orchestrate skill-level scripts.
 
 ### Master Scripts
 
-| Script          | Purpose                                 | When to Use              |
-| --------------- | --------------------------------------- | ------------------------ |
+| Script                | Purpose                                 | When to Use              |
+| --------------------- | --------------------------------------- | ------------------------ |
 | `checklist.py`        | Priority-based validation (Core checks) | Development, pre-commit  |
 | `verify_all.py`       | Comprehensive verification (All checks) | Pre-deployment, releases |
 | `model_router.py`     | Dynamic task complexity routing (L1-L3) | Every subagent call      |
+| `bus_manager.py`      | Context Bus administration (Push/Pull)  | Debugging, inspection    |
 | `business_dashboard.py` | Feature-level progress tracking (Rich) | /status, sprint review   |
-| `metrics_dashboard.py`  | Technical observability (CLI Monitor)   | Monitoring               |
+| `metrics_dashboard.py` | Technical observability (CLI Monitor)   | Monitoring               |
 | `drift_detector.py`   | Documentation lag detection             | /status, /release        |
 | `analyze_efficiency.py` | Performance & Cost (Token usage)       | Monthly audit            |
 | `distill_context.py`  | Long-context optimization (RAG/Extract) | Shared Context Bus       |
@@ -416,7 +417,7 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 | **Total Agents**    | 36                                              |
 | **Total Skills**    | 53                                              |
 | **Total Workflows** | 21                                              |
-| **Total Scripts**   | 2 (master) + 16 (skill-level)                   |
+| **Total Scripts**   | 23                                              |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
 | **MCP Servers**     | 1 (`skill-server` Go binary — stdio transport)  |
 | **Coverage**        | ~95% web/mobile/backend/infra development       |

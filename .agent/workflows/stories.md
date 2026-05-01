@@ -56,7 +56,7 @@ ROUTING HINTS (add to Fix Hint section):
 - Backend stories → note "Primary agent: backend-specialist"
 - Frontend stories → note "Primary agent: frontend-specialist"
 - Full-stack stories → note "Primary agent: orchestrator"
-- Go-specific stories → note "Primary agent: crypto-go-specialist"
+- Go-specific stories → note "Primary agent: crypto-go-architect"
 ```
 
 ---

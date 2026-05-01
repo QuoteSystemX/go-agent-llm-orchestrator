@@ -72,7 +72,7 @@ Assign each issue a tag and priority:
 | `[SECURITY]` | 🔴 Critical | `security-auditor` |
 | `[PERF]` | 🟡 High | `performance-optimizer` |
 | `[TEST]` | 🟡 High | `test-engineer` / `qa-automation-engineer` |
-| `[REFACTOR]` | 🟢 Medium | `crypto-go-specialist` / `code-archaeologist` |
+| `[REFACTOR]` | 🟢 Medium | `crypto-go-architect` / `code-archaeologist` |
 | `[DOCS]` | 🟢 Low | `documentation-writer` |
 | `[CHORE]` | 🟢 Low | `project-planner` |
 

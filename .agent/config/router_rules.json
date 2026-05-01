@@ -17,13 +17,14 @@
     }
   ],
   "models": {
-    "L1": "claude-3-haiku-20240307",
-    "L2": "claude-3-5-sonnet-20240620",
-    "L3": "claude-3-opus-20240229"
+    "L1": "${MODEL_L1:-claude-sonnet-4-20250514}",
+    "L2": "${MODEL_L2:-claude-sonnet-4-20250514}",
+    "L3": "${MODEL_L3:-claude-opus-4-20250514}"
   },
   "fallbacks": {
     "L1": "L2",
     "L2": "L3",
     "L3": "L3"
-  }
+  },
+  "_note": "Model IDs use env-var syntax: set MODEL_L1, MODEL_L2, MODEL_L3 to override. model_router.py resolves them at runtime."
 }

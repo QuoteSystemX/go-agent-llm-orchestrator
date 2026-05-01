@@ -57,7 +57,7 @@ AGENT_DEFAULT_TOOLS: dict[str, str] = {
     # Implementation agents
     "backend-specialist":     "Read, Write, Edit, Bash, Grep, Glob",
     "frontend-specialist":    "Read, Write, Edit, Bash, Grep, Glob",
-    "crypto-go-specialist":   "Read, Write, Edit, Bash, Grep, Glob",
+    "crypto-go-architect":   "Read, Write, Edit, Bash, Grep, Glob",
     "database-architect":     "Read, Write, Edit, Bash, Grep, Glob",
     "mobile-developer":       "Read, Write, Edit, Bash, Grep, Glob",
     "game-developer":         "Read, Write, Edit, Bash, Grep, Glob",

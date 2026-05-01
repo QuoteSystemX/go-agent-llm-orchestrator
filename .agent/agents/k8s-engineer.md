@@ -163,7 +163,7 @@ Cloud provider?
 | Situation | Agent | What to pass |
 |-----------|-------|--------------|
 | CI/CD pipeline that deploys to K8s | `devops-engineer` | Helm chart + values files + cluster context |
-| Go-based Operator development | `crypto-go-specialist` | CRD spec + reconciler skeleton |
+| Go-based Operator development | `crypto-go-architect` | CRD spec + reconciler skeleton |
 | Security audit of cluster config | `security-auditor` | RBAC manifests + NetworkPolicy + PSS labels |
 | Manifests introduce regressions in tests | `test-engineer` | Changed manifests + test environment config |
 | Post-deploy monitoring alert fires | `debugger` | Alert definition + pod logs + describe output |
