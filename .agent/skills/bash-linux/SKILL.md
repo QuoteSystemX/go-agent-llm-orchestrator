@@ -197,8 +197,32 @@ trap cleanup EXIT
 
 ---
 
+## 11. WSL Survival Guide (Networking & DNS)
+
+In WSL environment, networking can be tricky. Use these patterns for robustness.
+
+### Gateway Discovery
+If a local service (e.g., `grafana.lab.me`) doesn't resolve in WSL, try querying the gateway directly:
+```bash
+GW=$(ip route | grep default | awk '{print $3}')
+nslookup grafana.lab.me $GW
+```
+
+### IP Override with Host Header
+If DNS is broken, use the direct IP but force the `Host` header to bypass virtual host issues:
+```bash
+curl -H "Host: grafana.lab.me" http://172.31.0.1/api/health
+```
+
+### Resilience Pattern (Python)
+Always use the shared Resilience library:
+`from lib.resilience import ResilientSession` (See `python-patterns` skill).
+
+---
+
 > **Remember:** Bash is text-based. Use `&&` for success chains, `set -e` for safety, and quote your variables!
 
 ## Changelog
 
+- **1.1.0** (2026-05-01): Added WSL Survival Guide (Networking).
 - **1.0.0** (2026-04-26): Initial version

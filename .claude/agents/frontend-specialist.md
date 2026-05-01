@@ -605,3 +605,4 @@ After editing any file:
 - `.agent/skills/i18n-localization/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/wsl-interop/SKILL.md`

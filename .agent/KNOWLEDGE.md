@@ -199,6 +199,28 @@ The BMAD lifecycle adds structured product development on top of the task queue 
 
 ---
 
+## 🌐 WSL & NETWORK INTEROPERABILITY STANDARDS
+
+WSL (Windows Subsystem for Linux) has known networking quirks, specifically regarding local DNS resolution and isolated network namespaces.
+
+### 1. Mandatory Resilience Chain (Python)
+
+All Python-based tools making network requests MUST use the shared Resilience Library:
+`from lib.resilience import ResilientSession`
+
+**Why?**
+-   **Direct Call**: Standard attempts.
+-   **Gateway DNS**: Automatically detects the WSL gateway and queries it for internal domains (`.lab`, `.me`, `.local`).
+-   **Headless Bridge**: Uses Chromium to bridge requests if the local network stack blocks standard `requests`.
+
+### 2. Manual Network Hacks (Bash/Go)
+
+-   **Gateway Discovery**: `GW=$(ip route | grep default | awk '{print $3}')`
+-   **IP Pinning**: If DNS fails, use the direct IP (gateway or static) and force the `Host` header (e.g., `curl -H "Host: service.lab" http://<ip>`).
+-   **Browser Debugging**: Use `playwright` or `puppeteer` as a "proxy" for tools that cannot bypass WSL firewall/DNS restrictions directly.
+
+---
+
 ## 🛠 TIPS & TRICKS
 
 - **Relative Links**: Always use relative paths for internal documentation (e.g., `../wiki/api.md`).

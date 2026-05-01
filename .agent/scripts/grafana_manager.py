@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
 import os
-import json
-import requests
-import argparse
 import sys
+import json
+import argparse
 from typing import Dict, Any, Optional
 
+# Add lib directory to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
+from resilience import ResilientSession
+
 class GrafanaManager:
-    def __init__(self, host: str = None, token: str = None):
-        self.host = host or os.environ.get("GRAFANA_HOST", "http://localhost:3000")
-        self.token = token or os.environ.get("GRAFANA_TOKEN")
-        self.headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
-        if self.token:
-            self.headers["Authorization"] = f"Bearer {self.token}"
+    def __init__(self, host: str = None, token: str = None, user: str = None, password: str = None, use_browser: bool = False):
+        self.session = ResilientSession(
+            host=host or os.environ.get("GRAFANA_HOST", "http://localhost:3000"),
+            token=token or os.environ.get("GRAFANA_TOKEN"),
+            user=user or os.environ.get("GRAFANA_USER"),
+            password=password or os.environ.get("GRAFANA_PASSWORD"),
+            use_browser=use_browser
+        )
 
     def _request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
-        url = f"{self.host.rstrip('/')}{endpoint}"
-        try:
-            response = requests.request(method, url, headers=self.headers, json=data, timeout=10)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error: Grafana API request failed: {e}", file=sys.stderr)
-            if hasattr(e, 'response') and e.response is not None:
-                print(f"Response: {e.response.text}", file=sys.stderr)
-            return {"error": str(e)}
+        return self.session.request(method, endpoint, data)
 
     def get_dashboard(self, uid: str) -> Dict:
         return self._request("GET", f"/api/dashboards/uid/{uid}")
@@ -80,9 +73,18 @@ def main():
     parser.add_argument("--ds-id", type=int, help="Datasource ID for exploration")
     parser.add_argument("--host", help="Grafana Host")
     parser.add_argument("--token", help="Grafana Token")
+    parser.add_argument("--user", help="Username for Basic Auth")
+    parser.add_argument("--password", help="Password for Basic Auth")
+    parser.add_argument("--browser", action="store_true", help="Use headless browser for requests (WSL fallback)")
 
     args = parser.parse_args()
-    manager = GrafanaManager(host=args.host, token=args.token)
+    manager = GrafanaManager(
+        host=args.host, 
+        token=args.token, 
+        user=args.user, 
+        password=args.password, 
+        use_browser=args.browser
+    )
 
     if args.action == "get":
         if not args.uid:

@@ -436,3 +436,4 @@ go tool trace trace.out
 - `.agent/skills/architecture/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/wsl-interop/SKILL.md`

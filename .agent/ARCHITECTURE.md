@@ -12,7 +12,7 @@ Antigravity Kit is a modular system consisting of:
 - **52 Skills** - Domain-specific knowledge modules
 - **20 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
-- **Core Infrastructure** - Bus, Router, Telemetry, Dashboard
+- **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 
 ---
 

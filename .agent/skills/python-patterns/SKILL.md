@@ -439,8 +439,35 @@ Before implementing:
 
 ---
 
+## 12. WSL & Network Resilience (Mandatory for this project)
+
+In this project, networking from WSL often faces DNS and connectivity issues.
+
+### Resilience Chain Pattern
+
+All Python scripts making network requests MUST use the shared resilience library:
+`from lib.resilience import ResilientSession`
+
+**Why?**
+
+1.  **Direct**: Standard requests.
+2.  **Smart DNS**: Falls back to Gateway DNS (Router) if the local domain (e.g., `.lab`, `.me`) is unknown to WSL.
+3.  **Headless Bridge**: Falls back to Chromium if standard networking is blocked.
+
+### Example Implementation
+
+```python
+from lib.resilience import ResilientSession
+
+session = ResilientSession(host="http://service.lab.me", user="admin", password="...")
+result = session.request("GET", "/api/v1/resource")
+```
+
+---
+
 > **Remember**: Python patterns are about decision-making for YOUR specific context. Don't copy code—think about what serves your application best.
 
 ## Changelog
 
+- **1.1.0** (2026-05-01): Added WSL Network Resilience mandatory pattern.
 - **1.0.0** (2026-04-26): Initial version
