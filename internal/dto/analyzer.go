@@ -261,15 +261,38 @@ func (a *Analyzer) GetStagePrompt(stage string) string {
 
 	switch strings.ToLower(stage) {
 	case "discovery":
-		return rolePrefix + "Project Discovery (Discovery)" + roleSuffix + "\nHelp the user define their project requirements and goals."
+		return rolePrefix + "Project Discovery (Discovery)" + roleSuffix + `
+RULES:
+1. Conduct a Socratic interview. Do NOT provide solutions yet.
+2. Ask the following 5 mandatory questions at minimum:
+   - "What problem does this solve and for whom?"
+   - "What does success look like in 90 days? How will we measure it?"
+   - "What are the hard constraints? (budget, tech, timeline, regulatory)"
+   - "What is explicitly OUT of scope for this phase?"
+   - "Who are the top 2 user personas? Describe their context."
+3. Wait for the user's answers before drafting anything.
+4. Your goal is to gather enough information to produce wiki/BRIEF.md later.`
 	case "prd":
-		return rolePrefix + "Product Requirements (PRD)" + roleSuffix + "\nFocus on user stories, functional requirements, and success criteria."
+		return rolePrefix + "Product Requirements (PRD)" + roleSuffix + `
+RULES:
+1. Focus on user stories, functional requirements, and success criteria.
+2. Use Gherkin (Given/When/Then) for Acceptance Criteria.
+3. Apply MoSCoW prioritization (Must, Should, Could, Won't).
+4. Do NOT discuss technical implementation details yet.`
 	case "architecture":
-		return rolePrefix + "System Architecture" + roleSuffix + "\nDiscuss tech stack, data flow, and component relationships."
+		return rolePrefix + "System Architecture" + roleSuffix + `
+RULES:
+1. Discuss tech stack, data flow, and component relationships.
+2. Identify system components and write ADRs (Architectural Decision Records).
+3. Map data flow end-to-end.`
 	case "stories":
-		return rolePrefix + "Task Decomposition (Stories)" + roleSuffix + "\nHelp the user decompose requirements into atomic tasks."
+		return rolePrefix + "Task Decomposition (Stories)" + roleSuffix + `
+RULES:
+1. Decompose requirements into atomic tasks.
+2. Each story should be a single executable slice.
+3. Follow the standard STORY.md template.`
 	case "sprint":
-		return rolePrefix + "Sprint Planning" + roleSuffix + "\nHelp the user plan the immediate development cycle."
+		return rolePrefix + "Sprint Planning" + roleSuffix + "\nHelp the user plan the immediate development cycle and select tasks for the next sprint."
 	case "worker":
 		return rolePrefix + "Implementation (Worker)" + roleSuffix + "\nDiscuss technical implementation details and code refinement."
 	case "testing":
@@ -314,6 +337,18 @@ func (a *Analyzer) GetBMADFileStatus(repoName string) map[string]bool {
 		}
 	}
 	return status
+}
+
+// CalculateStageFromFiles finds the first stage that doesn't have an artifact yet.
+func (a *Analyzer) CalculateStageFromFiles(repoName string) string {
+	status := a.GetBMADFileStatus(repoName)
+	stages := []string{"discovery", "prd", "architecture", "stories", "sprint", "worker", "testing", "regression", "docs_update", "closure"}
+	for _, s := range stages {
+		if !status[s] {
+			return s
+		}
+	}
+	return "completed"
 }
 
 // FinalizeStage generates an artifact based on the dialogue session and pushes it to git.

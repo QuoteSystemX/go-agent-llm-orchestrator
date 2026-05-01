@@ -1750,6 +1750,11 @@ func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
 		validStages := []string{"discovery", "prd", "architecture", "stories", "sprint", "worker", "testing", "regression", "docs_update", "closure"}
 		for _, v := range validStages {
 			if command == v {
+				// If switching to a new stage, we might want to preserve history but mark the intent.
+				// For /discovery, if already in discovery, we could clear context to restart.
+				if command == "discovery" && session.CurrentStage == "discovery" {
+					session.Context = []dto.DialogueMessage{}
+				}
 				session.CurrentStage = command
 				break
 			}
@@ -1824,6 +1829,51 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to get session", http.StatusInternalServerError)
 		return
+	}
+
+	// Smart Stage Detection: if context is empty, sync with files
+	if len(session.Context) == 0 {
+		expectedStage := s.analyzer.CalculateStageFromFiles(repo)
+		if expectedStage != "completed" && expectedStage != session.CurrentStage {
+			log.Printf("DTO: Syncing stage for %s: %s -> %s", repo, session.CurrentStage, expectedStage)
+			session.CurrentStage = expectedStage
+		}
+
+		// Auto-initialize whatever stage we are on
+		if session.CurrentStage != "completed" {
+			log.Printf("DTO: Auto-initializing %s stage for %s", session.CurrentStage, repo)
+			systemPrompt := s.analyzer.GetStagePrompt(session.CurrentStage)
+			
+			// Add RAG context for initialization if available
+			if ragStore := s.analyzer.GetRagStore(repo); ragStore != nil {
+				// Use specific query for later stages to get relevant context
+				query := "project overview summary"
+				if session.CurrentStage != "discovery" {
+					query = "project requirements architecture data flow"
+				}
+				results := ragStore.SearchFiltered(r.Context(), query, 5, "")
+				if len(results) > 0 {
+					systemPrompt += "\n\nRelevant Repository Context for initialization:\n---\n"
+					for _, doc := range results {
+						systemPrompt += fmt.Sprintf("File: %s\nContent: %s\n---\n", doc.Source, doc.Content)
+					}
+				}
+			}
+
+			llmMessages := []map[string]string{
+				{"role": "system", "content": systemPrompt},
+				{"role": "user", "content": fmt.Sprintf("Start the %s phase interaction.", session.CurrentStage)},
+			}
+
+			var response string
+			response, err = s.analyzer.GenerateDialogueResponse(r.Context(), llm.DTO, llmMessages)
+			if err == nil {
+				session.Context = append(session.Context, dto.DialogueMessage{Role: "assistant", Content: response})
+				mgr.SaveSession(r.Context(), session)
+			} else {
+				log.Printf("DTO: Auto-initialization failed: %v", err)
+			}
+		}
 	}
 
 	fileStatus := s.analyzer.GetBMADFileStatus(repo)

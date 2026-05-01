@@ -1741,7 +1741,9 @@ async function loadDTOSession(repo) {
                 }
             });
         } else {
-            addChatMessage('assistant', `Hello! I am your **Orchestration Operator**. I'm ready to assist with the **${session.current_stage || 'Discovery'}** stage for **${repo}**. How should we proceed?`, false);
+            // This case is handled by auto-init on the backend now, 
+            // but we keep a fallback just in case.
+            addChatMessage('assistant', `Initializing **${session.current_stage || 'Discovery'}**...`, false);
         }
 
         updateBMADTracker(session);
