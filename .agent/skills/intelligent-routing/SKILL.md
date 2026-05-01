@@ -61,6 +61,7 @@ graph TD
 | **Reliability**     | "slo", "sli", "metrics", "dashboard", "alert", "sre"     | `sre-engineer`                            | ✅ YES       |
 | **Release**         | "release", "version", "tag", "changelog", "semver"       | `release-manager`                         | ✅ YES       |
 | **Visual Design**   | "design", "color", "typography", "palette", "hsl"        | `visual-designer`                         | ✅ YES       |
+| **Grafana**         | "grafana", "dashboard", "panel", "promql", "logql"       | `grafana-master`                          | ✅ YES       |
 | **Product Discovery**| "discovery", "brief", "prd", "architecture", "bmad"      | `analyst`                                 | ✅ YES       |
 | **Legacy / Clean**  | "legacy", "refactor", "dead code", "archaeologist"       | `code-archaeologist`                      | ✅ YES       |
 | **Data Pipeline**   | "pipeline", "etl", "elt", "dbt", "airflow", "kafka", "clickhouse", "spark", "data warehouse", "data lake" | `data-engineer` | ✅ YES |

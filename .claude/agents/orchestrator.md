@@ -148,6 +148,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `sre-engineer` | Reliability & SRE | SLO/SLI, metrics, dashboards, alerts, on-call |
 | `release-manager` | Release & Versioning | SemVer, CHANGELOG, tagging, pre-flight audits |
 | `visual-designer` | UI Aesthetics | Design tokens, HSL palettes, "WOW" factor |
+| `grafana-master` | Dashboarding | Expert Grafana JSON, PromQL/LogQL, visualizations |
 
 ---
 
@@ -192,6 +193,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `sre-engineer` | SLOs, dashboards, alerts, runbooks | ❌ Application code, infra provisioning |
 | `release-manager` | VERSION, CHANGELOG, git tags | ❌ Feature code, bug fixes |
 | `visual-designer` | design-system.json, CSS tokens, UI specs | ❌ React logic, backend API |
+| `grafana-master` | Grafana JSON, PromQL/LogQL, dashboard API | ❌ Application code, infra provisioning |
 
 ### File Type Ownership
 
@@ -749,3 +751,4 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/frontend-design/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/grafana-dashboard-master/SKILL.md`

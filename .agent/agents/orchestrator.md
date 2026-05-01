@@ -3,7 +3,7 @@ name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master
 ---
 
 # Orchestrator - Native Multi-Agent Coordination
@@ -148,6 +148,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `sre-engineer` | Reliability & SRE | SLO/SLI, metrics, dashboards, alerts, on-call |
 | `release-manager` | Release & Versioning | SemVer, CHANGELOG, tagging, pre-flight audits |
 | `visual-designer` | UI Aesthetics | Design tokens, HSL palettes, "WOW" factor |
+| `grafana-master` | Dashboarding | Expert Grafana JSON, PromQL/LogQL, visualizations |
 
 ---
 
@@ -192,6 +193,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `sre-engineer` | SLOs, dashboards, alerts, runbooks | ❌ Application code, infra provisioning |
 | `release-manager` | VERSION, CHANGELOG, git tags | ❌ Feature code, bug fixes |
 | `visual-designer` | design-system.json, CSS tokens, UI specs | ❌ React logic, backend API |
+| `grafana-master` | Grafana JSON, PromQL/LogQL, dashboard API | ❌ Application code, infra provisioning |
 
 ### File Type Ownership
 
