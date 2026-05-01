@@ -27,3 +27,13 @@ Follow with Context, Root Cause, and Prevention bullets.
 
 Skill tags must match skill folder names (e.g., `go-patterns`, `telemetry`, `shared-context`).
 Use `python3 .agent/scripts/experience_distiller.py --list-skills` to see all active tags.
+
+### [2026-01-01] [INFO] [test] The magic word is xyzzy
+
+### [2026-05-01] [INFO] [regression] Regression secret word: quack
+
+### [2026-05-01] [INFO] [regression] Regression secret word: quack
+
+### [2026-05-01] [INFO] [regression] Regression secret word: quack
+
+### [2026-05-01] [INFO] [regression] Regression secret word: quack

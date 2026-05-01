@@ -3,32 +3,21 @@
 
 Validates agent actions against watchdog_rules.json before execution.
 Called by the orchestrator before major operations.
-
-Usage:
-    python3 guardrail_monitor.py                    # budget check only
-    python3 guardrail_monitor.py --check-cmd "rm -rf /tmp/old"
-    python3 guardrail_monitor.py --check-file ".env.production"
 """
-import json
 import re
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent
-TELEMETRY_PATH = REPO_ROOT / ".agent" / "bus" / "telemetry.json"
-RULES_PATH = REPO_ROOT / ".agent" / "config" / "watchdog_rules.json"
-
-
-def load_json(path: Path) -> dict:
-    if not path.exists():
-        return {}
-    try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return {}
-
+# Import from common lib
+try:
+    from lib.paths import WATCHDOG_RULES_PATH, TELEMETRY_PATH
+    from lib.common import load_json_safe
+except ImportError:
+    # Fallback for direct execution if lib not in path
+    sys.path.append(str(Path(__file__).resolve().parent))
+    from lib.paths import WATCHDOG_RULES_PATH, TELEMETRY_PATH
+    from lib.common import load_json_safe
 
 def check_budget(rules: dict, telemetry: dict) -> tuple[bool, str]:
     """Check token and cost limits."""
@@ -45,94 +34,86 @@ def check_budget(rules: dict, telemetry: dict) -> tuple[bool, str]:
 
     return True, "Budget within limits."
 
-
 def _is_command_match(pattern: str, command: str) -> bool:
-    """Check if a pattern matches a command using word-boundary-aware matching.
-
-    Rules:
-    - Patterns that look like full commands (contain spaces) are matched
-      as prefixes of the command string (after stripping).
-    - Single-word patterns use word-boundary regex to avoid false positives
-      like matching "DROP TABLE" inside a grep command searching for that string.
-    """
+    """Check if a pattern matches a command using word-boundary-aware matching."""
     pat = pattern.strip().lower()
     cmd = command.strip().lower()
 
     if " " in pat:
-        # Multi-word pattern: check if command starts with it or has it as a
-        # standalone segment (not inside quotes or after grep/cat/echo)
         if _is_inside_string_search(cmd, pat):
             return False
 
-        # For path-sensitive patterns like "rm -rf /", ensure the path
-        # isn't just a prefix of a longer path (e.g., "/tmp/old")
         if pat.endswith("/") or pat.endswith("/*"):
-            # Exact path block: "rm -rf /" should not match "rm -rf /tmp/old"
-            # Check if what follows the pattern is end-of-string or whitespace
             idx = cmd.find(pat)
             if idx >= 0:
                 after = cmd[idx + len(pat):]
-                # If pattern ends with / and there's more path after it, not a match
                 if pat.endswith("/") and after and after[0] not in (" ", "\t", "|", ";", "&"):
                     return False
             return pat in cmd
         return pat in cmd
     else:
-        # Single-word pattern: word-boundary match, exclude string search context
         if _is_inside_string_search(cmd, pat):
             return False
         regex = rf'\b{re.escape(pat)}\b'
         return bool(re.search(regex, cmd))
 
-
 def _is_inside_string_search(cmd: str, pattern: str) -> bool:
-    """Detect if the pattern appears inside a safe search/display context.
-
-    Avoids false positives like: grep "DROP TABLE" docs.md
-    or: cat file.sql | grep "rm -rf"
-    """
-    # Common search/display commands where the pattern is an argument, not action
+    """Detect if the pattern appears inside a safe search/display context."""
     search_prefixes = ["grep ", "egrep ", "fgrep ", "rg ", "ag ", "ack ",
                        "cat ", "less ", "more ", "head ", "tail ",
                        "echo ", "printf ", "log "]
     for prefix in search_prefixes:
         if cmd.startswith(prefix):
             return True
-
-    # Note: We removed the global quote check because it blocked execution
-    # contexts like psql -c 'DROP DATABASE'. We rely on prefix detection.
     return False
 
+def _split_commands(command: str) -> list[str]:
+    """Split a complex command into individual segments (pipes, chains, subshells)."""
+    # Simplified splitting - in a real shell this is much more complex
+    # but for safety checks we want to be conservative.
+    segments = re.split(r'[;|]|&&|\|\|', command)
+    
+    # Handle subshells $(...) and `...`
+    subshells = re.findall(r'\$\((.*?)\)', command)
+    subshells += re.findall(r'`(.*?)`', command)
+    
+    return [s.strip() for s in segments + subshells if s.strip()]
 
 def check_dangerous_command(rules: dict, command: str) -> tuple[str, str]:
-    """Check a command against block/warn lists.
-
-    Returns:
-        ("block", reason) — command must NOT execute.
-        ("warn", reason) — command is risky, log and continue.
-        ("ok", "") — command is safe.
-    """
+    """Check a command against block/warn lists, including segments."""
     dangerous = rules.get("dangerous_operations", {})
     commands_cfg = dangerous.get("commands", {})
 
-    for pattern in commands_cfg.get("block", []):
-        if _is_command_match(pattern, command):
-            return "block", f"BLOCKED: '{command}' matches block-pattern '{pattern}'"
+    segments = _split_commands(command)
+    for seg in segments:
+        for pattern in commands_cfg.get("block", []):
+            if _is_command_match(pattern, seg):
+                return "block", f"BLOCKED: Segment '{seg}' matches block-pattern '{pattern}'"
 
-    for pattern in commands_cfg.get("warn", []):
-        if _is_command_match(pattern, command):
-            return "warn", f"WARNING: '{command}' matches warn-pattern '{pattern}'"
+        for pattern in commands_cfg.get("warn", []):
+            if _is_command_match(pattern, seg):
+                return "warn", f"WARNING: Segment '{seg}' matches warn-pattern '{pattern}'"
 
     return "ok", ""
 
+def check_secret_leak(command: str) -> tuple[bool, str]:
+    """Check if the command contains likely secrets."""
+    secret_patterns = {
+        "Generic Secret": r'(?i)(key|pass|secret|token|auth|pwd)[a-z0-9_]*[-=_ ]{1,3}[a-zA-Z0-9]{16,}',
+        "AWS Access Key": r'AKIA[0-9A-Z]{16}',
+        "AWS Secret Key": r'(?i)aws_secret_access_key.*[a-zA-Z0-9/+=]{40}',
+        "Private Key": r'-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----',
+        "Bearer Token": r'Bearer [a-zA-Z0-9\-\._~+/]+=*',
+    }
+
+    for name, pattern in secret_patterns.items():
+        if re.search(pattern, command):
+            return True, f"LIKELY SECRET DETECTED ({name}) in command."
+    
+    return False, ""
 
 def check_protected_file(rules: dict, filepath: str) -> tuple[str, str]:
-    """Check if a file is in the protected list.
-
-    Returns:
-        ("protected", reason) — file requires explicit confirmation.
-        ("ok", "") — file is not protected.
-    """
+    """Check if a file is in the protected list."""
     dangerous = rules.get("dangerous_operations", {})
     protected_patterns = dangerous.get("files", {}).get("protected", [])
 
@@ -142,17 +123,37 @@ def check_protected_file(rules: dict, filepath: str) -> tuple[str, str]:
 
     return "ok", ""
 
+def run_in_sandbox(command: str) -> bool:
+    """Run a command in a Docker sandbox (requires Docker)."""
+    import subprocess
+    print(f"🐳 SANDBOX: Executing '{command}' in isolated container...")
+    try:
+        # We use alpine for speed, mounting nothing for isolation
+        # Note: This is a demo implementation. Real sandbox needs resource limits.
+        docker_cmd = ["docker", "run", "--rm", "alpine:latest", "sh", "-c", command]
+        result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=60)
+        print(f"📦 Sandbox Output:\n{result.stdout}")
+        if result.stderr:
+            print(f"⚠️ Sandbox Stderr:\n{result.stderr}")
+        return result.returncode == 0
+    except FileNotFoundError:
+        print("❌ SANDBOX FAILURE: Docker not found in system path.")
+        return False
+    except Exception as e:
+        print(f"❌ SANDBOX FAILURE: {e}")
+        return False
 
 def main():
-    rules = load_json(RULES_PATH)
-    telemetry = load_json(TELEMETRY_PATH)
+    rules = load_json_safe(WATCHDOG_RULES_PATH)
+    telemetry = load_json_safe(TELEMETRY_PATH)
     exit_code = 0
+    sandbox_mode = "--sandbox" in sys.argv
 
     if not rules:
         print("⚠️  No watchdog rules found. Skipping checks.")
         sys.exit(0)
 
-    # Budget check (always runs)
+    # ... (budget checks) ...
     budget_ok, budget_msg = check_budget(rules, telemetry)
     if not budget_ok:
         print(f"🛑 WATCHDOG: {budget_msg}")
@@ -160,21 +161,32 @@ def main():
     else:
         print(f"✅ Budget: {budget_msg}")
 
-    # Command check (--check-cmd "command string")
+    # Command check
     if "--check-cmd" in sys.argv:
         idx = sys.argv.index("--check-cmd")
         if idx + 1 < len(sys.argv):
             cmd = sys.argv[idx + 1]
+            
+            # Secret check first
+            secret_detected, secret_msg = check_secret_leak(cmd)
+            if secret_detected:
+                print(f"⚠️  WATCHDOG: {secret_msg}")
+            
             level, reason = check_dangerous_command(rules, cmd)
             if level == "block":
                 print(f"🛑 {reason}")
                 exit_code = 2
             elif level == "warn":
                 print(f"⚠️  {reason}")
+                if sandbox_mode:
+                    success = run_in_sandbox(cmd)
+                    if not success: exit_code = 2
             else:
                 print(f"✅ Command safe: '{cmd}'")
+                if sandbox_mode:
+                    run_in_sandbox(cmd)
 
-    # File check (--check-file "path/to/file")
+    # File check
     if "--check-file" in sys.argv:
         idx = sys.argv.index("--check-file")
         if idx + 1 < len(sys.argv):
@@ -187,7 +199,6 @@ def main():
                 print(f"✅ File not protected: '{fpath}'")
 
     sys.exit(exit_code)
-
 
 if __name__ == "__main__":
     main()

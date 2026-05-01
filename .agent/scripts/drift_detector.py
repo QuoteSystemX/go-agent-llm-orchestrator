@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 import argparse
 import json
+import re
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 
@@ -43,11 +44,56 @@ def get_documented_files():
             
     return "\n".join(docs)
 
+def check_arch_consistency():
+    """Verify that all agents and skills listed in ARCHITECTURE.md actually exist."""
+    arch_path = REPO_ROOT / ".agent" / "ARCHITECTURE.md"
+    if not arch_path.exists():
+        return []
+    
+    content = arch_path.read_text(encoding='utf-8')
+    drifts = []
+    
+    # Split content by H2 headers (##) to isolate Agents from Skills
+    sections = re.split(r'^## ', content, flags=re.MULTILINE)
+    
+    agent_dir = REPO_ROOT / ".agent" / "agents"
+    # Skills can be in multiple locations
+    skill_dirs = [
+        REPO_ROOT / ".agent" / "skills",
+        REPO_ROOT / ".agent" / ".shared"
+    ]
+    
+    def skill_exists(name):
+        return any((sd / name).is_dir() for sd in skill_dirs)
+
+    for section in sections:
+        header = section.split('\n')[0].lower()
+        # Find names in the FIRST column of tables
+        names = re.findall(r'^\|\s*`([\w-]+)`\s*\|', section, re.MULTILINE)
+        
+        # Section identification logic
+        is_agents_section = "agent" in header and "lifecycle" not in header and "skill" not in header
+        is_skills_section = "skill" in header
+        
+        if is_agents_section:
+            for name in names:
+                if name.lower() in ["agent", "agent-name"]: continue
+                if not (agent_dir / f"{name}.md").exists():
+                    drifts.append(f"AGENT DRIFT: '{name}' listed in Agents table but missing in .agent/agents/")
+        
+        elif is_skills_section:
+            for name in names:
+                if name.lower() in ["skill", "skill-name"]: continue
+                if not skill_exists(name):
+                    drifts.append(f"SKILL DRIFT: '{name}' listed in Skills table but missing in {skill_dirs[0]} or {skill_dirs[1]}")
+
+    return drifts
+
 def detect_drift():
     changes = get_git_changes()
     docs_content = get_documented_files()
     
-    drifts = []
+    drifts = check_arch_consistency()
     # Filter for important files (code, not assets/logs)
     monitored_exts = [".go", ".ts", ".tsx", ".py", ".js"]
     
@@ -56,7 +102,7 @@ def detect_drift():
         if path.suffix in monitored_exts and "test" not in f:
             # Check if filename is mentioned in docs
             if path.name not in docs_content:
-                drifts.append(f)
+                drifts.append(f"FILE DRIFT: {f} (modified but not in docs)")
                 
     return drifts
 

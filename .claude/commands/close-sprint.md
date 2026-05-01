@@ -66,11 +66,15 @@ Check `tasks/` for any remaining `[STORY]` or `[FEAT]` cards.
 6. Update `wiki/_index.md`: move BRIEF and PRD links to an `## Archive` section.
 7. Log: `✅ Sprint NN closed. Full cycle complete — BRIEF.md and PRD.md archived. Repository ready for next /discovery.`
 
-**If backlog has remaining stories**:
-1. Do NOT archive BRIEF.md or PRD.md — they are still needed.
-2. Log: `✅ Sprint NN closed. N stories remain in backlog. Run /sprint to plan the next sprint.`
+### Step 4: Experience Distillation
 
-### Step 4: Summary
+Run the experience distiller to archive old lessons and ensure the experience base remains relevant.
+
+1. // turbo
+   Run command: `python3 .agent/scripts/experience_distiller.py`
+2. Log the output of the distillation (e.g., `✅ Distillation complete: N active, M archived`).
+
+### Step 5: Summary
 
 Print a closing summary:
 

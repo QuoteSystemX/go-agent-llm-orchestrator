@@ -1,44 +1,48 @@
 #!/usr/bin/env python3
 """Experience Distiller — Lesson archiving, skill-tagging, and per-skill filtering.
-
-Manages the lifecycle of LESSONS_LEARNED.md entries:
-  - Archives lessons older than 30 days to wiki/archive/experience/
-  - Supports skill-tagged entries for contextual loading
-  - Filters lessons by skill tag for agent skill-loading
-
-Usage:
-    python3 experience_distiller.py              # distill (archive old lessons)
-    python3 experience_distiller.py --skill go-patterns   # filter by skill tag
-    python3 experience_distiller.py --list-skills         # list all skill tags found
-
-Entry format:
-    ### [YYYY-MM-DD] [TAG] [skill-name] Title
-    Description of the lesson learned.
-
-    ### [2026-04-28] [BUG] [go-patterns] xsync MapOf nil pointer on empty init
-    Always initialize xsync.MapOf with NewMapOf(), never with zero-value.
 """
-import os
 import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent
-LESSONS_PATH = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
-ARCHIVE_DIR = REPO_ROOT / "wiki" / "archive" / "experience"
+def detect_project_language() -> str:
+    """Detect the dominant programming language of the project."""
+    from lib.paths import REPO_ROOT
+    exts = [f.suffix for f in REPO_ROOT.glob("**/*") if f.is_file()]
+    counts = {".go": exts.count(".go"), ".py": exts.count(".py"), ".js": exts.count(".js"), ".ts": exts.count(".ts")}
+    dominant = max(counts, key=counts.get)
+    mapping = {".go": "Go", ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript"}
+    return mapping.get(dominant, "Unknown")
 
-# Retention policy: lessons older than this are archived
+# Import from common lib
+try:
+    from lib.paths import LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.common import load_json_safe
+except ImportError:
+    sys.path.append(str(Path(__file__).resolve().parent))
+    from lib.paths import LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.common import load_json_safe
+
+ARCHIVE_DIR = REPO_ROOT / "wiki" / "archive" / "experience"
 RETENTION_DAYS = 30
 
-
 def parse_entries(content: str) -> tuple[str, list[str]]:
-    """Split LESSONS_LEARNED.md into header and individual entries."""
-    entries = re.split(r'\n### ', content)
-    header = entries[0]
-    lessons = entries[1:]
-    return header, lessons
+    """Split content into header and individual entries."""
+    if content.startswith("### "):
+        # No header, or header is empty
+        header = ""
+        # We need to split by \n### but the first one is at the start
+        # Add a newline at start to make split uniform
+        lessons_content = "\n" + content
+    else:
+        # Split normally
+        lessons_content = content
 
+    parts = re.split(r'\n### ', lessons_content)
+    header = parts[0] if not content.startswith("### ") else ""
+    lessons = parts[1:]
+    return header, lessons
 
 def extract_date(entry: str) -> datetime | None:
     """Extract date from [YYYY-MM-DD] in an entry."""
@@ -50,23 +54,17 @@ def extract_date(entry: str) -> datetime | None:
             return None
     return None
 
-
 def extract_skill_tag(entry: str) -> str | None:
-    """Extract skill tag from entry.
-
-    Looks for the pattern: [DATE] [TAG] [skill-name]
-    where skill-name is a lowercase-with-dashes identifier.
-    """
+    """Extract skill tag from entry."""
     match = re.search(r'\]\s*\[\w+\]\s*\[([\w-]+)\]', entry)
     return match.group(1) if match else None
-
 
 def distill_lessons() -> str:
     """Archive lessons older than RETENTION_DAYS."""
     if not LESSONS_PATH.exists():
         return "No lessons file found."
 
-    with open(LESSONS_PATH, 'r') as f:
+    with open(LESSONS_PATH, 'r', encoding="utf-8") as f:
         content = f.read()
 
     header, lessons = parse_entries(content)
@@ -82,37 +80,44 @@ def distill_lessons() -> str:
         lesson_date = extract_date(lesson)
         if lesson_date and lesson_date < threshold:
             archive_file = ARCHIVE_DIR / f"{lesson_date.strftime('%Y-%m-%d')}.md"
-            with open(archive_file, 'a') as af:
+            with open(archive_file, 'a', encoding="utf-8") as af:
                 af.write(f"### {lesson}\n")
             archived_count += 1
             continue
 
         active_lessons.append(f"### {lesson}")
 
-    with open(LESSONS_PATH, 'w') as f:
+    with open(LESSONS_PATH, 'w', encoding="utf-8") as f:
         f.write(header)
         if active_lessons:
             f.write("\n" + "\n".join(active_lessons))
 
     return f"Distillation complete: {len(active_lessons)} active, {archived_count} archived."
 
-
 def filter_by_skill(skill_name: str) -> str:
-    """Return only lessons tagged with a specific skill.
-
-    When an agent loads a skill (e.g. go-patterns), it can call this
-    to get project-specific warnings relevant to that domain.
-    """
-    if not LESSONS_PATH.exists():
-        return ""
-
-    with open(LESSONS_PATH, 'r') as f:
-        content = f.read()
-
-    _, lessons = parse_entries(content)
+    """Return lessons tagged with a specific skill, including archives."""
+    all_lessons = []
+    
+    # 1. Active lessons
+    if LESSONS_PATH.exists():
+        with open(LESSONS_PATH, 'r', encoding="utf-8") as f:
+            _, active = parse_entries(f.read())
+            all_lessons.extend(active)
+            
+    # 2. Archived lessons
+    if ARCHIVE_DIR.exists():
+        for archive_file in ARCHIVE_DIR.glob("*.md"):
+            with open(archive_file, 'r', encoding="utf-8") as f:
+                # Archives might not have the header or use different structure
+                # but they follow the ### format
+                content = f.read()
+                if not content.startswith("### "):
+                    content = "\n### " + content
+                _, archived = parse_entries(content)
+                all_lessons.extend(archived)
 
     matched = []
-    for lesson in lessons:
+    for lesson in all_lessons:
         tag = extract_skill_tag(lesson)
         if tag and tag == skill_name:
             matched.append(f"### {lesson}")
@@ -120,31 +125,68 @@ def filter_by_skill(skill_name: str) -> str:
     if not matched:
         return f"No lessons found for skill '{skill_name}'."
 
-    return f"Found {len(matched)} lesson(s) for '{skill_name}':\n\n" + "\n".join(matched)
+    return f"Found {len(matched)} lesson(s) for '{skill_name}' (including archives):\n\n" + "\n".join(matched)
 
+def search_lessons(query: str) -> str:
+    """Find lessons using weighted keyword search."""
+    all_lessons = []
+    if LESSONS_PATH.exists():
+        with open(LESSONS_PATH, 'r', encoding="utf-8") as f:
+            _, active = parse_entries(f.read())
+            all_lessons.extend(active)
+    if ARCHIVE_DIR.exists():
+        for archive_file in ARCHIVE_DIR.glob("*.md"):
+            with open(archive_file, 'r', encoding="utf-8") as f:
+                content = f.read()
+                if not content.startswith("### "): content = "\n### " + content
+                _, archived = parse_entries(content)
+                all_lessons.extend(archived)
+
+    query_terms = set(query.lower().split())
+    results = []
+    for lesson in all_lessons:
+        lesson_lower = lesson.lower()
+        score = sum(2 if term in lesson_lower else 0 for term in query_terms)
+        # Extra points for matches in the title (first line)
+        title = lesson_lower.split('\n')[0]
+        score += sum(3 if term in title else 0 for term in query_terms)
+        
+        if score > 0:
+            results.append((score, lesson))
+
+    if not results:
+        return f"No lessons matching '{query}' found."
+
+    results.sort(key=lambda x: x[0], reverse=True)
+    top_results = [f"### {r[1]}" for r in results[:5]]
+    return f"Top {len(top_results)} match(es) for '{query}':\n\n" + "\n".join(top_results)
 
 def list_skill_tags() -> str:
-    """List all unique skill tags found in LESSONS_LEARNED.md."""
-    if not LESSONS_PATH.exists():
-        return "No lessons file found."
-
-    with open(LESSONS_PATH, 'r') as f:
-        content = f.read()
-
-    _, lessons = parse_entries(content)
-
+    """List all unique skill tags found."""
     tags = set()
-    for lesson in lessons:
-        tag = extract_skill_tag(lesson)
-        if tag:
-            tags.add(tag)
+    
+    # Check active and archives
+    files_to_check = [LESSONS_PATH]
+    if ARCHIVE_DIR.exists():
+        files_to_check.extend(ARCHIVE_DIR.glob("*.md"))
+        
+    for path in files_to_check:
+        if path.exists():
+            with open(path, 'r', encoding="utf-8") as f:
+                content = f.read()
+                if not content.startswith("### ") and path != LESSONS_PATH:
+                    content = "\n### " + content
+                _, lessons = parse_entries(content)
+                for lesson in lessons:
+                    tag = extract_skill_tag(lesson)
+                    if tag:
+                        tags.add(tag)
 
     if not tags:
-        return "No skill-tagged lessons found. Use format: ### [DATE] [TAG] [skill-name] Title"
+        return "No skill-tagged lessons found."
 
     sorted_tags = sorted(tags)
     return f"Skill tags ({len(sorted_tags)}): " + ", ".join(sorted_tags)
-
 
 def main():
     if "--skill" in sys.argv:
@@ -154,11 +196,17 @@ def main():
         else:
             print("Usage: experience_distiller.py --skill <skill-name>")
             sys.exit(1)
+    elif "--query" in sys.argv:
+        idx = sys.argv.index("--query")
+        if idx + 1 < len(sys.argv):
+            print(search_lessons(sys.argv[idx + 1]))
+        else:
+            print("Usage: experience_distiller.py --query <search-text>")
+            sys.exit(1)
     elif "--list-skills" in sys.argv:
         print(list_skill_tags())
     else:
         print(distill_lessons())
-
 
 if __name__ == "__main__":
     main()

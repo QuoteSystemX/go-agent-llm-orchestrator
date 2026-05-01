@@ -1,35 +1,54 @@
 #!/usr/bin/env python3
+"""Post-Mortem Runner — Analyzes failure logs and suggests lessons learned.
+"""
 import sys
-from datetime import datetime
+import os
 from pathlib import Path
+from datetime import datetime
 
-REPO_ROOT = Path(__file__).parent.parent.parent
+try:
+    from lib.paths import AGENT_DIR, LESSONS_PATH
+    from lib.common import load_json_safe
+except ImportError:
+    sys.path.append(str(Path(__file__).resolve().parent))
+    from lib.paths import AGENT_DIR, LESSONS_PATH
+    from lib.common import load_json_safe
 
-def run_post_mortem(task_file):
-    print(f"🕵️ Analyzing failure for task: {task_file}")
+LOG_DIR = AGENT_DIR / "logs"
+
+def analyze_recent_failures():
+    """Scan log directory for recent errors and extract context."""
+    if not LOG_DIR.exists():
+        return "No logs found to analyze."
+
+    logs = sorted(LOG_DIR.glob("*.log"), key=os.path.getmtime, reverse=True)
+    if not logs:
+        return "No recent logs found."
+
+    recent_log = logs[0]
+    with open(recent_log, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Heuristic for finding error context
+    lines = content.splitlines()
+    error_lines = [l for l in lines if "ERROR" in l or "Exception" in l or "Failed" in l]
     
-    # Read the task file and its history
-    task_path = REPO_ROOT / "tasks" / task_file
-    if not task_path.exists():
-        print(f"Error: Task file {task_file} not found.")
-        return
+    if not error_lines:
+        return f"No obvious errors found in {recent_log.name}."
 
-    # In a real agentic flow, we would extract logs here.
-    # For now, we prepare the context for the Analyst.
+    date_str = datetime.now().strftime("%Y-%m-%d")
     
-    print("\n--- POST-MORTEM CONTEXT PREPARED ---")
-    print(f"Task: {task_file}")
-    print("Action Required: Invoke @analyst to extract 'Lesson Learned' in this format:")
-    print(f"### [{datetime.now().strftime('%Y-%m-%d')}] [TAG] Title")
-    print("- Context: ...")
-    print("- Root Cause: ...")
-    print("- Prevention: ...")
-    print("Then update .agent/rules/LESSONS_LEARNED.md")
-    print("------------------------------------\n")
+    suggestion = f"""### [{date_str}] [FAIL] [skill-name] Title of the issue
+Context: Analysis of {recent_log.name} detected:
+{error_lines[-1] if error_lines else "Unknown error"}
+
+Root Cause: [Describe why it failed]
+Resolution: [How was it fixed?]
+"""
+    return f"Suggested lesson learned based on {recent_log.name}:\n\n{suggestion}"
+
+def main():
+    print(analyze_recent_failures())
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 post_mortem_runner.py <task_filename>")
-        sys.exit(1)
-        
-    run_post_mortem(sys.argv[1])
+    main()

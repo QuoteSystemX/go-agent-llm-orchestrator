@@ -26,13 +26,78 @@ Antigravity Kit is a modular system consisting of:
 ├── skills/                  # Skills (Domain-specific knowledge modules)
 ├── workflows/               # Slash Commands for Antigravity (+ Local triggers)
 ├── rules/                   # Global Rules (GEMINI.md)
-├── scripts/                 # Master Validation Scripts + sync_claude_agents.py
+├── scripts/                 # Master Validation Scripts
+│   ├── lib/                 # Core Infrastructure Libraries
+│   │   ├── paths.py         # Dynamic path resolution
+│   │   ├── common.py        # Atomic JSON, logging, and shared utilities
+│   │   └── resilience.py    # Self-healing and error handling logic
+│   ├── status_report.py     # Workspace Health Dashboard
+│   ├── drift_detector.py    # Documentation vs Code sync
+│   ├── guardrail_monitor.py # Safety and budget enforcement
+│   ├── bus_manager.py       # Context Bus (DTO) management
+│   └── visualize_deps.py    # Automated Mermaid dependency visualization
 └── skill-server/            # Go MCP binary (skills_load, skills_list, skills_search)
     ├── main.go
     ├── go.mod
     ├── Makefile
     ├── skill-server.sh      # Platform launcher (auto-detects OS/ARCH)
     └── bin/                 # Pre-built binaries (linux-amd64, linux-arm64)
+
+### 📊 Dependency Map
+<!-- DEPENDENCY_GRAPH_START -->
+```mermaid
+graph TD
+  adr_generator --> argparse
+  analyze_efficiency --> collections
+  auto_preview --> argparse
+  auto_preview --> signal
+  batch_runner --> argparse
+  bus_debugger --> lib
+  bus_manager --> argparse
+  bus_manager --> lib
+  bus_manager --> typing
+  business_dashboard --> rich
+  checklist --> argparse
+  checklist --> lib
+  checklist --> status_report
+  checklist --> typing
+  checklist --> visualize_deps
+  distill_context --> argparse
+  drift_detector --> argparse
+  experience_distiller --> lib
+  generate_adr --> lib
+  grafana_manager --> argparse
+  grafana_manager --> resilience
+  grafana_manager --> typing
+  guardrail_monitor --> fnmatch
+  guardrail_monitor --> lib
+  install_hooks --> lib
+  install_hooks --> shutil
+  main --> filepath
+  main --> mcp
+  main --> server
+  main --> skills
+  metrics_dashboard --> rich
+  model_router --> argparse
+  post_mortem_runner --> lib
+  pre_commit_review --> lib
+  quality_tracker --> argparse
+  quality_tracker --> collections
+  quality_tracker --> urllib
+  rollback_task --> argparse
+  rollback_task --> lib
+  session_manager --> argparse
+  session_manager --> typing
+  skill_versioning --> argparse
+  status_report --> drift_detector
+  status_report --> lib
+  sync_claude_agents --> argparse
+  task_helper --> argparse
+  verify_all --> argparse
+  verify_all --> typing
+  visualize_deps --> lib
+```
+<!-- DEPENDENCY_GRAPH_END -->
 
 # Prompt Library Hub Features (Repository Root)
 ├── prompt/patterns/         # Execution Methodologies (featureforge, bugcatcher, reviewer)
@@ -325,6 +390,71 @@ python .agent/scripts/verify_all.py . --url http://localhost:3000
 - i18n Check
 
 For details, see [scripts/README.md](scripts/README.md)
+
+---
+
+## 🛠️ CLI Tool Reference
+
+The following tools are available in `.agent/scripts/` for maintenance and safety:
+
+### `checklist.py`
+Master validation runner.
+- `python3 .agent/scripts/checklist.py .` - Run all core checks.
+- `--fix` - Automatically fix simple configuration and directory issues.
+- `--url <URL>` - Include performance and E2E checks.
+
+### `guardrail_monitor.py`
+Safety and budget watchdog.
+- `--check-cmd "<command>"` - Validate a command against block/warn lists. Handles pipes, subshells, and detects secret leaks.
+- `--check-file "<path>"` - Check if a file is protected.
+
+### `experience_distiller.py`
+Learning and knowledge maintenance.
+- `python3 .agent/scripts/experience_distiller.py` - Archive lessons older than 30 days.
+- `--skill <name>` - Filter and display lessons for a specific skill (searches active and archives).
+- `--list-skills` - List all unique skill tags in the knowledge base.
+
+### `bus_manager.py`
+Context Bus administration.
+- `push --id <ID> --type <TYPE> --author <NAME> --content '<JSON>'` - Push data to the shared bus. Alerts if telemetry exceeds budget.
+- `wait --id <ID> --timeout <sec>` - Wait for a specific object to appear.
+- `list`, `peek`, `delete`, `clear` - Manage bus objects.
+
+### `visualize_deps.py`
+Dependency Graph Generator.
+- `python3 .agent/scripts/visualize_deps.py` - Scans imports and updates the Mermaid diagram in `ARCHITECTURE.md`.
+
+### `status_report.py`
+Workspace Health Dashboard.
+- `python3 .agent/scripts/status_report.py` - Shows the Health Score (0-100%) based on drift, logs, security, and tests.
+
+### `generate_adr.py`
+Architecture Decision Record Generator.
+- `python3 .agent/scripts/generate_adr.py "<Title>" "<Context>" "<Decision>"` - Creates a new ADR in `wiki/decisions/`.
+
+### `post_mortem_runner.py`
+Failure Analysis Tool.
+- `python3 .agent/scripts/post_mortem_runner.py` - Analyzes recent logs and suggests a lesson learned.
+
+### `pre_commit_review.py`
+Git Hook Reviewer.
+- `python3 .agent/scripts/pre_commit_review.py` - Checks staged diffs against historical lessons in `LESSONS_LEARNED.md`.
+
+### `rollback_task.py`
+Task & State Undo.
+- `python3 .agent/scripts/rollback_task.py [--author <name>]` - Reverts git changes and cleans up the context bus.
+
+### `test_factory.py`
+Unit Test Generator.
+- `python3 .agent/scripts/test_factory.py <target_file>` - Generates basic test files for Python and Go.
+
+### `vulnerability_patcher.py`
+Security Auto-patch Helper.
+- `python3 .agent/scripts/vulnerability_patcher.py <type> <file> <context>` - Formats a secure fix request for an agent.
+
+### `bus_debugger.py`
+Interactive Bus Inspector.
+- `python3 .agent/scripts/bus_debugger.py` - Interactive shell to list and peek at bus objects.
 
 ---
 
