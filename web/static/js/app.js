@@ -85,6 +85,9 @@ class OrchestratorSocket {
                     flowManager.addTrace(msg.payload);
                 }
                 break;
+            case 'dto_ready':
+                if (typeof handleDTOReady === 'function') handleDTOReady(msg.payload);
+                break;
             default:
                 console.warn('WS: Unknown message type', msg.type);
         }
@@ -1371,6 +1374,8 @@ function switchTab(tabName) {
     if (tabName === 'repositories') {
         renderTasks();
     } else if (tabName === 'dto') {
+        const dot = document.getElementById('dto-tab-notify-dot');
+        if (dot) dot.style.display = 'none';
         populateRepoSelect();
     } else if (tabName === 'rag') {
         fetchRAGStats();
@@ -1712,6 +1717,21 @@ function handleRepoAnalysisUpdate(payload) {
     // Update BMAD tracker if status is provided
     if (state.bmad_stage) {
         updateBMADTracker(state.bmad_stage);
+    }
+}
+
+function handleDTOReady(payload) {
+    const { repo } = payload;
+
+    // Show notification dot on DTO tab button
+    const dot = document.getElementById('dto-tab-notify-dot');
+    if (dot) dot.style.display = 'inline-block';
+
+    // If user is already on DTO tab and viewing this repo, reload session silently
+    const dtoPane = document.getElementById('tab-dto');
+    const dtoRepoSelect = document.getElementById('dto-repo-select');
+    if (dtoPane && dtoPane.classList.contains('active') && dtoRepoSelect && dtoRepoSelect.value === repo) {
+        loadDTOSession(repo);
     }
 }
 

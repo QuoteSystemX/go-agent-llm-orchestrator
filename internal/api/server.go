@@ -1812,6 +1812,71 @@ func (s *AdminServer) handleDTOChat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// PrewarmDTOSession pre-generates the initial assistant questions for a repo so
+// they are ready before the user opens the DTO tab. It is safe to call multiple
+// times — it is a no-op when the session already has context.
+func (s *AdminServer) PrewarmDTOSession(ctx context.Context, repo string) {
+	mgr := s.analyzer.GetSessionManager()
+	if mgr == nil {
+		return
+	}
+
+	session, exists, err := mgr.GetSession(ctx, repo)
+	if err != nil || len(session.Context) > 0 {
+		return
+	}
+
+	expectedStage := s.analyzer.CalculateStageFromFiles(repo)
+	if expectedStage != "completed" && expectedStage != session.CurrentStage {
+		session.CurrentStage = expectedStage
+	}
+	if session.CurrentStage == "completed" {
+		return
+	}
+
+	log.Printf("DTO Prewarm: Initializing %s stage for %s", session.CurrentStage, repo)
+	systemPrompt := s.analyzer.GetStagePrompt(session.CurrentStage)
+
+	if ragStore := s.analyzer.GetRagStore(repo); ragStore != nil {
+		query := "project overview summary"
+		if session.CurrentStage != "discovery" {
+			query = "project requirements architecture data flow"
+		}
+		if results := ragStore.SearchFiltered(ctx, query, 5, ""); len(results) > 0 {
+			systemPrompt += "\n\nRelevant Repository Context for initialization:\n---\n"
+			for _, doc := range results {
+				systemPrompt += fmt.Sprintf("File: %s\nContent: %s\n---\n", doc.Source, doc.Content)
+			}
+		}
+	}
+
+	llmMessages := []map[string]string{
+		{"role": "system", "content": systemPrompt},
+		{"role": "user", "content": fmt.Sprintf("Start the %s phase interaction. Please present the initial mandatory questions to the user immediately.", session.CurrentStage)},
+	}
+
+	response, err := s.analyzer.GenerateDialogueResponse(ctx, llm.DTO, llmMessages)
+	if err != nil {
+		log.Printf("DTO Prewarm: LLM call failed for %s: %v", repo, err)
+		return
+	}
+
+	session.Context = append(session.Context, dto.DialogueMessage{Role: "assistant", Content: response})
+	if exists {
+		if err := mgr.UpdateSession(ctx, session); err != nil {
+			log.Printf("DTO Prewarm: Session cleared during save for %s, skipping: %v", repo, err)
+			return
+		}
+	} else {
+		mgr.SaveSession(ctx, session)
+	}
+
+	log.Printf("DTO Prewarm: Session ready for %s (%s stage)", repo, session.CurrentStage)
+	if s.hub != nil {
+		s.hub.Broadcast(TypeDTOReady, map[string]string{"repo": repo, "stage": session.CurrentStage})
+	}
+}
+
 func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 	repo := r.URL.Query().Get("repo")
 	if repo == "" {
@@ -1825,60 +1890,19 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, exists, err := mgr.GetSession(r.Context(), repo)
+	session, _, err := mgr.GetSession(r.Context(), repo)
 	if err != nil {
 		http.Error(w, "failed to get session", http.StatusInternalServerError)
 		return
 	}
 
-	// Smart Stage Detection: if context is empty, sync with files
+	// Fallback: if prewarm hasn't run yet, initialize synchronously
 	if len(session.Context) == 0 {
-		expectedStage := s.analyzer.CalculateStageFromFiles(repo)
-		if expectedStage != "completed" && expectedStage != session.CurrentStage {
-			log.Printf("DTO: Syncing stage for %s: %s -> %s", repo, session.CurrentStage, expectedStage)
-			session.CurrentStage = expectedStage
-		}
-
-		// Auto-initialize whatever stage we are on
-		if session.CurrentStage != "completed" {
-			log.Printf("DTO: Auto-initializing %s stage for %s", session.CurrentStage, repo)
-			systemPrompt := s.analyzer.GetStagePrompt(session.CurrentStage)
-			
-			// Add RAG context for initialization if available
-			if ragStore := s.analyzer.GetRagStore(repo); ragStore != nil {
-				// Use specific query for later stages to get relevant context
-				query := "project overview summary"
-				if session.CurrentStage != "discovery" {
-					query = "project requirements architecture data flow"
-				}
-				results := ragStore.SearchFiltered(r.Context(), query, 5, "")
-				if len(results) > 0 {
-					systemPrompt += "\n\nRelevant Repository Context for initialization:\n---\n"
-					for _, doc := range results {
-						systemPrompt += fmt.Sprintf("File: %s\nContent: %s\n---\n", doc.Source, doc.Content)
-					}
-				}
-			}
-
-			llmMessages := []map[string]string{
-				{"role": "system", "content": systemPrompt},
-				{"role": "user", "content": fmt.Sprintf("Start the %s phase interaction. Please present the initial mandatory questions to the user immediately.", session.CurrentStage)},
-			}
-
-			var response string
-			response, err = s.analyzer.GenerateDialogueResponse(r.Context(), llm.DTO, llmMessages)
-			if err == nil {
-				session.Context = append(session.Context, dto.DialogueMessage{Role: "assistant", Content: response})
-				if exists {
-					if err := mgr.UpdateSession(r.Context(), session); err != nil {
-						log.Printf("DTO: Session cleared during initialization, skipping save: %v", err)
-					}
-				} else {
-					mgr.SaveSession(r.Context(), session)
-				}
-			} else {
-				log.Printf("DTO: Auto-initialization failed: %v", err)
-			}
+		s.PrewarmDTOSession(r.Context(), repo)
+		session, _, err = mgr.GetSession(r.Context(), repo)
+		if err != nil {
+			http.Error(w, "failed to get session after init", http.StatusInternalServerError)
+			return
 		}
 	}
 

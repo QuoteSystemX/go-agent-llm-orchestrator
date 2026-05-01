@@ -1138,6 +1138,16 @@ body { padding-bottom: 40px; }
 
 .tab-btn i { width: 16px; height: 16px; }
 
+.tab-notify-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: status-pulse 1.5s infinite;
+    flex-shrink: 0;
+}
+
 .tab-btn:hover {
     color: var(--text);
     background: var(--glass);

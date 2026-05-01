@@ -158,6 +158,10 @@ func main() {
 			"repo":  repoURL,
 			"state": state,
 		})
+		// Pre-warm DTO session when analysis completes successfully
+		if !state.IsRunning && state.Error == "" {
+			go adminServer.PrewarmDTOSession(ctx, repoURL)
+		}
 	})
 
 	engine.SetActivityNotifyFunc(func() {
@@ -202,6 +206,8 @@ func main() {
 					// It returns early if the commit hash hasn't changed.
 					if _, err := analyzer.AnalyzeRepo(ctx, repoName, true); err != nil {
 						log.Printf("Background DTO Sync: Failed for %s: %v", repoName, err)
+					} else {
+						go adminServer.PrewarmDTOSession(ctx, repoName)
 					}
 				}
 				log.Println("Background DTO Sync: Periodic update finished.")
@@ -273,6 +279,18 @@ func main() {
 			log.Println("git: DTO templates synchronized")
 		}
 	}
+
+	// Pre-warm DTO sessions for all existing repos on startup
+	go func() {
+		repos, err := database.GetDistinctRepos(ctx)
+		if err != nil {
+			log.Printf("DTO Prewarm startup: failed to list repos: %v", err)
+			return
+		}
+		for _, repoName := range repos {
+			adminServer.PrewarmDTOSession(ctx, repoName)
+		}
+	}()
 
 	// Start git syncer for prompt-library (runs initial sync then polls)
 	go gitSyncer.Start(ctx)

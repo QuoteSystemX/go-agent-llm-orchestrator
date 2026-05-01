@@ -22,6 +22,7 @@ const (
 	TypeRepoAnalysis = "repo_analysis"
 	TypeNotify       = "notify"
 	TypeAgentTrace   = "agent_trace"
+	TypeDTOReady     = "dto_ready"
 )
 
 // WSMessage represents a generic message sent over WebSocket
