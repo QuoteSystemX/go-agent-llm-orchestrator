@@ -1862,7 +1862,7 @@ func (s *AdminServer) handleDTOSession(w http.ResponseWriter, r *http.Request) {
 
 			llmMessages := []map[string]string{
 				{"role": "system", "content": systemPrompt},
-				{"role": "user", "content": fmt.Sprintf("Start the %s phase interaction.", session.CurrentStage)},
+				{"role": "user", "content": fmt.Sprintf("Start the %s phase interaction. Please present the initial mandatory questions to the user immediately.", session.CurrentStage)},
 			}
 
 			var response string

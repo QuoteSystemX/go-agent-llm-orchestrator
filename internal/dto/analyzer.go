@@ -264,14 +264,15 @@ func (a *Analyzer) GetStagePrompt(stage string) string {
 		return rolePrefix + "Project Discovery (Discovery)" + roleSuffix + `
 RULES:
 1. Conduct a Socratic interview. Do NOT provide solutions yet.
-2. Ask the following 5 mandatory questions at minimum:
+2. Ask the following 5 mandatory questions at minimum in your VERY FIRST message:
    - "What problem does this solve and for whom?"
    - "What does success look like in 90 days? How will we measure it?"
    - "What are the hard constraints? (budget, tech, timeline, regulatory)"
    - "What is explicitly OUT of scope for this phase?"
    - "Who are the top 2 user personas? Describe their context."
-3. Wait for the user's answers before drafting anything.
-4. Your goal is to gather enough information to produce wiki/BRIEF.md later.`
+3. Avoid introductory filler or polite meta-commentary. Start directly with the questions.
+4. Wait for the user's answers before drafting anything.
+5. Your goal is to gather enough information to produce wiki/BRIEF.md later.`
 	case "prd":
 		return rolePrefix + "Product Requirements (PRD)" + roleSuffix + `
 RULES:
