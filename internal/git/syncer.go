@@ -83,7 +83,8 @@ func (s *Syncer) StartBackgroundReposSync(ctx context.Context) {
 					rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
 					
 					log.Printf("git: background sync for %s...", repoName)
-					if err := s.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
+					_, err := s.SyncCustom(ctx, rawUrl, "main", repoPath)
+					if err != nil {
 						log.Printf("git: sync failed for %s: %v", repoName, err)
 					}
 				}
@@ -108,52 +109,78 @@ func (s *Syncer) Sync(ctx context.Context) error {
 	}
 	branch := s.db.GetSetting("prompt_library_git_branch", "main")
 
-	return s.SyncCustom(ctx, rawUrl, branch, s.cacheDir)
+	_, err := s.SyncCustom(ctx, rawUrl, branch, s.cacheDir)
+	return err
 }
 
 // SyncCustom allows syncing any repository to a specific directory.
-func (s *Syncer) SyncCustom(ctx context.Context, rawUrl, branch, targetDir string) error {
+// Returns reinitialized=true if the repository was wiped and re-cloned (fresh start).
+func (s *Syncer) SyncCustom(ctx context.Context, rawUrl, branch, targetDir string) (bool, error) {
+	return s.syncInternal(ctx, rawUrl, branch, targetDir, true)
+}
+
+func (s *Syncer) syncInternal(ctx context.Context, rawUrl, branch, targetDir string, allowRetry bool) (bool, error) {
+	reinitialized := false
 	pat := s.db.GetSetting("prompt_library_pat", "")
 	if pat == "" {
-		return fmt.Errorf("GitHub PAT not configured — set it via web UI Settings → Prompt Library")
+		return false, fmt.Errorf("GitHub PAT not configured — set it via web UI Settings → Prompt Library")
 	}
 
 	// Ensure we use HTTPS and inject PAT
 	syncUrl := s.prepareSyncURL(rawUrl, pat)
 
 	if err := os.MkdirAll(filepath.Dir(targetDir), 0755); err != nil {
-		return fmt.Errorf("creating cache parent dir: %w", err)
+		return false, fmt.Errorf("creating cache parent dir: %w", err)
 	}
 
 	if _, err := os.Stat(filepath.Join(targetDir, ".git")); os.IsNotExist(err) {
 		log.Printf("git: initializing %s (branch: %s) in %s", rawUrl, branch, targetDir)
 		if err := os.MkdirAll(targetDir, 0755); err != nil {
-			return fmt.Errorf("creating cache dir: %w", err)
+			return false, fmt.Errorf("creating cache dir: %w", err)
 		}
 		if err := s.runGit(ctx, targetDir, "init"); err != nil {
-			return err
+			return false, err
 		}
+		reinitialized = true
 		
 		// Set remote origin
 		if err := s.runGit(ctx, targetDir, "remote", "add", "origin", syncUrl); err != nil {
 			if strings.Contains(err.Error(), "already exists") {
 				if err := s.runGit(ctx, targetDir, "remote", "set-url", "origin", syncUrl); err != nil {
-					return fmt.Errorf("failed to reset remote origin: %w", err)
+					return false, fmt.Errorf("failed to reset remote origin: %w", err)
 				}
 			} else {
-				return fmt.Errorf("failed to add remote origin: %w", err)
+				return false, fmt.Errorf("failed to add remote origin: %w", err)
 			}
 		}
 	} else {
 		// Update remote URL in case PAT or URL changed
 		if err := s.runGit(ctx, targetDir, "remote", "set-url", "origin", syncUrl); err != nil {
-			return fmt.Errorf("failed to update remote origin: %w", err)
+			errMsg := err.Error()
+			if allowRetry && (strings.Contains(errMsg, "invalid gitfile format") || strings.Contains(errMsg, "not a git repository") || strings.Contains(errMsg, "exit status 128")) {
+				log.Printf("git: self-healing: wiping corrupted repository during remote update at %s and retrying...", targetDir)
+				os.RemoveAll(targetDir)
+				return s.syncInternal(ctx, rawUrl, branch, targetDir, false)
+			}
+			return false, fmt.Errorf("failed to update remote origin: %w", err)
 		}
 	}
 
 	log.Printf("git: syncing %s (branch: %s) to %s", rawUrl, branch, targetDir)
 	if err := s.runGit(ctx, targetDir, "fetch", "--depth", "1", "origin", branch); err != nil {
-		return fmt.Errorf("fetch failed: %w", err)
+		// Self-healing: if shallow clone is corrupted or changed, wipe and retry once
+		errMsg := err.Error()
+		isFatal := strings.Contains(errMsg, "shallow file has changed") || 
+		           strings.Contains(errMsg, "exit status 128") || 
+				   strings.Contains(errMsg, "not a git repository")
+		
+		if allowRetry && isFatal {
+			log.Printf("git: self-healing: wiping corrupted repository at %s and retrying...", targetDir)
+			os.RemoveAll(targetDir)
+			// Recursive call will now trigger a fresh clone (init + remote add + fetch)
+			return s.syncInternal(ctx, rawUrl, branch, targetDir, false)
+		}
+		return reinitialized, fmt.Errorf("fetch failed: %w", err)
 	}
 
 	// Remove stale lock file that a previously killed git process may have left behind.
@@ -163,13 +190,13 @@ func (s *Syncer) SyncCustom(ctx context.Context, rawUrl, branch, targetDir strin
 	}
 
 	if err := s.runGit(ctx, targetDir, "reset", "--hard", "origin/"+branch); err != nil {
-		return fmt.Errorf("reset failed: %w", err)
+		return reinitialized, fmt.Errorf("reset failed: %w", err)
 	}
 	
 	if targetDir == s.cacheDir {
 		s.notifySyncSuccess()
 	}
-	return nil
+	return reinitialized, nil
 }
 
 // prepareSyncURL ensures the URL is HTTPS and includes the PAT for authentication.

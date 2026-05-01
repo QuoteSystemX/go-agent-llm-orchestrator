@@ -316,6 +316,12 @@ func (db *DB) SetSetting(key, value string) error {
 	return err
 }
 
+// DeleteSetting removes a setting from the main database.
+func (db *DB) DeleteSetting(key string) error {
+	_, err := db.main.Exec("DELETE FROM settings WHERE key = ?", key)
+	return err
+}
+
 // GetDailyUsage counts tasks executed today.
 func (db *DB) GetDailyUsage(ctx context.Context) (int, error) {
 	var count int

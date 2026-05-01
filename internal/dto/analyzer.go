@@ -624,8 +624,16 @@ func (a *Analyzer) AnalyzeRepo(ctx context.Context, repoName string, isBackgroun
 		a.updateState(repoName, "Syncing Repository", "", -1, -1)
 		log.Printf("DTO [%s]: Syncing repository to %s...", repoName, repoPath)
 		rawUrl := fmt.Sprintf("https://github.com/%s.git", repoName)
-		if err := a.syncer.SyncCustom(ctx, rawUrl, "main", repoPath); err != nil {
+		reinitialized, err := a.syncer.SyncCustom(ctx, rawUrl, "main", repoPath)
+		if err != nil {
 			log.Printf("DTO [%s]: Sync failed: %v. Proceeding with existing files if any.", repoName, err)
+			state.Error = fmt.Sprintf("Sync failed: %v", err)
+		} else {
+			state.Error = "" // Clear previous sync errors
+			if reinitialized {
+				log.Printf("DTO [%s]: Sync self-healed, forcing full re-analysis and RAG check", repoName)
+				a.db.DeleteSetting("dto_last_commit_" + repoName)
+			}
 		}
 	}
 
