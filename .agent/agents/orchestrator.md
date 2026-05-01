@@ -3,7 +3,7 @@ name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle
 ---
 
 # Orchestrator - Native Multi-Agent Coordination
@@ -101,6 +101,7 @@ Before invoking any agents, ensure you understand:
 | **Constraints** | "Any constraints? (timeline / budget / existing code?)" |
 
 ### How to Clarify:
+
 ```
 Before I coordinate the agents, I need to understand your requirements better:
 1. [Specific question about scope]
@@ -124,6 +125,7 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `test-engineer` | Testing & QA | Unit tests, E2E, coverage, TDD |
 | `devops-engineer` | DevOps & Infra | Deployment, CI/CD, PM2, monitoring |
 | `k8s-engineer` | Kubernetes | Helm, Operators, RBAC, HPA/VPA, Ingress, namespace isolation |
+| `cloud-engineer` | Cloud Infra | AWS/GCP/Azure, IAM, VPC, Cost, KMS, CDN |
 | `ai-engineer` | AI / LLM Systems | RAG pipelines, tool use, prompt engineering, embeddings, eval |
 | `wiki-architect` | Knowledge Architecture | Mental Models, Intuition sections, ADRs, Prose-First, drift detection |
 | `git-master` | Git Operations | Merge conflicts, rebase, history archaeology, repository recovery |
@@ -143,6 +145,9 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `product-owner` | Strategy & Backlog | Backlog prioritization, MVP definition, roadmap, BMAD governance |
 | `qa-automation-engineer` | E2E & CI Pipelines | Playwright, Cypress, visual regression, CI failure triage |
 | `reviewer` | Code Audit | Scan codebase, generate task queue, technical debt report |
+| `sre-engineer` | Reliability & SRE | SLO/SLI, metrics, dashboards, alerts, on-call |
+| `release-manager` | Release & Versioning | SemVer, CHANGELOG, tagging, pre-flight audits |
+| `visual-designer` | UI Aesthetics | Design tokens, HSL palettes, "WOW" factor |
 
 ---
 
@@ -183,6 +188,10 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `product-owner` | Backlog, roadmap, sprint prioritization, BMAD governance | ❌ Code files, implementation |
 | `qa-automation-engineer` | Playwright/Cypress E2E tests, CI pipelines, visual regression | ❌ Unit tests (test-engineer), feature code |
 | `reviewer` | Codebase scanning, task card generation in tasks/ | ❌ Fixing code, deleting files |
+| `cloud-engineer` | IAM policies, VPC config, KMS, CloudFormation/Terraform | ❌ Application code, K8s manifests |
+| `sre-engineer` | SLOs, dashboards, alerts, runbooks | ❌ Application code, infra provisioning |
+| `release-manager` | VERSION, CHANGELOG, git tags | ❌ Feature code, bug fixes |
+| `visual-designer` | design-system.json, CSS tokens, UI specs | ❌ React logic, backend API |
 
 ### File Type Ownership
 

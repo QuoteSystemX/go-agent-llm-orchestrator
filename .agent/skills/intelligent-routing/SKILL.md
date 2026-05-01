@@ -57,6 +57,12 @@ graph TD
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
 | **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`                  | ✅ YES       |
 | **Audit**           | "audit", "scan code", "tech debt", "generate tasks"      | `reviewer`                                | ✅ YES       |
+| **Cloud Infra**     | "aws", "gcp", "azure", "iam", "vpc", "kms", "s3", "blob" | `cloud-engineer`                          | ✅ YES       |
+| **Reliability**     | "slo", "sli", "metrics", "dashboard", "alert", "sre"     | `sre-engineer`                            | ✅ YES       |
+| **Release**         | "release", "version", "tag", "changelog", "semver"       | `release-manager`                         | ✅ YES       |
+| **Visual Design**   | "design", "color", "typography", "palette", "hsl"        | `visual-designer`                         | ✅ YES       |
+| **Product Discovery**| "discovery", "brief", "prd", "architecture", "bmad"      | `analyst`                                 | ✅ YES       |
+| **Legacy / Clean**  | "legacy", "refactor", "dead code", "archaeologist"       | `code-archaeologist`                      | ✅ YES       |
 | **Data Pipeline**   | "pipeline", "etl", "elt", "dbt", "airflow", "kafka", "clickhouse", "spark", "data warehouse", "data lake" | `data-engineer` | ✅ YES |
 | **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
@@ -339,8 +345,8 @@ Any routing decision that results in **code being written or modified** MUST aut
 
 A routing is a **code-change** if the selected agent is any of:
 `backend-specialist`, `frontend-specialist`, `go-specialist`, `crypto-specialist`, `crypto-go-architect`, `mobile-developer`,
-`database-architect`, `devops-engineer`, `k8s-engineer`, `ai-engineer`, `data-engineer`, `debugger`, `performance-optimizer`,
-`code-archaeologist`, `rest-api-designer`, `grpc-architect`, `game-developer`
+`database-architect`, `devops-engineer`, `k8s-engineer`, `cloud-engineer`, `ai-engineer`, `data-engineer`, `debugger`, `performance-optimizer`,
+`code-archaeologist`, `rest-api-designer`, `grpc-architect`, `game-developer`, `sre-engineer`, `release-manager`, `visual-designer`
 
 ### Regression Guard Protocol
 
