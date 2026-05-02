@@ -115,6 +115,14 @@ func (m *Manager) Export(ctx context.Context, password string, w io.Writer) erro
 		}
 	}
 
+	// Add RAG index (chromem_db)
+	ragDir := filepath.Join(m.dataDir, "chromem_db")
+	if _, err := os.Stat(ragDir); err == nil {
+		if err := addDir(ragDir, "chromem_db"); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -195,7 +203,7 @@ func (m *Manager) Import(ctx context.Context, password string, r io.ReaderAt, si
 		}
 
 		// Replace directories
-		dirs := []string{"repos", "prompt-lib"}
+		dirs := []string{"repos", "prompt-lib", "chromem_db"}
 		for _, dir := range dirs {
 			src := filepath.Join(tempExtractDir, dir)
 			dst := filepath.Join(m.dataDir, dir)
