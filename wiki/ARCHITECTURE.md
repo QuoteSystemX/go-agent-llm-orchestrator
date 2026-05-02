@@ -19,6 +19,8 @@ graph TD
     Scheduler --> TaskLogs[(Execution Logs)]
     API --> JulesAPI[Jules API]
     Scheduler --> JulesAPI
+    API --> Backup[Backup Manager]
+    API --> Budget[Budget Manager]
 ```
 
 ## 2. Components
@@ -36,8 +38,18 @@ graph TD
 | **Budget Manager** | Enforces cost and session limits across tasks. | Go | `internal/budget` |
 | **Storage Engine** | Manages persistent data in SQLite (Main & History). | SQLite3 | `internal/db` |
 | **Git Syncer** | Keeps local repos and prompt-library in sync. | Go (go-git) | `internal/git` |
+| **Backup Manager** | Password-protected ZIP export/import of system state. | Go | `internal/backup` |
 
-## 3. Data Flow
+## 3. Key Source Files
+
+- **API Entry**: `internal/api/server.go`
+- **Backup Engine**: `internal/backup/manager.go`
+- **Database Engine**: `internal/db/sqlite.go`
+- **Git Synchronizer**: `internal/git/syncer.go`
+- **Task Scheduler**: `internal/scheduler/cron.go`
+- **Main Entry**: `cmd/orchestrator/main.go`
+
+## 4. Data Flow
 
 1. **Boot Sync**: `main.go` reads `distribution.yml` → UPSERTs tasks into SQLite.
 2. **Repository Sync**: `internal/git` pulls/clones managed repositories and the `prompt-library`.
@@ -64,7 +76,8 @@ graph TD
 
 - **Status:** Accepted
 - **Decision:** Transition from API polling to Webhooks/SSE. Orchestrator provides a secure endpoint `POST /api/v1/webhooks/jules` to receive real-time session status updates from Jules API.
-- **Payload Schema:** 
+- **Payload Schema:**
+
   ```json
   {
     "event": "session.updated",
@@ -84,6 +97,11 @@ graph TD
 
 - **Status:** Accepted
 - **Decision:** Expose internal states (audit logs, traffic queues, drift status) directly to the Web UI via new API endpoints to reduce operational "blind spots" in autonomous mode.
+
+### ADR-010: Backup & Restore System
+
+- **Status:** Accepted
+- **Decision:** Implement a password-protected ZIP backup system that snapshots SQLite databases and includes repositories, RAG indices, and prompt libraries. Use `github.com/alexmullins/zip` for AES-256 encryption. To ensure reliability in Kubernetes, temporary snapshots are stored in the application's persistent data directory (`dataDir`).
 
 ## 5. Database Schema
 

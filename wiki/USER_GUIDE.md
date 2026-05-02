@@ -32,25 +32,33 @@ Click the **"Logs"** button on any task card to open the history.
 The **Command Center** provides deep visibility into the orchestrator's autonomous operations via specialized tabs:
 
 ### 1. 🛡️ Audit Logs
+
 Track every significant system action that happens behind the scenes.
+
 - **Auto-Responses**: See when the Supervisor responded to a blocked session.
 - **Routing Decisions**: Track when tasks are escalated to more powerful models.
 - **Governance Events**: See when a budget limit was hit or adjusted.
 
 ### 2. 📋 Traffic Queue
+
 Monitor real-time execution queuing.
+
 - **Waiting Tasks**: View all tasks currently waiting for a free worker slot.
 - **Wait Duration**: See exactly how long a task has been pending.
 - **Bump Priority**: Manually prioritize a specific task to move it to the front of the queue.
 
 ### 3. 💰 Budgets & Governance
+
 Enforce financial and operational safety limits.
+
 - **System Quota**: Global daily session and monthly cost limits.
 - **Project Budgets**: Specific limits for individual repositories to prevent "experiment" repos from consuming the main quota.
 - **Alerts**: Configure thresholds (e.g., 80%) for Telegram notifications.
 
 ### 4. 🧭 Documentation Drift
+
 Maintain a healthy relationship between code and documentation.
+
 - **Drift Badges**: Repositories show **🍏 SYNCED** or **⚠️ DRIFT** badges.
 - **Automated Check**: The system hashes `ARCHITECTURE.md` and core Wiki pages vs. the source code.
 - **Resolution**: Use the `wiki-architect` agent to reconcile documentation if drift is detected.
@@ -108,13 +116,29 @@ Click the **"Settings"** button to adjust:
 6. **Log Retention**: Set how many days to keep execution history (default: 7).
 7. **Global Quota**: Set daily task limits to control LLM costs.
 
-## 📄 Distribution Configuration (`distribution.yml`)
-
-For large-scale deployments, use the `distribution.yml` file to define tasks across all repositories:
-
-- **Centralized Management**: Define schedules, agents, and patterns for your entire fleet in one YAML.
-- **Persistence**: On startup, the orchestrator imports this file and updates the database.
 - **Automation**: Combines with Helm to manage deployment in Kubernetes.
+
+## 💾 System Backup & Restore
+
+The orchestrator includes a built-in backup utility to protect your task configurations, history, repositories, and RAG indices.
+
+### 1. Exporting System State
+
+Go to **Settings > System Management** or use the direct endpoint:
+
+- **Action**: Generates a password-protected ZIP archive (`.zip`).
+- **Includes**:
+  - `tasks.db` (Configurations)
+  - `history.db` (Execution logs & Audit)
+  - `repos/` (Managed repository clones)
+  - `prompt-lib/` (Custom prompt templates)
+  - `chromem_db/` (Vector embeddings & RAG index)
+
+### 2. Importing System State
+
+- **Safety**: The system will automatically pause execution engines before applying the import.
+- **Verification**: Integrity and password verification are performed before overwriting any data.
+- **Persistence**: Temporary snapshots are stored in the persistent `dataDir` to prevent memory overflow in large-scale environments.
 
 ## 🛠️ Maintenance
 
