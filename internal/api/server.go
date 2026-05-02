@@ -2297,27 +2297,35 @@ func (s *AdminServer) handleImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-
 	password := r.FormValue("password")
+	log.Printf("SYSTEM: Import started. Password provided: %v", password != "")
+	
+	dataDir := s.backupMgr.DataDir()
+	log.Printf("SYSTEM: Using data dir for temp file: %s", dataDir)
 
 	// We need Seekable reader for ZIP, so save to temp file in dataDir
-	tempF, err := os.CreateTemp(s.backupMgr.DataDir(), "import-*.zip")
+	tempF, err := os.CreateTemp(dataDir, "import-*.zip")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("SYSTEM: Failed to create temp file in %s: %v", dataDir, err)
+		http.Error(w, "Failed to create temp file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer os.Remove(tempF.Name())
+	log.Printf("SYSTEM: Created temp file: %s", tempF.Name())
 
 	size, err := io.Copy(tempF, file)
 	if err != nil {
 		tempF.Close()
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("SYSTEM: Failed to copy uploaded file: %v", err)
+		http.Error(w, "Failed to copy uploaded file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	tempF.Close()
+	log.Printf("SYSTEM: Uploaded file size: %d bytes", size)
 
 	f, err := os.Open(tempF.Name())
 	if err != nil {
+		log.Printf("SYSTEM: Failed to re-open temp file: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -2325,7 +2333,8 @@ func (s *AdminServer) handleImport(w http.ResponseWriter, r *http.Request) {
 
 	applyFunc, err := s.backupMgr.Import(r.Context(), password, f, size)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("SYSTEM: Import preparation failed: %v", err)
+		http.Error(w, "Import failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
