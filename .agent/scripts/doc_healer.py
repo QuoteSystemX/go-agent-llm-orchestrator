@@ -36,13 +36,25 @@ def heal_docs():
         if not full_path.exists(): continue
         
         name = full_path.name
-        # Simple heuristic for description
         desc = f"System module for {name}."
-        if name.endswith(".py"):
+        
+        # Enhanced extraction logic
+        try:
             with open(full_path, "r", errors='ignore') as f:
-                first_lines = "".join(f.readlines()[:5])
-                if '"""' in first_lines:
-                    desc = first_lines.split('"""')[1].split('"""')[0].strip().split('\n')[0]
+                header = f.read(2000) # Read enough for docstrings
+                
+                # Python
+                py_match = re.search(r'"""(.*?)"""', header, re.DOTALL)
+                if py_match:
+                    desc = py_match.group(1).strip().split('\n')[0]
+                
+                # Go / JS (Single line or multi-line comments at start)
+                elif header.startswith("//"):
+                    desc = header.split('\n')[0].replace("//", "").strip()
+                elif header.startswith("/*"):
+                    desc = header.split('*/')[0].replace("/*", "").replace("*", "").strip().split('\n')[0]
+        except:
+            pass
 
         # Add to ARCHITECTURE.md under a "Recent Additions" section
         if "## 🆕 Recent Additions" not in content:

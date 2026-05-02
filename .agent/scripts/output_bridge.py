@@ -108,13 +108,22 @@ def synthesize_outputs():
             outputs.append(json.load(out_f))
     
     # Run automation scripts before clearing
-    print("🔄 Running automation scripts (Assembler & Task Sync)...")
+    print("🔄 Running automation scripts (Unified Hub Sync)...")
     scripts_dir = ".agent/scripts"
-    try:
-        subprocess.run([sys.executable, os.path.join(scripts_dir, "walkthrough_assembler.py")], check=True)
-        subprocess.run([sys.executable, os.path.join(scripts_dir, "task_sync.py")], check=True)
-    except Exception as e:
-        print(f"⚠️  Automation failed: {e}")
+    automation_chain = [
+        "walkthrough_assembler.py",
+        "task_sync.py",
+        "doc_healer.py",
+        "visualize_deps.py",
+        "obsidian_validator.py"
+    ]
+    
+    for script in automation_chain:
+        print(f"  - Executing {script}...")
+        try:
+            subprocess.run([sys.executable, os.path.join(scripts_dir, script)], check=True)
+        except Exception as e:
+            print(f"  ⚠️  {script} failed: {e}")
 
     print("\n" + "="*50)
     print("🤖 **Agent Header**: orchestrator (Synthesis)")

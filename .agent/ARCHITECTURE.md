@@ -51,11 +51,13 @@ Unified Agent Kit is a modular system consisting of:
 ```mermaid
 graph TD
   adr_generator --> argparse
+  agent_skill_auditor --> lib
   analyze_efficiency --> collections
   arbitrator --> bus_manager
   arbitrator --> lib
   auto_preview --> argparse
   auto_preview --> signal
+  autonomous_fuzzer --> random
   batch_runner --> argparse
   bus_debugger --> lib
   bus_manager --> argparse
@@ -74,6 +76,9 @@ graph TD
   checklist --> visualize_deps
   conflict_resolver --> collections
   conflict_resolver --> lib
+  context_autofill --> lib
+  discovery_brain_sync --> lib
+  discovery_brain_sync --> semantic_brain_engine
   distill_context --> argparse
   doc_healer --> drift_detector
   doc_healer --> lib
@@ -90,6 +95,7 @@ graph TD
   incident_watcher --> lib
   install_hooks --> lib
   install_hooks --> shutil
+  intent_validator --> lib
   knowledge_synergy --> argparse
   knowledge_synergy --> lib
   main --> filepath
@@ -785,3 +791,4 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 | `.agent/scripts/output_bridge.py` | Mandatory Agent Output Gateway (Validation & Bus). |
 | `.agent/scripts/walkthrough_assembler.py` | Automated Walkthrough log assembler. |
 | `.agent/scripts/task_sync.py` | Automated Task status synchronizer. |
+| `.agent/scripts/obsidian_validator.py` | System module for obsidian_validator.py. |
