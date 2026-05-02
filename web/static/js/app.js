@@ -105,19 +105,24 @@ class OrchestratorSocket {
         const task = tasks.find(t => t.id === payload.id);
         if (task) {
             const oldStatus = task.status;
-            task.status = payload.status;
             
-            if (oldStatus !== payload.status) {
+            // Merge all fields from payload into the task object
+            Object.assign(task, payload);
+            
+            if (oldStatus !== payload.status || payload.rag_files_indexed !== undefined) {
                 if (typeof renderTasks === 'function') {
                     renderTasks();
-                    // Add pulse effect to the updated task card
-                    setTimeout(() => {
-                        const card = document.querySelector(`[data-task-id="${payload.id}"]`);
-                        if (card) {
-                            card.classList.add('task-status-update');
-                            setTimeout(() => card.classList.remove('task-status-update'), 2000);
-                        }
-                    }, 50);
+                    
+                    if (oldStatus !== payload.status) {
+                        // Add pulse effect to the updated task card
+                        setTimeout(() => {
+                            const card = document.querySelector(`[data-task-id="${payload.id}"]`);
+                            if (card) {
+                                card.classList.add('task-status-update');
+                                setTimeout(() => card.classList.remove('task-status-update'), 2000);
+                            }
+                        }, 50);
+                    }
                 }
             }
         } else {
@@ -1425,7 +1430,7 @@ function switchTab(tabName) {
     document.getElementById(`tab-${tabName}`).classList.add('active');
 
     if (tabName === 'repositories') {
-        renderTasks();
+        fetchTasks();
     } else if (tabName === 'dto') {
         const dot = document.getElementById('dto-tab-notify-dot');
         if (dot) dot.style.display = 'none';
@@ -1762,12 +1767,42 @@ async function loadRepoStatus() {
 // WebSocket migration complete
 function handleRepoAnalysisUpdate(payload) {
     const { repo, state } = payload;
+    
+    // 1. Update the global tasks array for the Repositories tab
+    let tasksUpdated = false;
+    tasks.forEach(task => {
+        if (task.name === repo) {
+            task.rag_files_indexed = state.files_indexed;
+            task.rag_total_files = state.total_files;
+            
+            // Map analysis state to RAG status
+            if (state.is_running) {
+                task.rag_status = 'indexing';
+            } else if (state.error) {
+                task.rag_status = 'corrupted'; // or another error status
+            } else {
+                task.rag_status = 'ok';
+            }
+            tasksUpdated = true;
+        }
+    });
+
+    if (tasksUpdated && typeof renderTasks === 'function') {
+        renderTasks();
+    }
+
+    // 2. Update RAG tab if it's currently active
+    const ragPane = document.getElementById('tab-rag');
+    if (ragPane && ragPane.classList.contains('active')) {
+        if (typeof fetchRAGStats === 'function') fetchRAGStats();
+    }
+
+    // 3. Update DTO tab UI (existing logic)
     const select = document.getElementById('dto-repo-select');
     if (!select || select.value !== repo) return;
     
     updateAnalysisProgress(state);
 
-    // Update BMAD tracker if status is provided
     if (state.bmad_stage) {
         updateBMADTracker(state.bmad_stage);
     }

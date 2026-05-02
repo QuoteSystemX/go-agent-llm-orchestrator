@@ -34,8 +34,8 @@ type RAGStats struct {
 	TotalFiles      int       `json:"total_files"`
 	ChunkCount      int       `json:"chunk_count"`
 	LastScrubbedAt  time.Time `json:"last_scrubbed_at"`
-	IndexPath       string    `json:"index_path"`
-	OllamaEndpoint  string    `json:"ollama_endpoint"`
+	IndexPath       string    `json:"-"`
+	OllamaEndpoint  string    `json:"-"`
 	EmbeddingModel  string    `json:"embedding_model"`
 	StorageMode     string    `json:"storage_mode"` // "persistent" or "memory"
 	Status          string    `json:"status"`       // "ok", "indexing", "initial", "corrupted"

@@ -152,10 +152,25 @@ func main() {
 
 	engine.Start()
 	engine.SetNotifyFunc(func(taskID, status string) {
-		hub.Broadcast(api.TypeTask, map[string]string{
+		// Fetch repo name for this task to get RAG stats
+		var repoName string
+		_ = database.QueryRowContext(ctx, "SELECT name FROM tasks WHERE id = ?", taskID).Scan(&repoName)
+
+		payload := map[string]any{
 			"id":     taskID,
 			"status": status,
-		})
+		}
+
+		if repoName != "" && analyzer != nil && analyzer.GetRagManager() != nil {
+			if store := analyzer.GetRagManager().GetStore(repoName); store != nil {
+				stats := store.GetStats()
+				payload["rag_status"] = stats.Status
+				payload["rag_files_indexed"] = stats.FilesIndexed
+				payload["rag_total_files"] = stats.TotalFiles
+			}
+		}
+
+		hub.Broadcast(api.TypeTask, payload)
 	})
 	analyzer.SetNotifyFunc(func(repoURL string, state *dto.RepoAnalysisState) {
 		hub.Broadcast(api.TypeRepoAnalysis, map[string]any{
