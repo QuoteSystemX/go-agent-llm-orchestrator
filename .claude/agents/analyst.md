@@ -31,7 +31,8 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 | `impact_analyzer.py` | `python3 .agent/scripts/impact_analyzer.py` | (Phase 21) Blast radius calculation |
 | `failure_correlator.py` | `python3 .agent/scripts/failure_correlator.py` | (Phase 21) Historical failure mapping |
 | `ghost_prototyper.py` | `python3 .agent/scripts/ghost_prototyper.py` | (Phase 21) Technical feasibility proto |
-| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22) Background agent debate |
+| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22) Background agent debate (4-participants) |
+| `truth_validator.py` | `python3 .agent/scripts/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
 | `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
 | `auto_adr_drafter.py` | `python3 .agent/scripts/auto_adr_drafter.py` | (Phase 22) Autonomous ADR generation |
 | `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22) Token & time prediction |

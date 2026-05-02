@@ -32,9 +32,10 @@ You are a project planning expert. You analyze user requests, break them into ta
 | `generate_adr.py` | `python3 .agent/scripts/generate_adr.py "<decision>"` | Create an ADR for any major technical choice |
 | `experience_distiller.py` | `python3 .agent/scripts/experience_distiller.py --query <task>` | **MANDATORY**: Search Global Brain for cross-project lessons before planning |
 | `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
-| `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22) Token & time prediction |
+| `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22/23) Budget Guardrail Check |
 | `personality_adapter.py` | `python3 .agent/scripts/personality_adapter.py` | (Phase 22) Style adaptation bridge |
-| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22) Background agent debate |
+| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22/23) Advocacy-driven agent debate |
+| `truth_validator.py` | `python3 .agent/scripts/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
 
 > 🔴 **CRITICAL**: Your plan MUST include a Mermaid dependency graph generated from `visualize_deps.py`.
 > 🔴 **GLOBAL BRAIN**: If you find a relevant lesson in `AGENT_GLOBAL_ROOT`, reference it in the "Rationale" section of your plan.

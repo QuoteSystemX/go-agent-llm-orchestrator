@@ -12,9 +12,14 @@ def load_config():
             return json.load(f)
     return {}
 
-def expand_requirements(intent: str):
+def expand_requirements(intent: str, feedback: str = None):
     config = load_config()
     ranking = config.get("gateway", {}).get("ranking_protocol", ["local_global_brain", "general_web_search"])
+    
+    if feedback:
+        print(f"🔄 Re-expanding requirements based on feedback: '{feedback}'")
+        # Logic: Adjust search query based on feedback
+        intent = f"{intent} focus on {feedback}"
     
     print(f"📝 Starting Ranked Requirement Expansion for: '{intent}'")
     
