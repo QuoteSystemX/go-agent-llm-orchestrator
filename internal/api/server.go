@@ -2300,8 +2300,8 @@ func (s *AdminServer) handleImport(w http.ResponseWriter, r *http.Request) {
 
 	password := r.FormValue("password")
 
-	// We need Seekable reader for ZIP, so save to temp file
-	tempF, err := os.CreateTemp("", "import-*.zip")
+	// We need Seekable reader for ZIP, so save to temp file in dataDir
+	tempF, err := os.CreateTemp(s.backupMgr.DataDir(), "import-*.zip")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

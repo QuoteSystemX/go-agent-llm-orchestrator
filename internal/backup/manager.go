@@ -23,10 +23,14 @@ func NewManager(database *db.DB, dataDir string) *Manager {
 	}
 }
 
+func (m *Manager) DataDir() string {
+	return m.dataDir
+}
+
 // Export creates a password-protected ZIP archive containing databases and data directories.
 func (m *Manager) Export(ctx context.Context, password string, w io.Writer) error {
-	// 1. Create temp directory for DB snapshots
-	tempDir, err := os.MkdirTemp("", "orchestrator-backup-*")
+	// 1. Create temp directory for DB snapshots in the data directory (which is writable)
+	tempDir, err := os.MkdirTemp(m.dataDir, "backup-tmp-*")
 	if err != nil {
 		return err
 	}
@@ -135,8 +139,8 @@ func (m *Manager) Import(ctx context.Context, password string, r io.ReaderAt, si
 		rc.Close()
 	}
 
-	// 2. Extract to a temporary directory
-	tempExtractDir, err := os.MkdirTemp("", "orchestrator-import-*")
+	// 2. Extract to a temporary directory in dataDir
+	tempExtractDir, err := os.MkdirTemp(m.dataDir, "import-tmp-*")
 	if err != nil {
 		return nil, err
 	}
