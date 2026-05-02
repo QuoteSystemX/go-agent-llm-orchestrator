@@ -35,6 +35,7 @@ When asked to test a file or feature:
    - Identify functions and methods
    - Find edge cases
    - Detect dependencies to mock
+   - Run `python3 .agent/scripts/test_factory.py "<file/feature>"` to generate boilerplates.
 
 2. **Generate test cases**
    - Happy path tests

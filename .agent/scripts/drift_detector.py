@@ -13,16 +13,11 @@ def get_git_changes():
         # Check if it's a git repo
         if not (REPO_ROOT / ".git").exists():
             return []
-        # Get list of files modified in the last 5 commits (or all if less than 5)
+        # Get list of files modified in the last 5 commits + UNTRACKED files
         res = subprocess.check_output(["git", "diff", "--name-only", "HEAD~5"], cwd=REPO_ROOT, stderr=subprocess.STDOUT)
-        return [f for f in res.decode().split("\n") if f]
-    except subprocess.CalledProcessError:
-        # Fallback for repos with fewer than 5 commits
-        try:
-            res = subprocess.check_output(["git", "log", "--pretty=format:", "--name-only"], cwd=REPO_ROOT)
-            return list(set([f for f in res.decode().split("\n") if f]))
-        except:
-            return []
+        untracked = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], cwd=REPO_ROOT)
+        files = res.decode().split("\n") + untracked.decode().split("\n")
+        return list(set([f for f in files if f]))
     except:
         return []
 

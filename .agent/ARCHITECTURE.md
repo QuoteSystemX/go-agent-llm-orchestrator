@@ -13,6 +13,8 @@ Antigravity Kit is a modular system consisting of:
 - **20 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
+- **Autonomous SRE** - Incident Watcher, War Room Manager
+- **Intelligence Layer** - Council of Sages (Multi-agent Consensus), Global Brain
 
 ---
 
@@ -49,6 +51,8 @@ Antigravity Kit is a modular system consisting of:
 graph TD
   adr_generator --> argparse
   analyze_efficiency --> collections
+  arbitrator --> bus_manager
+  arbitrator --> lib
   auto_preview --> argparse
   auto_preview --> signal
   batch_runner --> argparse
@@ -58,11 +62,18 @@ graph TD
   bus_manager --> typing
   business_dashboard --> rich
   checklist --> argparse
+  checklist --> doc_healer
   checklist --> lib
+  checklist --> prompt_optimizer
   checklist --> status_report
+  checklist --> task_tracer
   checklist --> typing
   checklist --> visualize_deps
+  conflict_resolver --> collections
+  conflict_resolver --> lib
   distill_context --> argparse
+  doc_healer --> drift_detector
+  doc_healer --> lib
   drift_detector --> argparse
   experience_distiller --> lib
   generate_adr --> lib
@@ -71,8 +82,12 @@ graph TD
   grafana_manager --> typing
   guardrail_monitor --> fnmatch
   guardrail_monitor --> lib
+  incident_watcher --> bus_manager
+  incident_watcher --> lib
   install_hooks --> lib
   install_hooks --> shutil
+  knowledge_synergy --> argparse
+  knowledge_synergy --> lib
   main --> filepath
   main --> mcp
   main --> server
@@ -80,12 +95,18 @@ graph TD
   metrics_dashboard --> rich
   model_router --> argparse
   post_mortem_runner --> lib
+  pre_commit_review --> conflict_resolver
   pre_commit_review --> lib
+  pre_commit_review --> status_report
+  pre_commit_review --> task_tracer
+  prompt_optimizer --> collections
+  prompt_optimizer --> lib
   quality_tracker --> argparse
   quality_tracker --> collections
   quality_tracker --> urllib
   rollback_task --> argparse
   rollback_task --> lib
+  semantic_experience --> lib
   session_manager --> argparse
   session_manager --> typing
   skill_versioning --> argparse
@@ -93,9 +114,12 @@ graph TD
   status_report --> lib
   sync_claude_agents --> argparse
   task_helper --> argparse
+  task_tracer --> lib
   verify_all --> argparse
   verify_all --> typing
   visualize_deps --> lib
+  war_room_manager --> bus_manager
+  war_room_manager --> lib
 ```
 <!-- DEPENDENCY_GRAPH_END -->
 
@@ -138,6 +162,7 @@ Specialist AI personas for different domains.
 | `penetration-tester`     | Offensive security         | red-team-tactics                                                  |
 | `test-engineer`          | Testing strategies         | testing-patterns, tdd-workflow, webapp-testing                    |
 | `debugger`               | Root cause analysis        | systematic-debugging                                              |
+| `red-team`               | Adversarial Auditor        | red-team-tactics, vulnerability-scanner                           |
 | `performance-optimizer`  | Speed, Web Vitals          | performance-profiling                                             |
 | `seo-specialist`         | Ranking, visibility        | seo-fundamentals, geo-fundamentals                                |
 | `documentation-writer`   | Manuals, docs              | documentation-templates, i18n-localization                        |
@@ -357,7 +382,11 @@ Master validation scripts that orchestrate skill-level scripts.
 | `experience_distiller.py` | Lesson learned archiving (30 days)    | Maintenance              |
 | `guardrail_monitor.py` | Budget & Token safety watchdog         | Runtime monitoring       |
 | `post_mortem_runner.py` | Failure analysis & Lesson generation   | After task failure       |
-| `lint_runner.py`      | Unified linting & workspace cleanup     | Pre-commit, linting      |
+| `doc_healer.py`      | Self-healing Documentation        | after code changes       |
+| `knowledge_synergy.py` | Cross-project knowledge sync    | Post-Mortem, ADR export  |
+| `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
+| `war_room_manager.py`  | Multi-agent incident resolution | After incident           |
+| `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
 
 ### Usage
 
@@ -455,6 +484,26 @@ Security Auto-patch Helper.
 ### `bus_debugger.py`
 Interactive Bus Inspector.
 - `python3 .agent/scripts/bus_debugger.py` - Interactive shell to list and peek at bus objects.
+
+### `task_tracer.py`
+Git-to-Task Traceability.
+- `python3 .agent/scripts/task_tracer.py` - Links staged changes to active cards in `tasks/`. Triggered by `pre-commit`.
+
+### `prompt_optimizer.py`
+Cost & Prompt Efficiency.
+- `python3 .agent/scripts/prompt_optimizer.py` - Analyzes telemetry and suggests token reductions.
+
+### `conflict_resolver.py`
+Bus Arbitration.
+- `python3 .agent/scripts/conflict_resolver.py` - Detects ID collisions and state conflicts.
+
+### `semantic_experience.py`
+Contextual Knowledge Search.
+- `python3 .agent/scripts/semantic_experience.py <query>` - Searches LESSONS_LEARNED.md using keyword overlap.
+
+### `doc_healer.py`
+Self-healing Documentation.
+- `python3 .agent/scripts/doc_healer.py` - Analyzes code and updates ARCHITECTURE.md for new files.
 
 ---
 
@@ -651,3 +700,37 @@ Jules automation: full_cycle pattern → 1 story → 1 PR
 | `sprint_planner` | `analyst` | Mon 10:00 | Update sprint board |
 | `full_cycle` | `backend-specialist` | Daily 11:00 | Implement 1 story → 1 PR |
 | `sprint_closer` | `analyst` | Daily 23:50 | Auto-close sprint when all tasks done |
+
+
+## 🛡️ Autonomous SRE & Intelligence (Auto-SRE)
+
+The kit implements a self-healing loop inspired by high-reliability systems.
+
+### 1. The Reflex Loop (War Room)
+- **Detection**: `incident_watcher.py` monitors all exit codes.
+- **Elevation**: Failures are pushed to the Context Bus as `incident` objects.
+- **Resolution**: `war_room_manager.py` invokes a triad of agents (Debugger, Test Engineer, Orchestrator) to generate a `proposed_fix`.
+- **Git-Ops**: In user-less mode, the system creates a `fix/inc-ID` branch and commits verified fixes autonomously.
+
+### 2. Council of Sages (Consensus)
+Mandatory multi-agent review for architectural decisions.
+- **Workflow**: Draft → Challenge (Red-Team) → Defense (Proposer) → Verdict (Arbitrator).
+- **Enforcement**: ADRs without an `approved` verdict on the bus are blocked by the Pre-Commit Gate.
+
+### 3. Global Knowledge Layer (Global Brain)
+Knowledge shared across repositories and AI tools (Gemini, Claude Code).
+- **Storage**: Neutral path `~/.agent_knowledge/` (configurable via `AGENT_GLOBAL_ROOT`).
+- **Sync**: `knowledge_synergy.py` exports repository ADRs to the global lessons base.
+- **Search**: `experience_distiller.py` performs multi-root search (Local + Global).
+
+---
+
+## 🆕 Recent Additions
+
+| File | Description |
+| --- | --- |
+| `.agent/scripts/grafana_manager.py` | System module for grafana_manager.py. |
+| `.agent/scripts/healer_victim.py` | Victim for healing. |
+| `.agent/scripts/incident_watcher.py` | Incident Watcher — The "Eyes" of the Auto-SRE. |
+| `.agent/scripts/war_room_manager.py` | War Room Manager — The "Brain" of the Auto-SRE. |
+| `.agent/scripts/arbitrator.py` | Arbitrator — The Judge of the Council of Sages. |

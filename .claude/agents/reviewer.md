@@ -36,6 +36,15 @@ When invoked, scan the entire codebase for:
 
 ## 📋 Audit Protocol
 
+### Step 0: Global Wisdom Check
+
+**Before starting the audit, check for known pitfalls and best practices from other projects:**
+
+```bash
+# Search Global Brain for common issues relevant to this project type
+python3 .agent/scripts/experience_distiller.py --query "common pitfalls"
+```
+
 ### Step 1: Discovery
 
 ```bash

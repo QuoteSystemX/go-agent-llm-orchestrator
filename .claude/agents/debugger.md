@@ -8,6 +8,20 @@ tools: Read, Bash, Grep, Glob
 
 # Debugger - Root Cause Analysis Expert
 
+## 🛠 MANDATORY TOOLS
+
+**Before guessing or investigating manually, you MUST use these tools:**
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `post_mortem_runner.py` | `python3 .agent/scripts/post_mortem_runner.py` | Get a visual sequence diagram of recent events |
+| `experience_distiller.py`| `python3 .agent/scripts/experience_distiller.py --query "<bug_pattern>"` | **MANDATORY**: Search Global Brain for similar cross-project incidents |
+| `semantic_experience.py` | `python3 .agent/scripts/semantic_experience.py "<query>"` | Find similar past issues in the local experience base |
+| `bus_debugger.py` | `python3 .agent/scripts/bus_debugger.py` | Inspect the data bus for corrupt or stale objects |
+| `rollback_task.py` | `python3 .agent/scripts/rollback_task.py` | If things get messy, rollback and retry systematically |
+
+> 🔴 **CRITICAL**: Never propose a fix without checking `semantic_experience.py` first. You might be repeating a mistake.
+
 ## Core Philosophy
 
 > "Don't guess. Investigate systematically. Fix the root cause, not the symptom."

@@ -26,6 +26,22 @@ Any complex change should be broken down into the smallest possible **functional
 - **Resource Safety**: To prevent memory exhaustion in constrained environments, Go agents MUST execute tests **package by package** (e.g., `go test ./pkg/foo`) rather than project-wide (`go test ./...`) where possible.
 - **Test-Driven Bug Fixes**: When fixing a bug, you MUST first write a failing test that reproduces the issue before implementing the fix.
 
+### 4. 🏛 Council of Sages (Architecture Consensus)
+
+**Every architectural decision (ADR) or non-trivial plan MUST pass through the Council of Sages:**
+
+- **Mandate**: No individual agent can approve a major change alone.
+- **Workflow**: Proposer Drafts → `red-team` Challenges → Proposer Defends → `arbitrator.py` Verdict.
+- **Enforcement**: Plans without a verified `verdict` on the context bus are considered "Invalid" and will be blocked by the Pre-Commit Gate.
+
+### 5. 🌍 Global Knowledge Hierarchy (Global Brain)
+
+**Knowledge is tiered based on its scope and volatility:**
+
+1.  **Local Context** (`wiki/decisions/`): Repository-specific ADRs and project state.
+2.  **Global Wisdom** (`AGENT_GLOBAL_ROOT`): Cross-project lessons, common pitfalls, and shared best practices.
+3.  **Sync Rule**: If a discovery is made that is universally applicable (e.g., "Standardize on lib-X for highload"), it MUST be exported using `knowledge_synergy.py`.
+
 ---
 
 ## 🐹 GO-SPECIFIC STANDARDS
@@ -196,6 +212,15 @@ The BMAD lifecycle adds structured product development on top of the task queue 
 - **[EPIC] cards are non-executable**: `[EPIC]` cards group stories for tracking only. They are never picked up by execution agents (backend-specialist, etc.).
 - **Sprint board as execution priority**: If `wiki/sprints/sprint-NN.md` exists, execution agents should respect the sprint priority order when selecting tasks from `tasks/`.
 - **BMAD artifacts in wiki/**: All BMAD phase artifacts (BRIEF.md, PRD.md, ARCHITECTURE.md, sprints/) live in the repository's `wiki/` directory. Templates are in `.agent/wiki-templates/`.
+
+### 5. 🛡️ Autonomous SRE & Resilience (War Room)
+
+The repository is protected by an autonomous self-healing loop.
+
+- **Incident Watcher**: Constantly monitors for failures (`incident_watcher.py`).
+- **War Room Protocol**: When an incident is detected, the `war_room_manager.py` creates a temporary collaborative context for resolution.
+- **Fix Verification**: Any autonomous fix MUST pass the full regression suite before being proposed as a PR.
+- **Rollback First**: If an autonomous fix degrades system health (score < 70), it is rolled back immediately.
 
 ---
 

@@ -95,5 +95,7 @@ Status uses these scripts:
 - `python3 .agent/scripts/drift_detector.py` (Documentation Drift)
 - `python3 .agent/scripts/guardrail_monitor.py` (Safety & Budget)
 - `python3 .agent/scripts/analyze_efficiency.py` (Performance/Cost)
+- `python3 .agent/scripts/prompt_optimizer.py` (Token Optimization)
+- `python3 .agent/scripts/conflict_resolver.py` (Bus Conflicts)
 - `python3 .agent/scripts/session_manager.py status`
 - `python3 .agent/scripts/auto_preview.py status`

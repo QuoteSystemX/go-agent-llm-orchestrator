@@ -22,7 +22,7 @@ BUS_FILE = BUS_DIR / "context.json"
 VALID_TYPES = [
     "requirement", "api_spec", "code_chunk",
     "verification_result", "memory_note", "state_snapshot",
-    "telemetry",
+    "telemetry", "proposed_fix", "incident",
 ]
 
 def _check_telemetry_limits(content: dict):
@@ -81,8 +81,22 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
     save_json_atomic(BUS_FILE, data)
     print(f"✅ Pushed '{obj_id}' ({obj_type}) by {author}.")
 
-def wait_for_object(obj_id: str, timeout: int = 30) -> None:
-    """Wait for an object with a specific ID to appear on the bus."""
+def get_objects_by_type(obj_type: str) -> list[dict]:
+    """Returns all objects of a specific type."""
+    data = load_json_safe(BUS_FILE)
+    if not data: return []
+    return [obj for obj in data.get("objects", []) if obj["type"] == obj_type]
+
+def clean_author(author: str) -> None:
+    """Removes all objects by a specific author."""
+    data = load_json_safe(BUS_FILE)
+    if not data: return
+    data["objects"] = [obj for obj in data.get("objects", []) if obj["author"] != author]
+    save_json_atomic(BUS_FILE, data)
+    print(f"✅ Removed all objects by {author}.")
+
+def wait_for_object(obj_id: str, timeout: int = 30) -> Optional[dict]:
+    """Wait for an object with a specific ID to appear on the bus and return it."""
     import time
     print(f"⏳ Waiting for object '{obj_id}' on the bus (timeout: {timeout}s)...")
     start = time.time()
@@ -92,11 +106,10 @@ def wait_for_object(obj_id: str, timeout: int = 30) -> None:
         for obj in objects:
             if obj["id"] == obj_id:
                 print(f"✅ Found object '{obj_id}' after {int(time.time() - start)}s.")
-                print(json.dumps(obj, indent=2, ensure_ascii=False))
-                return
-        time.sleep(2)
+                return obj
+        time.sleep(1)
     print(f"❌ Timeout: Object '{obj_id}' not found after {timeout}s.")
-    sys.exit(1)
+    return None
 
 def main():
     parser = argparse.ArgumentParser(description="Context Bus Manager")

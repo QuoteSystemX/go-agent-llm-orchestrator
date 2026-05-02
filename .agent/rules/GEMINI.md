@@ -129,6 +129,17 @@ When user's prompt is NOT in English:
 - **Performance**: Measure first. Adhere to 2025 standards (Core Web Vitals).
 - **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
 
+### 🏥 SYSTEM HEALTH FIRST (Global Protocol)
+
+**Before performing ANY task that modifies code or project state:**
+
+1.  **Check Health**: Run `python3 .agent/scripts/status_report.py`. If score < 80, investigate why.
+2.  **Check Conflicts**: Run `python3 .agent/scripts/conflict_resolver.py`. DO NOT proceed if conflicts exist.
+3.  **Check Budget**: Run `python3 .agent/scripts/guardrail_monitor.py`. DO NOT exceed token/cost limits.
+4.  **Check Experience**: Run `python3 .agent/scripts/experience_distiller.py`. Learn from past failures.
+
+> 🔴 **MANDATORY**: A task is only complete if `checklist.py . --fix` has been run and returns success.
+
 ### 📁 File Dependency Awareness
 
 **Before modifying ANY file:**

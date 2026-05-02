@@ -27,9 +27,14 @@ Maintain the codebase knowledge base (Mental Models, ADRs, Intuition) in sync wi
 ## Execution Protocol
 
 1. **Analyze Argument**:
-   - If `audit`: Run `python3 .agent/scripts/drift_detector.py`. Pass results to Wiki Architect.
+   - If `audit`: 
+     - Run `python3 .agent/scripts/drift_detector.py`. 
+     - Run `python3 .agent/scripts/doc_healer.py` to automatically fix simple drifts.
+     - Pass remaining results to Wiki Architect.
    - If `design`: Search for code related to `<name>`. Extract patterns and write a Mental Model doc.
-   - If `sync`: Check git history for files changed in `wiki/` vs `src/` and propose updates.
+   - If `sync`: 
+     - Check git history for files changed in `wiki/` vs `src/` and propose updates.
+     - Run `python3 .agent/scripts/doc_healer.py` as a pre-sync check.
 
 2. **Wiki Architect Context**:
    - Use `wiki-writing` skill.

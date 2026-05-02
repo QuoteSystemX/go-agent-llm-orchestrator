@@ -117,10 +117,32 @@ def run_fix():
     try:
         import visualize_deps
         import status_report
+        import task_tracer
+        import prompt_optimizer
+        
+        # Trace check: warning if changes exist but no task is active
+        staged = task_tracer.get_staged_files()
+        if staged and not task_tracer.find_active_task():
+            print_warning("Changes detected but no active task found in tasks/.")
+            
         visualize_deps.generate_mermaid()
         score, metrics = status_report.calculate_health()
+        
+        # Add cost metrics to dashboard (simplified for demo)
+        opt_report = prompt_optimizer.analyze_telemetry()
+        if "HIGH USAGE" in opt_report:
+            score -= 10
+            metrics["Cost Status"] = "⚠️ HIGH"
+        else:
+            metrics["Cost Status"] = "✅ OK"
+            
         status_report.export_to_html(score, metrics)
-        print_success("Visualization and Dashboard updated.")
+        
+        # Doc Healer: Auto-repair documentation drift
+        import doc_healer
+        doc_healer.heal_docs()
+        
+        print_success("Visualization, Dashboard, and Documentation updated.")
     except Exception as e:
         print_warning(f"Failed to update visualization: {e}")
 

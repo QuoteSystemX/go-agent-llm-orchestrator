@@ -17,11 +17,11 @@ def detect_project_language() -> str:
 
 # Import from common lib
 try:
-    from lib.paths import LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
-    from lib.paths import LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
 
 ARCHIVE_DIR = REPO_ROOT / "wiki" / "archive" / "experience"
@@ -108,13 +108,18 @@ def filter_by_skill(skill_name: str) -> str:
     if ARCHIVE_DIR.exists():
         for archive_file in ARCHIVE_DIR.glob("*.md"):
             with open(archive_file, 'r', encoding="utf-8") as f:
-                # Archives might not have the header or use different structure
-                # but they follow the ### format
                 content = f.read()
-                if not content.startswith("### "):
-                    content = "\n### " + content
+                if not content.startswith("### "): content = "\n### " + content
                 _, archived = parse_entries(content)
                 all_lessons.extend(archived)
+                
+    # 3. Global lessons
+    if GLOBAL_LESSONS_PATH.exists():
+        with open(GLOBAL_LESSONS_PATH, 'r', encoding="utf-8") as f:
+            content = f.read()
+            if not content.startswith("### "): content = "\n### " + content
+            _, global_l = parse_entries(content)
+            all_lessons.extend(global_l)
 
     matched = []
     for lesson in all_lessons:
@@ -141,6 +146,12 @@ def search_lessons(query: str) -> str:
                 if not content.startswith("### "): content = "\n### " + content
                 _, archived = parse_entries(content)
                 all_lessons.extend(archived)
+    if GLOBAL_LESSONS_PATH.exists():
+        with open(GLOBAL_LESSONS_PATH, 'r', encoding="utf-8") as f:
+            content = f.read()
+            if not content.startswith("### "): content = "\n### " + content
+            _, global_l = parse_entries(content)
+            all_lessons.extend(global_l)
 
     query_terms = set(query.lower().split())
     results = []
@@ -165,8 +176,8 @@ def list_skill_tags() -> str:
     """List all unique skill tags found."""
     tags = set()
     
-    # Check active and archives
-    files_to_check = [LESSONS_PATH]
+    # Check active, archives, and global
+    files_to_check = [LESSONS_PATH, GLOBAL_LESSONS_PATH]
     if ARCHIVE_DIR.exists():
         files_to_check.extend(ARCHIVE_DIR.glob("*.md"))
         

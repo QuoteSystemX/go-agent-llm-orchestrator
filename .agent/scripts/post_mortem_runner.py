@@ -1,54 +1,57 @@
 #!/usr/bin/env python3
 """Post-Mortem Runner — Analyzes failure logs and suggests lessons learned.
+Now with Mermaid sequence visualization.
 """
 import sys
 import os
+import json
 from pathlib import Path
 from datetime import datetime
 
 try:
-    from lib.paths import AGENT_DIR, LESSONS_PATH
+    from lib.paths import AGENT_DIR, BUS_DIR
     from lib.common import load_json_safe
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
-    from lib.paths import AGENT_DIR, LESSONS_PATH
+    from lib.paths import AGENT_DIR, BUS_DIR
     from lib.common import load_json_safe
 
-LOG_DIR = AGENT_DIR / "logs"
+def generate_mermaid_sequence(events):
+    """Generate a Mermaid sequence diagram from bus events."""
+    mermaid = ["```mermaid", "sequenceDiagram", "  actor User"]
+    for e in events:
+        author = e.get("author", "Unknown").replace("-", "_")
+        etype = e.get("type", "event")
+        mermaid.append(f"  {author}->>Bus: Push {etype}")
+    mermaid.append("```")
+    return "\n".join(mermaid)
 
-def analyze_recent_failures():
-    """Scan log directory for recent errors and extract context."""
-    if not LOG_DIR.exists():
-        return "No logs found to analyze."
+def run_post_mortem():
+    bus_file = BUS_DIR / "context.json"
+    if not bus_file.exists():
+        return "No bus data for post-mortem."
 
-    logs = sorted(LOG_DIR.glob("*.log"), key=os.path.getmtime, reverse=True)
-    if not logs:
-        return "No recent logs found."
-
-    recent_log = logs[0]
-    with open(recent_log, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    # Heuristic for finding error context
-    lines = content.splitlines()
-    error_lines = [l for l in lines if "ERROR" in l or "Exception" in l or "Failed" in l]
+    data = load_json_safe(bus_file)
+    objects = data.get("objects", [])
     
-    if not error_lines:
-        return f"No obvious errors found in {recent_log.name}."
-
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    # Filter for last 10 events
+    events = objects[-10:]
     
-    suggestion = f"""### [{date_str}] [FAIL] [skill-name] Title of the issue
-Context: Analysis of {recent_log.name} detected:
-{error_lines[-1] if error_lines else "Unknown error"}
-
-Root Cause: [Describe why it failed]
-Resolution: [How was it fixed?]
-"""
-    return f"Suggested lesson learned based on {recent_log.name}:\n\n{suggestion}"
+    report = [
+        "# 📉 Post-Mortem Report",
+        f"Generated: {datetime.now().isoformat()}",
+        "\n## ⏱ Sequence of Events",
+        generate_mermaid_sequence(events),
+        "\n## 🔍 Root Cause Analysis",
+        "Analysis based on the last 10 events above.",
+        "- Last Agent active: " + (events[-1].get("author") if events else "N/A"),
+        "- Last Type: " + (events[-1].get("type") if events else "N/A"),
+    ]
+    
+    return "\n".join(report)
 
 def main():
-    print(analyze_recent_failures())
+    print(run_post_mortem())
 
 if __name__ == "__main__":
     main()

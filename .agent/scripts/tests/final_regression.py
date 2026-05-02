@@ -132,9 +132,11 @@ class FinalRegressionTest(unittest.TestCase):
         self.assertIn("ADR created", msg)
 
     def test_09_post_mortem(self):
-        print("[REGRESSION] 09: Post-Mortem Runner")
-        res = post_mortem_runner.analyze_recent_failures()
-        self.assertIsInstance(res, str)
+        print("\n[REGRESSION] 09: Post-Mortem Runner")
+        import post_mortem_runner
+        res = post_mortem_runner.run_post_mortem()
+        self.assertIn("Post-Mortem Report", res)
+        self.assertIn("Sequence of Events", res)
 
     def test_10_checklist_fix(self):
         print("[REGRESSION] 10: Checklist (Auto-fix)")
@@ -168,12 +170,119 @@ class FinalRegressionTest(unittest.TestCase):
         test_path.parent.rmdir()
 
     def test_13_config_healing(self):
-        print("[REGRESSION] 13: Config Healing")
+        print("\n[REGRESSION] 13: Config Healing")
         # Corrupt the rules
         save_json_atomic(WATCHDOG_RULES_PATH, {"corrupt": True})
         checklist.run_fix()
         rules = load_json_safe(WATCHDOG_RULES_PATH)
         self.assertIn("limits", rules)
+
+    def test_14_task_tracer(self):
+        print("\n[REGRESSION] 14: Task Tracer")
+        import task_tracer
+        tasks_dir = REPO_ROOT / "tasks"
+        tasks_dir.mkdir(exist_ok=True)
+        test_task = tasks_dir / "reg-task.md"
+        test_task.write_text("# Regression Task", encoding="utf-8")
+        try:
+            res = task_tracer.update_task_card(test_task, ["dummy.py"])
+            self.assertIn("Updated", res)
+            self.assertIn("dummy.py", test_task.read_text(encoding="utf-8"))
+        finally:
+            if test_task.exists(): test_task.unlink()
+
+    def test_15_prompt_optimizer(self):
+        print("\n[REGRESSION] 15: Prompt Optimizer")
+        import prompt_optimizer
+        import bus_manager
+        import json
+        # Push fresh telemetry since test_11 might have cleaned the bus
+        bus_manager.push("opt_1", "telemetry", "tester", json.dumps({"total_tokens": 1000}))
+        report = prompt_optimizer.analyze_telemetry()
+        self.assertIn("PROMPT COST OPTIMIZATION REPORT", report)
+
+    def test_16_conflict_resolver(self):
+        print("\n[REGRESSION] 16: Conflict Resolver")
+        import bus_manager
+        import conflict_resolver
+        import json
+        # Push conflicting IDs
+        bus_manager.push("conf_1", "telemetry", "tester_a", json.dumps({"val": 1}))
+        bus_manager.push("conf_1", "telemetry", "tester_b", json.dumps({"val": 2}))
+        report = conflict_resolver.resolve_conflicts()
+        self.assertIn("BUS CONFLICTS DETECTED", report)
+
+    def test_17_doc_healer(self):
+        print("\n[REGRESSION] 17: Doc Healer")
+        test_file = REPO_ROOT / ".agent" / "scripts" / "healer_victim.py"
+        test_file.write_text('"""Victim for healing."""\nprint("hi")', encoding="utf-8")
+        try:
+            import doc_healer
+            res = doc_healer.heal_docs()
+            self.assertTrue("Documentation healing complete" in res or "No file drift detected" in res)
+            arch_content = (REPO_ROOT / ".agent" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+            self.assertIn("healer_victim.py", arch_content)
+        finally:
+            if test_file.exists(): test_file.unlink()
+
+    def test_18_war_room(self):
+        """Phase 14.1: Autonomous War Room Test."""
+        print("\n[REGRESSION] 18: War Room")
+        try:
+            import incident_watcher
+            import war_room_manager
+            
+            # 1. Trigger incident (simulated failure)
+            incident_watcher.watch_command(["python3", "-c", "import sys; sys.exit(1)"])
+            
+            # 2. Find incident on bus
+            incidents = bus_manager.get_objects_by_type("incident")
+            self.assertGreater(len(incidents), 0)
+            inc_id = incidents[-1]['id']
+            
+            # 3. Run War Room Manager
+            war_room_manager.manage_war_room(inc_id)
+            
+            # 4. Check for proposed fix
+            fixes = bus_manager.get_objects_by_type("proposed_fix")
+            self.assertGreater(len(fixes), 0)
+            self.assertEqual(fixes[-1]['content']['incident_ref'], inc_id)
+            self.assertEqual(fixes[-1]['content']['status'], "ready_to_apply")
+            
+        finally:
+            bus_manager.clean_author("incident_watcher")
+            bus_manager.clean_author("war_room_manager")
+
+    def test_19_consensus(self):
+        """Phase 14.2: Council of Sages Consensus Test."""
+        print("\n[REGRESSION] 19: Council of Sages")
+        try:
+            import arbitrator
+            
+            # 1. Create a plan on the bus
+            plan_id = "plan_test_01"
+            bus_manager.push(
+                plan_id,
+                "requirement",
+                "tester",
+                json.dumps({"goal": "Test consensus architecture"})
+            )
+            
+            # 2. Run Arbitrator
+            arbitrator.run_consensus(plan_id)
+            
+            # 3. Check for verdict
+            verdicts = bus_manager.get_objects_by_type("verification_result")
+            self.assertGreater(len(verdicts), 0)
+            
+            # Filter for our plan
+            plan_verdicts = [v for v in verdicts if v['content'].get('plan_ref') == plan_id]
+            self.assertGreater(len(plan_verdicts), 0)
+            self.assertEqual(plan_verdicts[-1]['content']['status'], "approved_with_conditions")
+            
+        finally:
+            bus_manager.clean_author("tester")
+            bus_manager.clean_author("arbitrator")
 
 if __name__ == "__main__":
     unittest.main()

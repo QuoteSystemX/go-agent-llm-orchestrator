@@ -18,7 +18,12 @@ This command activates DEBUG mode for systematic investigation of issues, errors
 
 When `/debug` is triggered:
 
-1. **Gather information**
+1. **Automated Diagnostics**
+   - Run `python3 .agent/scripts/post_mortem_runner.py` for visual analysis.
+   - Run `python3 .agent/scripts/semantic_experience.py "<issue>"` for past lessons.
+   - Run `python3 .agent/scripts/bus_debugger.py` to check data consistency.
+
+2. **Gather information**
    - Error message
    - Reproduction steps
    - Expected vs actual behavior

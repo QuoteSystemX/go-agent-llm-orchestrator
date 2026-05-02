@@ -1,7 +1,12 @@
 import json
 import os
+import datetime
 from pathlib import Path
 from typing import Any, Optional
+
+def get_timestamp() -> str:
+    """Returns a unified ISO timestamp."""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def load_json_safe(path: Path) -> Any:
     """Load JSON file with unified error handling and encoding."""

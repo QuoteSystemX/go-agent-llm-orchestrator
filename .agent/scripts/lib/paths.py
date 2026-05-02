@@ -11,6 +11,8 @@ def get_repo_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 REPO_ROOT = get_repo_root()
+GLOBAL_ROOT = Path(os.getenv("AGENT_GLOBAL_ROOT", "~/.agent_knowledge")).expanduser()
+GLOBAL_LESSONS_PATH = GLOBAL_ROOT / "lessons_learned.md"
 AGENT_DIR = REPO_ROOT / ".agent"
 BUS_DIR = AGENT_DIR / "bus"
 CONFIG_DIR = AGENT_DIR / "config"

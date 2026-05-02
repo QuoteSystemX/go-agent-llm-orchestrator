@@ -46,7 +46,37 @@ def review_diff():
         print("\nRecommendation: Review LESSONS_LEARNED.md to ensure you aren't repeating past mistakes.")
         return False, "Review finished with warnings."
 
-    return True, "Diff looks clean according to history."
+    # INTEGRATION: Check System Health (Must be > 70 for commit)
+    try:
+        import status_report
+        health = status_report.get_health_report()
+        score = health.get("score", 100)
+        if score < 70:
+            print(f"❌ COMMIT BLOCKED: System Health Score is too low ({score}/100).")
+            print("Run 'python3 .agent/scripts/checklist.py . --fix' to improve health.")
+            return False, "Low health score."
+    except Exception as e:
+        print(f"⚠️ Health check skipped: {e}")
+
+    # INTEGRATION: Check Bus Conflicts
+    try:
+        import conflict_resolver
+        conflicts = conflict_resolver.resolve_conflicts()
+        if conflicts:
+            print(f"❌ COMMIT BLOCKED: Found {len(conflicts)} active bus conflicts.")
+            print("Run 'python3 .agent/scripts/conflict_resolver.py' for details.")
+            return False, "Bus conflicts detected."
+    except Exception as e:
+        print(f"⚠️ Conflict check skipped: {e}")
+
+    # NEW: Automatically trace tasks on successful review
+    try:
+        import task_tracer
+        task_tracer.main()
+    except Exception as e:
+        print(f"⚠️ Task tracing failed: {e}")
+
+    return True, "Diff looks clean and system is healthy."
 
 if __name__ == "__main__":
     ok, msg = review_diff()
