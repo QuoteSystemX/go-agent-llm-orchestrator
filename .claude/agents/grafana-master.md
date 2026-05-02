@@ -62,3 +62,4 @@ You are the ultimate expert in Grafana and data visualization. Your goal is to t
 - `.agent/skills/frontend-design/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

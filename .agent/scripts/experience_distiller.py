@@ -19,10 +19,12 @@ def detect_project_language() -> str:
 try:
     from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
+    import semantic_brain_engine
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
     from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
+    import semantic_brain_engine
 
 ARCHIVE_DIR = REPO_ROOT / "wiki" / "archive" / "experience"
 RETENTION_DAYS = 30
@@ -133,44 +135,40 @@ def filter_by_skill(skill_name: str) -> str:
     return f"Found {len(matched)} lesson(s) for '{skill_name}' (including archives):\n\n" + "\n".join(matched)
 
 def search_lessons(query: str) -> str:
-    """Find lessons using weighted keyword search."""
-    all_lessons = []
+    """Find lessons using hybrid semantic search (Global + Local)."""
+    # 1. Global Search (Semantic)
+    semantic_results = semantic_brain_engine.search_lessons(query, top_n=3)
+    
+    # 2. Local Search (Traditional Fallback for active lessons)
+    all_local = []
     if LESSONS_PATH.exists():
         with open(LESSONS_PATH, 'r', encoding="utf-8") as f:
             _, active = parse_entries(f.read())
-            all_lessons.extend(active)
-    if ARCHIVE_DIR.exists():
-        for archive_file in ARCHIVE_DIR.glob("*.md"):
-            with open(archive_file, 'r', encoding="utf-8") as f:
-                content = f.read()
-                if not content.startswith("### "): content = "\n### " + content
-                _, archived = parse_entries(content)
-                all_lessons.extend(archived)
-    if GLOBAL_LESSONS_PATH.exists():
-        with open(GLOBAL_LESSONS_PATH, 'r', encoding="utf-8") as f:
-            content = f.read()
-            if not content.startswith("### "): content = "\n### " + content
-            _, global_l = parse_entries(content)
-            all_lessons.extend(global_l)
-
+            all_local.extend(active)
+            
     query_terms = set(query.lower().split())
-    results = []
-    for lesson in all_lessons:
+    local_matches = []
+    for lesson in all_local:
         lesson_lower = lesson.lower()
         score = sum(2 if term in lesson_lower else 0 for term in query_terms)
-        # Extra points for matches in the title (first line)
-        title = lesson_lower.split('\n')[0]
-        score += sum(3 if term in title else 0 for term in query_terms)
-        
         if score > 0:
-            results.append((score, lesson))
-
-    if not results:
-        return f"No lessons matching '{query}' found."
-
-    results.sort(key=lambda x: x[0], reverse=True)
-    top_results = [f"### {r[1]}" for r in results[:5]]
-    return f"Top {len(top_results)} match(es) for '{query}':\n\n" + "\n".join(top_results)
+            local_matches.append((score, lesson))
+            
+    # Combine results
+    output = [f"🧠 Semantic Matches (Global Brain):"]
+    if semantic_results:
+        for res in semantic_results:
+            output.append(f"### {res['content']} (Score: {res['score']:.2f})")
+    else:
+        output.append("_No semantic matches found._")
+        
+    if local_matches:
+        local_matches.sort(key=lambda x: x[0], reverse=True)
+        output.append(f"\n📂 Local Matches:")
+        for r in local_matches[:3]:
+            output.append(f"### {r[1]}")
+            
+    return "\n".join(output)
 
 def list_skill_tags() -> str:
     """List all unique skill tags found."""

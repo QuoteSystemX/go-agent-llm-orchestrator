@@ -18,6 +18,8 @@ tools: Read, Bash, Grep, Glob
 | `experience_distiller.py`| `python3 .agent/scripts/experience_distiller.py --query "<bug_pattern>"` | **MANDATORY**: Search Global Brain for similar cross-project incidents |
 | `semantic_experience.py` | `python3 .agent/scripts/semantic_experience.py "<query>"` | Find similar past issues in the local experience base |
 | `bus_debugger.py` | `python3 .agent/scripts/bus_debugger.py` | Inspect the data bus for corrupt or stale objects |
+| `ghost_prototyper.py` | `python3 .agent/scripts/ghost_prototyper.py` | (Phase 21) Verify fix in a safe playground |
+| `failure_correlator.py` | `python3 .agent/scripts/failure_correlator.py` | (Phase 21) Compare with historical failures |
 | `rollback_task.py` | `python3 .agent/scripts/rollback_task.py` | If things get messy, rollback and retry systematically |
 
 > 🔴 **CRITICAL**: Never propose a fix without checking `semantic_experience.py` first. You might be repeating a mistake.

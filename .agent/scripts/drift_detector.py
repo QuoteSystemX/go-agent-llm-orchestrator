@@ -9,16 +9,26 @@ import re
 REPO_ROOT = Path(__file__).parent.parent.parent
 
 def get_git_changes():
+    files = []
     try:
-        # Check if it's a git repo
         if not (REPO_ROOT / ".git").exists():
             return []
-        # Get list of files modified in the last 5 commits + UNTRACKED files
-        res = subprocess.check_output(["git", "diff", "--name-only", "HEAD~5"], cwd=REPO_ROOT, stderr=subprocess.STDOUT)
+        # Try to get changes from last 5 commits
+        try:
+            res = subprocess.check_output(["git", "diff", "--name-only", "HEAD~5"], cwd=REPO_ROOT, stderr=subprocess.DEVNULL)
+            files.extend(res.decode().split("\n"))
+        except:
+            # Fallback to all tracked files if HEAD~5 is too deep
+            res = subprocess.check_output(["git", "ls-files"], cwd=REPO_ROOT)
+            files.extend(res.decode().split("\n"))
+            
+        # Get untracked files
         untracked = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], cwd=REPO_ROOT)
-        files = res.decode().split("\n") + untracked.decode().split("\n")
+        files.extend(untracked.decode().split("\n"))
+        
         return list(set([f for f in files if f]))
-    except:
+    except Exception as e:
+        print(f"⚠️ Git error: {e}")
         return []
 
 def get_documented_files():
@@ -95,6 +105,7 @@ def detect_drift():
     for f in changes:
         path = Path(f)
         if path.suffix in monitored_exts and "test" not in f:
+            # print(f"Checking {f}...") # Debug
             # Check if filename is mentioned in docs
             if path.name not in docs_content:
                 drifts.append(f"FILE DRIFT: {f} (modified but not in docs)")

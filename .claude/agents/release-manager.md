@@ -40,3 +40,4 @@ You are responsible for the final stage of the development lifecycle: bringing c
 - `.agent/skills/git-master/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

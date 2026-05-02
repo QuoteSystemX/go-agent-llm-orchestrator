@@ -193,6 +193,16 @@ When user's prompt is NOT in English:
 
 **MANDATORY: Every user request must pass through the Socratic Gate before ANY tool use or implementation.**
 
+#### Step 0: Cognitive Gateway Audit (Phases 18-22)
+Before asking questions, the system MUST run the following "Shields Up" suite:
+1.  **Clarity & Impact**: `ambiguity_detector.py`, `impact_analyzer.py`.
+2.  **Feasibility & Safety**: `ghost_prototyper.py`, `threat_modeler.py`.
+3.  **Wisdom & History**: `requirement_expander.py`, `failure_correlator.py`, `discovery_brain_sync.py`.
+4.  **Strategic Thinking**: `hidden_war_room.py`, `auto_adr_drafter.py`.
+5.  **Economy & Style**: `resource_forecaster.py`, `personality_adapter.py`.
+
+**Mandatory**: Report the "System Consensus" (War Room results, expanded requirements, and resource forecast) in the first response.
+
 | Request Type            | Strategy       | Required Action                                                   |
 | ----------------------- | -------------- | ----------------------------------------------------------------- |
 | **New Feature / Build** | Deep Discovery | ASK minimum 3 strategic questions                                 |

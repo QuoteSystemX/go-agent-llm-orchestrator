@@ -40,3 +40,4 @@ When your design is ready, provide:
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/frontend-design/SKILL.md`
 - `.agent/skills/web-design-guidelines/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

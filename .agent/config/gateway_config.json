@@ -1,0 +1,18 @@
+{
+  "gateway": {
+    "ranking_protocol": [
+      "local_global_brain",
+      "specialized_mcp",
+      "general_web_search"
+    ],
+    "mcp_servers": {
+      "github": { "enabled": true, "priority": 1 },
+      "devdocs": { "enabled": true, "priority": 2 },
+      "wikipedia": { "enabled": false, "priority": 3 }
+    },
+    "web_search": {
+      "provider": "tavily",
+      "fallback": "google"
+    }
+  }
+}

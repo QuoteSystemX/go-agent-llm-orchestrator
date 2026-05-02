@@ -150,3 +150,4 @@ buf generate                                      # Generated code compiles
 - `.agent/skills/lint-and-validate/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

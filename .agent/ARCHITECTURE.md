@@ -1,3 +1,4 @@
+CORRUPTED BY CHAOS MONKEY
 # Antigravity Kit Architecture
 
 > Comprehensive AI Agent Capability Expansion Toolkit
@@ -61,6 +62,8 @@ graph TD
   bus_manager --> lib
   bus_manager --> typing
   business_dashboard --> rich
+  chaos_monkey --> lib
+  chaos_monkey --> random
   checklist --> argparse
   checklist --> doc_healer
   checklist --> lib
@@ -76,6 +79,7 @@ graph TD
   doc_healer --> lib
   drift_detector --> argparse
   experience_distiller --> lib
+  experience_distiller --> semantic_brain_engine
   generate_adr --> lib
   grafana_manager --> argparse
   grafana_manager --> resilience
@@ -95,6 +99,7 @@ graph TD
   metrics_dashboard --> rich
   model_router --> argparse
   post_mortem_runner --> lib
+  pr_audit --> lib
   pre_commit_review --> conflict_resolver
   pre_commit_review --> lib
   pre_commit_review --> status_report
@@ -106,14 +111,20 @@ graph TD
   quality_tracker --> urllib
   rollback_task --> argparse
   rollback_task --> lib
+  semantic_brain_engine --> lib
+  semantic_brain_engine --> typing
   semantic_experience --> lib
   session_manager --> argparse
   session_manager --> typing
+  skill_factory --> argparse
+  skill_factory --> lib
   skill_versioning --> argparse
   status_report --> drift_detector
   status_report --> lib
   sync_claude_agents --> argparse
   task_helper --> argparse
+  task_miner --> argparse
+  task_miner --> lib
   task_tracer --> lib
   verify_all --> argparse
   verify_all --> typing
@@ -734,3 +745,23 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 | `.agent/scripts/incident_watcher.py` | Incident Watcher — The "Eyes" of the Auto-SRE. |
 | `.agent/scripts/war_room_manager.py` | War Room Manager — The "Brain" of the Auto-SRE. |
 | `.agent/scripts/arbitrator.py` | Arbitrator — The Judge of the Council of Sages. |
+| `.agent/scripts/skill_factory.py` | System module for skill_factory.py. |
+| `.agent/scripts/task_miner.py` | System module for task_miner.py. |
+| `.agent/scripts/word_counter.py` | System module for word_counter.py. |
+| `.agent/scripts/pr_audit.py` | System module for pr_audit.py. |
+| `.agent/scripts/chaos_monkey.py` | System module for chaos_monkey.py. |
+| `.agent/scripts/semantic_brain_engine.py` | System module for semantic_brain_engine.py. |
+| `.agent/scripts/extremely_unique_chaos_script.py` | Extremely Unique Chaos Script — Used to test doc_healer resilience. |
+| `.agent/scripts/agent_skill_auditor.py` | System module for agent_skill_auditor.py. |
+| `.agent/scripts/ci_auto_fixer.py` | System module for ci_auto_fixer.py. |
+| `.agent/scripts/context_autofill.py` | System module for context_autofill.py. |
+| `.agent/scripts/discovery_brain_sync.py` | System module for discovery_brain_sync.py. |
+| `.agent/scripts/intent_validator.py` | System module for intent_validator.py. |
+| `.agent/scripts/ambiguity_detector.py` | System module for ambiguity_detector.py. |
+| `.agent/scripts/impact_analyzer.py` | System module for impact_analyzer.py. |
+| `.agent/scripts/code_polisher.py` | System module for code_polisher.py. |
+| `.agent/scripts/failure_correlator.py` | System module for failure_correlator.py. |
+| `.agent/scripts/threat_modeler.py` | System module for threat_modeler.py. |
+| `.agent/scripts/resource_optimizer.py` | System module for resource_optimizer.py. |
+| `.agent/scripts/ghost_prototyper.py` | System module for ghost_prototyper.py. |
+| `.agent/scripts/autonomous_fuzzer.py` | System module for autonomous_fuzzer.py. |

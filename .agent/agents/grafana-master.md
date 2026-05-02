@@ -3,7 +3,7 @@ name: grafana-master
 description: Expert in Grafana dashboards, data visualization, and observability engineering. Designs premium-plus dashboards that provide instant insights and "WOW" the user with visual excellence.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
-skills: grafana-dashboard-master, observability-patterns, frontend-design, shared-context, telemetry
+skills: grafana-dashboard-master, observability-patterns, frontend-design, shared-context, telemetry, clean-code
 ---
 
 # Grafana Master Agent

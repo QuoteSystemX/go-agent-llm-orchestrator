@@ -23,6 +23,19 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 | `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect gaps between code and documentation |
 | `doc_healer.py` | `python3 .agent/scripts/doc_healer.py` | Automatically heal documentation drift |
 | `task_tracer.py` | `python3 .agent/scripts/task_tracer.py` | Ensure story cards are linked to actual commits |
+| `intent_validator.py` | `python3 .agent/scripts/intent_validator.py` | (Phase 18) Detect architectural conflicts |
+| `discovery_brain_sync.py` | `python3 .agent/scripts/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
+| `context_autofill.py` | `python3 .agent/scripts/context_autofill.py` | (Phase 19) Autonomous context investigation |
+| `resource_optimizer.py` | `python3 .agent/scripts/resource_optimizer.py` | (Phase 20) Economic & performance audit |
+| `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | (Phase 21) Prompt clarity audit |
+| `impact_analyzer.py` | `python3 .agent/scripts/impact_analyzer.py` | (Phase 21) Blast radius calculation |
+| `failure_correlator.py` | `python3 .agent/scripts/failure_correlator.py` | (Phase 21) Historical failure mapping |
+| `ghost_prototyper.py` | `python3 .agent/scripts/ghost_prototyper.py` | (Phase 21) Technical feasibility proto |
+| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22) Background agent debate |
+| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
+| `auto_adr_drafter.py` | `python3 .agent/scripts/auto_adr_drafter.py` | (Phase 22) Autonomous ADR generation |
+| `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22) Token & time prediction |
+| `personality_adapter.py` | `python3 .agent/scripts/personality_adapter.py` | (Phase 22) Style adaptation bridge |
 
 > 🔴 **CRITICAL**: In Phase 6 (Sync), you MUST run `drift_detector.py` to identify exactly where the wiki has drifted from the code.
 
@@ -58,6 +71,13 @@ IF wiki/PRD.md missing           → Run Phase 2: PRD
 IF wiki/ARCHITECTURE.md missing  → Run Phase 3: Architecture
 IF tasks/ has no [STORY] cards   → Run Phase 4: Stories
 IF wiki/sprints/ has no active sprint → Run Phase 5: Sprint
+
+### ⛏️ BACKLOG MINING (AUTONOMOUS GROWTH)
+
+**You can autonomously populate the task queue from the roadmap:**
+1. **Trigger**: When `/mine-tasks` is called OR when `tasks/` is empty and a `ROADMAP.md` exists.
+2. **Action**: Run `python3 .agent/scripts/task_miner.py`.
+3. **Verify**: Check `tasks/` to ensure new story cards were created.
 ELSE                             → Report status of current phase
 ```
 
@@ -156,7 +176,10 @@ ELSE                             → Report status of current phase
 
 1. **Intake**: When the **Wiki Architect** or **Drift Detector** script flags a gap between code and docs.
 2. **Analysis**: Analyze the code changes that caused the drift (e.g., new API endpoints, database changes).
-3. **Task Creation**: Create a new `[STORY]` card in `tasks/` with the title `[STORY] Sync: Documentation for [Feature/File]`.
+3. **Task Creation**: 
+   - **Stories**: [STORY] cards in `tasks/` (Implementation phase driver)
+   - **Backlog Mining**: Use `/mine-tasks` to autonomously populate `tasks/` from `ROADMAP.md`.
+   - **Sync**: [STORY] cards in `tasks/` titled `[STORY] Sync: Documentation for [Feature/File]`.
 4. **Format**: Follow the standard `STORY.md` template. The Acceptance Criteria must verify that `ARCHITECTURE.md` or the relevant `wiki/` file matches the current code implementation.
 5. **Assignment**: Notify the **Wiki Architect** to execute the task.
 
@@ -191,3 +214,4 @@ ELSE                             → Report status of current phase
 - `.agent/skills/architecture/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

@@ -12,6 +12,10 @@ $ARGUMENTS
 
 Produce `wiki/BRIEF.md` through a structured Socratic interview. No code. No PRD yet. Discovery and brief only.
 
+## Step 0: Total Gateway Audit (Phases 18-21)
+- Run `ambiguity_detector.py`, `intent_validator.py`, `impact_analyzer.py`, `threat_modeler.py`, `failure_correlator.py`, `discovery_brain_sync.py`, `context_autofill.py`, `ghost_prototyper.py`.
+- **Mandatory**: Report all findings (conflicts, blast radius, security, history, prototype) before starting.
+
 ---
 
 ## Pre-Flight

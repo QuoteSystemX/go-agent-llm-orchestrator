@@ -42,6 +42,23 @@ Any complex change should be broken down into the smallest possible **functional
 2.  **Global Wisdom** (`AGENT_GLOBAL_ROOT`): Cross-project lessons, common pitfalls, and shared best practices.
 3.  **Sync Rule**: If a discovery is made that is universally applicable (e.g., "Standardize on lib-X for highload"), it MUST be exported using `knowledge_synergy.py`.
 
+### 6. 🧠 Agent & Skill Intelligence
+- **Global Wisdom**: Use `experience_distiller.py` to query cross-project lessons.
+- **Autonomous Backlog**: `task_miner.py` generates tasks from roadmap.
+- **Skill Factory**: Agents build their own tools when needed.
+- **Skill Audit**: `agent_skill_auditor.py` ensures every agent has mandatory skills (like `clean-code`) and correct metadata.
+
+### 7. 🚀 Autonomy Tiers (Self-Driving Ops)
+The repository operates with three levels of autonomy:
+
+- **Tier 1: Assisted** (Socratic Gate): System investigates context before asking questions.
+- **Tier 2: Reactive** (Auto-Healing): System detects CI failures and fixes them automatically.
+- **Tier 3: Proactive** (Autonomous Reviewer): System identifies technical debt and creates tasks without user prompt.
+
+**Mandatory Automation**:
+- **Daily Audit**: `autonomous_reviewer_cron.py` (via GitHub Actions).
+- **Post-Merge Distillation**: `experience_distiller.py --auto` (via GitHub Actions).
+
 ---
 
 ## 🐹 GO-SPECIFIC STANDARDS
@@ -150,8 +167,8 @@ git diff --name-only HEAD | grep -E "\.(orig|bak|tmp|diff|patch|log|pyc)$|~$|PLA
   | `[BUG]` | `fix` | `debugger` | `backend-specialist`, `test-engineer`, `qa-automation-engineer` | test-engineer writes regression after fix; qa validates E2E |
   | `[TEST]` | `test` | `test-engineer` | `qa-automation-engineer` | qa-automation for E2E/Playwright suites |
   | `[PERF]` | `perf` | `performance-optimizer` | `backend-specialist`, `go-specialist` | go-specialist for Go-specific profiling |
-  | `[SECURITY]` | `chore` | `security-auditor` | `penetration-tester` | pentest for active exploit validation |
-  | `[REFACTOR]` | `refactor` | `go-specialist`, `code-archaeologist` | `backend-specialist` | code-archaeologist for legacy/unknown code |
+  | `[SECURITY]` | `chore` | `security-auditor` | `penetration-tester` | security_scan.py for automated audit |
+  | `[REFACTOR]` | `refactor` | `go-specialist`, `code-archaeologist` | `backend-specialist` | code-archaeologist for legacy/modernization |
   | `[DOCS]` | `docs` | `documentation-writer` | `explorer-agent` | explorer discovers gaps; writer fills them |
   | `[DB]` | `feat` | `database-architect` | `backend-specialist` | schema, migration, index, query optimization |
   | `[INFRA]` | `chore` | `devops-engineer` | `security-auditor` | CI/CD, deploy, server, monitoring |

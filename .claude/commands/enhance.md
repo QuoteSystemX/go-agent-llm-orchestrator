@@ -18,6 +18,10 @@ This command adds features or makes updates to existing application.
 
 ### Steps:
 
+0. **Total Gateway Audit (Phases 18-21)**
+   - Run the full audit suite: Ambiguity, Conflict, Impact, Security, History, Global Sync, Context, Ghost Proto.
+   - Report all findings before proceeding.
+
 1. **Understand Current State**
    - Load project state with `python .agent/scripts/session_manager.py info`
    - Understand existing features, tech stack
