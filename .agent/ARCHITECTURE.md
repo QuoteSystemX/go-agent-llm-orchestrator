@@ -797,3 +797,4 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 | `.agent/scripts/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
 | `.agent/scripts/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
 | `.agent/scripts/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
+| `.agent/scripts/session_manager.py` | Session Manager - Antigravity Kit |
