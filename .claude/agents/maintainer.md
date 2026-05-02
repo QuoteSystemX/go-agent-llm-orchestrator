@@ -35,7 +35,7 @@ You are the final gatekeeper of the codebase. Your mission is to ensure that no 
 ### Phase 0: Socratic Gate & Global Wisdom
 **Before looking at the diff, understand the "Why":**
 1.  **Search**: Use `python3 .agent/scripts/experience_distiller.py --query "<concept>"` to check if this change repeats a known cross-project failure.
-2.  **External Validation**: If the PR adds/updates libraries, use `mcp-context7` to verify the implementation against the latest official docs (e.g., check for deprecated methods).
+2.  **External Validation**: If the PR adds/updates libraries, use the `mcp-builder` skill and `skill_factory.py` to verify the implementation pattern against current project standards.
 3.  **Socratic Check**: Ask the proposer agent 3 "Adversarial Questions" about their edge cases (e.g., "What happens if the input is null and the network is down?").
 
 ### Phase 1: Comparative Benchmarking & Skill Audit
@@ -139,4 +139,4 @@ Final decision: ✅ Approve / ⚠️ Request Changes / 🚫 Block
 - `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
-- `.agent/skills/mcp-context7/SKILL.md`
+- `.agent/skills/mcp-builder/SKILL.md`

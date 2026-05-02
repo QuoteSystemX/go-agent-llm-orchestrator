@@ -534,6 +534,15 @@ def main() -> None:
         n_commands = len(list(CLAUDE_COMMANDS_OUT.glob("*.md")))
         print(f"\nDone. agents: {n_agents}  commands: {n_commands}")
 
+        # Keep the Mermaid dependency graph in ARCHITECTURE.md current after every sync
+        try:
+            import visualize_deps
+            result = visualize_deps.generate_mermaid()
+            if "updated" in result.lower():
+                print("  ✓ Mermaid dependency graph refreshed")
+        except Exception as e:
+            print(f"  ⚠ dep graph update skipped: {e}")
+
 
 if __name__ == "__main__":
     main()

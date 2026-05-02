@@ -1,4 +1,3 @@
-CORRUPTED BY CHAOS MONKEY
 # Unified Agent Kit Architecture
 
 > Comprehensive AI Agent Capability Expansion Toolkit
@@ -58,6 +57,9 @@ graph TD
   auto_preview --> argparse
   auto_preview --> signal
   autonomous_fuzzer --> random
+  autonomous_reviewer_cron --> drift_detector
+  autonomous_reviewer_cron --> lib
+  autonomous_reviewer_cron --> status_report
   batch_runner --> argparse
   bus_debugger --> lib
   bus_manager --> argparse
@@ -117,6 +119,8 @@ graph TD
   quality_tracker --> urllib
   rollback_task --> argparse
   rollback_task --> lib
+  security_scan --> argparse
+  security_scan --> lib
   semantic_brain_engine --> lib
   semantic_brain_engine --> typing
   semantic_experience --> lib
@@ -128,6 +132,7 @@ graph TD
   status_report --> drift_detector
   status_report --> lib
   sync_claude_agents --> argparse
+  sync_claude_agents --> visualize_deps
   task_helper --> argparse
   task_miner --> argparse
   task_miner --> lib
@@ -396,7 +401,8 @@ Master validation scripts that orchestrate skill-level scripts.
 | `analyze_efficiency.py` | Performance & Cost (Token usage)       | Monthly audit            |
 | `distill_context.py`  | Long-context optimization (RAG/Extract) | Shared Context Bus       |
 | `batch_runner.py`     | Fan-out / Fan-in parallel execution    | Multi-agent tasks        |
-| `experience_distiller.py` | Lesson learned archiving (30 days)    | Maintenance              |
+| `experience_distiller.py` | Lesson learned archiving (30 days), `--auto-export` to global brain | Maintenance, post-merge  |
+| `autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra, roadmap gaps → task cards | self-driving-ops.yml (daily) |
 | `guardrail_monitor.py` | Budget & Token safety watchdog         | Runtime monitoring       |
 | `post_mortem_runner.py` | Failure analysis & Lesson generation   | After task failure       |
 | `doc_healer.py`      | Self-healing Documentation        | after code changes       |
@@ -620,10 +626,10 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| **Total Agents**    | 36                                              |
-| **Total Skills**    | 53                                              |
+| **Total Agents**    | 39                                              |
+| **Total Skills**    | 55                                              |
 | **Total Workflows** | 21                                              |
-| **Total Scripts**   | 23                                              |
+| **Total Scripts**   | 24                                              |
 | **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
 | **MCP Servers**     | 1 (`skill-server` Go binary — stdio transport)  |
 | **Coverage**        | ~95% web/mobile/backend/infra development       |

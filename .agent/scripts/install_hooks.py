@@ -21,9 +21,10 @@ def install_pre_commit():
     hook_path = git_hooks_dir / "pre-commit"
     reviewer_script = REPO_ROOT / ".agent" / "scripts" / "pre_commit_review.py"
     
-    # Create a small shell script that calls our python script
-    content = f"""#!/bin/bash
-python3 {reviewer_script}
+    # Use a portable path so the hook works for any developer / CI checkout
+    content = """#!/bin/bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+python3 "$REPO_ROOT/.agent/scripts/pre_commit_review.py"
 """
     
     with open(hook_path, "w", encoding="utf-8") as f:

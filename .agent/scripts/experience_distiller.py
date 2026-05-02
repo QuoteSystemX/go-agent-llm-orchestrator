@@ -17,12 +17,12 @@ def detect_project_language() -> str:
 
 # Import from common lib
 try:
-    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, GLOBAL_ROOT, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
     import semantic_brain_engine
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
-    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, AGENT_DIR, REPO_ROOT
+    from lib.paths import LESSONS_PATH, GLOBAL_LESSONS_PATH, GLOBAL_ROOT, AGENT_DIR, REPO_ROOT
     from lib.common import load_json_safe
     import semantic_brain_engine
 
@@ -197,6 +197,37 @@ def list_skill_tags() -> str:
     sorted_tags = sorted(tags)
     return f"Skill tags ({len(sorted_tags)}): " + ", ".join(sorted_tags)
 
+def auto_export() -> str:
+    """Distill local lessons then copy new entries to global knowledge base.
+
+    Called by self-driving-ops.yml post-merge job via --auto-export flag.
+    """
+    result = distill_lessons()
+
+    if not LESSONS_PATH.exists():
+        return result + "\nNo lessons to export."
+
+    GLOBAL_ROOT.mkdir(parents=True, exist_ok=True)
+    with open(LESSONS_PATH, "r", encoding="utf-8") as f:
+        local_content = f.read()
+
+    existing_global = GLOBAL_LESSONS_PATH.read_text(encoding="utf-8") if GLOBAL_LESSONS_PATH.exists() else ""
+
+    _, local_entries = parse_entries(local_content)
+    _, global_entries = parse_entries(existing_global) if existing_global else ("", [])
+
+    global_set = set(e.strip()[:80] for e in global_entries)
+    new_entries = [e for e in local_entries if e.strip()[:80] not in global_set]
+
+    if new_entries:
+        with open(GLOBAL_LESSONS_PATH, "a", encoding="utf-8") as f:
+            for entry in new_entries:
+                f.write(f"\n### {entry}\n")
+        return result + f"\nExported {len(new_entries)} new lesson(s) to global knowledge base."
+
+    return result + "\nGlobal knowledge base already up to date."
+
+
 def main():
     if "--skill" in sys.argv:
         idx = sys.argv.index("--skill")
@@ -214,6 +245,8 @@ def main():
             sys.exit(1)
     elif "--list-skills" in sys.argv:
         print(list_skill_tags())
+    elif "--auto-export" in sys.argv:
+        print(auto_export())
     else:
         print(distill_lessons())
 
