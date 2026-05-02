@@ -485,3 +485,15 @@ func (db *DB) GetChatHistory(ctx context.Context, repo string, limit int) ([]map
 	}
 	return history, nil
 }
+
+// BackupMain creates a consistent snapshot of the main database at the target path.
+func (db *DB) BackupMain(ctx context.Context, targetPath string) error {
+	_, err := db.main.ExecContext(ctx, fmt.Sprintf("VACUUM INTO '%s'", targetPath))
+	return err
+}
+
+// BackupHistory creates a consistent snapshot of the history database at the target path.
+func (db *DB) BackupHistory(ctx context.Context, targetPath string) error {
+	_, err := db.history.ExecContext(ctx, fmt.Sprintf("VACUUM INTO '%s'", targetPath))
+	return err
+}

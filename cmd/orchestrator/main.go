@@ -12,6 +12,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/autopilot"
+	"go-agent-llm-orchestrator/internal/backup"
 	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/dto"
@@ -141,6 +142,9 @@ func main() {
 	adminServer.SetDriftDetector(driftDetector)
 	adminServer.SetTrafficManager(tm)
 	adminServer.SetJulesDeleter(julesClient)
+	
+	backupMgr := backup.NewManager(database, filepath.Dir(dbPath))
+	adminServer.SetBackupManager(backupMgr)
 
 	autopilotEngine := autopilot.NewEngine(database, engine, statsAggregator)
 

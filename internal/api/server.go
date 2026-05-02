@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"go-agent-llm-orchestrator/internal/backup"
 	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/dto"
@@ -71,6 +73,7 @@ type AdminServer struct {
 	budgetMgr       *budget.Manager
 	driftDetector   *monitor.DriftDetector
 	trafficManager  *traffic.TrafficManager
+	backupMgr       *backup.Manager
 	webhookBus      chan<- monitor.WebhookEvent
 	startTime       time.Time
 }
@@ -113,6 +116,9 @@ func (s *AdminServer) SetDriftDetector(dd *monitor.DriftDetector) { s.driftDetec
 
 // SetTrafficManager attaches a traffic manager.
 func (s *AdminServer) SetTrafficManager(tm *traffic.TrafficManager) { s.trafficManager = tm }
+
+// SetBackupManager attaches a backup manager.
+func (s *AdminServer) SetBackupManager(bm *backup.Manager) { s.backupMgr = bm }
 
 // maskSecret returns the first 4 and last 4 characters of a secret with "..." in between.
 // Short secrets are fully masked.
@@ -170,6 +176,8 @@ func (s *AdminServer) Start(addr string) error {
 	mux.HandleFunc("/api/v1/system/stats", s.handleSystemStats)
 	mux.HandleFunc("/api/v1/system/drift", s.handleDriftStatus)
 	mux.HandleFunc("/api/v1/system/traffic", s.handleTrafficStatus)
+	mux.HandleFunc("/api/v1/system/export", s.handleExport)
+	mux.HandleFunc("/api/v1/system/import", s.handleImport)
 
 	// DTO API
 	mux.HandleFunc("/api/v1/dto/templates", s.handleTemplates)
@@ -2255,4 +2263,91 @@ func (s *AdminServer) handleDriftStatus(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
+}
+
+func (s *AdminServer) handleExport(w http.ResponseWriter, r *http.Request) {
+	if s.backupMgr == nil {
+		http.Error(w, "backup manager not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	password := r.URL.Query().Get("password")
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=orchestrator-backup-%s.zip", time.Now().Format("2006-01-02-15-04-05")))
+
+	if err := s.backupMgr.Export(r.Context(), password, w); err != nil {
+		log.Printf("Export failed: %v", err)
+	}
+}
+
+func (s *AdminServer) handleImport(w http.ResponseWriter, r *http.Request) {
+	if s.backupMgr == nil {
+		http.Error(w, "backup manager not initialized", http.StatusServiceUnavailable)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "failed to get file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	password := r.FormValue("password")
+
+	// We need Seekable reader for ZIP, so save to temp file
+	tempF, err := os.CreateTemp("", "import-*.zip")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(tempF.Name())
+
+	size, err := io.Copy(tempF, file)
+	if err != nil {
+		tempF.Close()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tempF.Close()
+
+	f, err := os.Open(tempF.Name())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	applyFunc, err := s.backupMgr.Import(r.Context(), password, f, size)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Apply restore
+	log.Println("SYSTEM: Starting Restore process. Stopping engines...")
+	if s.scheduler != nil {
+		s.scheduler.NotifyAllTasksChange()
+	}
+
+	time.Sleep(1 * time.Second)
+
+	if err := applyFunc(); err != nil {
+		http.Error(w, "failed to apply backup: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("SYSTEM: Restore complete. The system will exit to apply changes.")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Backup restored successfully. The system will now exit to apply changes. Please restart the orchestrator."))
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		os.Exit(0)
+	}()
 }

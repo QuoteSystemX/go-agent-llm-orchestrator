@@ -776,6 +776,27 @@
                     </div>
                 </div>
 
+                <!-- System Maintenance (Backup & Restore) -->
+                <div class="settings-section-title">System Maintenance</div>
+                <div class="form-group">
+                    <label>Maintenance Password</label>
+                    <input type="password" id="sys-maintenance-password" placeholder="Password for ZIP protection">
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem">
+                        Used to protect the ZIP archive during Export and decrypt it during Import.
+                    </div>
+                </div>
+                <div class="form-row" style="gap: 1rem; margin-top: 0.5rem; display: flex;">
+                    <button class="btn-primary" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.5rem" onclick="exportBackup()">
+                        <i data-lucide="download" style="width:16px"></i> Download Backup
+                    </button>
+                    <div style="flex:1; display:flex;">
+                        <input type="file" id="sys-import-file" style="display:none" onchange="importBackup()">
+                        <button class="btn-warning" style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem" onclick="document.getElementById('sys-import-file').click()">
+                            <i data-lucide="upload" style="width:16px"></i> Restore from File
+                        </button>
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button class="btn-success" onclick="saveSettings()">Save Changes</button>
                     <button class="btn-cancel" onclick="hideModal('settings-modal')">Cancel</button>

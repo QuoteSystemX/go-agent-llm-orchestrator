@@ -1186,6 +1186,59 @@ async function saveSettings() {
     }
 }
 
+async function exportBackup() {
+    const password = document.getElementById('sys-maintenance-password').value;
+    if (!password) {
+        alert('Please enter a password for the backup archive.');
+        return;
+    }
+    const url = `/api/v1/system/export?password=${encodeURIComponent(password)}`;
+    window.location.href = url;
+}
+
+async function importBackup() {
+    const fileInput = document.getElementById('sys-import-file');
+    if (fileInput.files.length === 0) return;
+    
+    const password = document.getElementById('sys-maintenance-password').value;
+    if (!password) {
+        alert('Please enter the password to decrypt the archive.');
+        fileInput.value = '';
+        return;
+    }
+
+    if (!confirm('DANGER: This will overwrite all tasks, history, and RAG indexes. The system will restart. Continue?')) {
+        fileInput.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('password', password);
+
+    if (typeof showToast === 'function') showToast('Uploading backup and restoring system...', 'info');
+    else console.log('Uploading backup and restoring system...');
+    
+    try {
+        const resp = await fetch('/api/v1/system/import', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (resp.ok) {
+            const msg = await resp.text();
+            alert(msg);
+            window.location.reload();
+        } else {
+            alert('Import failed: ' + await resp.text());
+        }
+    } catch (e) {
+        alert('Error during import: ' + e.message);
+    } finally {
+        fileInput.value = '';
+    }
+}
+
 async function syncPromptLibrary() {
     const btn = document.getElementById('btn-sync-now');
     const orig = btn.innerHTML;
