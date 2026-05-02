@@ -291,8 +291,27 @@ Task: %s
 
 Respond with ONLY the word SIMPLE, COMPLEX, or DTO.`
 
+const defaultAuditPrompt = `Audit the following task mission for ambiguity and readiness.
+Analyze if the mission is clear, if enough context is provided, and if there are obvious missing requirements.
+
+Mission: %s
+Context: %s
+
+Respond with a JSON object:
+{
+  "ambiguity_score": 0.0 to 1.0,
+  "missing_requirements": ["list", "of", "missing", "info"],
+  "impact_rating": "Low/Medium/High",
+  "is_ready": true/false,
+  "reasoning": "brief explanation"
+}`
+
 func (r *Router) getClassifyPrompt() string {
 	return r.getModel("prompt_classify", defaultClassifyPrompt)
+}
+
+func (r *Router) getAuditPrompt() string {
+	return r.getModel("prompt_audit", defaultAuditPrompt)
 }
 
 // getRoutingTarget reads routing_simple / routing_complex / routing_dto from settings.
@@ -389,6 +408,67 @@ func (r *Router) Classify(ctx context.Context, taskDesc string) (Classification,
 		return Complex, nil
 	}
 	return Simple, nil
+}
+
+type AuditResult struct {
+	AmbiguityScore      float64  `json:"ambiguity_score"`
+	MissingRequirements []string `json:"missing_requirements"`
+	ImpactRating        string   `json:"impact_rating"`
+	IsReady             bool     `json:"is_ready"`
+	Reasoning           string   `json:"reasoning"`
+}
+
+// AuditContext performs a "Step 0" audit of a task mission using a local LLM.
+func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (*AuditResult, error) {
+	start := time.Now()
+	defer func() {
+		monitor.LLMLatency.WithLabelValues("local", "audit").Observe(time.Since(start).Seconds())
+	}()
+	monitor.LLMCalls.WithLabelValues("local", "audit").Inc()
+
+	prompt := fmt.Sprintf(r.getAuditPrompt(), mission, ragContext)
+
+	// Use GenerateChat directly with local provider to ensure speed and privacy
+	// We provide a specific system role to avoid the default generic coding assistant prompt
+	response, err := r.GenerateChat(ctx, Simple, []map[string]string{
+		{"role": "system", "content": "You are a mission auditor. Analyze the provided task and return a JSON object with clarity (0.0-1.0), ambiguity (0.0-1.0), and impact (LOW|MEDIUM|HIGH)."},
+		{"role": "user", "content": prompt},
+	}, "local")
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract JSON from response (LLMs sometimes wrap it in code blocks)
+	jsonStr := response
+	if idx := strings.Index(jsonStr, "{"); idx != -1 {
+		jsonStr = jsonStr[idx:]
+	}
+	if idx := strings.LastIndex(jsonStr, "}"); idx != -1 {
+		jsonStr = jsonStr[:idx+1]
+	}
+
+	var result AuditResult
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		log.Printf("LLM Router: failed to parse audit JSON: %v. Raw: %s", err, response)
+		return nil, fmt.Errorf("audit parsing failed: %w", err)
+	}
+
+	if r.tracer != nil {
+		taskID := monitor.GetTaskID(ctx)
+		if taskID != "" {
+			r.tracer.BroadcastTrace(monitor.AgentTraceEvent{
+				TaskID:    taskID,
+				Type:      monitor.TraceThought,
+				Content:   fmt.Sprintf("Gateway Audit: Ready=%v, Ambiguity=%.2f, Impact=%s", result.IsReady, result.AmbiguityScore, result.ImpactRating),
+				Timestamp: time.Now(),
+				Metadata: map[string]string{
+					"reasoning": result.Reasoning,
+				},
+			})
+		}
+	}
+
+	return &result, nil
 }
 
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {

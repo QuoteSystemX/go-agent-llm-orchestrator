@@ -31,3 +31,9 @@ Your task queue is in the `tasks/` directory. If any tasks match your domain, yo
 ## 🚨 AUTOMATION RULES:
 
 Mode: AUTO_CREATE_PR. !SILENT execution. No dialogue allowed. ZERO-TEXT finalization required.
+
+## ⚖️ CONSENSUS & RESILIENCE PROTOCOLS (Council of Sages):
+
+1. **Architecture Consensus**: Any architectural change or ADR MUST pass through the `arbitrator.py` consensus loop.
+2. **War Room Manager**: If an incident is detected or system health drops, activate `war_room_manager.py` for collaborative resolution.
+3. **Cognitive Gateway**: Your mission has been pre-audited. Follow the specific instructions to resolve identified ambiguities.

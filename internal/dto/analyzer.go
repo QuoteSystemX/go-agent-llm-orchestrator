@@ -341,7 +341,16 @@ func (a *Analyzer) GetBMADFileStatus(repoName string) map[string]bool {
 }
 
 // CalculateStageFromFiles finds the first stage that doesn't have an artifact yet.
+// If active (PENDING) tasks exist in the database, it reports 'execution' stage.
 func (a *Analyzer) CalculateStageFromFiles(repoName string) string {
+	// 1. Check for active execution tasks
+	var pendingCount int
+	err := a.db.QueryRow("SELECT COUNT(*) FROM tasks WHERE name = ? AND status = 'PENDING' AND category = 'worker'", repoName).Scan(&pendingCount)
+	if err == nil && pendingCount > 0 {
+		return "execution"
+	}
+
+	// 2. Fallback to BMAD artifact detection
 	status := a.GetBMADFileStatus(repoName)
 	stages := []string{"discovery", "prd", "architecture", "stories", "sprint", "worker", "testing", "regression", "docs_update", "closure"}
 	for _, s := range stages {

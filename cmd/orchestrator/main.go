@@ -86,7 +86,7 @@ func main() {
 	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
 	promptBuilder := prompt.NewBuilder(database, cacheDir)
 
-	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder)
+	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder, router)
 	dtoMgr := dto.NewTemplateManager(database)
 	// Initial template sync from cache if it exists
 	tplDir := filepath.Join(cacheDir, "templates")

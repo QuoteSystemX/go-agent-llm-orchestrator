@@ -13,6 +13,7 @@ import (
 	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
+	"go-agent-llm-orchestrator/internal/llm"
 	"go-agent-llm-orchestrator/internal/monitor"
 	"go-agent-llm-orchestrator/internal/notifier"
 	"go-agent-llm-orchestrator/internal/prompt"
@@ -34,6 +35,7 @@ type Engine struct {
 	tracer        monitor.Tracer
 	verifier      TaskVerifier
 	budgetMgr     *budget.Manager
+	router        *llm.Router
 	mu            sync.RWMutex
 	entries       map[string]cron.EntryID
 	syncChan      chan string
@@ -41,7 +43,7 @@ type Engine struct {
 	onActivityUpdate func()
 }
 
-func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder) *Engine {
+func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder, router *llm.Router) *Engine {
 	return &Engine{
 		cron:          cron.New(),
 		db:            database,
@@ -49,6 +51,7 @@ func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesCli
 		client:        client,
 		notifier:      nt,
 		promptBuilder: pb,
+		router:        router,
 		entries:       make(map[string]cron.EntryID),
 		syncChan:      make(chan string, 100),
 	}
@@ -403,8 +406,8 @@ func (e *Engine) runTask(taskID string) {
 		return
 	}
 
-	if status == "PAUSED" {
-		log.Printf("Task %s: SKIPPED (status is PAUSED)", taskID)
+	if status == "PAUSED" || status == "BLOCKED" {
+		log.Printf("Task %s: SKIPPED (status is %s)", taskID, status)
 		return
 	}
 
@@ -420,6 +423,16 @@ func (e *Engine) runTask(taskID string) {
 			}
 			return
 		}
+	}
+
+	// Cognitive Gateway Audit (Step 0)
+	if err := e.runGatewayAudit(ctx, taskID, mission, repoName, category); err != nil {
+		// If audit fails, block the task
+		e.updateTaskStatus(ctx, taskID, "BLOCKED", "last_error = ?", err.Error())
+		if e.notifier != nil {
+			e.notifier.SendAlert(taskID, "Gateway Audit failed: "+err.Error())
+		}
+		return
 	}
 
 	var logID int64
@@ -620,6 +633,44 @@ func (e *Engine) runTask(taskID string) {
 	}
 }
 
+// runGatewayAudit performs a Step 0 audit of the task mission against the repo context.
+// It returns an error if the audit fails or if ambiguity is too high.
+func (e *Engine) runGatewayAudit(ctx context.Context, taskID, mission, repoName, category string) error {
+	if e.router == nil {
+		return nil // No router, skip audit
+	}
+
+	log.Printf("Task %s: Starting Cognitive Gateway Audit...", taskID)
+	
+	// Get RAG context for audit (fast, small K)
+	// Map task category to RAG category (meta/code)
+	ragCategory := ""
+	if category == "code" || category == "meta" {
+		ragCategory = category
+	}
+
+	ragContext := ""
+	if e.contextSearch != nil {
+		ragContext = e.contextSearch(ctx, repoName, mission, 3, ragCategory)
+	}
+
+	result, err := e.router.AuditContext(ctx, mission, ragContext)
+	if err != nil {
+		return fmt.Errorf("gateway audit failed: %w", err)
+	}
+
+	if !result.IsReady || result.AmbiguityScore > 0.7 {
+		msg := fmt.Sprintf("Audit REJECTED: Ambiguity=%.2f. Reasoning: %s. Missing: %v", 
+			result.AmbiguityScore, result.Reasoning, result.MissingRequirements)
+		log.Printf("Task %s: %s", taskID, msg)
+		return fmt.Errorf("high ambiguity detected: %s", msg)
+	}
+
+	log.Printf("Task %s: Gateway Audit PASSED (Ambiguity=%.2f, Impact=%s)", 
+		taskID, result.AmbiguityScore, result.ImpactRating)
+	return nil
+}
+
 // buildPrompt builds the Jules prompt from the prompt-library clone.
 // Returns an error (and causes the task to be paused) if the library is not ready.
 func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoName, lastError, category string, ragTopK int) (string, error) {
@@ -632,7 +683,13 @@ func (e *Engine) buildPrompt(ctx context.Context, agent, pattern, mission, repoN
 		if ragTopK <= 0 {
 			ragTopK = 5
 		}
-		ragContext = e.contextSearch(ctx, repoName, query, ragTopK, category)
+		// Map task category to RAG category
+		ragCategory := ""
+		if category == "code" || category == "meta" {
+			ragCategory = category
+		}
+		
+		ragContext = e.contextSearch(ctx, repoName, query, ragTopK, ragCategory)
 		if ragContext != "" {
 			log.Printf("Task dispatch: RAG context injected (%d chars) for %s/%s", len(ragContext), repoName, agent)
 			
