@@ -163,6 +163,12 @@ Scale & requirements?
 
 > "Every LLM call is a hypothesis. Eval is the experiment."
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

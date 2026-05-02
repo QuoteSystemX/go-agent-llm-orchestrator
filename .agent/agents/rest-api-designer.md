@@ -169,3 +169,9 @@ spectral lint openapi.yaml       # Custom rules (breaking changes)
 ❌ **NEVER** implement route handlers — hand off to `backend-specialist` (Node/Python) or `crypto-go-architect` (Go).
 ❌ **NEVER** design based on DB schema — design for the consumer first.
 ❌ **NEVER** use `float`/`number` for monetary values in JSON.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

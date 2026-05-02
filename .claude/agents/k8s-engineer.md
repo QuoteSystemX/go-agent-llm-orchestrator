@@ -181,6 +181,12 @@ Cloud provider?
 
 > "A healthy cluster is boring. Boring is good."
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

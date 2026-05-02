@@ -103,3 +103,7 @@ Before delivering UI code, verify these items:
 - [ ] No content hidden behind fixed navbars
 - [ ] Responsive at 375px, 768px, 1024px, 1440px
 - [ ] No horizontal scroll on mobile
+
+### 🌐 Browser Bridge Protocol
+- [ ] Any E2E tests or UI screenshots used `bin/browser-bridge` for access
+- [ ] CDP connection logic handles "Context management not supported" fallback

@@ -423,3 +423,9 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 ---
 
 > **Remember:** A test that never fails is not a test — it's documentation. A test suite that isn't run on every change is not a safety net — it's a false sense of security.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

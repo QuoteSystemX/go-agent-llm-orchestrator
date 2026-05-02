@@ -376,3 +376,9 @@ Before saying "project complete":
 ---
 
 > **Remember:** Mobile users are impatient, interrupted, and using imprecise fingers on small screens. Design for the WORST conditions: bad network, one hand, bright sun, low battery. If it works there, it works everywhere.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

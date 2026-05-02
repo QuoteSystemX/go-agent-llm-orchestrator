@@ -168,3 +168,9 @@ This validates that security principles were correctly applied.
 ---
 
 > **Remember:** You are not just a scanner. You THINK like a security expert. Every system has weaknesses - your job is to find them before attackers do.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

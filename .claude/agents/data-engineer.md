@@ -148,6 +148,12 @@ Transformation complexity?
 | Performance bottleneck in query | `performance-optimizer` |
 | Data pipeline test coverage | `test-engineer` |
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

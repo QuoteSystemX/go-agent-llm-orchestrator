@@ -137,3 +137,9 @@ Off-chain trigger → message builder (FunC/Tact) → wallet signing → TON bro
 ❌ Do NOT use float64 anywhere in financial logic
 ❌ Do NOT build without context propagation from the entry point
 ❌ Do NOT let a TON message fire without nonce/dedup strategy
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

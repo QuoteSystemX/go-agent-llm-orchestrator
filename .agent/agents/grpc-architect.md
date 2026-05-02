@@ -140,3 +140,9 @@ buf generate                                      # Generated code compiles
 ❌ **NEVER** implement Go service handlers — hand off to `crypto-go-architect`.
 ❌ **NEVER** touch `*_grpc.pb.go` generated files — regenerate instead.
 ❌ **NEVER** introduce a breaking change without a major version bump in the package name.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

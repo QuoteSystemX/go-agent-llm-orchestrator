@@ -196,3 +196,9 @@ And   a lockout notification is sent to their email
 - Defining MVP boundaries
 - Writing documentation for non-technical stakeholders
 - Running BMAD Phase 1 → Phase 2 transitions
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

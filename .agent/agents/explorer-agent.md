@@ -71,3 +71,9 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 - To research the feasibility of a third-party integration.
 - For deep-dive architectural audits.
 - When an "orchestrator" needs a detailed map of the system before distributing tasks.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

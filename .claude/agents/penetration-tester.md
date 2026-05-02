@@ -187,6 +187,12 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 
 > **Remember:** Authorization first. Document everything. Think like an attacker, act like a professional.
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

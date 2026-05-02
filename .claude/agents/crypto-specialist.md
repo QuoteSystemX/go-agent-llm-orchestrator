@@ -118,6 +118,12 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 ❌ Do NOT use float64 for any financial calculation
 ❌ Do NOT design systems without considering adversarial inputs
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

@@ -1,5 +1,5 @@
 CORRUPTED BY CHAOS MONKEY
-# Antigravity Kit Architecture
+# Unified Agent Kit Architecture
 
 > Comprehensive AI Agent Capability Expansion Toolkit
 
@@ -7,7 +7,7 @@ CORRUPTED BY CHAOS MONKEY
 
 ## 📋 Overview
 
-Antigravity Kit is a modular system consisting of:
+Unified Agent Kit is a modular system consisting of:
 
 - **36 Specialist Agents** - Role-based AI personas
 - **52 Skills** - Domain-specific knowledge modules
@@ -27,7 +27,7 @@ Antigravity Kit is a modular system consisting of:
 ├── KNOWLEDGE.md             # Global Rules, Context, and Orchestration Standards
 ├── agents/                  # Specialist Agents profiles (.md) — with profile: frontmatter
 ├── skills/                  # Skills (Domain-specific knowledge modules)
-├── workflows/               # Slash Commands for Antigravity (+ Local triggers)
+├── workflows/               # Slash Commands for Unified Agent (+ Local triggers)
 ├── rules/                   # Global Rules (GEMINI.md)
 ├── scripts/                 # Master Validation Scripts
 │   ├── lib/                 # Core Infrastructure Libraries
@@ -404,6 +404,10 @@ Master validation scripts that orchestrate skill-level scripts.
 | `personality_adapter.py` | Style & DNA adaptation         | User stylistic alignment  |
 | `requirement_expander.py` | Hybrid knowledge expansion     | /prd, /architecture      |
 | `auto_adr_drafter.py`  | Autonomous ADR drafting        | Phase 3 Architecture     |
+| `browser_resilience.py` | Browser connectivity manager     | Every web/browser task   |
+| `output_bridge.py`     | Agent output validator          | Every final response     |
+| `walkthrough_assembler.py` | Auto-documentation assembler   | Maintenance              |
+| `task_sync.py`        | Task status synchronizer        | Maintenance              |
 
 ### Usage
 
@@ -526,7 +530,7 @@ Self-healing Documentation.
 
 ## 🤖 Claude Code Integration
 
-The `.agent/` folder is the **source of truth** for both Antigravity (Gemini) and Claude Code.
+The `.agent/` folder is the **source of truth** for both Unified Agent (Gemini) and Claude Code.
 A thin adapter layer in `.claude/` makes the same agents and skills available to Claude Code.
 
 ### How It Works
@@ -537,7 +541,7 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 .agent/workflows/*.md  → .claude/commands/*.md        (slash commands,       /name invokable)
 ```
 
-`$ARGUMENTS` is preserved verbatim in commands — identical syntax for both Antigravity and Claude Code.
+`$ARGUMENTS` is preserved verbatim in commands — identical syntax for both Unified Agent and Claude Code.
 
 ### Files Added for Claude Code
 
@@ -550,9 +554,9 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 - `.agent/scripts/sync_claude_agents.py` — Generator script (`--profile`, `--agent`, `--dry-run`)
 - `.agent/skill-server/` — Go MCP binary source + pre-built linux binaries
 
-### Skill Loading: Antigravity vs Claude Code
+### Skill Loading: Unified Agent vs Claude Code
 
-- **Antigravity**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
+- **Unified Agent**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
 - **Claude Code (Variant A)**: dynamic loading — generated agents get a `> **Skills** — read these files` pointer block; no inline embedding. Eliminates duplication and the 100-line truncation limit.
 - **skill-server MCP** (Variant C): Go binary exposes `skills_load`, `skills_list`, `skills_search` tools via stdio JSON-RPC. Configured in `.claude/settings.json` (project) and `~/.claude/.mcp.json` (user).
 
@@ -589,7 +593,7 @@ python3 .agent/scripts/sync_claude_agents.py --profile mobile
 
 `distribute-agentic-kit.yml` runs `sync_claude_agents.py` (optionally with `--profile`) before rsync and distributes:
 
-- `.agent/` — Antigravity Kit (unchanged)
+- `.agent/` — Unified Agent Kit (unchanged)
 - `.claude/agents/` — Claude Code subagents (generated, filtered by profile if set)
 - `.claude/commands/` — Claude Code slash commands (generated)
 - `.agent/skill-server/bin/` — Pre-built Go binaries (linux-amd64, linux-arm64)
@@ -777,3 +781,7 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 | `.agent/scripts/personality_adapter.py` | Detects and applies User Stylistic DNA (Minimalism/Pragmatism). |
 | `.agent/scripts/requirement_expander.py` | Cascading knowledge retrieval with feedback loop support. |
 | `.agent/scripts/auto_adr_drafter.py` | Autonomous ADR drafting for Phase 22/23 logic. |
+| `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS. |
+| `.agent/scripts/output_bridge.py` | Mandatory Agent Output Gateway (Validation & Bus). |
+| `.agent/scripts/walkthrough_assembler.py` | Automated Walkthrough log assembler. |
+| `.agent/scripts/task_sync.py` | Automated Task status synchronizer. |

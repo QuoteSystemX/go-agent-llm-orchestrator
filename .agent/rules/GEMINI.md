@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-# GEMINI.md - Antigravity Kit
+# GEMINI.md - Unified Agent Kit
 
 > This file defines how the AI behaves in this workspace.
 
@@ -55,31 +55,20 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 3. **Inform User**: Concisely state which expertise is being applied.
 4. **Apply**: Generate response using the selected agent's persona and rules.
 
-### Response Format (MANDATORY)
+## 📤 OUTPUT GATEWAY (MANDATORY)
 
-When auto-applying an agent, inform the user:
+**Every response that involves code changes, features, or complex logic MUST be validated via `bin/output-bridge`.**
 
-```markdown
-🤖 **Applying knowledge of `@[agent-name]`...**
+1.  **Format**: Follow the structure: Header, Goal, Implementation, Components, Result.
+2.  **Validation**: Run `cat response.md | bin/output-bridge`.
+3.  **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
 
-[Continue with specialized response]
-```
-
-### 📋 RESPONSE_TEMPLATE (Global Standard)
-
-**Trigger:** MANDATORY for every response that involves code changes, features, or complex logic.
-
-**Structure:**
-1. 🤖 **Agent Header** (🤖 **Applying knowledge of `@[agent-name]`...**)
-2. 🎯 **Context/Goal** (Briefly describe the task or problem being solved)
-3. 🛠 **Technical Implementation** (List key changes, algorithms, or fixes)
-4. 📂 **Impacted Components** (List files or directories modified)
-5. 📈 **Outcome/Result** (Final state or verification status)
-
-**Rules:**
-- Use the language of the user's request for the text content.
-- Keep bullet points concise and technical.
-- Always include the "Impacted Components" section.
+**Mandatory Structure:**
+- 🤖 **Agent Header**: specialist-name
+- 🎯 **Context/Goal**: Brief description
+- 🛠 **Technical Implementation**: Technical details
+- 📂 **Impacted Components**: Absolute file paths
+- 📈 **Outcome/Result**: Verification status
 
 **Rules:**
 
@@ -137,6 +126,7 @@ When user's prompt is NOT in English:
 2.  **Check Conflicts**: Run `python3 .agent/scripts/conflict_resolver.py`. DO NOT proceed if conflicts exist.
 3.  **Check Budget**: Run `python3 .agent/scripts/guardrail_monitor.py`. DO NOT exceed token/cost limits.
 4.  **Check Experience**: Run `python3 .agent/scripts/experience_distiller.py`. Learn from past failures.
+5.  **Browser Access**: If web access is needed, MUST use `bin/browser-bridge`. Never attempt raw browser calls without the resilience bridge.
 
 > 🔴 **MANDATORY**: A task is only complete if `checklist.py . --fix` has been run and returns success.
 

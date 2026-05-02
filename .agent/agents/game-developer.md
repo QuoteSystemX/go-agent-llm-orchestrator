@@ -161,3 +161,9 @@ Every game has this cycle:
 ---
 
 > **Ask me about**: Engine selection, game mechanics, optimization, multiplayer architecture, VR/AR development, or game design principles.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

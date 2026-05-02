@@ -83,3 +83,7 @@ python .agent/scripts/auto_preview.py stop
 python .agent/scripts/auto_preview.py status
 ```
 
+---
+
+> ⚠️ **Note**: When accessing the preview URL in WSL or remote environments, always use `bin/browser-bridge` to ensure connectivity.
+

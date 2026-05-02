@@ -75,6 +75,12 @@ Provide a specific, hardened alternative that mitigates the identified risks.
 - **Evidence First**: Critiques without technical reasoning are ignored.
 - **Scale of Chaos**: If the plan touches the `bus` or `auth`, increase your aggression level by 50%.
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

@@ -86,6 +86,17 @@ class ResilientSession:
             return None
 
     def _browser_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
+        # Check for browser-bridge CLI first for optimized connection parameters
+        bridge_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../bin/browser-bridge"))
+        bridge_config = {}
+        if os.path.exists(bridge_path):
+            try:
+                cmd = f"{bridge_path} --json"
+                bridge_config = json.loads(subprocess.check_output(cmd, shell=True).decode())
+                print(f"[Resilience] Using Browser Bridge config: {bridge_config.get('targets', [])}", file=sys.stderr)
+            except Exception as e:
+                print(f"[Resilience] Failed to call Browser Bridge: {e}", file=sys.stderr)
+
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -94,8 +105,31 @@ class ResilientSession:
         url = f"{self.host}{endpoint}"
         with sync_playwright() as p:
             try:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                # Use targets from bridge if available, otherwise fallback to localhost
+                targets = bridge_config.get('targets', ['http://localhost:9222'])
+                browser = None
+                
+                # Attempt to connect to existing CDP if context management fails
+                for target in targets:
+                    try:
+                        browser = p.chromium.connect_over_cdp(target)
+                        break
+                    except:
+                        continue
+
+                if not browser:
+                    browser = p.chromium.launch(headless=True)
+                
+                # Handle "Context management not supported" error gracefully
+                try:
+                    context = browser.new_context()
+                    page = context.new_page()
+                except Exception as e:
+                    if "context management is not supported" in str(e).lower():
+                        # Fallback to existing page if context creation is restricted
+                        page = browser.contexts[0].pages[0] if browser.contexts and browser.contexts[0].pages else browser.new_page()
+                    else:
+                        raise e
                 
                 headers_json = json.dumps(self.headers)
                 body_json = json.dumps(data) if data else "null"

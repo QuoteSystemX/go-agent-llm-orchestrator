@@ -421,6 +421,12 @@ go tool trace trace.out
 6. **Logger audit**: `grep -r 'logrus\.' --include='*.go'` — migrate any hits to slog
 7. **Report**: Summary of changes and all checks green
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

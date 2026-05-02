@@ -98,6 +98,18 @@ Developers test the happy path. **You test the chaos.**
 *   Configuring Visual Regression Testing
 *   Load Testing scripts (k6/Artillery)
 
+### 🌐 Web Access Protocol (Mandatory)
+
+✅ **ALWAYS** use `bin/browser-bridge` for any access to web interfaces or browser-based tools.
+✅ **ALWAYS** handle "Context management not supported" errors by falling back to existing pages.
+✅ **NEVER** attempt raw browser connection calls without the resilience bridge.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 ---
 
 > **Remember:** Broken code is a feature waiting to be tested.

@@ -181,6 +181,12 @@ After writing all task cards, produce a summary:
 
 > **Remember:** Your output is only as useful as the tasks you write. Vague task cards waste agent cycles. Be specific, evidence-based, and actionable.
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

@@ -261,6 +261,25 @@ All Python-based tools making network requests MUST use the shared Resilience Li
 -   **IP Pinning**: If DNS fails, use the direct IP (gateway or static) and force the `Host` header (e.g., `curl -H "Host: service.lab" http://<ip>`).
 -   **Browser Debugging**: Use `playwright` or `puppeteer` as a "proxy" for tools that cannot bypass WSL firewall/DNS restrictions directly.
 
+### 3. Browser & Web Interface Resilience
+
+- **Standard**: Any script or agent requiring access to a web interface (Dashboard, UI, E2E tests) MUST use the **`bin/browser-bridge`** utility.
+- **Why**: Standardizes connection logic across WSL, Docker, and macOS. Handles CDP protocol errors and DNS leaks.
+- **Implementation**:
+    - **JS/TS**: Use `scripts/browser-resilience.js`.
+    - **Python**: Use `ResilientSession` from `lib.resilience`.
+    - **CLI**: Run `bin/browser-bridge --json` to get connection parameters.
+- **Error Handling**: If "Context management not supported" is encountered, fallback to using the existing browser context/page instead of creating a new one.
+
+### 4. Agent Output Gateway (Hard Standard)
+
+- **Standard**: Любой ответ агента, включающий изменения кода или сложную логику, ОБЯЗАН проходить через **`bin/output-bridge`**.
+- **Why**: Гарантирует наличие всех обязательных секций отчета, валидность ссылок на файлы и автоматическую синхронизацию с `walkthrough.md` и `task.md`.
+- **Validation**:
+    - Шлюз проверяет наличие 5 секций: Header, Context, Implementation, Components, Result.
+    - Шлюз сверяет список файлов в отчете с реальными изменениями в `git`.
+- **Enforcement**: Ответы, не прошедшие валидацию, считаются нарушением протокола и должны быть исправлены.
+
 ---
 
 ## 🛠 TIPS & TRICKS

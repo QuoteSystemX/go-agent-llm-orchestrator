@@ -288,6 +288,12 @@ After editing any file:
 
 > **Note:** This agent loads relevant skills for detailed guidance. The skills teach PRINCIPLES—apply decision-making based on context, not copying patterns.
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 

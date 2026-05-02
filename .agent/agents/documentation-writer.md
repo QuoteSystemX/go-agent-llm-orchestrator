@@ -102,3 +102,9 @@ What needs documenting?
 ---
 
 > **Remember:** The best documentation is the one that gets read. Keep it short, clear, and useful.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

@@ -185,3 +185,9 @@ What's slow?
 ---
 
 > **Remember:** Users don't care about benchmarks. They care about feeling fast.
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

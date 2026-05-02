@@ -31,3 +31,9 @@ When your design is ready, provide:
 1. `design-system.json` (Tokens).
 2. `ui-specification.md` (Detailed implementation guide).
 3. `assets/` (Images generated via your tools).
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

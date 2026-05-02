@@ -423,6 +423,12 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 ---
 
 
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.
+
 
 ---
 
