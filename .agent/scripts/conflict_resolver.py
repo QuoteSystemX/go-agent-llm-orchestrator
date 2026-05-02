@@ -14,7 +14,7 @@ except ImportError:
     from lib.paths import BUS_DIR
     from lib.common import load_json_safe, save_json_atomic
 
-def resolve_conflicts():
+def resolve_conflicts(fix=False):
     bus_file = BUS_DIR / "context.json"
     if not bus_file.exists():
         return "No bus data found."
@@ -27,6 +27,8 @@ def resolve_conflicts():
         ids[obj.get("id")].append(obj)
 
     conflicts = []
+    fixed_objects = []
+    
     for obj_id, objs in ids.items():
         if len(objs) > 1:
             # Check if they are actually different
@@ -37,6 +39,18 @@ def resolve_conflicts():
                     "count": len(objs),
                     "authors": list(set(o.get("author") for o in objs))
                 })
+                if fix:
+                    # Keep latest (by timestamp)
+                    sorted_objs = sorted(objs, key=lambda x: x.get("timestamp", ""), reverse=True)
+                    fixed_objects.append(sorted_objs[0])
+                    continue
+        
+        fixed_objects.extend(objs)
+
+    if fix and conflicts:
+        data["objects"] = fixed_objects
+        save_json_atomic(bus_file, data)
+        return f"✅ Fixed {len(conflicts)} conflicts on the bus."
 
     if not conflicts:
         return "✅ No conflicts detected on the bus."
@@ -48,4 +62,5 @@ def resolve_conflicts():
     return "\n".join(report)
 
 if __name__ == "__main__":
-    print(resolve_conflicts())
+    fix_mode = "--fix" in sys.argv
+    print(resolve_conflicts(fix=fix_mode))

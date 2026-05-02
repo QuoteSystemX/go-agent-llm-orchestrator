@@ -398,6 +398,12 @@ Master validation scripts that orchestrate skill-level scripts.
 | `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
 | `war_room_manager.py`  | Multi-agent incident resolution | After incident           |
 | `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
+| `resource_forecaster.py` | Token & time budget prediction | Phase 22/23 Gateway Audit |
+| `hidden_war_room.py`   | 4-participant agent debate      | Strategic thinking & Veto |
+| `truth_validator.py`   | Cross-source truth check        | Requirement validation    |
+| `personality_adapter.py` | Style & DNA adaptation         | User stylistic alignment  |
+| `requirement_expander.py` | Hybrid knowledge expansion     | /prd, /architecture      |
+| `auto_adr_drafter.py`  | Autonomous ADR drafting        | Phase 3 Architecture     |
 
 ### Usage
 
@@ -765,3 +771,9 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 | `.agent/scripts/resource_optimizer.py` | System module for resource_optimizer.py. |
 | `.agent/scripts/ghost_prototyper.py` | System module for ghost_prototyper.py. |
 | `.agent/scripts/autonomous_fuzzer.py` | System module for autonomous_fuzzer.py. |
+| `.agent/scripts/resource_forecaster.py` | Predicted token/time usage (Phase 23 Budget Guardrail). |
+| `.agent/scripts/hidden_war_room.py` | 4-participant debate (Optimist, Skeptic, Advocate, Arbitrator). |
+| `.agent/scripts/truth_validator.py` | Cross-references Local Brain, MCP, and Web for contradictions. |
+| `.agent/scripts/personality_adapter.py` | Detects and applies User Stylistic DNA (Minimalism/Pragmatism). |
+| `.agent/scripts/requirement_expander.py` | Cascading knowledge retrieval with feedback loop support. |
+| `.agent/scripts/auto_adr_drafter.py` | Autonomous ADR drafting for Phase 22/23 logic. |
