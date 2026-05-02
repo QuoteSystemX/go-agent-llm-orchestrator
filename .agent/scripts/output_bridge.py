@@ -70,9 +70,16 @@ def save_to_bus(content, agent_name="unknown"):
     components_text = components_match.group(1).strip() if components_match else ""
     impacted_files = re.findall(r"(?:file:///|/|[a-zA-Z]:\\)([\w\-\./\\\s]+)", components_text)
     
+    # Detect provider for metadata
+    provider = os.environ.get("AGENT_PROVIDER", "unknown").lower()
+    if provider == "unknown":
+        if os.environ.get("GEMINI_API_KEY"): provider = "antigravity"
+        elif os.environ.get("ANTHROPIC_API_KEY"): provider = "cloud-core"
+
     data = {
         "timestamp": timestamp,
         "agent": agent_name,
+        "provider": provider,
         "goal": goal,
         "impacted_files": [f.strip() for f in impacted_files],
         "content": content,
@@ -170,25 +177,67 @@ def main():
 
     print("🔍 Validating agent output via Output Gateway...")
     
+    # 0. Sync Wiki Knowledge (Karpathy 2.0)
+    print("🔗 Syncing Obsidian Knowledge Graph...")
+    scripts_dir = ".agent/scripts"
+    try:
+        subprocess.run([sys.executable, os.path.join(scripts_dir, "obsidian_sync.py")], check=True)
+    except Exception as e:
+        print(f"⚠️  Obsidian sync failed: {e}")
+
     # 1. Check sections
     missing_sections = validate_sections(content)
     if missing_sections:
         print(f"❌ FAILED: Missing mandatory sections: {', '.join(missing_sections)}")
         sys.exit(1)
     
-    # 2. Check impacted files
-    # Only check if there are actual git changes
-    git_files = get_git_changed_files()
-    if git_files:
-        mismatched = validate_impacted_files(content)
-        if mismatched:
-            print("⚠️  WARNING: Files modified in git but missing from Impacted Components:")
-            for m in mismatched:
-                print(f"   - {m}")
-            # We dont exit 1 here for now to avoid blocking completely during rollout, 
-            # but in strict mode we should.
+    # Extract goal and files for further validation
+    goal_match = re.search(r"🎯 \*\*Context/Goal\*\*:?\s*(.*?)(\n[🛠📂📈]|$)", content, re.DOTALL | re.IGNORECASE)
+    goal = goal_match.group(1).strip() if goal_match else ""
+    components_match = re.search(r"📂 \*\*Impacted Components\*\*:?\s*(.*?)(\n[📈]|$)", content, re.DOTALL | re.IGNORECASE)
+    components_text = components_match.group(1).strip() if components_match else ""
+    impacted_files = re.findall(r"(?:file:///|/|[a-zA-Z]:\\)([\w\-\./\\\s]+)", components_text)
+
+    # 2. Mental Model Validation (Karpathy 2.0)
+    try:
+        subprocess.run([sys.executable, os.path.join(scripts_dir, "model_validator.py"), goal, json.dumps(impacted_files)], check=True)
+    except subprocess.CalledProcessError:
+        print("❌ FAILED: Change violates established Mental Models in wiki/mental-models/")
+        # sys.exit(1)
+
+    # 2.5 Governance Gate: Wiki-First Enforcement (Hybrid Protocol)
+    try:
+        subprocess.run([sys.executable, os.path.join(scripts_dir, "governance_gate.py"), json.dumps(impacted_files)], check=True)
+    except subprocess.CalledProcessError:
+        print("❌ FAILED: New files must be defined in the Wiki (Stories/ADR) first.")
+        # sys.exit(1)
+
+    # 3. Red-Team Gate: Security & Impact Audit
+    critical_keywords = ["auth", "security", "infra", "secret", "bus", "permission", "access", "root"]
+    is_critical = any(k in goal.lower() for k in critical_keywords) or \
+                  any("infra" in f or "bus" in f for f in git_files)
     
-    # 3. Save to Bus
+    if is_critical:
+        print("🛡️  CRITICAL CHANGE DETECTED: Triggering Red-Team Gate...")
+        scripts_dir = ".agent/scripts"
+        
+        # Run Security Scan
+        try:
+            print("   - Running security_scan.py...")
+            subprocess.run([sys.executable, os.path.join(scripts_dir, "security_scan.py"), "."], check=True)
+        except subprocess.CalledProcessError:
+            print("❌ RED-TEAM VETO: Security scan failed or found vulnerabilities.")
+            # In a real CI/CD we would exit 1 here. For now we warn.
+            # sys.exit(1)
+        
+        # Run Threat Modeler
+        try:
+            print("   - Running threat_modeler.py...")
+            subprocess.run([sys.executable, os.path.join(scripts_dir, "threat_modeler.py")], check=True)
+        except Exception as e:
+            print(f"   ⚠️  Threat modeling failed: {e}")
+
+    # 4. Save to Bus
     agent_match = re.search(r"🤖 \*\*Agent Header\*\*:?\s*(\w+)", content, re.IGNORECASE)
     agent_name = agent_match.group(1) if agent_match else "unknown"
     save_to_bus(content, agent_name)

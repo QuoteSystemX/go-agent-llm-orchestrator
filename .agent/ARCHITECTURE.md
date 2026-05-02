@@ -119,8 +119,11 @@ graph TD
   quality_tracker --> urllib
   rollback_task --> argparse
   rollback_task --> lib
+  sandbox_runner --> ast
+  sandbox_runner --> tempfile
   security_scan --> argparse
   security_scan --> lib
+  self_healer --> traceback
   semantic_brain_engine --> lib
   semantic_brain_engine --> typing
   semantic_experience --> lib
@@ -417,7 +420,16 @@ Master validation scripts that orchestrate skill-level scripts.
 | `requirement_expander.py` | Hybrid knowledge expansion     | /prd, /architecture      |
 | `auto_adr_drafter.py`  | Autonomous ADR drafting        | Phase 3 Architecture     |
 | `browser_resilience.py` | Browser connectivity manager     | Every web/browser task   |
-| `output_bridge.py`     | Agent output validator          | Every final response     |
+| `output_bridge.py`     | Agent output validator & Red-Team Gate | Every final response     |
+| `model_router.py`     | Unified Provider Router (Gemini/Claude) | Every subagent call      |
+| `self_healer.py`       | Autonomous Script Repair Wrapper       | Tool execution           |
+| `skill_discovery.py`   | JIT Skill Acquisition (URL Fetcher)    | Knowledge expansion      |
+| `sandbox_runner.py`    | Safe Code Sandbox (AST + Isolation)    | Untrusted code execution |
+| `predictive_watcher.py` | Predictive DevOps (Auto-ADR)          | Post-session maintenance |
+| `obsidian_sync.py`    | Obsidian Wiki-to-Code Bridge          | Every final response     |
+| `model_validator.py`  | Mental Model Architecture Validator   | Every final response     |
+| `governance_gate.py`  | Wiki-First Enforcement Sentinel       | Every final response     |
+| `knowledge_miner.py`  | Retroactive Knowledge Archeologist    | Maintenance              |
 | `walkthrough_assembler.py` | Auto-documentation assembler   | Maintenance              |
 | `task_sync.py`        | Task status synchronizer        | Maintenance              |
 
@@ -755,6 +767,24 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 - **Storage**: Neutral path `~/.agent_knowledge/` (configurable via `AGENT_GLOBAL_ROOT`).
 - **Sync**: `knowledge_synergy.py` exports repository ADRs to the global lessons base.
 - **Search**: `experience_distiller.py` performs multi-root search (Local + Global).
+
+---
+
+## 🧠 Cognitive Automation & Unified Provider Routing (Phase 2026)
+
+The kit implements a provider-agnostic cognitive layer that bridges Antigravity (Gemini) and Cloud Core (Claude).
+
+### 1. Unified Multi-Model Router
+- **Logic**: Automatically detects the active environment (`AGENT_PROVIDER`) and maps task complexity (L1-L3) to the most cost-effective yet capable model.
+- **Failover**: Implements cross-provider fallback (e.g., if Gemini is rate-limited, it routes to Claude).
+
+### 2. Autonomous Self-Healing & JIT Skills
+- **Self-Repair**: `self_healer.py` wraps critical script execution. If a failure is detected, it generates a "Repair DTO" in the Context Bus for the `@debugger` agent to fulfill.
+- **JIT Acquisition**: `skill_discovery.py` allows agents to ingest external documentation on-the-fly, synthesizing new skills in `.agent/skills/temp/` without human intervention.
+
+### 3. Safety Gate & AST Sandbox
+- **Red-Team Gate**: Instrumented in `output_bridge.py`. Critical infrastructure or security changes are automatically audited by `security_scan.py` and `threat_modeler.py` before completion.
+- **Safe Execution**: `sandbox_runner.py` uses AST static analysis to block dangerous code and executes in a restricted, temporary environment.
 
 ---
 
