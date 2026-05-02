@@ -8,9 +8,9 @@
 
 Unified Agent Kit is a modular system consisting of:
 
-- **36 Specialist Agents** - Role-based AI personas
-- **52 Skills** - Domain-specific knowledge modules
-- **20 Workflows** - Slash command procedures
+- **39 Specialist Agents** - Role-based AI personas
+- **55 Skills** - Domain-specific knowledge modules
+- **21 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 - **Autonomous SRE** - Incident Watcher, War Room Manager
@@ -762,39 +762,38 @@ Knowledge shared across repositories and AI tools (Gemini, Claude Code).
 
 | File | Description |
 | --- | --- |
-| `.agent/scripts/grafana_manager.py` | System module for grafana_manager.py. |
-| `.agent/scripts/healer_victim.py` | Victim for healing. |
-| `.agent/scripts/incident_watcher.py` | Incident Watcher — The "Eyes" of the Auto-SRE. |
-| `.agent/scripts/war_room_manager.py` | War Room Manager — The "Brain" of the Auto-SRE. |
-| `.agent/scripts/arbitrator.py` | Arbitrator — The Judge of the Council of Sages. |
-| `.agent/scripts/skill_factory.py` | System module for skill_factory.py. |
-| `.agent/scripts/task_miner.py` | System module for task_miner.py. |
-| `.agent/scripts/word_counter.py` | System module for word_counter.py. |
-| `.agent/scripts/pr_audit.py` | System module for pr_audit.py. |
-| `.agent/scripts/chaos_monkey.py` | System module for chaos_monkey.py. |
-| `.agent/scripts/semantic_brain_engine.py` | System module for semantic_brain_engine.py. |
-| `.agent/scripts/extremely_unique_chaos_script.py` | Extremely Unique Chaos Script — Used to test doc_healer resilience. |
-| `.agent/scripts/agent_skill_auditor.py` | System module for agent_skill_auditor.py. |
-| `.agent/scripts/ci_auto_fixer.py` | System module for ci_auto_fixer.py. |
-| `.agent/scripts/context_autofill.py` | System module for context_autofill.py. |
-| `.agent/scripts/discovery_brain_sync.py` | System module for discovery_brain_sync.py. |
-| `.agent/scripts/intent_validator.py` | System module for intent_validator.py. |
-| `.agent/scripts/ambiguity_detector.py` | System module for ambiguity_detector.py. |
-| `.agent/scripts/impact_analyzer.py` | System module for impact_analyzer.py. |
-| `.agent/scripts/code_polisher.py` | System module for code_polisher.py. |
-| `.agent/scripts/failure_correlator.py` | System module for failure_correlator.py. |
-| `.agent/scripts/threat_modeler.py` | System module for threat_modeler.py. |
-| `.agent/scripts/resource_optimizer.py` | System module for resource_optimizer.py. |
-| `.agent/scripts/ghost_prototyper.py` | System module for ghost_prototyper.py. |
-| `.agent/scripts/autonomous_fuzzer.py` | System module for autonomous_fuzzer.py. |
-| `.agent/scripts/resource_forecaster.py` | Predicted token/time usage (Phase 23 Budget Guardrail). |
-| `.agent/scripts/hidden_war_room.py` | 4-participant debate (Optimist, Skeptic, Advocate, Arbitrator). |
-| `.agent/scripts/truth_validator.py` | Cross-references Local Brain, MCP, and Web for contradictions. |
-| `.agent/scripts/personality_adapter.py` | Detects and applies User Stylistic DNA (Minimalism/Pragmatism). |
-| `.agent/scripts/requirement_expander.py` | Cascading knowledge retrieval with feedback loop support. |
-| `.agent/scripts/auto_adr_drafter.py` | Autonomous ADR drafting for Phase 22/23 logic. |
-| `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS. |
-| `.agent/scripts/output_bridge.py` | Mandatory Agent Output Gateway (Validation & Bus). |
-| `.agent/scripts/walkthrough_assembler.py` | Automated Walkthrough log assembler. |
-| `.agent/scripts/task_sync.py` | Automated Task status synchronizer. |
-| `.agent/scripts/obsidian_validator.py` | System module for obsidian_validator.py. |
+| `.agent/scripts/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
+| `.agent/scripts/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
+| `.agent/scripts/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
+| `.agent/scripts/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
+| `.agent/scripts/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
+| `.agent/scripts/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
+| `.agent/scripts/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
+| `.agent/scripts/chaos_monkey.py` | Deliberate fault injection for resilience testing (run on throwaway branches only). |
+| `.agent/scripts/semantic_brain_engine.py` | TF-IDF semantic search engine over LESSONS_LEARNED and global knowledge base. |
+| `.agent/scripts/agent_skill_auditor.py` | Ensures every agent has mandatory skills (clean-code) and valid SKILL.md metadata. |
+| `.agent/scripts/ci_auto_fixer.py` | Auto-healing: detects failing CI jobs and proposes targeted fix commits. |
+| `.agent/scripts/context_autofill.py` | Autonomous context investigator — pulls ADRs, lessons, and bus state before an agent starts. |
+| `.agent/scripts/discovery_brain_sync.py` | Syncs discovery output to Semantic Brain for future semantic search queries. |
+| `.agent/scripts/intent_validator.py` | Phase 18 gate — detects architectural conflicts before implementation begins. |
+| `.agent/scripts/ambiguity_detector.py` | Socratic gate — identifies vague or ambiguous requirements before coding. |
+| `.agent/scripts/impact_analyzer.py` | Estimates blast radius of a change across the codebase before execution. |
+| `.agent/scripts/code_polisher.py` | Applies senior-level polish: removes dead code, enforces naming conventions, simplifies logic. |
+| `.agent/scripts/failure_correlator.py` | Cross-references recent failures with LESSONS_LEARNED to detect repeated mistakes. |
+| `.agent/scripts/threat_modeler.py` | STRIDE-based threat modeler — generates threat model for a given component or PR. |
+| `.agent/scripts/resource_optimizer.py` | Economic audit — identifies high-token operations and suggests cheaper alternatives. |
+| `.agent/scripts/ghost_prototyper.py` | Creates throwaway proof-of-concept branches to validate architectural hypotheses. |
+| `.agent/scripts/autonomous_fuzzer.py` | Generates randomized edge-case inputs to stress-test functions and APIs. |
+| `.agent/scripts/resource_forecaster.py` | Predicts token and wall-clock budget for a task before execution (Phase 23 gate). |
+| `.agent/scripts/hidden_war_room.py` | 4-participant strategic debate: Optimist, Skeptic, Advocate, Arbitrator — for major decisions. |
+| `.agent/scripts/truth_validator.py` | Cross-references Local Brain, global knowledge, and external sources for contradictions. |
+| `.agent/scripts/personality_adapter.py` | Detects user stylistic DNA (Minimalism/Pragmatism) and adapts agent response style. |
+| `.agent/scripts/requirement_expander.py` | Cascading knowledge retrieval — expands terse requirements into detailed specs with feedback loop. |
+| `.agent/scripts/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
+| `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
+| `.agent/scripts/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
+| `.agent/scripts/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
+| `.agent/scripts/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
+| `.agent/scripts/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
+| `.agent/scripts/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
+| `.agent/scripts/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |

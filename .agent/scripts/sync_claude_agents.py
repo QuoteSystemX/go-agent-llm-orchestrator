@@ -481,6 +481,39 @@ def sync_commands(dry_run: bool = False, check: bool = False) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Orphan detection
+# ---------------------------------------------------------------------------
+
+def _check_orphans() -> None:
+    """Report .claude/ files that have no corresponding source in .agent/."""
+    # Expected agent names: specialist agents + wf-* workflow agents
+    expected_agents: set[str] = set()
+    for src in AGENTS_SRC.glob("*.md"):
+        expected_agents.add(src.name)
+    for src in WORKFLOWS_SRC.glob("*.md"):
+        expected_agents.add(f"wf-{src.name}")
+
+    # Expected command names mirror workflow names
+    expected_commands: set[str] = {src.name for src in WORKFLOWS_SRC.glob("*.md")}
+
+    print("\n=== Checking for orphaned .claude/ files ===")
+    for actual in sorted(CLAUDE_AGENTS_OUT.glob("*.md")):
+        if actual.name not in expected_agents:
+            rel = actual.relative_to(REPO_ROOT)
+            print(f"  [ORPHAN] {rel}")
+            _drift.append(str(rel))
+        else:
+            rel = actual.relative_to(REPO_ROOT)
+            print(f"  [OK]     {rel}")
+
+    for actual in sorted(CLAUDE_COMMANDS_OUT.glob("*.md")):
+        if actual.name not in expected_commands:
+            rel = actual.relative_to(REPO_ROOT)
+            print(f"  [ORPHAN] {rel}")
+            _drift.append(str(rel))
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -524,11 +557,12 @@ def main() -> None:
             sync_commands(dry_run=dry_run, check=check)
 
     if check:
+        _check_orphans()
         if _drift:
-            print(f"\nERROR: {len(_drift)} file(s) out of sync. Run 'make sync' to fix.")
+            print(f"\nERROR: {len(_drift)} file(s) out of sync or orphaned. Run 'python3 .agent/scripts/sync_claude_agents.py' to fix.")
             sys.exit(1)
         else:
-            print("\nAll files in sync.")
+            print("\nAll files in sync — no orphans detected.")
     elif not dry_run:
         n_agents   = len(list(CLAUDE_AGENTS_OUT.glob("*.md")))
         n_commands = len(list(CLAUDE_COMMANDS_OUT.glob("*.md")))

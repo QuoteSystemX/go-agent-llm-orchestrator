@@ -28,6 +28,16 @@ def analyze_go_mod(root: Path) -> Dict[str, Any]:
     if not go_mod.exists():
         return {}
 
+    # A go.mod without any .go source files is not a Go project (e.g. a
+    # workspace root that only contains a nested Go sub-module like skill-server/).
+    has_go_sources = any(root.glob("*.go")) or any(root.glob("**/*.go"))
+    # Exclude the nested skill-server sub-module from the check
+    nested_only = all(
+        ".agent/skill-server" in str(p) for p in root.rglob("*.go")
+    )
+    if not has_go_sources or nested_only:
+        return {}
+
     result: Dict[str, Any] = {"type": "Go"}
     stack = ["Go"]
     deps = []
@@ -126,7 +136,8 @@ def analyze_python_project(root: Path) -> Dict[str, Any]:
     setup_py = root / "setup.py"
     requirements = root / "requirements.txt"
 
-    if not any(f.exists() for f in [pyproject, setup_py, requirements]):
+    has_py_sources = any(root.glob("*.py")) or any(root.glob("**/*.py"))
+    if not any(f.exists() for f in [pyproject, setup_py, requirements]) and not has_py_sources:
         return {}
 
     result: Dict[str, Any] = {"type": "Python"}
