@@ -30,3 +30,8 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Agent Python temporary files
+.agent/**/__pycache__/
+.agent/**/*.py[cod]
+.agent/**/*.pyo

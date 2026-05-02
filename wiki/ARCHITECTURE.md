@@ -31,7 +31,7 @@ graph TD
 | **Web UI** | Premium management dashboard (Glassmorphism). | HTML/CSS/JS (Vanilla) | `web/static` |
 | **Scheduler** | Watches task schedules and triggers executions. | Go (robfig/cron) | `internal/scheduler` |
 | **Autopilot** | Monitors backlogs and scales workers dynamically. | Go | `internal/autopilot` |
-| **DTO/RAG** | Repository analysis and code search indexing. | Go (chromem-go) | `internal/dto`, `internal/rag` |
+| **DTO/RAG** | Repository analysis and code search indexing. Features persistence via chromem-go, self-healing corruption recovery, and Ollama priority gating. | Go (chromem-go) | `internal/dto`, `internal/rag` |
 | **Traffic Manager** | Priority-based LLM request queuing and observability. | Go | `internal/traffic` |
 | **Monitor** | Polls Jules API, triggers supervisor, and detects Doc-Drift. | Go | `internal/monitor` |
 | **Supervisor** | Generates automated responses for blocked agent sessions. | Go | `internal/llm` |
@@ -48,6 +48,8 @@ graph TD
 - **Git Synchronizer**: `internal/git/syncer.go`
 - **Task Scheduler**: `internal/scheduler/cron.go`
 - **Main Entry**: `cmd/orchestrator/main.go`
+- **RAG Storage**: `internal/rag/store.go`
+- **Frontend App**: `web/static/js/app.js`
 
 ## 4. Data Flow
 
@@ -58,7 +60,9 @@ graph TD
 5. **Execution**: Scheduler triggers task → `internal/traffic` queues request → Calls Jules API with RAG context.
 6. **Monitoring (Event-Driven)**: Jules API pushes Webhooks to `/api/v1/webhooks/jules` → Updates SQLite and pushes to UI via WebSocket Hub.
 7. **Supervision**: If session transitions to `AWAITING_USER_FEEDBACK`, `internal/llm` immediately generates response via Supervisor.
-8. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions.
+| 8. **Cleanup**: Background job in `internal/scheduler` deletes old logs/sessions.
+9. **RAG Self-Healing**: Monitor indices for corruption (e.g., magic number mismatch) and trigger automated recovery/re-indexing if necessary.
+10. **Priority Gating**: `rag.MemoryStore` uses a global mutex (`inferMu`) shared with the LLM Router to prevent concurrent embedding/inference overload on Ollama.
 
 ## 4. Architecture Decision Records (ADRs)
 
@@ -102,6 +106,16 @@ graph TD
 
 - **Status:** Accepted
 - **Decision:** Implement a password-protected ZIP backup system that snapshots SQLite databases and includes repositories, RAG indices, and prompt libraries. Use `github.com/alexmullins/zip` for AES-256 encryption. To ensure reliability in Kubernetes, temporary snapshots are stored in the application's persistent data directory (`dataDir`).
+
+### ADR-011: RAG Priority Gating & Self-Healing
+
+- **Status:** Accepted
+- **Decision:** Implement a priority gate (`sync.RWMutex`) in the RAG store to synchronize vector embeddings with active LLM inference. Add a "Recovery" mode that detects index corruption (magic number errors) and re-initializes storage from scratch to prevent system crashes.
+
+### ADR-012: Real-time UI synchronization via Unified State Store
+
+- **Status:** Accepted
+- **Decision:** Establish a single source of truth for task and RAG metrics on the frontend. Use a global `Store` object in `app.js` and event-driven WebSocket updates (`agent_trace`, `dto_ready`, `rag_progress`) to eliminate "two clocks" UI drift between different dashboard tabs.
 
 ## 5. Database Schema
 
