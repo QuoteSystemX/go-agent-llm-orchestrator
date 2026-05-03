@@ -101,14 +101,14 @@ graph TD
   handlers_bmad --> filepath
   handlers_bmad --> mcp
   handlers_discovery -->  Then scan the first 512 bytes of SKILL.md for the keyword.
-  skillPath := filepath.Join(skillsDir, name, 
+		skillPath := filepath.Join(skillsDir, name, 
   handlers_discovery --> filepath
   handlers_discovery --> mcp
   handlers_gov -->  Actually execute based on command type
- switch target.CommandType {
- case 
+	switch target.CommandType {
+	case 
   handlers_gov -->  Security fixes require fewer votes for agility
-  Status:      
+		Status:      
   handlers_gov --> %d
   handlers_gov --> %d votes - %s
   handlers_gov --> filepath
@@ -131,46 +131,46 @@ graph TD
   helpers --> filepath
   helpers --> mcp
   hooks_test -->  Call loadItem which triggers on_read
- _, err = h.loadItem(fullPath)
- if err != nil {
-  t.Fatalf(
+	_, err = h.loadItem(fullPath)
+	if err != nil {
+		t.Fatalf(
   hooks_test -->  Create docs dir first so Watch can add it
- docsDir := filepath.Join(tempDir, 
+	docsDir := filepath.Join(tempDir, 
   hooks_test -->  Create file
- fullPath := filepath.Join(tempDir, relPath)
- os.MkdirAll(filepath.Dir(fullPath), 0755)
- os.WriteFile(fullPath, []byte(
+	fullPath := filepath.Join(tempDir, relPath)
+	os.MkdirAll(filepath.Dir(fullPath), 0755)
+	os.WriteFile(fullPath, []byte(
   hooks_test -->  Register hook
- relPath := 
+	relPath := 
   hooks_test -->  Verify job created
- var count int
- err = db.conn.QueryRow(
+	var count int
+	err = db.conn.QueryRow(
   hooks_test -->  Wait for hook to trigger and job to be created
- success := false
- timeout := time.After(10 * time.Second)
- tick := time.Tick(500 * time.Millisecond)
- for {
-  select {
-  case <-timeout:
-   t.Fatal(
+	success := false
+	timeout := time.After(10 * time.Second)
+	tick := time.Tick(500 * time.Millisecond)
+	for {
+		select {
+		case <-timeout:
+			t.Fatal(
   hooks_test --> Modify file
- fullPath := filepath.Join(tempDir, relPath)
- t.Logf(
+	fullPath := filepath.Join(tempDir, relPath)
+	t.Logf(
   hooks_test --> filepath
   incident_watcher --> bus_manager
   incident_watcher --> lib
   indexer --> filepath
   indexer --> fsnotify
   indexer_test -->  Create a test file
- docsDir := filepath.Join(tempDir, 
+	docsDir := filepath.Join(tempDir, 
   indexer_test -->  Search for 
   indexer_test -->  Setup structure
- dirs := []string{
+	dirs := []string{
   indexer_test -->  Test porter stemming (security -> secur)
-  results, _ = idx.Search(
+		results, _ = idx.Search(
   indexer_test -->  Verify all 3 files are indexed
- var count int
- err = db.conn.QueryRow(
+	var count int
+	err = db.conn.QueryRow(
   indexer_test --> filepath
   install_hooks --> lib
   install_hooks --> shutil
@@ -178,55 +178,55 @@ graph TD
   knowledge_synergy --> argparse
   knowledge_synergy --> lib
   main -->  --- Agents Tools ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Architecture & Status ---
 
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- BMAD Automation ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Council of Sages ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Infrastructure & Ops ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Jobs & Workflows ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Knowledge Tools ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Logging & Observability ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Resource Hooks ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  --- Skills Tools ---
- s.AddTool(mcp.NewTool(
+	s.AddTool(mcp.NewTool(
   main -->  Data Retention initialization
- if *retentionDays > 0 {
-  h.db.SetSetting(
+	if *retentionDays > 0 {
+		h.db.SetSetting(
   main -->  Ensure essential tables are populated
- _ = h.db.SaveProposal(&CouncilProposal{
-  ID:        
+	_ = h.db.SaveProposal(&CouncilProposal{
+		ID:        
   main -->  Graceful shutdown
-  srv := &http.Server{Addr: addr}
-  go func() {
-   if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-    fmt.Fprintf(os.Stderr, 
+		srv := &http.Server{Addr: addr}
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				fmt.Fprintf(os.Stderr, 
   main -->  Helper to wrap handlers with RBAC and Telemetry
- withRBAC := func(toolName string, hdlr func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-  return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-   start := time.Now()
-   agent := 
+	withRBAC := func(toolName string, hdlr func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			start := time.Now()
+			agent := 
   main -->  Indexer initialization
- if *indexDirs != 
+	if *indexDirs != 
   main -->  RBAC Check
-   allowed, err := h.db.CheckPermission(agent, toolName)
-   if err != nil || !allowed {
-    if toolName == 
+			allowed, err := h.db.CheckPermission(agent, toolName)
+			if err != nil || !allowed {
+				if toolName == 
   main -->  SSE log streaming (simulated)
-  http.HandleFunc(
+		http.HandleFunc(
   main --> filepath
   main --> http
   main --> mcp
   main --> readiness probes.
-  http.HandleFunc(
+		http.HandleFunc(
   main --> server
   main --> signal
   main_test --> filepath
