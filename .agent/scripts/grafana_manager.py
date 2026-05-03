@@ -19,6 +19,14 @@ class GrafanaManager:
             use_browser=use_browser
         )
 
+    @property
+    def host(self):
+        return self.session.host
+
+    @property
+    def headers(self):
+        return self.session.headers
+
     def _request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         return self.session.request(method, endpoint, data)
 

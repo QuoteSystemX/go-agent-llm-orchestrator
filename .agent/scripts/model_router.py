@@ -31,7 +31,7 @@ PROVIDER_DEFAULTS = {
     },
     "default": {
         "L1": "gpt-4o-mini",
-        "L2": "gpt-4o",
+        "L2": "claude-sonnet-4-20250514",
         "L3": "o1-preview"
     }
 }
@@ -55,7 +55,7 @@ def load_rules():
     with open(RULES_FILE, "r") as f:
         return json.load(f)
 
-def resolve_env_var(value: str, provider: str, tier: str) -> str:
+def resolve_env_var(value: str, provider: str = "default", tier: str = "L2") -> str:
     """Resolve ${ENV_VAR:-default} syntax in model IDs with provider awareness."""
     match = re.match(r'^\$\{(\w+):-([^}]+)\}$', value)
     if match:

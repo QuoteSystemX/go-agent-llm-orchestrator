@@ -29,6 +29,7 @@ class TestGrafanaManager(unittest.TestCase):
             f"{self.host}/api/dashboards/uid/test-uid",
             headers=self.manager.headers,
             json=None,
+            auth=None,
             timeout=10
         )
         self.assertEqual(result["dashboard"]["title"], "Test DB")
@@ -60,6 +61,7 @@ class TestGrafanaManager(unittest.TestCase):
             f"{self.host}/api/datasources/proxy/1/api/v1/label/__name__/values",
             headers=self.manager.headers,
             json=None,
+            auth=None,
             timeout=10
         )
         self.assertIn("metric_1", result["data"])

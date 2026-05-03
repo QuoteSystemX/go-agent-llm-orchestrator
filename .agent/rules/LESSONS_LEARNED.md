@@ -33,6 +33,12 @@ This document contains "hard-won" technical insights and project-specific gotcha
 - **Root Cause**: The directory was never committed (only `.gitkeep` files were ignored).
 - **Prevention**: Keep `tasks/.gitkeep` committed so the directory is always present after checkout.
 
+### [2026-05-03] [DOCS] [drift-detector] drift_detector.py must scan SKILL.md files
+
+- **Context**: `drift_detector.py` was flagging documentation drift for scripts correctly documented in skill-specific `SKILL.md` files because it only scanned `ARCHITECTURE.md` and `wiki/`.
+- **Root Cause**: The detector's search space was too narrow, ignoring the primary documentation source for individual skills.
+- **Prevention**: Updated `drift_detector.py` to recursively include all `SKILL.md` files in `.agent/skills/` during the documentation sync check.
+
 ---
 
 ## How to add a lesson:

@@ -129,6 +129,12 @@ version: 1.0.0
 
 > **Remember:** SEO is a long-term game. Quality content + technical excellence + patience = results.
 
+## 🔍 Validation Script
+
+| Script | Purpose | Command |
+|--------|---------|---------|
+| `scripts/seo_checker.py` | Verify meta tags, headers, and SEO basics | `python scripts/seo_checker.py <project_path>` |
+
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version

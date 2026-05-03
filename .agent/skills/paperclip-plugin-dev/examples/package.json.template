@@ -1,0 +1,14 @@
+{
+  "name": "@paperclip/plugin-template",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@paperclipai/plugin-sdk": "latest",
+    "react": "^18.2.0",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6",
+    "@types/react": "^18.2.15"
+  }
+}

@@ -92,7 +92,7 @@ def scan_file(path: Path) -> list[dict]:
                     "severity": "CRITICAL",
                     "type": "SECRET",
                     "description": description,
-                    "file": str(path.relative_to(REPO_ROOT)),
+                    "file": str(path.resolve().relative_to(REPO_ROOT.resolve())),
                     "line": line_num,
                     "snippet": line.strip()[:120],
                 })
@@ -106,7 +106,7 @@ def scan_file(path: Path) -> list[dict]:
                     "severity": "WARNING",
                     "type": "CODE",
                     "description": description,
-                    "file": str(path.relative_to(REPO_ROOT)),
+                    "file": str(path.resolve().relative_to(REPO_ROOT.resolve())),
                     "line": line_num,
                     "snippet": line.strip()[:120],
                 })
@@ -142,7 +142,7 @@ def check_forbidden_files() -> list[dict]:
                 "severity": "WARNING",
                 "type": "FORBIDDEN_FILE",
                 "description": f"Forbidden file pattern '{pattern}' — must not be committed",
-                "file": str(path.relative_to(REPO_ROOT)),
+                "file": str(path.resolve().relative_to(REPO_ROOT.resolve())),
                 "line": 0,
                 "snippet": "",
             })

@@ -89,11 +89,18 @@ class TestFilterBySkill(unittest.TestCase):
         self.tmp.write(SAMPLE_CONTENT)
         self.tmp.close()
         self.original_path = experience_distiller.LESSONS_PATH
+        self.original_global = experience_distiller.GLOBAL_LESSONS_PATH
+        self.original_archive = experience_distiller.ARCHIVE_DIR
+        
         experience_distiller.LESSONS_PATH = Path(self.tmp.name)
+        experience_distiller.GLOBAL_LESSONS_PATH = Path("/tmp/nonexistent_global.md")
+        experience_distiller.ARCHIVE_DIR = Path("/tmp/nonexistent_archive")
 
     def tearDown(self):
         import experience_distiller
         experience_distiller.LESSONS_PATH = self.original_path
+        experience_distiller.GLOBAL_LESSONS_PATH = self.original_global
+        experience_distiller.ARCHIVE_DIR = self.original_archive
         os.unlink(self.tmp.name)
 
     def test_filter_go_patterns(self):

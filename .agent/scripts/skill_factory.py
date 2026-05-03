@@ -16,7 +16,7 @@ from pathlib import Path
 
 # Antigravity Standard: Path Resolution
 sys.path.append(str(Path(__file__).resolve().parent))
-from lib.common import load_json, save_json, log_event
+from lib.common import load_json_safe, save_json_atomic
 from lib.paths import REPO_ROOT
 
 def main():

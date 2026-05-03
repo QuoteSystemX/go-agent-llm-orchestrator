@@ -73,15 +73,35 @@ def run_fix():
     """Attempt to fix common issues."""
     print_header("🛠 AUTO-FIXING ISSUES")
     
-    # 1. Ensure directories exist
-    dirs = [CONFIG_DIR, RULES_DIR, REPO_ROOT / "wiki/archive/experience"]
+    # 1. Ensure core directories exist
+    from lib.paths import BUS_DIR, CONFIG_DIR, RULES_DIR, AGENT_DIR, SCRIPTS_DIR
+    dirs = [
+        AGENT_DIR, 
+        BUS_DIR, 
+        CONFIG_DIR, 
+        RULES_DIR, 
+        SCRIPTS_DIR,
+        REPO_ROOT / ".agent/logs",
+        REPO_ROOT / "wiki/archive/experience",
+        REPO_ROOT / "tasks"
+    ]
     for d in dirs:
         if not d.exists():
             print_step(f"Creating directory: {d}")
             d.mkdir(parents=True, exist_ok=True)
             print_success(f"Created {d}")
 
-    # 2. Basic watchdog rules if missing or broken
+    # 2. Fix permissions for scripts
+    print_step("Ensuring scripts are executable...")
+    for script in SCRIPTS_DIR.glob("**/*.py"):
+        try:
+            current_mode = script.stat().st_mode
+            script.chmod(current_mode | 0o111)
+        except Exception as e:
+            print_warning(f"Failed to set permissions for {script}: {e}")
+    print_success("Script permissions checked.")
+
+    # 3. Basic watchdog rules if missing or broken
     rules_valid = False
     if WATCHDOG_RULES_PATH.exists():
         rules = load_json_safe(WATCHDOG_RULES_PATH)
@@ -112,7 +132,7 @@ def run_fix():
             json.dump(default_rules, f, indent=2)
         print_success("Healed watchdog rules.")
     
-    # 3. Auto-update Visualization and Dashboard
+    # 4. Auto-update Visualization and Dashboard
     print_step("Updating Visualization and Dashboard...")
     try:
         import visualize_deps

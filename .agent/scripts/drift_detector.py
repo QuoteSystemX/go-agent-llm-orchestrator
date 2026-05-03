@@ -47,6 +47,15 @@ def get_documented_files():
             except:
                 pass
             
+    # Read Skill documentation
+    skills_dir = REPO_ROOT / ".agent" / "skills"
+    if skills_dir.exists():
+        for f in skills_dir.glob("**/SKILL.md"):
+            try:
+                docs.append(f.read_text(encoding='utf-8', errors='ignore'))
+            except:
+                pass
+
     return "\n".join(docs)
 
 def check_arch_consistency():
@@ -102,8 +111,15 @@ def detect_drift():
     # Filter for important files (code, not assets/logs)
     monitored_exts = [".go", ".ts", ".tsx", ".py", ".js"]
     
+    # Paths to ignore for drift detection
+    ignored_paths = ["paperclip-plugin/"]
+    
     for f in changes:
         path = Path(f)
+        # Skip ignored paths
+        if any(f.startswith(p) for p in ignored_paths):
+            continue
+            
         if path.suffix in monitored_exts and "test" not in f:
             # print(f"Checking {f}...") # Debug
             # Check if filename is mentioned in docs

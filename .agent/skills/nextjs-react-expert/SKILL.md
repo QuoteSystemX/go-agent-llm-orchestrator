@@ -221,6 +221,7 @@ Before shipping to production:
 | Script                                 | Purpose                     | Command                                                      |
 | -------------------------------------- | --------------------------- | ------------------------------------------------------------ |
 | `scripts/react_performance_checker.py` | Automated performance audit | `python scripts/react_performance_checker.py <project_path>` |
+| `scripts/convert_rules.py` | Convert and validate optimization rules | `python scripts/convert_rules.py` |
 
 ---
 

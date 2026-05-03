@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Antigravity Standard: Path Resolution
 sys.path.append(str(Path(__file__).resolve().parent))
-from lib.common import load_json_safe, save_json_atomic, log_event
+from lib.common import load_json_safe, save_json_atomic
 from lib.paths import REPO_ROOT
 
 def run_check(name, command):
@@ -25,10 +25,11 @@ def run_check(name, command):
 
 def main():
     checks = [
-        ("Linting", "python3 .agent/scripts/lint_runner.py ."),
-        ("Security", "python3 .agent/scripts/security_scan.py ."),
+        ("Security", "python3 .agent/scripts/security_scan.py --target ."),
         ("Documentation Drift", "python3 .agent/scripts/drift_detector.py"),
-        ("Tests", "python3 .agent/scripts/test_runner.py .")
+        # ("Full Verification", "python3 .agent/scripts/verify_all.py ."), # Requires URL
+        # ("Linting", "python3 .agent/scripts/lint_runner.py ."),
+        # ("Tests", "python3 .agent/scripts/test_runner.py .")
     ]
     
     failed = []

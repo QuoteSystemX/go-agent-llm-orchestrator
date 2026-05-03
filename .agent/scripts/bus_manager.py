@@ -47,6 +47,13 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
         print(f"❌ Invalid type '{obj_type}'. Must be one of: {', '.join(VALID_TYPES)}")
         sys.exit(1)
 
+    data = load_json_safe(BUS_FILE) or {"version": "1.0.0", "objects": []}
+    
+    # Check for duplicates
+    if any(obj["id"] == obj_id for obj in data.get("objects", [])):
+        print(f"❌ Error: Object with ID '{obj_id}' already exists on the bus.")
+        sys.exit(1)
+
     try:
         content = json.loads(content_str)
     except json.JSONDecodeError:
@@ -63,10 +70,6 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
         except json.JSONDecodeError:
             meta = {"raw": metadata}
 
-    data = load_json_safe(BUS_FILE)
-    if not data:
-        data = {"version": "1.0.0", "objects": []}
-
     new_obj = {
         "id": obj_id,
         "type": obj_type,
@@ -81,19 +84,53 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
     save_json_atomic(BUS_FILE, data)
     print(f"✅ Pushed '{obj_id}' ({obj_type}) by {author}.")
 
-def get_objects_by_type(obj_type: str) -> list[dict]:
-    """Returns all objects of a specific type."""
+def pull(obj_id: str) -> None:
+    """Pull an object from the bus and print as JSON."""
     data = load_json_safe(BUS_FILE)
-    if not data: return []
-    return [obj for obj in data.get("objects", []) if obj["type"] == obj_type]
+    if not data:
+        print(f"❌ Bus is empty.")
+        sys.exit(1)
+    
+    for obj in data.get("objects", []):
+        if obj["id"] == obj_id:
+            print(json.dumps(obj))
+            return
+            
+    print(f"❌ Object '{obj_id}' not found.")
+    sys.exit(1)
 
-def clean_author(author: str) -> None:
-    """Removes all objects by a specific author."""
+def delete(obj_id: str) -> None:
+    """Remove an object from the bus by ID."""
     data = load_json_safe(BUS_FILE)
     if not data: return
-    data["objects"] = [obj for obj in data.get("objects", []) if obj["author"] != author]
+    
+    original_count = len(data.get("objects", []))
+    data["objects"] = [obj for obj in data.get("objects", []) if obj["id"] != obj_id]
+    
+    if len(data["objects"]) < original_count:
+        save_json_atomic(BUS_FILE, data)
+        print(f"✅ Deleted object '{obj_id}'.")
+    else:
+        print(f"ℹ️ Object '{obj_id}' not found.")
+
+def clear() -> None:
+    """Empty the context bus."""
+    data = {"version": "1.0.0", "objects": []}
     save_json_atomic(BUS_FILE, data)
-    print(f"✅ Removed all objects by {author}.")
+    print("🧹 Context bus cleared.")
+
+def list_objects() -> None:
+    """List all objects on the bus."""
+    data = load_json_safe(BUS_FILE)
+    objects = data.get("objects", []) if data else []
+    
+    if not objects:
+        print("ℹ️ Bus is empty.")
+        return
+        
+    print(f"🚌 Context Bus ({len(objects)} objects):")
+    for obj in objects:
+        print(f"- [{obj['timestamp']}] {obj['id']} ({obj['type']}) by {obj['author']}")
 
 def wait_for_object(obj_id: str, timeout: int = 30) -> Optional[dict]:
     """Wait for an object with a specific ID to appear on the bus and return it."""
@@ -102,7 +139,7 @@ def wait_for_object(obj_id: str, timeout: int = 30) -> Optional[dict]:
     start = time.time()
     while time.time() - start < timeout:
         data = load_json_safe(BUS_FILE)
-        objects = data.get("objects", [])
+        objects = data.get("objects", []) if data else []
         for obj in objects:
             if obj["id"] == obj_id:
                 print(f"✅ Found object '{obj_id}' after {int(time.time() - start)}s.")
@@ -123,6 +160,20 @@ def main():
     push_p.add_argument("--content", required=True)
     push_p.add_argument("--metadata", help="Optional JSON metadata")
 
+    # pull
+    pull_p = sub.add_parser("pull", help="Pull an object by ID")
+    pull_p.add_argument("--id", required=True)
+
+    # delete
+    del_p = sub.add_parser("delete", help="Delete an object by ID")
+    del_p.add_argument("--id", required=True)
+
+    # list
+    sub.add_parser("list", help="List all objects")
+
+    # clear
+    sub.add_parser("clear", help="Clear the bus")
+
     # wait
     wait_p = sub.add_parser("wait", help="Wait for an object by ID")
     wait_p.add_argument("--id", required=True)
@@ -131,10 +182,18 @@ def main():
     args = parser.parse_args()
     if args.command == "push":
         push(args.id, args.type, args.author, args.content, args.metadata)
+    elif args.command == "pull":
+        pull(args.id)
+    elif args.command == "delete":
+        delete(args.id)
+    elif args.command == "list":
+        list_objects()
+    elif args.command == "clear":
+        clear()
     elif args.command == "wait":
         wait_for_object(args.id, args.timeout)
     else:
-        print("Command not implemented.")
+        parser.print_help()
         sys.exit(1)
 
 if __name__ == "__main__":
