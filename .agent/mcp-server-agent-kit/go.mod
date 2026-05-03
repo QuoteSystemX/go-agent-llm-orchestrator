@@ -1,4 +1,4 @@
-module skill-server
+module mcp-server-agent-kit
 
 go 1.26
 
