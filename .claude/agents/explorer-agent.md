@@ -72,6 +72,13 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 - For deep-dive architectural audits.
 - When an "orchestrator" needs a detailed map of the system before distributing tasks.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `status_report.py` | `python3 .agent/scripts/status_report.py` | Workspace health snapshot before starting any deep-dive audit |
+| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Identify gaps between code and documentation during codebase mapping |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

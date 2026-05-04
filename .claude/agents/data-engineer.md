@@ -148,6 +148,13 @@ Transformation complexity?
 | Performance bottleneck in query | `performance-optimizer` |
 | Data pipeline test coverage | `test-engineer` |
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `analyze_efficiency.py` | `python3 .agent/scripts/analyze_efficiency.py` | Analyze pipeline token and latency metrics from execution log |
+| `knowledge_miner.py` | `python3 .agent/scripts/knowledge_miner.py` | Retroactive archaeology — extract reusable patterns from past work |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

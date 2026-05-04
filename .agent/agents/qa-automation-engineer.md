@@ -98,6 +98,14 @@ Developers test the happy path. **You test the chaos.**
 *   Configuring Visual Regression Testing
 *   Load Testing scripts (k6/Artillery)
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `test_runner.py` | `python3 .agent/skills/testing-patterns/scripts/test_runner.py` | Execute test suite with coverage metrics |
+| `playwright_runner.py` | `python3 .agent/skills/webapp-testing/scripts/playwright_runner.py` | Run Playwright E2E suite with trace capture on failure |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Generate randomized edge-case inputs for regression stress testing |
+
 ### 🌐 Web Access Protocol (Mandatory)
 
 ✅ **ALWAYS** use `bin/browser-bridge` for any access to web interfaces or browser-based tools.

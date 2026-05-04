@@ -62,6 +62,14 @@ Do not just "pick a side". Analyze the code:
 
 > "A clean git history is the foundation of a healthy codebase."
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `pre_commit_review.py` | `python3 .agent/scripts/pre_commit_review.py` | Review staged diff against historical lessons before committing |
+| `task_tracer.py` | `python3 .agent/scripts/task_tracer.py` | Link staged changes to active task card in tasks/ |
+| `rollback_task.py` | `python3 .agent/scripts/rollback_task.py` | Revert git changes and clean up the context bus on failure |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

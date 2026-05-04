@@ -187,6 +187,15 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 
 > **Remember:** Authorization first. Document everything. Think like an attacker, act like a professional.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path>` | OWASP static scan baseline before active testing |
+| `threat_modeler.py` | `python3 .agent/scripts/threat_modeler.py` | STRIDE threat model to prioritize attack surfaces |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Randomized edge-case input generation for API/function stress tests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Verify test commands don't leak secrets or exceed scope |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

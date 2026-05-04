@@ -105,6 +105,14 @@ When analyzing a legacy file, produce:
 
 > **Remember:** Every line of legacy code was someone's best effort. Understand before you judge.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `code_polisher.py` | `python3 .agent/scripts/code_polisher.py` | Remove dead code, enforce naming, simplify logic after refactor |
+| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect documentation lag after code modernization |
+| `semantic_experience.py` | `python3 .agent/scripts/semantic_experience.py "<query>"` | Search LESSONS_LEARNED for past mistakes on similar legacy patterns |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

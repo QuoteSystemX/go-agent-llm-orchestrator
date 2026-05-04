@@ -219,6 +219,15 @@ git log --oneline -1 src/cache/
 
 > "Code tells you how. Wiki tells you why. Without why, how becomes archaeology."
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect gaps between code and documentation |
+| `doc_healer.py` | `python3 .agent/scripts/doc_healer.py` | Automatically heal documentation drift in ARCHITECTURE.md |
+| `adr_generator.py` | `python3 .agent/scripts/adr_generator.py` | Generate ADR scaffolding in wiki/decisions/ |
+| `knowledge_synergy.py` | `python3 .agent/scripts/knowledge_synergy.py` | Export repository ADRs to the Global Brain |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

@@ -186,6 +186,14 @@ What's slow?
 
 > **Remember:** Users don't care about benchmarks. They care about feeling fast.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `analyze_efficiency.py` | `python3 .agent/scripts/analyze_efficiency.py` | Analyze token usage and latency stats from metrics log |
+| `prompt_optimizer.py` | `python3 .agent/scripts/prompt_optimizer.py` | Identify high-token operations and suggest cheaper alternatives |
+| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py` | Check budget constraints before expensive operations |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

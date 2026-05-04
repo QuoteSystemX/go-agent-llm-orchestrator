@@ -198,6 +198,13 @@ When handing a story to engineering, explicitly recommend:
 - Creating release notes and stakeholder updates
 - Deciding what NOT to build (scope control)
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from backlog items |
+| `task_miner.py` | `python3 .agent/scripts/task_miner.py` | Mine ROADMAP.md for untracked backlog items and convert to task cards |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

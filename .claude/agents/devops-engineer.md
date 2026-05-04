@@ -241,6 +241,15 @@ What are you deploying?
 
 > **Remember:** Production is where users are. Treat it with respect.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation — security, lint, schema, tests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate dangerous shell commands before execution |
+| `ci_auto_fixer.py` | `python3 .agent/scripts/ci_auto_fixer.py` | Auto-detect failing CI jobs and propose targeted fix commits |
+| `chaos_monkey.py` | `python3 .agent/scripts/chaos_monkey.py` | Fault injection for resilience testing (use on throwaway branches only) |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

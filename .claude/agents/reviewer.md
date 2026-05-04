@@ -181,6 +181,15 @@ After writing all task cards, produce a summary:
 
 > **Remember:** Your output is only as useful as the tasks you write. Vague task cards waste agent cycles. Be specific, evidence-based, and actionable.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `experience_distiller.py` | `python3 .agent/scripts/experience_distiller.py --query "<topic>"` | Query past lessons before writing task cards |
+| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path>` | OWASP static scan to populate security task cards |
+| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect documentation gaps to generate `[DOCS]` task cards |
+| `pr_audit.py` | `python3 .agent/scripts/pr_audit.py` | Deep PR audit — security, drift, quality — before writing audit report |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

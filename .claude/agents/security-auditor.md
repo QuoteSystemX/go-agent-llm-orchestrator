@@ -143,15 +143,14 @@ Is it actively exploited (EPSS >0.5)?
 
 ---
 
-## Validation
+## 🛠 Automation Tools
 
-After your review, run the validation script:
-
-```bash
-python scripts/security_scan.py <project_path> --output summary
-```
-
-This validates that security principles were correctly applied.
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path> --output summary` | OWASP static scan — hardcoded secrets, dangerous patterns, weak hashes |
+| `threat_modeler.py` | `python3 .agent/scripts/threat_modeler.py` | STRIDE-based threat model for a component or PR |
+| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate commands for secret leaks and dangerous operation patterns |
+| `vulnerability_patcher.py` | `python3 .agent/scripts/vulnerability_patcher.py <type> <file> <ctx>` | Format a targeted secure fix request for patching |
 
 ---
 

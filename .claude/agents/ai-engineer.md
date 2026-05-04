@@ -163,6 +163,14 @@ Scale & requirements?
 
 > "Every LLM call is a hypothesis. Eval is the experiment."
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `context_autofill.py` | `python3 .agent/scripts/context_autofill.py "<intent>"` | Investigate codebase context autonomously before building any LLM feature |
+| `model_router.py` | `python3 .agent/scripts/model_router.py` | Route task complexity (L1-L3) to the most cost-effective model |
+| `sandbox_runner.py` | `python3 .agent/scripts/sandbox_runner.py <file>` | AST-safe execution sandbox for untrusted LLM-generated code |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

@@ -424,6 +424,15 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 
 > **Remember:** A test that never fails is not a test — it's documentation. A test suite that isn't run on every change is not a safety net — it's a false sense of security.
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `test_factory.py` | `python3 .agent/scripts/test_factory.py <target_file>` | Generate basic test file scaffolding for Python and Go |
+| `test_runner.py` | `python3 .agent/skills/testing-patterns/scripts/test_runner.py` | Run test suite with coverage report |
+| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Run core validation suite before declaring test coverage complete |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Generate randomized edge-case inputs for stress-testing functions |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

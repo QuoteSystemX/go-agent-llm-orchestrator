@@ -181,6 +181,13 @@ Cloud provider?
 
 > "A healthy cluster is boring. Boring is good."
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation — security, schema, lint before applying manifests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate kubectl/helm commands against dangerous operation rules |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.

@@ -197,6 +197,14 @@ And   a lockout notification is sent to their email
 - Writing documentation for non-technical stakeholders
 - Running BMAD Phase 1 → Phase 2 transitions
 
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from a story description |
+| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | Expand terse requirements into detailed specs with feedback loop |
+| `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
+
 ### 📤 Output Protocol (Mandatory)
 
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
