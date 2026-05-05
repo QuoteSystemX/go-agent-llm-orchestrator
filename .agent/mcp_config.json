@@ -3,16 +3,9 @@
     "mcpServers": {
         "skills": {
             "command": "sh",
-            "args": ["-c", "exec $(git rev-parse --show-toplevel)/.agent/skill-server/skill-server.sh"],
-            "description": "Antigravity Kit skill loader — exposes skills_load, skills_list, skills_search"
-        },
-        "context7": {
-            "command": "npx",
             "args": [
-                "-y",
-                "@upstash/context7-mcp",
-                "--api-key",
-                "YOUR_API_KEY"
+                "-c",
+                "exec $(git rev-parse --show-toplevel)/.agent/skill-server/skill-server.sh"
             ]
         },
         "shadcn": {
@@ -20,6 +13,35 @@
             "args": [
                 "shadcn@latest",
                 "mcp"
+            ]
+        },
+        "wikipedia": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "wikipedia-mcp"
+            ]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/home/amudrykh"
+            ]
+        },
+        "github": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ]
+        },
+        "browser": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-puppeteer"
             ]
         }
     }
