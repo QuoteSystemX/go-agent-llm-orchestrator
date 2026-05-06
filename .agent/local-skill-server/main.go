@@ -70,8 +70,24 @@ func main() {
 	s.AddTool(mcp.NewTool("bmad_status", mcp.WithDescription("Check the status of the BMAD lifecycle.")), h.bmadStatus)
 	s.AddTool(mcp.NewTool("status_summary", mcp.WithDescription("Get Agent Kit summary.")), h.statusSummary)
 
+	// --- Stdout Protection & Panic Recovery ---
+	// Any stray output to stdout during init will break the MCP protocol.
+	originalStdout := os.Stdout
+	os.Stdout = os.Stderr
+	defer func() {
+		os.Stdout = originalStdout
+		if r := recover(); r != nil {
+			fmt.Fprintf(os.Stderr, "FATAL: agent-kit-server panicked: %v\n", r)
+			os.Exit(1)
+		}
+	}()
+
+	fmt.Fprintf(os.Stderr, "Starting agent-kit-server v%s (root: %s)...\n", serverVersion, root)
+
+	// Restore stdout just before serving
+	os.Stdout = originalStdout
 	if err := server.ServeStdio(s); err != nil {
-		fmt.Fprintf(os.Stderr, "agent-kit-server: %v\n", err)
+		fmt.Fprintf(os.Stderr, "ERROR: agent-kit-server failed: %v\n", err)
 		os.Exit(1)
 	}
 }
