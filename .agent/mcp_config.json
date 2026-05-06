@@ -2,11 +2,8 @@
     "_readme": "Template config for Antigravity (Gemini). Copy to your Antigravity workspace and replace YOUR_API_KEY placeholders. The 'skills' server is required; 'context7' and 'shadcn' are optional extras.",
     "mcpServers": {
         "local-skill-server": {
-            "command": "sh",
-            "args": [
-                "-c",
-                "exec $(git rev-parse --show-toplevel)/.agent/local-skill-server/local-skill-server.sh"
-            ]
+            "command": "agent-kit-server",
+            "args": []
         },
         "shadcn": {
             "command": "npx",

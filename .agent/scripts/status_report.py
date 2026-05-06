@@ -9,10 +9,12 @@ from datetime import datetime
 try:
     from lib.paths import REPO_ROOT
     from lib.common import load_json_safe
+    from mcp_provisioner import check_mcp_health
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
     from lib.paths import REPO_ROOT
     from lib.common import load_json_safe
+    from mcp_provisioner import check_mcp_health
 
 def calculate_health():
     """Calculate a workspace health score based on multiple metrics."""
@@ -42,7 +44,17 @@ def calculate_health():
     # 3. Security (Stub for now, in real it would call security_scan.py)
     metrics["Security"] = "PASS"
     
-    # 4. Tests (Stub)
+    # 4. MCP Server Health (Self-healing)
+    try:
+        is_healthy, msg = check_mcp_health()
+        metrics["MCP Server"] = "PASS" if is_healthy else "FAIL"
+        if not is_healthy:
+            score -= 20
+            metrics["MCP Server"] += f" ({msg})"
+    except:
+        metrics["MCP Server"] = "Unknown"
+
+    # 5. Tests (Stub)
     metrics["Tests"] = "PASS"
 
     return max(0, score), metrics
