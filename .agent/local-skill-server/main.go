@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -154,11 +155,18 @@ func (h *handler) bmadStatus(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 }
 
 func (h *handler) statusSummary(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	agents, _ := os.ReadDir(filepath.Join(h.projectRoot, ".agent", "agents"))
+	// Count agents recursively (supports category subfolders)
+	agentCount := 0
+	_ = filepath.WalkDir(filepath.Join(h.projectRoot, ".agent", "agents"), func(_ string, d fs.DirEntry, _ error) error {
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".md") {
+			agentCount++
+		}
+		return nil
+	})
 	skills, _ := os.ReadDir(filepath.Join(h.projectRoot, ".agent", "skills"))
 	workflows, _ := os.ReadDir(filepath.Join(h.projectRoot, ".agent", "workflows"))
 
-	summary := fmt.Sprintf("Agents: %d\nSkills: %d\nWorkflows: %d", len(agents), len(skills), len(workflows))
+	summary := fmt.Sprintf("Agents: %d\nSkills: %d\nWorkflows: %d", agentCount, len(skills), len(workflows))
 	return mcp.NewToolResultText(summary), nil
 }
 
@@ -176,12 +184,24 @@ func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 }
 
 func (h *handler) loadAgent(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, _ := req.RequireString("name")
-	name = sanitizeString(name)
-	if !strings.HasSuffix(name, ".md") {
-		name += ".md"
+	name := sanitizeString(req.GetString("name", ""))
+	if name == "" {
+		return mcp.NewToolResultError("name is required"), nil
 	}
-	return h.loadItem(filepath.Join(h.projectRoot, ".agent", "agents", name))
+	// Search recursively through category subfolders
+	agentsRoot := filepath.Join(h.projectRoot, ".agent", "agents")
+	var found string
+	_ = filepath.WalkDir(agentsRoot, func(path string, d fs.DirEntry, _ error) error {
+		if !d.IsDir() && d.Name() == name+".md" {
+			found = path
+			return fs.SkipAll
+		}
+		return nil
+	})
+	if found == "" {
+		return mcp.NewToolResultError(fmt.Sprintf("agent '%s' not found", name)), nil // nosec
+	}
+	return h.loadItem(found)
 }
 
 func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -191,20 +211,29 @@ func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 // --- Helpers ---
 
 func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return mcp.NewToolResultError("cannot read directory: " + err.Error()), nil
-	}
 	var names []string
-	for _, e := range entries {
-		if strings.HasPrefix(e.Name(), ".") {
-			continue
+	if isDir {
+		// Skills: list top-level directories only
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return mcp.NewToolResultError("cannot read directory: " + err.Error()), nil
 		}
-		if isDir && e.IsDir() {
-			names = append(names, e.Name())
-		} else if !isDir && !e.IsDir() {
-			names = append(names, strings.TrimSuffix(e.Name(), ".md"))
+		for _, e := range entries {
+			if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+				names = append(names, e.Name())
+			}
 		}
+	} else {
+		// Agents/workflows: walk recursively, collect all .md files
+		_ = filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() || strings.HasPrefix(d.Name(), ".") {
+				return nil
+			}
+			if strings.HasSuffix(d.Name(), ".md") {
+				names = append(names, strings.TrimSuffix(d.Name(), ".md"))
+			}
+			return nil
+		})
 	}
 	return mcp.NewToolResultText(strings.Join(names, "\n")), nil
 }

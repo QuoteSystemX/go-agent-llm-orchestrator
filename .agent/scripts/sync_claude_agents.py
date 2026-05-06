@@ -355,7 +355,7 @@ def patch_source_tools(dry_run: bool = False) -> None:
     patched = 0
     skipped = 0
 
-    for src in sorted(AGENTS_SRC.glob("*.md")):
+    for src in sorted(AGENTS_SRC.rglob("**/*.md")):
         raw = src.read_text(encoding="utf-8")
         fm, body = parse_frontmatter(raw)
 
@@ -421,7 +421,8 @@ def _write_file(out_path: "Path", content: str, dry_run: bool, check: bool) -> N
 def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "", check: bool = False) -> None:
     CLAUDE_AGENTS_OUT.mkdir(parents=True, exist_ok=True)
 
-    agent_files = sorted(AGENTS_SRC.glob("*.md"))
+    # rglob scans all subdirectories — supports hierarchical category folders
+    agent_files = sorted(AGENTS_SRC.rglob("**/*.md"))
     if only_agent:
         agent_files = [f for f in agent_files if f.stem == only_agent]
         if not agent_files:
@@ -438,9 +439,12 @@ def sync_agents(dry_run: bool = False, only_agent: str = "", profile: str = "", 
         agent_files = filtered
         print(f"\n=== Syncing specialist agents ({len(agent_files)}, profile={profile!r}, skipped={skipped}) ===")
     else:
-        print(f"\n=== Syncing specialist agents ({len(agent_files)}) ===")
+        # Show category breakdown for visibility
+        cats = {f.parent.name if f.parent != AGENTS_SRC else "root" for f in agent_files}
+        print(f"\n=== Syncing specialist agents ({len(agent_files)}) | categories: {', '.join(sorted(cats))} ===")
 
     for src in agent_files:
+        # Flatten to .claude/agents/<name>.md — category folders are source-only
         out_path = CLAUDE_AGENTS_OUT / src.name
         content = build_claude_agent(src, is_workflow=False)
         _write_file(out_path, content, dry_run, check)
@@ -488,7 +492,7 @@ def _handle_orphans(dry_run: bool, check: bool) -> None:
     """Report and optionally delete .claude/ files that have no corresponding source in .agent/."""
     # Expected agent names: specialist agents + wf-* workflow agents
     expected_agents: set[str] = set()
-    for src in AGENTS_SRC.glob("*.md"):
+    for src in AGENTS_SRC.rglob("**/*.md"):  # recursive — supports subdirectory layout
         expected_agents.add(src.name)
     for src in WORKFLOWS_SRC.glob("*.md"):
         expected_agents.add(f"wf-{src.name}")

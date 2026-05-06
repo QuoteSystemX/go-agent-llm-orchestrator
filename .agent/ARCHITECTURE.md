@@ -38,11 +38,11 @@ Unified Agent Kit is a modular system consisting of:
 │   ├── guardrail_monitor.py # Safety and budget enforcement
 │   ├── bus_manager.py       # Context Bus (DTO) management
 │   └── visualize_deps.py    # Automated Mermaid dependency visualization
-└── skill-server/            # Go MCP binary (skills_load, skills_list, skills_search)
+└── local-skill-server/      # Go MCP binary source (agents_load, agents_list, skills_*, workflows)
     ├── main.go
     ├── go.mod
     ├── Makefile
-    ├── skill-server.sh      # Platform launcher (auto-detects OS/ARCH)
+    ├── local-skill-server.sh  # Platform launcher (auto-detects OS/ARCH)
     └── bin/                 # Pre-built binaries (linux-amd64, linux-arm64)
 ```
 
@@ -142,6 +142,31 @@ func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mc
   handlers_infra --> exec
   handlers_infra --> filepath
   handlers_infra --> mcp
+  handlers_jobs --> 
+  handlers_jobs -->  Mark workflows that have an associated executable script.
+			scriptPath := filepath.Join(h.projectRoot, 
+  handlers_jobs -->  nosec
+		JobID:   jobID,
+		Command: 
+  handlers_jobs -->  nosec
+		return mcp.NewToolResultError(
+  handlers_jobs -->  nosec
+		}
+	}
+	return mcp.NewToolResultError(
+  handlers_jobs -->  nosec
+	content := fmt.Sprintf(
+  handlers_jobs -->  nosec
+	}
+	return mcp.NewToolResultText(strings.Join(lines, 
+  handlers_jobs -->  nosec
+
+	tasksDir := filepath.Join(h.projectRoot, 
+  handlers_jobs -->  nosec
+}
+
+func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	workflowsDir := filepath.Join(h.projectRoot, 
   handlers_jobs --> filepath
   handlers_jobs --> mcp
   handlers_knowledge --> 
@@ -245,8 +270,8 @@ func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mc
 			allowed, err := h.db.CheckPermission(agent, toolName)
 			if err != nil || !allowed {
 				if toolName == 
-  main -->  SSE log streaming (simulated)
-		http.HandleFunc(
+  main -->  SSE log streaming — tail audit.log
+		auditLogPath := filepath.Join(h.projectRoot, 
   main --> audit.log...
   main --> filepath
   main --> http
@@ -257,9 +282,20 @@ func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mc
   main --> signal
   main_test --> filepath
   main_test --> mcp
+  maintenance -->  Check for .agent folder or GEMINI.md
+		if _, err := os.Stat(filepath.Join(curr, 
+  maintenance -->  Find the most recent directory that contains a .agent folder
+		var bestMatch string
+		var latestTime int64
+		for _, e := range entries {
+			if e.IsDir() {
+				candidate := filepath.Join(
   maintenance --> filepath
+  maintenance --> paperclip, look for workspaces
+	if _, err := os.Stat(
   metrics_dashboard --> rich
   model_router --> argparse
+  model_router --> lib
   post_mortem_runner --> lib
   pr_audit --> lib
   pre_commit_review --> conflict_resolver
@@ -289,6 +325,7 @@ func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mc
   skill_versioning --> argparse
   status_report --> drift_detector
   status_report --> lib
+  status_report --> mcp_provisioner
   sync_claude_agents --> argparse
   sync_claude_agents --> visualize_deps
   task_helper --> argparse
@@ -556,6 +593,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | `checklist.py`        | Priority-based validation (Core checks) | Development, pre-commit  |
 | `verify_all.py`       | Comprehensive verification (All checks) | Pre-deployment, releases |
 | `model_router.py`     | Dynamic task complexity routing (L1-L3) | Every subagent call      |
+| `mcp_provisioner.py`  | Auto-builds and provisions MCP server binaries | MCP initialization       |
 | `bus_manager.py`      | Context Bus administration (Push/Pull)  | Debugging, inspection    |
 | `business_dashboard.py` | Feature-level progress tracking (Rich) | /status, sprint review   |
 | `metrics_dashboard.py` | Technical observability (CLI Monitor)   | Monitoring               |
@@ -768,7 +806,7 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 ### How It Works
 
 ```plaintext
-.agent/agents/*.md     → .claude/agents/*.md         (specialist subagents, @-invokable)
+.agent/agents/**/*.md  → .claude/agents/*.md         (specialist subagents, @-invokable, category folders flattened)
 .agent/workflows/*.md  → .claude/agents/wf-*.md      (workflow subagents,   @-invokable)
 .agent/workflows/*.md  → .claude/commands/*.md        (slash commands,       /name invokable)
 ```
@@ -781,16 +819,17 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 - `.agent/templates/CLAUDE.md` — Template provisioned to target repos on first CI deploy
 - `.claude/settings.json` — MCP server config + `"agent": "orchestrator"` for auto-routing
 - `~/.claude/.mcp.json` — User-level MCP config (skill-server at absolute path)
-- `.claude/agents/*.md` — 31 specialist agents + 18 workflow agents (generated, @-invokable)
-- `.claude/commands/*.md` — 18 slash commands `/name` (generated, same source as workflows)
-- `.agent/scripts/sync_claude_agents.py` — Generator script (`--profile`, `--agent`, `--dry-run`)
-- `.agent/skill-server/` — Go MCP binary source + pre-built linux binaries
+- `.claude/agents/*.md` — 41 specialist agents + 20 workflow agents (generated, @-invokable)
+- `.claude/commands/*.md` — 20 slash commands `/name` (generated, same source as workflows)
+- `.agent/scripts/sync_claude_agents.py` — Generator script (`--profile`, `--agent`, `--dry-run`, supports `agents/**/` subdirs)
+- `.agent/local-skill-server/` — Go MCP binary source (`agents_*`, `skills_*`, `workflows_*` tools)
+- `.agent/mcp-server-agent-kit/` — Extended Go MCP binary (Council, Jobs, RBAC, Governance)
 
 ### Skill Loading: Unified Agent vs Claude Code
 
 - **Unified Agent**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
 - **Claude Code (Variant A)**: dynamic loading — generated agents get a `> **Skills** — read these files` pointer block; no inline embedding. Eliminates duplication and the 100-line truncation limit.
-- **skill-server MCP** (Variant C): Go binary exposes `skills_load`, `skills_list`, `skills_search` tools via stdio JSON-RPC. Configured in `.claude/settings.json` (project) and `~/.claude/.mcp.json` (user).
+- **skill-server MCP** (Variant C): `local-skill-server` Go binary exposes `skills_load`, `skills_list`, `skills_search`, `agents_load`, `agents_list` tools via stdio JSON-RPC. Configured in `.mcp.json` (project) and `mcp_config.json`. Installed as `agent-kit-server` binary in `~/.local/bin/`.
 
 ### Slash Commands vs Subagents in Claude Code
 
@@ -828,10 +867,10 @@ python3 .agent/scripts/sync_claude_agents.py --profile mobile
 - `.agent/` — Unified Agent Kit (unchanged)
 - `.claude/agents/` — Claude Code subagents (generated, filtered by profile if set)
 - `.claude/commands/` — Claude Code slash commands (generated)
-- `.agent/skill-server/bin/` — Pre-built Go binaries (linux-amd64, linux-arm64)
+- `.agent/local-skill-server/bin/` — Pre-built Go binaries (linux-amd64, linux-arm64)
 - `CLAUDE.md` — first-time provisioning only (target repos own their copy after that)
 
-Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build-skill-server.yml` and committed to the repo, so distribution requires no Go toolchain in target repos.
+Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build-mcp-server-agent-kit.yml` and committed to the repo, so distribution requires no Go toolchain in target repos.
 
 **Profile-based distribution** — add `--profile <name>` to the rsync step to exclude domain-irrelevant agents. Profiles defined in `.github/profiles.yml`.
 
@@ -846,13 +885,13 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| **Total Agents**    | 39                                              |
-| **Total Skills**    | 55                                              |
-| **Total Workflows** | 21                                              |
-| **Total Scripts**   | 24                                              |
-| **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
-| **MCP Servers**     | 1 (`skill-server` Go binary — stdio transport)  |
-| **Coverage**        | ~95% web/mobile/backend/infra development       |
+| **Total Agents**    | 41                                                              |
+| **Total Skills**    | 55                                                              |
+| **Total Workflows** | 20                                                              |
+| **Total Scripts**   | 24                                                              |
+| **Total Patterns**  | 10 (5 original + 5 BMAD)                                        |
+| **MCP Servers**     | 2 (`local-skill-server` + `mcp-server-agent-kit`, stdio)        |
+| **Coverage**        | ~95% web/mobile/backend/infra development                       |
 
 ---
 
@@ -925,7 +964,7 @@ Jules automation: full_cycle pattern → 1 story → 1 PR
 
 | File | Purpose |
 |------|---------|
-| `.agent/agents/analyst.md` | BMAD lifecycle driver — Discovery through Sprint |
+| `.agent/agents/core/analyst.md` | BMAD lifecycle driver — Discovery through Sprint |
 | `.agent/skills/bmad-lifecycle/SKILL.md` | Phase knowledge, artifact contracts, story card format |
 | `.agent/workflows/discovery.md` | `/discovery` — Phase 1 slash command |
 | `.agent/workflows/prd.md` | `/prd` — Phase 2 slash command |

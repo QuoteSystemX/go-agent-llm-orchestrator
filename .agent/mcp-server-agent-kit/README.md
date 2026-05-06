@@ -24,7 +24,7 @@ A production-grade Model Context Protocol (MCP) server that powers the Agent Kit
 - `skills_list`: List all available skill names in `.agent/skills/`.
 - `skills_load`: Load full `SKILL.md` content for a specific skill.
 - `skills_search`: Search skills by keyword in name or description.
-- `agents_list`: List all specialist agents in `.agent/agents/`.
+- `agents_list`: List all specialist agents (recursively in `.agent/agents/`).
 - `agents_load`: Load agent profile (persona and rules).
 
 ### 🧠 Knowledge & Intelligence

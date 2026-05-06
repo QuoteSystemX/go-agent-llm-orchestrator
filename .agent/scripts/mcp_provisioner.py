@@ -34,7 +34,7 @@ def check_mcp_health():
         # Give it a moment to start
         try:
             _, stderr = process.communicate(input="", timeout=1)
-            if "Starting agent-kit-server" in stderr or "skill-server: executing" in stderr:
+            if "Starting agent-kit-server" in stderr:
                 return True, "MCP Server is healthy"
         except subprocess.TimeoutExpired:
             # If it timed out, it means it's waiting for input, which is GOOD for an MCP server

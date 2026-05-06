@@ -36,24 +36,24 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 | **QUESTION**     | "what is", "how does", "explain"           | TIER 0 only                    | Text Response               |
 | **SURVEY/INTEL** | "analyze", "list files", "overview"        | TIER 0 + Explorer              | Session Intel (No File)     |
 | **SIMPLE CODE**  | "fix", "add", "change" (single file)       | TIER 0 + TIER 1 (lite)         | Inline Edit                 |
-| **COMPLEX CODE** | "build", "create", "implement", "refactor" | TIER 0 + TIER 1 (full) + Agent | **{task-slug}.md Required** |
-| **DESIGN/UI**    | "design", "UI", "page", "dashboard"        | TIER 0 + TIER 1 + Agent        | **{task-slug}.md Required** |
+| **COMPLEX CODE** | "build", "create", "implement", "refactor" | TIER 0 + TIER 1 (full) + Agent | **{task-slug}.md Required** + Adaptive Routing |
+| **DESIGN/UI**    | "design", "UI", "page", "dashboard"        | TIER 0 + TIER 1 + Agent        | **{task-slug}.md Required** + Adaptive Routing |
 | **SLASH CMD**    | /create, /orchestrate, /debug              | Command-specific flow          | Variable                    |
 
 ---
 
 ## 🤖 INTELLIGENT AGENT ROUTING (STEP 2 - AUTO)
 
-**ALWAYS ACTIVE: Before responding to ANY request, automatically analyze and select the best agent(s).**
+**ALWAYS ACTIVE: Before responding to ANY request, automatically analyze and select the best agent(s) using Adaptive Routing.**
 
-> 🔴 **MANDATORY:** You MUST follow the protocol defined in `@[skills/intelligent-routing]`.
+> 🔴 **MANDATORY:** You MUST follow the protocol defined in `@[skills/intelligent-routing]` and `.agent/rules/ADAPTIVE_ROUTING.md`.
 
 ### Auto-Selection Protocol
 
-1. **Analyze (Silent)**: Detect domains (Frontend, Backend, Security, etc.) from user request.
-2. **Select Agent(s)**: Choose the most appropriate specialist(s).
-3. **Inform User**: Concisely state which expertise is being applied.
-4. **Apply**: Generate response using the selected agent's persona and rules.
+1. **Analyze (Silent)**: Detect domains and complexity.
+2. **Build Flow**: Select Level (L1-L4) based on `.agent/rules/ADAPTIVE_ROUTING.md`.
+3. **Inform User**: Concisely state the Flow (e.g., `🤖 Flow: [L3 -> L2]`).
+4. **Apply**: Generate response using the selected levels and agents.
 
 ## 📤 OUTPUT GATEWAY (MANDATORY)
 

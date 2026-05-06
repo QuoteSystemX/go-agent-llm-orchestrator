@@ -29,11 +29,12 @@ def analyze_go_mod(root: Path) -> Dict[str, Any]:
         return {}
 
     # A go.mod without any .go source files is not a Go project (e.g. a
-    # workspace root that only contains a nested Go sub-module like skill-server/).
+    # workspace root that only contains nested Go sub-modules like local-skill-server/ or mcp-server-agent-kit/).
     has_go_sources = any(root.glob("*.go")) or any(root.glob("**/*.go"))
-    # Exclude the nested skill-server sub-module from the check
+    # Exclude nested MCP server sub-modules from the check
     nested_only = all(
-        ".agent/skill-server" in str(p) for p in root.rglob("*.go")
+        (".agent/local-skill-server" in str(p) or ".agent/mcp-server-agent-kit" in str(p))
+        for p in root.rglob("*.go")
     )
     if not has_go_sources or nested_only:
         return {}

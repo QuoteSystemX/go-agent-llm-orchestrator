@@ -467,11 +467,15 @@ log_event({
 
 ## 🤖 Dynamic Model Routing & Overrides
 
-### 1. Automatic Optimization
-Before delegating a task to a sub-agent, the `orchestrator` should determine the optimal model:
-1. **Analyze**: Use `python3 .agent/scripts/model_router.py "[task description]"` to get the recommended model.
-2. **Execute**: Pass the returned `model_id` to the `Agent` tool.
-3. **Announce**: The router script will automatically print an announcement like: *"🤖 Dynamic Routing: Selected haiku for L1 task"*.
+### 1. Automatic Optimization (Dual Environment)
+Before delegating a task, the `orchestrator` must determine the optimal model and act according to the environment:
+
+1. **Analyze**: Use `python3 .agent/scripts/model_router.py "[task description]"` to get the recommended model ID.
+2. **Environment Check**:
+   - **If in Antigravity (IDE)**: The routing is **Advisory**. Announce the result to the user: *"🤖 Recommendation: Switch to [Model] for optimal results"*, but **DO NOT WAIT**. Proceed immediately using the currently active model. This prevents the process from getting stuck if the recommended model is unavailable due to rate limits.
+   - **If in Claude Code (CLI)**: The routing is **Autonomous**. Use the `bash` tool to spawn a sub-agent with the specific model:
+     `claude --model [model_id] -p "[task context + instructions]"`
+3. **Execution**: Collect the result from the sub-agent (or proceed directly in IDE) and synthesize.
 
 ### 2. Manual Override (`--model`)
 If the user provides a `--model` flag (e.g., `/enhance add feature --model=opus`):

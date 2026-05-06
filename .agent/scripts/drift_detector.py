@@ -64,7 +64,10 @@ def get_documented_files():
 
 def check_arch_consistency():
     """Verify that all agents and skills listed in ARCHITECTURE.md actually exist."""
-    arch_path = REPO_ROOT / ".agent" / "ARCHITECTURE.md"
+    arch_path = REPO_ROOT / "wiki" / "ARCHITECTURE.md"  # correct path
+    if not arch_path.exists():
+        # fallback to .agent/ARCHITECTURE.md
+        arch_path = REPO_ROOT / ".agent" / "ARCHITECTURE.md"
     if not arch_path.exists():
         return []
     
@@ -96,7 +99,9 @@ def check_arch_consistency():
         if is_agents_section:
             for name in names:
                 if name.lower() in ["agent", "agent-name"]: continue
-                if not (agent_dir / f"{name}.md").exists():
+                # Recursive search — agents can now live in subdirectories
+                matches = list(agent_dir.rglob(f"{name}.md"))
+                if not matches:
                     drifts.append(f"AGENT DRIFT: '{name}' listed in Agents table but missing in .agent/agents/")
         
         elif is_skills_section:
