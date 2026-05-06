@@ -109,6 +109,29 @@ graph TD
 	case 
   handlers_gov -->  Security fixes require fewer votes for agility
 		Status:      
+  handlers_gov -->  nosec
+			Status:    
+  handlers_gov -->  nosec
+		Proposer:    
+  handlers_gov -->  nosec
+		}
+		h.db.SaveJob(job)
+
+		scriptPath := filepath.Join(h.projectRoot, 
+  handlers_gov -->  nosec
+	}
+	
+	h.db.SaveProposal(p)
+	return mcp.NewToolResultText(fmt.Sprintf(
+  handlers_gov -->  nosec
+
+	default:
+		return mcp.NewToolResultError(
+  handlers_gov -->  nosec
+}
+
+func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	agent, _ := req.RequireString(
   handlers_gov --> %d
   handlers_gov --> %d votes - %s
   handlers_gov --> filepath
@@ -122,6 +145,8 @@ graph TD
   handlers_jobs --> filepath
   handlers_jobs --> mcp
   handlers_knowledge --> 
+  handlers_knowledge -->  nosec
+		filepath.Base(latestPath), n, strings.Join(all, 
   handlers_knowledge --> exec
   handlers_knowledge --> filepath
   handlers_knowledge --> mcp
@@ -222,6 +247,7 @@ graph TD
 				if toolName == 
   main -->  SSE log streaming (simulated)
 		http.HandleFunc(
+  main --> audit.log...
   main --> filepath
   main --> http
   main --> mcp
@@ -259,6 +285,7 @@ graph TD
   session_manager --> typing
   skill_factory --> argparse
   skill_factory --> lib
+  skill_factory --> unittest
   skill_versioning --> argparse
   status_report --> drift_detector
   status_report --> lib
