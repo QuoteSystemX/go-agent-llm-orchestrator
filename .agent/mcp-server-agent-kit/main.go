@@ -18,6 +18,13 @@ import (
 
 const serverVersion = "1.7.0"
 
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(os.Stderr, "[HTTP] %s %s %s\n", r.Method, r.URL.Path, r.URL.RawQuery)
+		next.ServeHTTP(w, r)
+	})
+}
+
 type handler struct {
 	projectRoot string
 	db          *DB
@@ -42,6 +49,7 @@ func main() {
 			projectRoot = resolveProjectRoot()
 		}
 	}
+	fmt.Fprintf(os.Stderr, "agent-kit: version %s, projectRoot: %q\n", serverVersion, projectRoot)
 
 	dbPath := *dbFile
 	if dbPath == "" {
@@ -303,7 +311,9 @@ func main() {
 			fmt.Fprintf(w, `{"status":"ok","version":"%s"}`, serverVersion)
 		})
 
-		http.Handle("/mcp", server.NewSSEServer(s))
+		mcpHandler := loggingMiddleware(server.NewSSEServer(s))
+		http.Handle("/mcp", mcpHandler)
+		http.Handle("/mcp/", mcpHandler)
 		
 		// SSE log streaming — tail audit.log
 		auditLogPath := filepath.Join(h.projectRoot, "audit.log")
