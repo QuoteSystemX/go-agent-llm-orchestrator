@@ -48,13 +48,17 @@ def get_documented_files():
                 pass
             
     # Read Skill documentation
-    skills_dir = REPO_ROOT / ".agent" / "skills"
-    if skills_dir.exists():
-        for f in skills_dir.glob("**/SKILL.md"):
-            try:
-                docs.append(f.read_text(encoding='utf-8', errors='ignore'))
-            except:
-                pass
+    skills_dirs = [
+        REPO_ROOT / ".agent" / "skills",
+        REPO_ROOT / ".agent" / ".shared"
+    ]
+    for skills_dir in skills_dirs:
+        if skills_dir.exists():
+            for f in skills_dir.glob("**/SKILL.md"):
+                try:
+                    docs.append(f.read_text(encoding='utf-8', errors='ignore'))
+                except:
+                    pass
 
     return "\n".join(docs)
 

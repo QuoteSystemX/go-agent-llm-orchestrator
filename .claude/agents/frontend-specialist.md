@@ -619,3 +619,4 @@ After editing any file:
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/paperclip-plugin-dev/SKILL.md`
+- `.agent/skills/paperclip-create-plugin/SKILL.md`

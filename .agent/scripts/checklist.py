@@ -193,14 +193,55 @@ def main():
         print_error(f"Watchdog Schema: {msg}")
         results.append({"name": "Watchdog Schema", "passed": False})
 
-    # Core checks (simulated for now as we don't have all scripts in this dummy environment)
-    # In reality, this would call run_script like in the original checklist.py
-    
+    # Core checks execution
     print_header("📋 CORE CHECKS")
-    # ... logic from original checklist.py would go here ...
-    # For this task, we focus on the improvements made.
+    
+    overall_passed = True
+    for name, script_path, mandatory in CORE_CHECKS:
+        full_path = REPO_ROOT / script_path
+        if not full_path.exists():
+            print_warning(f"Skipping {name}: Script {script_path} not found.")
+            continue
+            
+        print_step(f"Running {name}...")
+        try:
+            # Run the script and capture output
+            result = subprocess.run(
+                [sys.executable, str(full_path)],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                print_success(f"{name} passed.")
+                results.append({"name": name, "passed": True})
+            else:
+                if mandatory:
+                    print_error(f"{name} failed!")
+                    print(result.stdout)
+                    print(result.stderr)
+                    overall_passed = False
+                else:
+                    print_warning(f"{name} failed (non-blocking).")
+                results.append({"name": name, "passed": False})
+                
+        except Exception as e:
+            print_error(f"Error running {name}: {e}")
+            if mandatory:
+                overall_passed = False
+            results.append({"name": name, "passed": False})
 
-    print_success("Checklist run finished (subset of checks implemented in this demo).")
+    print_header("🏁 FINAL STATUS")
+    for res in results:
+        status = f"{Colors.GREEN}PASS{Colors.ENDC}" if res["passed"] else f"{Colors.RED}FAIL{Colors.ENDC}"
+        print(f"| {res['name']:<25} | {status} |")
+    
+    if not overall_passed:
+        print_error("\nChecklist FAILED. Please fix the mandatory issues above.")
+        sys.exit(1)
+    else:
+        print_success("\nAll core checks passed! Ready to proceed.")
 
 if __name__ == "__main__":
     main()

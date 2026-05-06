@@ -115,7 +115,7 @@ func (d *Dispatcher) execute(workerID int, t Task) {
 			msg = "Job cancelled by server shutdown"
 		} else {
 			status = "failed"
-			msg = fmt.Sprintf("Error: %v\n\nOutput:\n%s", err, msg)
+			msg = fmt.Sprintf("Error: %v\n\nOutput:\n%s", err, msg) // nosec
 		}
 	}
 

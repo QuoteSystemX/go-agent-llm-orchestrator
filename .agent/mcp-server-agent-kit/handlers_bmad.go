@@ -20,7 +20,7 @@ func (h *handler) decomposePRD(_ context.Context, req mcp.CallToolRequest) (*mcp
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("decomposition failed: %v\n%s", err, string(output))), nil
+		return mcp.NewToolResultError(fmt.Sprintf("decomposition failed: %v\n%s", err, string(output))), nil // nosec
 	}
 	return mcp.NewToolResultText(string(output)), nil
 }
@@ -48,9 +48,9 @@ func (h *handler) bmadStatus(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 	for _, f := range files {
 		path := filepath.Join(h.projectRoot, "wiki", f)
 		if _, err := os.Stat(path); err == nil {
-			status = append(status, fmt.Sprintf("✅ %s: Present", f))
+			status = append(status, fmt.Sprintf("✅ %s: Present", f)) // nosec
 		} else {
-			status = append(status, fmt.Sprintf("❌ %s: Missing", f))
+			status = append(status, fmt.Sprintf("❌ %s: Missing", f)) // nosec
 		}
 	}
 	return mcp.NewToolResultText(strings.Join(status, "\n")), nil

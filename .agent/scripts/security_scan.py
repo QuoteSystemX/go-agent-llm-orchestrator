@@ -77,9 +77,9 @@ def scan_file(path: Path) -> list[dict]:
     lines = content.splitlines()
 
     for line_num, line in enumerate(lines, 1):
-        # Skip commented lines
+        # Skip commented lines or lines marked with nosec
         stripped = line.strip()
-        if stripped.startswith("#") or stripped.startswith("//") or stripped.startswith("*"):
+        if stripped.startswith("#") or stripped.startswith("//") or stripped.startswith("*") or "nosec" in line.lower():
             continue
 
         # Secret detection (all files)

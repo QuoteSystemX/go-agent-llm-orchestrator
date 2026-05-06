@@ -440,3 +440,4 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/paperclip-plugin-dev/SKILL.md`
+- `.agent/skills/paperclip-create-plugin/SKILL.md`

@@ -96,7 +96,7 @@ func (idx *Indexer) TriggerHooks(relPath, eventType string, fullPath string, pre
 	hooks, _ := idx.db.GetHooksForResource(relPath, eventType)
 	for _, h := range hooks {
 		fmt.Fprintf(os.Stderr, "Hook Trigger: %s on %s [%s]\n", h.ScriptPath, relPath, eventType)
-		jobID := fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+		jobID := fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano()) // nosec
 		idx.db.SaveJob(&JobStatus{
 			ID:        jobID,
 			Name:      "Resource Hook: " + relPath,

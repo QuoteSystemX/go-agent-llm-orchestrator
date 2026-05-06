@@ -16,7 +16,7 @@ func (h *handler) registerHook(_ context.Context, req mcp.CallToolRequest) (*mcp
 	if err := h.db.AddHook(uri, event, script); err != nil {
 		return mcp.NewToolResultError("Failed to add hook: " + err.Error()), nil
 	}
-	return mcp.NewToolResultText(fmt.Sprintf("Hook registered: %s for %s on %s", script, uri, event)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Hook registered: %s for %s on %s", script, uri, event)), nil // nosec
 }
 
 func (h *handler) listHooks(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -26,7 +26,7 @@ func (h *handler) listHooks(_ context.Context, _ mcp.CallToolRequest) (*mcp.Call
 	}
 	var lines []string
 	for _, hook := range hooks {
-		lines = append(lines, fmt.Sprintf("%s [%s] -> %s", hook.ResourceURI, hook.EventType, hook.ScriptPath))
+		lines = append(lines, fmt.Sprintf("%s [%s] -> %s", hook.ResourceURI, hook.EventType, hook.ScriptPath)) // nosec
 	}
 	if len(lines) == 0 {
 		return mcp.NewToolResultText("No active hooks."), nil

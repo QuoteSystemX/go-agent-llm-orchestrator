@@ -39,6 +39,12 @@ This document contains "hard-won" technical insights and project-specific gotcha
 - **Root Cause**: The detector's search space was too narrow, ignoring the primary documentation source for individual skills.
 - **Prevention**: Updated `drift_detector.py` to recursively include all `SKILL.md` files in `.agent/skills/` during the documentation sync check.
 
+### [2026-05-06] [DOCS] [drift-detector] Expanded scan to .agent/.shared/
+
+- **Context**: Documentation drift in shared UI components (`ui-ux-pro-max`) was not being detected correctly.
+- **Root Cause**: `drift_detector.py` search path was hardcoded to `.agent/skills/`, missing components in `.agent/.shared/`.
+- **Prevention**: Updated `drift_detector.py` to scan both `skills/` and `.shared/` directories for `SKILL.md` files. Created missing `SKILL.md` for shared components.
+
 ---
 
 ## How to add a lesson:

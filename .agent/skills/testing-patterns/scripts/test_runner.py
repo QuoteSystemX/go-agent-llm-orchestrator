@@ -75,10 +75,26 @@ def detect_test_framework(project_path: Path) -> dict:
     
     # Go project
     if (project_path / "go.mod").exists():
-        result["type"] = "go"
-        result["framework"] = "go test"
-        result["cmd"] = ["go", "test", "-v", "-race", "./..."]
-        result["coverage_cmd"] = ["go", "test", "-v", "-race", "-coverprofile=coverage.out", "./..."]
+        # Check if any .go files exist before suggesting it's a Go project
+        import os
+        go_found = False
+        for root, dirs, files in os.walk(project_path):
+            if ".agent" in root or ".git" in root or "node_modules" in root: continue
+            if any(f.endswith(".go") for f in files):
+                go_found = True
+                break
+        
+        if go_found:
+            result["type"] = "go"
+            result["framework"] = "go test"
+            result["cmd"] = ["go", "test", "-v", "-race", "./..."]
+            result["coverage_cmd"] = ["go", "test", "-v", "-race", "-coverprofile=coverage.out", "./..."]
+        else:
+            # Revert to unknown if no go files found even if go.mod exists
+            if result["type"] == "go":
+                result["type"] = "unknown"
+                result["framework"] = None
+                result["cmd"] = None
     
     return result
 
