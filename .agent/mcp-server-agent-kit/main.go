@@ -305,15 +305,31 @@ func main() {
 
 		http.Handle("/mcp", server.NewSSEServer(s))
 		
-		// SSE log streaming (simulated)
+		// SSE log streaming — tail audit.log
+		auditLogPath := filepath.Join(h.projectRoot, "audit.log")
 		http.HandleFunc("/logs/stream", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
 			w.Header().Set("Connection", "keep-alive")
-			for i := 0; i < 10; i++ {
-				fmt.Fprintf(w, "data: log message %d\n\n", i)
-				w.(http.Flusher).Flush()
-				time.Sleep(1 * time.Second)
+			flusher, ok := w.(http.Flusher)
+			if !ok {
+				http.Error(w, "streaming not supported", http.StatusInternalServerError)
+				return
+			}
+			data, err := os.ReadFile(auditLogPath)
+			if err != nil {
+				fmt.Fprintf(w, "data: audit.log not found\n\n")
+				flusher.Flush()
+				return
+			}
+			lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+			start := len(lines) - 100
+			if start < 0 {
+				start = 0
+			}
+			for _, line := range lines[start:] {
+				fmt.Fprintf(w, "data: %s\n\n", line)
+				flusher.Flush()
 			}
 		})
 

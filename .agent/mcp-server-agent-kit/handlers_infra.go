@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func (h *handler) healthFix(_ context.Context, _ mcp.CallToolRequest) (*mcp.Call
 func (h *handler) systemInfo(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	branch, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	info := fmt.Sprintf("OS: %s\nArch: %s\nBranch: %s\nRoot: %s", // nosec
-		os.Getenv("OS"), os.Getenv("PROCESSOR_ARCHITECTURE"), strings.TrimSpace(string(branch)), h.projectRoot)
+		runtime.GOOS, runtime.GOARCH, strings.TrimSpace(string(branch)), h.projectRoot)
 	return mcp.NewToolResultText(info), nil
 }
 

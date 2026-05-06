@@ -29,13 +29,14 @@ func (h *handler) getGraph(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallT
 	// Simple graph generation from file structure (recursive)
 	var sb strings.Builder
 	sb.WriteString("graph TD\n")
-	
+	nodeID := 0
 	filepath.Walk(h.projectRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".md") {
 			return nil
 		}
 		rel, _ := filepath.Rel(h.projectRoot, path)
-		sb.WriteString(fmt.Sprintf("  Node%d[\"%s\"]\n", len(rel), rel))
+		sb.WriteString(fmt.Sprintf("  Node%d[\"%s\"]\n", nodeID, rel))
+		nodeID++
 		return nil
 	})
 	

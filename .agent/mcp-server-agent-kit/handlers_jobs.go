@@ -11,13 +11,33 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (h *handler) runWorkflow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *handler) runWorkflow(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name, _ := req.RequireString("name")
 	argsStr, _ := req.RequireString("arguments")
-	
+
+	// Strip script extensions sent by the plugin UI (e.g. "reviewer.py" → "reviewer").
+	for _, ext := range []string{".py", ".sh", ".js"} {
+		name = strings.TrimSuffix(name, ext)
+	}
+	name = sanitizeString(name)
+
+	// Security: only allow names that correspond to a known workflow .md file.
+	workflowMD := filepath.Join(h.projectRoot, ".agent", "workflows", name+".md")
+	if _, err := os.Stat(workflowMD); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("workflow %q not found in .agent/workflows/", name)), nil
+	}
+
+	// Resolve associated Python script in .agent/scripts/.
+	scriptPath := filepath.Join(h.projectRoot, ".agent", "scripts", name+".py")
+	if _, err := os.Stat(scriptPath); err != nil {
+		return mcp.NewToolResultText(fmt.Sprintf(
+			`{"status":"instructions_only","workflow":%q,"note":"no executable script; use knowledge_read to load workflow instructions"}`,
+			name,
+		)), nil
+	}
+
 	jobID := fmt.Sprintf("WORKFLOW-%d", time.Now().UnixNano())
-	
-	// Register job in DB
+
 	err := h.db.SaveJob(&JobStatus{
 		ID:        jobID,
 		Name:      "Workflow: " + name,
@@ -28,26 +48,41 @@ func (h *handler) runWorkflow(ctx context.Context, req mcp.CallToolRequest) (*mc
 		return nil, err
 	}
 
-	// Submit to worker pool
-	h.dispatcher.Submit(Task{
-		JobID:   jobID,
-		Command: filepath.Join(h.projectRoot, ".agent", "scripts", name),
-		Args:    strings.Split(argsStr, " "),
-	})
+	var extraArgs []string
+	if argsStr != "" {
+		extraArgs = strings.Fields(argsStr)
+	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Workflow %s initiated. Job ID: %s", name, jobID)), nil // nosec
+	if err := h.dispatcher.Submit(Task{ // nosec
+		JobID:   jobID,
+		Command: "python3",
+		Args:    append([]string{scriptPath}, extraArgs...),
+		Dir:     h.projectRoot,
+	}); err != nil {
+		h.finishJob(jobID, "failed")
+		return mcp.NewToolResultError(fmt.Sprintf("failed to queue workflow %q: %v", name, err)), nil
+	}
+
+	return mcp.NewToolResultText(fmt.Sprintf(`{"job_id":%q,"status":"running","workflow":%q}`, jobID, name)), nil // nosec
 }
 
 func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	scriptsDir := filepath.Join(h.projectRoot, ".agent", "scripts")
-	entries, err := os.ReadDir(scriptsDir)
+	workflowsDir := filepath.Join(h.projectRoot, ".agent", "workflows")
+	entries, err := os.ReadDir(workflowsDir)
 	if err != nil {
-		return nil, err
+		return mcp.NewToolResultError("cannot read .agent/workflows/: " + err.Error()), nil
 	}
 	var workflows []string
 	for _, e := range entries {
-		if !e.IsDir() && (strings.HasSuffix(e.Name(), ".sh") || strings.HasSuffix(e.Name(), ".py")) {
-			workflows = append(workflows, e.Name())
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".md") {
+			name := strings.TrimSuffix(e.Name(), ".md")
+			// Mark workflows that have an associated executable script.
+			scriptPath := filepath.Join(h.projectRoot, ".agent", "scripts", name+".py")
+			marker := " [instructions-only]"
+			if _, err := os.Stat(scriptPath); err == nil {
+				marker = " [executable]"
+			}
+			workflows = append(workflows, name+marker)
 		}
 	}
 	return mcp.NewToolResultText(strings.Join(workflows, "\n")), nil
@@ -86,14 +121,16 @@ func (h *handler) submitTask(_ context.Context, req mcp.CallToolRequest) (*mcp.C
 
 	agent = sanitizeString(agent)
 
-	// Generate task file in tasks/
-	filename := fmt.Sprintf("TASK-%d-%s.md", os.Getpid(), agent) // nosec
-	content := fmt.Sprintf("# %s\n\nAgent: %s\n\n%s", title, agent, description) // nosec
-	
-	path := filepath.Join(h.projectRoot, "tasks", filename)
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	filename := fmt.Sprintf("%s-%s-%d.md", time.Now().Format("2006-01-02"), agent, time.Now().UnixNano()%1e9) // nosec
+	content := fmt.Sprintf("# %s\n\nAgent: %s\n\n%s\n", title, agent, description) // nosec
+
+	tasksDir := filepath.Join(h.projectRoot, "tasks")
+	if err := os.MkdirAll(tasksDir, 0o755); err != nil {
+		return mcp.NewToolResultError("failed to create tasks directory: " + err.Error()), nil
+	}
+	if err := os.WriteFile(filepath.Join(tasksDir, filename), []byte(content), 0o644); err != nil { // nosec
 		return mcp.NewToolResultError("failed to write task: " + err.Error()), nil
 	}
-	
+
 	return mcp.NewToolResultText("Task submitted: " + filename), nil
 }

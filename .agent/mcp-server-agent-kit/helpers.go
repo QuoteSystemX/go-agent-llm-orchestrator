@@ -49,7 +49,7 @@ func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult,
 		if isDir && e.IsDir() {
 			names = append(names, e.Name())
 		} else if !isDir && !e.IsDir() {
-			names = append(names, e.Name())
+			names = append(names, strings.TrimSuffix(e.Name(), ".md"))
 		}
 	}
 	return mcp.NewToolResultText(strings.Join(names, "\n")), nil

@@ -93,8 +93,15 @@ func (d *Dispatcher) worker(id int) {
 }
 
 func (d *Dispatcher) execute(workerID int, t Task) {
+	defer func() {
+		if r := recover(); r != nil {
+			d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, progress = 100, completed_at = ? WHERE id = ?",
+				"failed", fmt.Sprintf("panic: %v", r), time.Now(), t.JobID)
+			fmt.Fprintf(os.Stderr, "Worker %d recovered from panic for job %s: %v\n", workerID, t.JobID, r)
+		}
+	}()
 	// Update status to running
-	d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, started_at = ? WHERE id = ?", 
+	d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, started_at = ? WHERE id = ?",
 		"running", fmt.Sprintf("Started by worker %d", workerID), time.Now(), t.JobID)
 
 	cmd := exec.CommandContext(d.ctx, t.Command, t.Args...)

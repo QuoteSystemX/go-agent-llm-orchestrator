@@ -52,9 +52,9 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 	if name == "KNOWLEDGE" {
 		path = filepath.Join(h.projectRoot, ".agent", "KNOWLEDGE.md")
 	} else if name == "ARCHITECTURE" {
-		path = filepath.Join(h.projectRoot, "wiki", "ARCHITECTURE.md")
+		path = filepath.Join(h.projectRoot, ".agent", "ARCHITECTURE.md")
 	} else {
-		return mcp.NewToolResultError("unknown knowledge artifact"), nil
+		return mcp.NewToolResultError("unknown knowledge artifact; valid values: KNOWLEDGE, ARCHITECTURE"), nil
 	}
 	return h.loadItem(path)
 }
