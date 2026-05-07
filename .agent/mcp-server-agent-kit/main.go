@@ -244,6 +244,10 @@ func main() {
 	), withRBAC("jobs_status", h.getJobStatus))
 	
 	s.AddTool(mcp.NewTool("workflows_list", mcp.WithDescription("List available automation workflows.")), withRBAC("workflows_list", h.listWorkflows))
+	s.AddTool(mcp.NewTool("workflows_load",
+		mcp.WithDescription("Read the documentation for a specific workflow."),
+		mcp.WithString("name", mcp.Required(), mcp.Description("Workflow name")),
+	), withRBAC("workflows_load", h.readWorkflowDoc))
 	s.AddTool(mcp.NewTool("workflows_run",
 		mcp.WithDescription("Execute a workflow safely."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Workflow name")),
