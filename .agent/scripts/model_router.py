@@ -36,12 +36,14 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
 
 try:
-    from lib.paths import RULES_FILE, TELEMETRY_PATH, LESSONS_PATH
+    from lib.paths import ROUTER_RULES_PATH as RULES_FILE, TELEMETRY_PATH, LESSONS_PATH
     from lib.common import load_json_safe
+    import bus_manager
 except ImportError:
     RULES_FILE = REPO_ROOT / ".agent" / "config" / "router_rules.json"
     TELEMETRY_PATH = REPO_ROOT / ".agent" / "bus" / "telemetry.json"
-    LESSONS_PATH = REPO_ROOT / "wiki" / "KNOWLEDGE.md"
+    LESSONS_PATH = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
+    bus_manager = None
     def load_json_safe(path):
         if not Path(path).exists(): return {}
         try:
@@ -71,8 +73,22 @@ def log_routing_event(task, score, tier, model_id):
             
         with open(TELEMETRY_PATH, 'w') as f:
             json.dump(telemetry, f, indent=2)
+            
+        # Push to Context Bus for cross-agent visibility (ADR-006)
+        if bus_manager:
+            try:
+                event_id = f"route-{int(datetime.now().timestamp())}"
+                bus_manager.push(
+                    obj_id=event_id,
+                    obj_type="routing_event",
+                    author="model-router",
+                    content_str=json.dumps(event)
+                )
+            except Exception as e:
+                # Don't fail the whole routing if bus is busy
+                print(f"⚠️ Bus push failed: {e}", file=sys.stderr)
     except Exception as e:
-        print(f"⚠️ Telemetry log failed: {e}")
+        print(f"⚠️ Telemetry log failed: {e}", file=sys.stderr)
 
 def check_ollama_health(base_url: str, timeout_ms: int = 1500) -> bool:
     """Ping Ollama's /api/tags endpoint to verify it's running locally."""

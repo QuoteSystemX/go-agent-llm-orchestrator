@@ -22,4 +22,5 @@ RULES_DIR = AGENT_DIR / "rules"
 # Common file paths
 TELEMETRY_PATH = BUS_DIR / "telemetry.json"
 WATCHDOG_RULES_PATH = CONFIG_DIR / "watchdog_rules.json"
+ROUTER_RULES_PATH = CONFIG_DIR / "router_rules.json"
 LESSONS_PATH = RULES_DIR / "LESSONS_LEARNED.md"

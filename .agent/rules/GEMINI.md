@@ -63,6 +63,20 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 2.  **Validation**: Run `cat response.md | bin/output-bridge`.
 3.  **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
 
+### 🧠 HYBRID ROUTING PROTOCOL (MANDATORY)
+
+**Before executing ANY sub-task or delegation, the agent MUST:**
+
+1. **Call the Router**: Run `python3 .agent/scripts/model_router.py "<task_description>" --json`.
+2. **Respect the Decision**: 
+   - If `provider == "ollama"`, use local models via MCP/Ollama.
+   - If `provider == "antigravity"`, stay in cloud.
+3. **Context Bus Check**: Check `.agent/bus/` for recent `routing_event` objects to maintain consistency across the session.
+
+*Rationale: This ensures optimal cost/performance balance and enables the self-learning loop via router_trainer.py.*
+
+---
+
 **Mandatory Structure:**
 - 🤖 **Agent Header**: specialist-name
 - 🎯 **Context/Goal**: Brief description

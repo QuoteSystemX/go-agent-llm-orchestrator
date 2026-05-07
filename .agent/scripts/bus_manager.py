@@ -22,7 +22,7 @@ BUS_FILE = BUS_DIR / "context.json"
 VALID_TYPES = [
     "requirement", "api_spec", "code_chunk",
     "verification_result", "memory_note", "state_snapshot",
-    "telemetry", "proposed_fix", "incident",
+    "telemetry", "proposed_fix", "incident", "routing_event",
 ]
 
 def _check_telemetry_limits(content: dict):
@@ -36,9 +36,9 @@ def _check_telemetry_limits(content: dict):
     cost = content.get("total_cost_usd", 0)
 
     if tokens > limits.get("token_budget_per_task", 100000):
-        print(f"\n⚠️  BUS ALERT: Telemetry indicates budget breach! Tokens: {tokens}")
+        print(f"\n⚠️  BUS ALERT: Telemetry indicates budget breach! Tokens: {tokens}", file=sys.stderr)
     if cost > limits.get("cost_limit_per_task_usd", 2.0):
-        print(f"\n⚠️  BUS ALERT: Telemetry indicates budget breach! Cost: ${cost:.2f}")
+        print(f"\n⚠️  BUS ALERT: Telemetry indicates budget breach! Cost: ${cost:.2f}", file=sys.stderr)
 
 def push(obj_id: str, obj_type: str, author: str, content_str: str,
          metadata: Optional[str] = None) -> None:
@@ -82,7 +82,7 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
 
     data["objects"].append(new_obj)
     save_json_atomic(BUS_FILE, data)
-    print(f"✅ Pushed '{obj_id}' ({obj_type}) by {author}.")
+    print(f"✅ Pushed '{obj_id}' ({obj_type}) by {author}.", file=sys.stderr)
 
 def pull(obj_id: str) -> None:
     """Pull an object from the bus and print as JSON."""
