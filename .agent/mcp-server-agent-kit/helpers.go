@@ -9,6 +9,11 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	// Keep AWS SDK dependencies for S3 backups
+	_ "github.com/aws/aws-sdk-go-v2/aws"
+	_ "github.com/aws/aws-sdk-go-v2/config"
+	_ "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func (h *handler) updateJob(id string, progress int, message string) {
@@ -53,4 +58,31 @@ func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult,
 		}
 	}
 	return mcp.NewToolResultText(strings.Join(names, "\n")), nil
+}
+
+func parseFrontmatter(content string) map[string]string {
+	meta := make(map[string]string)
+	// Match YAML-style frontmatter or simple markdown headers
+	re := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---`)
+	match := re.FindStringSubmatch(content)
+	if len(match) > 1 {
+		lines := strings.Split(match[1], "\n")
+		for _, line := range lines {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				// Strip quotes if present
+				val = strings.Trim(val, `"'`)
+				meta[key] = val
+			}
+		}
+	} else {
+		// Fallback: extract first H1 as name and first paragraph as description
+		h1Re := regexp.MustCompile(`(?m)^#\s+(.+)$`)
+		if h1Match := h1Re.FindStringSubmatch(content); len(h1Match) > 1 {
+			meta["name"] = h1Match[1]
+		}
+	}
+	return meta
 }

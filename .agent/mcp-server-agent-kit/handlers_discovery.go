@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -11,7 +12,37 @@ import (
 )
 
 func (h *handler) listSkills(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	return h.listItemsHelper(filepath.Join(h.projectRoot, ".agent", "skills"), true)
+	skillsDir := filepath.Join(h.projectRoot, ".agent", "skills")
+	entries, err := os.ReadDir(skillsDir)
+	if err != nil {
+		return mcp.NewToolResultError("cannot read skills directory: " + err.Error()), nil
+	}
+
+	var infos []RegistryInfo
+	for _, e := range entries {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		id := e.Name()
+		skillMD := filepath.Join(skillsDir, id, "SKILL.md")
+		content, _ := os.ReadFile(skillMD)
+		meta := parseFrontmatter(string(content))
+
+		name := meta["name"]
+		if name == "" {
+			name = strings.Title(strings.ReplaceAll(id, "-", " "))
+		}
+
+		infos = append(infos, RegistryInfo{
+			ID:          id,
+			Name:        name,
+			Description: meta["description"],
+			Type:        "skill",
+		})
+	}
+
+	jsonData, _ := json.Marshal(infos)
+	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
 func (h *handler) loadSkill(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -21,17 +52,32 @@ func (h *handler) loadSkill(_ context.Context, req mcp.CallToolRequest) (*mcp.Ca
 
 func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	agentsRoot := filepath.Join(h.projectRoot, ".agent", "agents")
-	var names []string
-	_ = filepath.WalkDir(agentsRoot, func(_ string, d fs.DirEntry, err error) error {
+	var infos []RegistryInfo
+	_ = filepath.WalkDir(agentsRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || strings.HasPrefix(d.Name(), ".") {
 			return nil
 		}
 		if strings.HasSuffix(d.Name(), ".md") {
-			names = append(names, strings.TrimSuffix(d.Name(), ".md"))
+			id := strings.TrimSuffix(d.Name(), ".md")
+			content, _ := os.ReadFile(path)
+			meta := parseFrontmatter(string(content))
+
+			name := meta["name"]
+			if name == "" {
+				name = strings.Title(strings.ReplaceAll(id, "-", " "))
+			}
+
+			infos = append(infos, RegistryInfo{
+				ID:          id,
+				Name:        name,
+				Description: meta["description"],
+				Type:        "agent",
+			})
 		}
 		return nil
 	})
-	return mcp.NewToolResultText(strings.Join(names, "\n")), nil
+	jsonData, _ := json.Marshal(infos)
+	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
 func (h *handler) loadAgent(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

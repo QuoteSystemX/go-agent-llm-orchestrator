@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -66,26 +68,94 @@ func (h *handler) runWorkflow(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	return mcp.NewToolResultText(fmt.Sprintf(`{"job_id":%q,"status":"running","workflow":%q}`, jobID, name)), nil // nosec
 }
 
+func (h *handler) readWorkflowDoc(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name, _ := req.RequireString("name")
+	name = sanitizeString(name)
+	workflowMD := filepath.Join(h.projectRoot, ".agent", "workflows", name+".md")
+	content, err := os.ReadFile(workflowMD)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("workflow %q not found", name)), nil
+	}
+	return mcp.NewToolResultText(string(content)), nil
+}
+
 func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	workflowsDir := filepath.Join(h.projectRoot, ".agent", "workflows")
 	entries, err := os.ReadDir(workflowsDir)
 	if err != nil {
 		return mcp.NewToolResultError("cannot read .agent/workflows/: " + err.Error()), nil
 	}
-	var workflows []string
+	var workflows []WorkflowInfo
 	for _, e := range entries {
 		if !e.IsDir() && strings.HasSuffix(e.Name(), ".md") {
-			name := strings.TrimSuffix(e.Name(), ".md")
+			id := strings.TrimSuffix(e.Name(), ".md")
+			fullPath := filepath.Join(workflowsDir, e.Name())
+
+			info := h.parseWorkflowInfo(id, fullPath)
+
 			// Mark workflows that have an associated executable script.
-			scriptPath := filepath.Join(h.projectRoot, ".agent", "scripts", name+".py")
-			marker := " [instructions-only]"
+			scriptPath := filepath.Join(h.projectRoot, ".agent", "scripts", id+".py")
 			if _, err := os.Stat(scriptPath); err == nil {
-				marker = " [executable]"
+				info.Executable = true
 			}
-			workflows = append(workflows, name+marker)
+
+			workflows = append(workflows, info)
 		}
 	}
-	return mcp.NewToolResultText(strings.Join(workflows, "\n")), nil
+
+	data, err := json.MarshalIndent(workflows, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError("failed to marshal workflows: " + err.Error()), nil
+	}
+
+	return mcp.NewToolResultText(string(data)), nil
+}
+
+func (h *handler) parseWorkflowInfo(id, path string) WorkflowInfo {
+	info := WorkflowInfo{
+		ID:          id,
+		Name:        strings.Title(strings.ReplaceAll(id, "-", " ")), // fallback
+		Description: "No description provided.",                     // fallback
+		Phase:       "utility",                                       // fallback
+		Args:        ".",                                             // fallback
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return info
+	}
+
+	// Simple frontmatter parser
+	re := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---\s*`)
+	match := re.FindStringSubmatch(string(content))
+	if len(match) < 2 {
+		return info
+	}
+
+	lines := strings.Split(match[1], "\n")
+	for _, line := range lines {
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		// Remove quotes if present
+		val = strings.Trim(val, `"'`)
+
+		switch key {
+		case "name":
+			info.Name = val
+		case "description":
+			info.Description = val
+		case "phase":
+			info.Phase = val
+		case "args":
+			info.Args = val
+		}
+	}
+
+	return info
 }
 
 func (h *handler) listJobs(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {

@@ -22,3 +22,19 @@ type CouncilProposal struct {
 	CommandType string    `json:"commandType"`
 	CommandData string    `json:"commandData"`
 }
+
+type WorkflowInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Phase       string `json:"phase"`
+	Args        string `json:"args"`
+	Executable  bool   `json:"executable"`
+}
+
+type RegistryInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"` // agent, skill
+}
