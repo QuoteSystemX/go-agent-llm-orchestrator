@@ -97,25 +97,24 @@
   ],
   "models": {
     "ollama": {
-      "L1": "qwen3.6-coder:7b",
+      "L1": "qwen2.5-coder:7b",
       "L1_alt": [
-        "llama4-nano:8b",
-        "gemma4:9b"
+        "qwen2.5-coder:3b",
+        "deepseek-r1:8b"
       ],
-      "L2": "qwen3.6-coder:14b",
+      "L2": "qwen2.5-coder:14b",
       "L2_alt": [
-        "deepseek-v4-coder:16b",
-        "devstral-lite:16b"
+        "deepseek-r1:14b",
+        "gemma3:12b"
       ],
-      "L3": "devstral:24b",
+      "L3": "qwen2.5-coder:32b",
       "L3_alt": [
-        "llama4-scout:24b",
-        "qwen3.6-coder:27b"
+        "deepseek-r1:32b",
+        "qwen3:30b"
       ],
-      "L4": "qwen3.6-coder:27b",
+      "L4": "qwen2.5-coder:32b",
       "L4_alt": [
-        "llama4-scout:24b",
-        "deepseek-v4-flash"
+        "deepseek-r1:32b"
       ]
     },
     "antigravity": {
@@ -136,16 +135,15 @@
   },
   "model_quality_scores": {
     "_comment": "ELO-style quality score (higher = better). Based on public benchmarks 2025-2026. Used to pick best available model from _alt list when primary is unavailable.",
-    "qwen3.6-coder:7b": 65,
-    "llama4-nano:8b": 62,
-    "gemma4:9b": 60,
-    "qwen3.6-coder:14b": 80,
-    "deepseek-v4-coder:16b": 79,
-    "devstral-lite:16b": 76,
-    "devstral:24b": 88,
-    "llama4-scout:24b": 89,
-    "qwen3.6-coder:27b": 92,
-    "deepseek-v4-flash": 91,
+    "qwen2.5-coder:7b": 65,
+    "deepseek-r1:8b": 63,
+    "qwen2.5-coder:3b": 60,
+    "qwen2.5-coder:14b": 80,
+    "deepseek-r1:14b": 79,
+    "gemma3:12b": 75,
+    "qwen2.5-coder:32b": 92,
+    "deepseek-r1:32b": 91,
+    "qwen3:30b": 88,
     "gemini-3-flash": 60,
     "gemini-3.1-pro-low": 75,
     "gemini-3.1-pro-high": 88,
