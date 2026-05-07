@@ -97,10 +97,10 @@
   ],
   "models": {
     "ollama": {
-      "L1": "qwen2.5-coder:7b",
+      "L1": "codestral:22b",
       "L1_alt": [
-        "qwen2.5-coder:3b",
-        "deepseek-r1:8b"
+        "deepseek-r1:8b",
+        "gemma2:9b"
       ],
       "L2": "qwen2.5-coder:14b",
       "L2_alt": [
@@ -110,11 +110,12 @@
       "L3": "qwen2.5-coder:32b",
       "L3_alt": [
         "deepseek-r1:32b",
-        "qwen3:30b"
+        "qwen3-coder:30b"
       ],
       "L4": "qwen2.5-coder:32b",
       "L4_alt": [
-        "deepseek-r1:32b"
+        "deepseek-r1:32b",
+        "qwen3-coder:30b"
       ]
     },
     "antigravity": {
@@ -137,7 +138,7 @@
     "_comment": "ELO-style quality score (higher = better). Based on public benchmarks 2025-2026. Used to pick best available model from _alt list when primary is unavailable.",
     "qwen2.5-coder:7b": 65,
     "deepseek-r1:8b": 63,
-    "qwen2.5-coder:3b": 60,
+    "gemma2:9b": 62,
     "qwen2.5-coder:14b": 80,
     "deepseek-r1:14b": 79,
     "gemma3:12b": 75,
