@@ -22,14 +22,7 @@
     }
   },
   "domain_affinity": {
-    "go": "antigravity",
-    "kubernetes": "antigravity",
-    "helm": "antigravity",
     "context-heavy": "antigravity",
-    "typescript": "antigravity",
-    "react": "antigravity",
-    "tailwind": "antigravity",
-    "css": "antigravity",
     "logic-heavy": "antigravity"
   },
   "rules": [
