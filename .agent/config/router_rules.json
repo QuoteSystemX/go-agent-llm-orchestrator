@@ -97,25 +97,25 @@
   ],
   "models": {
     "ollama": {
-      "L1": "qwen3:4b",
+      "L1": "qwen3.6-coder:7b",
       "L1_alt": [
-        "qwen3:1.7b",
-        "gemma3:4b"
+        "llama4-nano:8b",
+        "gemma4:9b"
       ],
-      "L2": "qwen3:14b",
+      "L2": "qwen3.6-coder:14b",
       "L2_alt": [
-        "deepseek-coder-v2:16b",
-        "gpt-oss-20b"
+        "deepseek-v4-coder:16b",
+        "devstral-lite:16b"
       ],
       "L3": "devstral:24b",
       "L3_alt": [
-        "qwen3:30b-a3b",
-        "deepseek-r1:32b"
+        "llama4-scout:24b",
+        "qwen3.6-coder:27b"
       ],
-      "L4": "qwen3-coder:30b-a3b",
+      "L4": "qwen3.6-coder:27b",
       "L4_alt": [
-        "qwen2.5-coder:32b",
-        "deepseek-r1:32b"
+        "llama4-scout:24b",
+        "deepseek-v4-flash"
       ]
     },
     "antigravity": {
@@ -131,24 +131,21 @@
     "cloud_fallback_provider": "antigravity",
     "ollama_base_url": "http://localhost:11434",
     "ollama_health_timeout_ms": 1500,
-    "cloud_on_tiers": [
-      "L4"
-    ],
-    "comment": "L1-L3 go to local Ollama. L4 always goes to cloud. If Ollama is unreachable, all tiers fall back to cloud."
+    "cloud_on_tiers": [],
+    "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud."
   },
   "model_quality_scores": {
     "_comment": "ELO-style quality score (higher = better). Based on public benchmarks 2025-2026. Used to pick best available model from _alt list when primary is unavailable.",
-    "qwen3:4b": 52,
-    "qwen3:1.7b": 40,
-    "gemma3:4b": 48,
-    "qwen3:14b": 71,
-    "deepseek-coder-v2:16b": 68,
-    "gpt-oss-20b": 65,
-    "devstral:24b": 82,
-    "qwen3:30b-a3b": 78,
-    "deepseek-r1:32b": 85,
-    "qwen3-coder:30b-a3b": 88,
-    "qwen2.5-coder:32b": 84,
+    "qwen3.6-coder:7b": 65,
+    "llama4-nano:8b": 62,
+    "gemma4:9b": 60,
+    "qwen3.6-coder:14b": 80,
+    "deepseek-v4-coder:16b": 79,
+    "devstral-lite:16b": 76,
+    "devstral:24b": 88,
+    "llama4-scout:24b": 89,
+    "qwen3.6-coder:27b": 92,
+    "deepseek-v4-flash": 91,
     "gemini-3-flash": 60,
     "gemini-3.1-pro-low": 75,
     "gemini-3.1-pro-high": 88,
