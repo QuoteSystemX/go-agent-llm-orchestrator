@@ -319,7 +319,7 @@ func main() {
 			fmt.Fprintf(w, `{"status":"ok","version":"%s"}`, serverVersion)
 		})
 
-		mcpHandler := loggingMiddleware(server.NewSSEServer(s))
+		mcpHandler := loggingMiddleware(server.NewStreamableHTTPServer(s, server.WithStateLess(true)))
 		http.Handle("/mcp", mcpHandler)
 		http.Handle("/mcp/", mcpHandler)
 		
