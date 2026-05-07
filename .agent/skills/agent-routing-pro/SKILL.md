@@ -55,11 +55,12 @@ Build the execution sequence.
 - **Example 2**: New feature -> `🤖 Flow: [L3 -> L2]`
 - **Example 3**: Prod DB migration -> `🤖 Flow: [L3 -> L2 -> L4]`
 
-### 3. Reporting (Memory-Augmented)
-Every response MUST start with:
-`🤖 Flow: [Levels]`
-`🧠 Model: [Provider] -> [Selected Model]`
-`📈 History: [Summary of found lessons or "None"]`
+Every response MUST start with the Flow plaque:
+- **L1**: `🤖 Flow: [L1]`
+- **L2+**:
+  `🤖 Flow: [Levels]`
+  `🧠 Model: [Provider] -> [Selected Model]`
+  `📈 History: [Summary of found lessons or "None"]`
 
 ---
 

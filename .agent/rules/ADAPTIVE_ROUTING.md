@@ -60,8 +60,10 @@ Triggered for high-risk operations or final security audits.
 
 ## 🛠 FLOW CONSTRUCTION
 
-The system will report the selected Flow at the start of every complex response:
-`🤖 Flow: [L3 -> L2 -> L4]`
+The system will report the selected Flow at the start of every response:
+
+- **L1 (Sprint)**: `🤖 Flow: [L1]`
+- **Complex (L2-L4)**: `🤖 Flow: [L3 -> L2 -> L4]` (including Model and History metadata)
 
 1. **Phase 1 (Strategy)**: Planning with L3.
 2. **Phase 2 (Action)**: Implementation with L2.

@@ -52,7 +52,9 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 1. **Analyze (Silent)**: Detect domains and complexity.
 2. **Build Flow**: Select Level (L1-L4) based on `.agent/rules/ADAPTIVE_ROUTING.md`.
-3. **Inform User**: Concisely state the Flow (e.g., `🤖 Flow: [L3 -> L2]`).
+3. **Inform User**: Concisely state the Flow at the start of EVERY response:
+   - L1: `🤖 Flow: [L1]`
+   - L2+: `🤖 Flow: [L3 -> L2]` (plus Model/History details)
 4. **Apply**: Generate response using the selected levels and agents.
 
 ## 📤 OUTPUT GATEWAY (MANDATORY)

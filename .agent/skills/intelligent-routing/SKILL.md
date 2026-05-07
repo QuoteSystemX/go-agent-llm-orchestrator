@@ -70,9 +70,17 @@ graph TD
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 
-## 4. Response Format
+### 4. Response Format
 
-**When auto-selecting an agent, inform the user concisely:**
+**Every response MUST start with the Flow plaque:**
+
+- **L1**: `🤖 Flow: [L1]`
+- **L2+**:
+  `🤖 Flow: [Levels]`
+  `🧠 Model: [Provider] -> [Selected Model]`
+  `📈 History: [Summary of found lessons or "None"]`
+
+**When auto-selecting an agent, also inform the user concisely:**
 
 ```markdown
 🤖 **Applying knowledge of `@security-auditor` + `@backend-specialist`...**
