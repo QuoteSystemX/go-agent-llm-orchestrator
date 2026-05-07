@@ -103,7 +103,7 @@ func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 		}
 	}
 
-	data, err := json.MarshalIndent(workflows, "", "  ")
+	data, err := json.Marshal(workflows)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal workflows: " + err.Error()), nil
 	}
