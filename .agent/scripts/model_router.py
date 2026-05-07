@@ -15,6 +15,21 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
+def resolve_env_var(value: str) -> str:
+    """Resolve environment variables in string like ${VAR:-default}."""
+    if not isinstance(value, str):
+        return value
+    
+    # Match ${VAR} or ${VAR:-default}
+    match = re.match(r"\$\{(?P<var>[^:-]+)(?::-(?P<default>.*))?\}", value)
+    if not match:
+        return value
+    
+    var_name = match.group("var")
+    default_val = match.group("default") or ""
+    
+    return os.environ.get(var_name, default_val)
+
 @dataclass
 class RoutingResult:
     """Routing decision returned by route()."""
@@ -293,7 +308,12 @@ def route(task_description, override_model=None):
     rules = load_json_safe(RULES_FILE)
 
     if override_model:
-        return override_model
+        return RoutingResult(
+            model_id=override_model,
+            tier="L2", # Default tier for manual override
+            provider="antigravity",
+            score=5
+        )
 
     # 1. Calculate Complexity Score
     score = calculate_score(task_description, rules)

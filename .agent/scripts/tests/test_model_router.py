@@ -8,7 +8,7 @@ from unittest.mock import patch
 from io import StringIO
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from model_router import route, resolve_env_var
+from model_router import route, resolve_env_var, RoutingResult
 
 
 class TestResolveEnvVar(unittest.TestCase):
@@ -32,15 +32,21 @@ class TestResolveEnvVar(unittest.TestCase):
 class TestRouteLogic(unittest.TestCase):
     @patch("model_router.RULES_FILE", Path("/nonexistent/path"))
     def test_no_rules_uses_default(self):
+        # When no rules file exists, it should still return a RoutingResult
+        # for Tier L2 (default score is 5)
         with patch("sys.stdout", new_callable=StringIO):
             result = route("some task")
-        self.assertEqual(result, "claude-sonnet-4-20250514")
+        self.assertIsInstance(result, RoutingResult)
+        self.assertEqual(result.tier, "L2")
+        self.assertEqual(result.provider, "antigravity")
 
     @patch("model_router.RULES_FILE", Path("/nonexistent/path"))
     def test_manual_override(self):
         with patch("sys.stdout", new_callable=StringIO):
             result = route("some task", override_model="my-model")
-        self.assertEqual(result, "my-model")
+        self.assertIsInstance(result, RoutingResult)
+        self.assertEqual(result.model_id, "my-model")
+        self.assertEqual(result.provider, "antigravity") # Default provider for override
 
 
 if __name__ == "__main__":
