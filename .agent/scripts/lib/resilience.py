@@ -2,25 +2,76 @@ import os
 import sys
 import json
 import subprocess
+import fnmatch
 import requests
+import urllib3
 import base64
 from typing import Dict, Any, Optional, Union
+
+# Path to network profiles config (relative to this file's location)
+_PROFILES_PATH = os.path.join(os.path.dirname(__file__), "../../config/network_profiles.json")
+
+def _is_wsl() -> bool:
+    """Detect if running inside WSL."""
+    try:
+        with open("/proc/version", "r") as f:
+            return "microsoft" in f.read().lower()
+    except Exception:
+        return False
+
+def _load_profiles() -> list:
+    """Load network profiles from config."""
+    path = os.path.abspath(_PROFILES_PATH)
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            return data.get("profiles", [])
+        except Exception:
+            pass
+    return []
+
+def _match_profile(host: str, profiles: list) -> Optional[Dict]:
+    """Find first matching profile for a given host."""
+    # Extract hostname from URL
+    hostname = host.replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+    for profile in profiles:
+        for pattern in profile.get("domain_patterns", []):
+            if fnmatch.fnmatch(hostname, pattern):
+                return profile
+    return None
 
 class ResilientSession:
     """
     Intelligent Resilience Chain for Networking (Optimized for WSL).
     Chain: Direct -> DNS Resolve via Gateway -> Headless Browser Bridge.
+    Auto-loads network profiles from .agent/config/network_profiles.json.
     """
-    def __init__(self, host: str, token: str = None, user: str = None, password: str = None, use_browser: bool = False):
+    def __init__(self, host: str, token: str = None, user: str = None, password: str = None, use_browser: bool = False, verify_ssl: bool = True):
         self.host = host.rstrip('/')
         self.token = token
         self.user = user
         self.password = password
         self.use_browser = use_browser
+        self.verify_ssl = verify_ssl
+        self.profile = None
+        self.is_wsl = _is_wsl()
         self.headers = {
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
+
+        # Auto-apply network profile if available
+        profiles = _load_profiles()
+        matched = _match_profile(self.host, profiles)
+        if matched:
+            self.profile = matched
+            self.verify_ssl = matched.get("verify_ssl", verify_ssl)
+            if not self.verify_ssl:
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            if self.is_wsl:
+                print(f"[Resilience] WSL detected. Profile '{matched['id']}' applied: verify_ssl={self.verify_ssl}", file=sys.stderr)
+
         self._setup_auth()
 
     def _setup_auth(self):
@@ -47,16 +98,29 @@ class ResilientSession:
             current_headers["Host"] = host_name
 
         try:
+            if not self.verify_ssl:
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
             auth = None
             if self.user and self.password and not self.token:
                 from requests.auth import HTTPBasicAuth
                 auth = HTTPBasicAuth(self.user, self.password)
 
-            response = requests.request(method, url, headers=current_headers, json=data, auth=auth, timeout=10)
+            response = requests.request(method, url, headers=current_headers, json=data, auth=auth, timeout=10, verify=self.verify_ssl)
             response.raise_for_status()
-            return response.json()
+            try:
+                return response.json()
+            except (ValueError, json.JSONDecodeError):
+                return {"raw": response.text, "status_code": response.status_code, "content_type": response.headers.get("content-type", "")}
         
         except requests.exceptions.RequestException as e:
+            # Auto-detect self-signed cert and retry with verify=False
+            is_ssl_error = isinstance(e, requests.exceptions.SSLError)
+            if is_ssl_error and self.verify_ssl:
+                print(f"[Resilience] SSL error detected (likely self-signed cert). Retrying with verify=False...", file=sys.stderr)
+                self.verify_ssl = False
+                return self.request(method, endpoint, data, retry_with_ip=retry_with_ip)
+
             # PHASE 2: Smart Resolution (Gateway DNS)
             is_auth_error = hasattr(e, 'response') and e.response is not None and e.response.status_code in [401, 403]
             is_conn_error = isinstance(e, (requests.exceptions.ConnectionError, requests.exceptions.Timeout))

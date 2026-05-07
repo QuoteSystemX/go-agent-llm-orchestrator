@@ -255,13 +255,34 @@ All Python-based tools making network requests MUST use the shared Resilience Li
 -   **Gateway DNS**: Automatically detects the WSL gateway and queries it for internal domains (`.lab`, `.me`, `.local`).
 -   **Headless Bridge**: Uses Chromium to bridge requests if the local network stack blocks standard `requests`.
 
-### 2. Manual Network Hacks (Bash/Go)
+### 2. Network Profiles (Auto-Detection)
+
+The file **`.agent/config/network_profiles.json`** contains domain-specific connection presets. `ResilientSession` loads this config automatically on init and pre-applies the correct `verify_ssl`, `preferred_method`, and `fallback_chain` — **no trial-and-error required**.
+
+**How it works:**
+1.  On `ResilientSession(host="https://paperclip.lab.me")`, the constructor reads `network_profiles.json`.
+2.  It matches the hostname against `domain_patterns` (glob-style: `*.lab.me`).
+3.  If matched, it applies the profile settings (e.g., `verify_ssl: false`) immediately.
+4.  If running in WSL (auto-detected via `/proc/version`), it logs the applied profile to stderr.
+
+**Adding a new service:**
+```json
+{
+  "id": "my-new-service",
+  "domain_patterns": ["myservice.lab.me"],
+  "verify_ssl": false,
+  "preferred_method": "direct",
+  "fallback_chain": ["direct", "gateway_dns"]
+}
+```
+
+### 3. Manual Network Hacks (Bash/Go)
 
 -   **Gateway Discovery**: `GW=$(ip route | grep default | awk '{print $3}')`
 -   **IP Pinning**: If DNS fails, use the direct IP (gateway or static) and force the `Host` header (e.g., `curl -H "Host: service.lab" http://<ip>`).
 -   **Browser Debugging**: Use `playwright` or `puppeteer` as a "proxy" for tools that cannot bypass WSL firewall/DNS restrictions directly.
 
-### 3. Browser & Web Interface Resilience
+### 4. Browser & Web Interface Resilience
 
 - **Standard**: Any script or agent requiring access to a web interface (Dashboard, UI, E2E tests) MUST use the **`bin/browser-bridge`** utility.
 - **Why**: Standardizes connection logic across WSL, Docker, and macOS. Handles CDP protocol errors and DNS leaks.
@@ -270,6 +291,11 @@ All Python-based tools making network requests MUST use the shared Resilience Li
     - **Python**: Use `ResilientSession` from `lib.resilience`.
     - **CLI**: Run `bin/browser-bridge --json` to get connection parameters.
 - **Error Handling**: If "Context management not supported" is encountered, fallback to using the existing browser context/page instead of creating a new one.
+
+#### ⚠️ UI Interaction in WSL (Agent Protocol)
+- **Direct MCP Tools (`mcp_browser_puppeteer_*`)**: ALWAYS prefer these tools. They execute on the host Windows machine, natively bypassing WSL's isolated network stack and DNS quirks.
+- **Self-Signed Certs**: If navigating to an internal domain (e.g., `*.lab.me`), the MCP browser might show a red "Not secure" screen. The agent must anticipate this if `allowDangerous: true` and `launchOptions: { args: ['--ignore-certificate-errors'] }` are not used.
+- **Forbidden Tool**: Do **NOT** use `browser_subagent` for UI tasks in this repository. The subagent attempts to spin up its own internal Chromium instance (via Playwright) *inside* the WSL/container sandbox, which fails to bind to CDP ports (e.g., `ECONNREFUSED 127.0.0.1:9222`).
 
 ### 4. Agent Output Gateway (Hard Standard)
 

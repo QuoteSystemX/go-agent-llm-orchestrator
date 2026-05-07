@@ -1,0 +1,50 @@
+{
+  "_doc": "Network connection profiles for ResilientSession. Auto-loaded on init.",
+  "_priority": "Profiles are matched top-to-bottom by domain pattern. First match wins.",
+
+  "environment_detection": {
+    "wsl": {
+      "detect": "grep -qi microsoft /proc/version 2>/dev/null",
+      "description": "Windows Subsystem for Linux — virtualized network stack, DNS issues common"
+    }
+  },
+
+  "profiles": [
+    {
+      "id": "paperclip-lab",
+      "description": "Paperclip platform on local lab network (self-signed ingress cert)",
+      "domain_patterns": ["*.lab.me", "paperclip.lab.me"],
+      "verify_ssl": false,
+      "preferred_method": "direct",
+      "fallback_chain": ["direct", "gateway_dns", "mcp_browser"],
+      "notes": "Ingress uses self-signed cert for ingress.local. Always skip TLS verification."
+    },
+    {
+      "id": "grafana-lab",
+      "description": "Grafana monitoring on local lab network",
+      "domain_patterns": ["grafana.lab.me", "*.monitoring.lab.me"],
+      "verify_ssl": false,
+      "preferred_method": "direct",
+      "fallback_chain": ["direct", "gateway_dns"],
+      "auth_hint": "Use GRAFANA_TOKEN env var or admin:admin default"
+    },
+    {
+      "id": "localhost-services",
+      "description": "Local development services (MCP servers, dev servers)",
+      "domain_patterns": ["localhost", "127.0.0.1", "0.0.0.0"],
+      "verify_ssl": false,
+      "preferred_method": "direct",
+      "fallback_chain": ["direct"],
+      "notes": "Direct connection always works for localhost from within WSL."
+    },
+    {
+      "id": "public-internet",
+      "description": "Any public HTTPS endpoint (GitHub, npm, etc.)",
+      "domain_patterns": ["*"],
+      "verify_ssl": true,
+      "preferred_method": "direct",
+      "fallback_chain": ["direct"],
+      "notes": "Standard TLS verification. No special handling needed."
+    }
+  ]
+}
