@@ -457,3 +457,7 @@ repos:
 | `terraform apply` without `plan -out` | CI always saves plan; humans always review |
 | Provider not pinned → silent upgrade | Pin with `~>` in `versions.tf` |
 | Workspace as poor man's environments | Separate directories instead |
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

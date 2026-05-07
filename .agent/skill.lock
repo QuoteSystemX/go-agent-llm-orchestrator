@@ -1,9 +1,10 @@
 # .agent/skill.lock
 # Auto-generated — commit this file to freeze embedded skill versions.
 # To update: python3 .agent/scripts/skill_versioning.py
-# Generated: 2026-04-26
+# Generated: 2026-05-07
 version: 1
 skills:
+  agent-routing-pro: 1.0.0
   api-patterns: 1.0.0
   app-builder: 1.0.0
   architecture: 1.0.0
@@ -12,6 +13,7 @@ skills:
   bmad-lifecycle: 1.0.0
   brainstorming: 1.0.0
   clean-code: 2.0
+  cloud-patterns: 1.0.0
   code-review-checklist: 1.0.0
   data-patterns: 1.0.0
   database-design: 1.0.0
@@ -23,6 +25,7 @@ skills:
   git-master: 1.0.0
   go-patterns: 1.0.0
   godoc-patterns: 1.0.0
+  grafana-dashboard-master: 1.0.0
   i18n-localization: 1.0.0
   intelligent-routing: 1.0.0
   k8s-patterns: 1.0.0
@@ -32,6 +35,9 @@ skills:
   mobile-design: 1.0.0
   nextjs-react-expert: 1.0.0
   nodejs-best-practices: 1.0.0
+  observability-patterns: 1.0.0
+  paperclip-create-plugin: 1.0.0
+  paperclip-plugin-dev: 1.0.0
   parallel-agents: 1.0.0
   performance-profiling: 1.0.0
   plan-writing: 1.0.0
@@ -42,12 +48,16 @@ skills:
   rust-pro: 1.0.0
   seo-fundamentals: 1.0.0
   server-management: 1.0.0
+  shared-context: 1.0.0
   systematic-debugging: 1.0.0
   tailwind-patterns: 1.0.0
   tdd-workflow: 1.0.0
+  telemetry: 1.0.0
+  terraform-patterns: 1.0.0
   testing-patterns: 1.0.0
   typescript-expert: 1.0.0
   vulnerability-scanner: 1.0.0
   web-design-guidelines: 1.0.0
   webapp-testing: 1.0.0
   wiki-writing: 1.0.0
+  wsl-interop: 1.0.0

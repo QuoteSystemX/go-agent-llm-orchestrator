@@ -495,3 +495,7 @@ func (s *awsSecrets) Get(ctx context.Context, name string) (string, error) {
 | CloudFront without WAF | Add `aws_wafv2_web_acl_association` for public APIs |
 | Spot without fallback | Always configure mixed instance types / capacity types |
 | KMS key without rotation | `enable_key_rotation = true` on every CMK |
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

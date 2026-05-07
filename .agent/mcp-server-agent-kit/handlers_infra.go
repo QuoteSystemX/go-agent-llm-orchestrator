@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -88,18 +89,24 @@ func (h *handler) backupS3(ctx context.Context, req mcp.CallToolRequest) (*mcp.C
 	bucket, _ := req.RequireString("bucket")
 	endpoint, _ := req.RequireString("endpoint")
 	
-	// Open DB file for reading
 	dbPath := filepath.Join(h.projectRoot, ".agent", "mcp_server.db")
-	f, err := os.Open(dbPath)
-	if err != nil {
-		return mcp.NewToolResultError("failed to open db for backup: " + err.Error()), nil
-	}
-	defer f.Close()
+	s3Path := "s3://" + bucket + "/backups/mcp_server_" + strconv.FormatInt(time.Now().Unix(), 10) + ".db"
 
-	// Logic for S3 upload would go here (using AWS SDK)
-	fmt.Fprintf(os.Stderr, "Backing up %s to s3://%s at %s\n", dbPath, bucket, endpoint)
+	// Logic for S3 upload using AWS CLI
+	args := []string{"s3", "cp", dbPath, s3Path}
+	if endpoint != "" && !strings.Contains(endpoint, "amazonaws.com") {
+		args = append(args, "--endpoint-url", endpoint)
+	}
+
+	cmd := exec.Command("aws", args...)
+	cmd.Dir = h.projectRoot
+	out, err := cmd.CombinedOutput()
 	
-	return mcp.NewToolResultText("Backup initiated (simulated)."), nil
+	if err != nil {
+		return mcp.NewToolResultError("S3 backup failed: " + err.Error() + "\n" + string(out)), nil
+	}
+	
+	return mcp.NewToolResultText("Backup successful: " + s3Path + "\n" + string(out)), nil
 }
 
 func (h *handler) registerWebhook(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -134,4 +141,47 @@ func (h *handler) statusSummary(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 	
 	summary := fmt.Sprintf("Agents: %d\nSkills: %d", len(agents), len(skills))
 	return mcp.NewToolResultText(summary), nil
+}
+
+// --- Workspace Tools ---
+
+func (h *handler) syncWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cmd := exec.Command("git", "pull", "--rebase")
+	cmd.Dir = h.projectRoot
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return mcp.NewToolResultError("Git pull failed: " + err.Error() + "\n" + string(out)), nil
+	}
+	return mcp.NewToolResultText("Workspace synced successfully:\n" + string(out)), nil
+}
+
+func (h *handler) pushWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cmd := exec.Command("git", "push")
+	cmd.Dir = h.projectRoot
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return mcp.NewToolResultError("Git push failed: " + err.Error() + "\n" + string(out)), nil
+	}
+	return mcp.NewToolResultText("Changes pushed successfully:\n" + string(out)), nil
+}
+
+func (h *handler) checkoutBranch(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	branch, _ := req.RequireString("branch")
+	cmd := exec.Command("git", "checkout", branch)
+	cmd.Dir = h.projectRoot
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return mcp.NewToolResultError("Git checkout failed: " + err.Error() + "\n" + string(out)), nil
+	}
+	return mcp.NewToolResultText("Switched to branch: " + branch + "\n" + string(out)), nil
+}
+
+func (h *handler) workspaceStatus(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cmd := exec.Command("git", "status", "--short")
+	cmd.Dir = h.projectRoot
+	out, _ := cmd.CombinedOutput()
+	branch, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	
+	res := fmt.Sprintf("Branch: %s\nChanges:\n%s", strings.TrimSpace(string(branch)), string(out))
+	return mcp.NewToolResultText(res), nil
 }

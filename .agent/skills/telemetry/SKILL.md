@@ -62,3 +62,7 @@ def log_event(data):
     with open(".agent/logs/metrics.jsonl", "a") as f:
         f.write(json.dumps(data) + "\n")
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

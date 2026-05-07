@@ -98,3 +98,7 @@ Every response MUST start with:
 - Step 3: **Conflict Detection**: Verify if Red Team fixes introduce new architectural regressions.
 - Step 4: Final hardening pass.
 - **Mandatory**: Include `## 🧠 Internal Discussion Log` section with Red Team insights and `⚔️ Conflicts`.
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

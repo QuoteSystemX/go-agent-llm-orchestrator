@@ -11,6 +11,7 @@ import re
 import argparse
 import urllib.request
 import urllib.error
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -90,8 +91,26 @@ def log_routing_event(task, score, tier, model_id):
     except Exception as e:
         print(f"⚠️ Telemetry log failed: {e}", file=sys.stderr)
 
+def _is_wsl() -> bool:
+    """Detect if running inside WSL."""
+    try:
+        with open("/proc/version", "r") as f:
+            return "microsoft" in f.read().lower()
+    except Exception:
+        return False
+
+def _get_wsl_gateway() -> str:
+    """Get the IP of the Windows host from WSL."""
+    try:
+        # Use ip route to find the default gateway
+        output = subprocess.check_output("ip route show default", shell=True, text=True)
+        return output.split()[2]
+    except Exception:
+        return ""
+
 def check_ollama_health(base_url: str, timeout_ms: int = 1500) -> bool:
     """Ping Ollama's /api/tags endpoint to verify it's running locally."""
+    if not base_url: return False
     try:
         url = base_url.rstrip("/") + "/api/tags"
         timeout_sec = timeout_ms / 1000
@@ -100,28 +119,57 @@ def check_ollama_health(base_url: str, timeout_ms: int = 1500) -> bool:
     except Exception:
         return False
 
+def discover_ollama_url(configured_url: str, timeout_ms: int = 500) -> tuple[str, str]:
+    """Smart Discovery Chain for Ollama.
+    
+    Returns (discovered_url, reason).
+    """
+    candidates = []
+    if configured_url and configured_url != "auto":
+        candidates.append((configured_url, "configured"))
+    
+    # Standard local options
+    candidates.append(("http://localhost:11434", "localhost"))
+    candidates.append(("http://127.0.0.1:11434", "loopback"))
+    
+    # WSL specific
+    if _is_wsl():
+        gw = _get_wsl_gateway()
+        if gw:
+            candidates.append((f"http://{gw}:11434", "WSL gateway"))
+            
+    # Docker specific
+    candidates.append(("http://host.docker.internal:11434", "docker bridge"))
 
-def resolve_provider(rules: dict) -> tuple[str, bool]:
+    for url, reason in candidates:
+        if check_ollama_health(url, timeout_ms):
+            return url, reason
+            
+    return None, "none found"
+
+
+def resolve_provider(rules: dict) -> tuple[str, bool, str]:
     """Determine which provider to use.
     
-    Returns (provider_name, is_ollama_available).
-    Checks hybrid_routing config first, then env var, then falls back to default.
+    Returns (provider_name, is_ollama_available, discovered_url).
     """
     # Manual override via env var always wins
     if os.environ.get("AGENT_PROVIDER"):
-        return os.environ.get("AGENT_PROVIDER").lower(), False
+        return os.environ.get("AGENT_PROVIDER").lower(), False, ""
 
     hybrid = rules.get("hybrid_routing", {})
     if not hybrid.get("enabled", False):
-        return "antigravity", False
+        return "antigravity", False, ""
 
-    # Check if Ollama is reachable
-    base_url = hybrid.get("ollama_base_url", "http://localhost:11434")
+    # Smart Discovery
+    conf_url = hybrid.get("ollama_base_url", "http://localhost:11434")
     timeout = hybrid.get("ollama_health_timeout_ms", 1500)
-    ollama_alive = check_ollama_health(base_url, timeout)
+    
+    discovered_url, reason = discover_ollama_url(conf_url, timeout)
+    ollama_alive = discovered_url is not None
     
     primary = hybrid.get("primary_provider", "ollama")
-    return primary, ollama_alive
+    return primary, ollama_alive, (discovered_url or conf_url)
 
 
 def get_ollama_local_models(base_url: str) -> set[str]:
@@ -262,21 +310,20 @@ def route(task_description, override_model=None):
 
     # 2. Hybrid Provider Resolution
     hybrid = rules.get("hybrid_routing", {})
-    primary_provider, ollama_alive = resolve_provider(rules)
+    primary_provider, ollama_alive, active_url = resolve_provider(rules)
     cloud_provider = hybrid.get("cloud_fallback_provider", "antigravity")
     cloud_only_tiers = hybrid.get("cloud_on_tiers", ["L4"])
 
     # Decide which provider to actually use
     if tier in cloud_only_tiers:
-        # e.g. L4 always goes to cloud regardless of Ollama status
         target_provider = cloud_provider
         routing_reason = f"tier {tier} is cloud-only"
     elif primary_provider == "ollama" and ollama_alive:
         target_provider = "ollama"
-        routing_reason = "Ollama is healthy ✅"
+        routing_reason = f"Ollama found at {active_url}"
     elif primary_provider == "ollama" and not ollama_alive:
         target_provider = cloud_provider
-        routing_reason = "Ollama unreachable ⚠️ → cloud fallback"
+        routing_reason = "Ollama not found in search chain ⚠️ → cloud fallback"
     else:
         target_provider = primary_provider
         routing_reason = "explicit provider"
@@ -302,7 +349,7 @@ def route(task_description, override_model=None):
         model_map=model_map,
         quality_scores=quality_scores,
         ollama_alive=(target_provider == "ollama" and ollama_alive),
-        ollama_base_url=ollama_url,
+        ollama_base_url=active_url,
     )
 
     # Build result early so we can attach warnings

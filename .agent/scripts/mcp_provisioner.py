@@ -14,6 +14,9 @@ def check_mcp_health():
     if not launcher.exists():
         return False, f"Launcher not found: {launcher}"
     
+    # On macOS, if it's an ELF binary, it will fail.
+    # We should also check if the binary it points to exists.
+    
     if not os.access(launcher, os.X_OK):
         os.chmod(launcher, 0o755)
         print(f"Fixed permissions for {launcher}")
@@ -21,8 +24,6 @@ def check_mcp_health():
     # Try to run the script and get the help output or just version info
     try:
         # We use a short timeout and send an empty line to see if it starts
-        # Since it's a stdio server, it will wait for input.
-        # But our improved script prints info to stderr on startup!
         process = subprocess.Popen(
             [str(launcher)],
             stdin=subprocess.PIPE,
@@ -37,9 +38,9 @@ def check_mcp_health():
             if "Starting agent-kit-server" in stderr:
                 return True, "MCP Server is healthy"
         except subprocess.TimeoutExpired:
-            # If it timed out, it means it's waiting for input, which is GOOD for an MCP server
+            # If it timed out, it means it's waiting for input, which is GOOD
             process.kill()
-            return True, "MCP Server is responsive (waiting for input)"
+            return True, "MCP Server is responsive"
             
         return False, "MCP Server failed to start correctly"
     except Exception as e:
@@ -58,11 +59,27 @@ def provision_mcp():
         return False
 
     try:
-        # 1. Build binaries
-        print(f"📦 Building binaries in {server_dir}...")
-        subprocess.run(["make", "build-linux"], cwd=str(server_dir), check=True)
+        # 1. Detect OS and build binaries
+        is_darwin = sys.platform == "darwin"
+        target = "build-darwin-universal" if is_darwin else "build-linux"
         
-        # 2. Create shim/symlink
+        print(f"📦 Building binaries for {'macOS' if is_darwin else 'Linux'} in {server_dir}...")
+        subprocess.run(["make", target], cwd=str(server_dir), check=True)
+        
+        # 2. Create the .sh launcher (overwriting any binary that was there)
+        print(f"📝 Creating launcher script at {launcher}...")
+        binary_path = "bin/local-skill-server-darwin" if is_darwin else "bin/local-skill-server-linux-amd64"
+        
+        script_content = f"""#!/bin/bash
+# Auto-generated launcher for MCP Server
+DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" && pwd )"
+exec "$DIR/{binary_path}" "$@"
+"""
+        with open(launcher, "w") as f:
+            f.write(script_content)
+        launcher.chmod(0o755)
+
+        # 3. Create shim/symlink in ~/.local/bin
         print(f"🔗 Creating shim at {shim}...")
         bin_dir.mkdir(parents=True, exist_ok=True)
         if shim.exists():
@@ -71,12 +88,6 @@ def provision_mcp():
         shim.chmod(0o755)
         
         print(f"✅ Provisioning complete. Command 'agent-kit-server' is ready.")
-        
-        # Check if ~/.local/bin is in PATH
-        path_env = os.environ.get("PATH", "")
-        if str(bin_dir) not in path_env:
-            print(f"⚠️  Note: {bin_dir} is not in your PATH. You may need to add it to ~/.bashrc")
-            
         return True
     except Exception as e:
         print(f"❌ Provisioning failed: {e}")

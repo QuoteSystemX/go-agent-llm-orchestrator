@@ -85,3 +85,7 @@ def push(obj):
     context["objects"].append(obj)
     write_json(".agent/bus/context.json", context)
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

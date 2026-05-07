@@ -104,3 +104,7 @@ Use Grafana's internal transformation engine to:
 - **Hardcoded Datasources**: Use `-- Mixed --` or template variables for datasources.
 - **Missing Units**: Numbers without context are meaningless.
 - **Dashboard Bloat**: Too many panels (>20) make the browser slow. Use `Rows` to collapse content.
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

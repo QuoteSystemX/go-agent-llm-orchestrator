@@ -1,6 +1,6 @@
 #!/bin/sh
 # mcp-server-agent-kit.sh — platform-aware launcher for the mcp-server-agent-kit MCP binary.
-# Used by .mcp.json or mcp_config.json as the MCP command.
+# Used by .mcp.json or .agent/config/mcp_config.json as the MCP command.
 set -e
 
 DIR="$(cd "$(dirname "$0")" && pwd)"

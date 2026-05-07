@@ -191,6 +191,14 @@ func main() {
 
 	s.AddTool(mcp.NewTool("project_list", mcp.WithDescription("List all registered projects.")), withRBAC("project_list", h.listProjects))
 	
+	s.AddTool(mcp.NewTool("workspace_sync", mcp.WithDescription("Sync workspace with remote (git pull).")), withRBAC("workspace_sync", h.syncWorkspace))
+	s.AddTool(mcp.NewTool("workspace_push", mcp.WithDescription("Push local changes to remote.")), withRBAC("workspace_push", h.pushWorkspace))
+	s.AddTool(mcp.NewTool("workspace_checkout", 
+		mcp.WithDescription("Switch to a different git branch."),
+		mcp.WithString("branch", mcp.Required(), mcp.Description("Branch name")),
+	), withRBAC("workspace_checkout", h.checkoutBranch))
+	s.AddTool(mcp.NewTool("workspace_status", mcp.WithDescription("Get detailed git status.")), withRBAC("workspace_status", h.workspaceStatus))
+
 	s.AddTool(mcp.NewTool("graph_get",
 		mcp.WithDescription("Get the agent interaction graph for the current session."),
 	), withRBAC("graph_get", h.getGraph))

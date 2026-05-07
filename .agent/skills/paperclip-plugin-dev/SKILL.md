@@ -1,6 +1,7 @@
 ---
 name: paperclip-plugin-dev
 description: Expert skill for designing, scaffolding, and implementing Paperclip plugins. Covers Worker logic, UI slots, and MCP integration.
+version: 1.0.0
 ---
 
 # 📎 Paperclip Plugin Development Skill
@@ -78,3 +79,7 @@ export const MyDashboardWidget = () => {
 - **Primary**: HSL(210, 100%, 50%) - Electric Blue
 - **Surface**: HSL(222, 47%, 11%) - Deep Slate
 - **Glass**: backdrop-blur-md, bg-white/5, border-white/10
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

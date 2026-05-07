@@ -49,3 +49,7 @@ As a final fallback, use **Playwright (Chromium)** to execute requests. Chromium
 ---
 
 > **Rule**: If a network request fails in WSL, DO NOT just report an error. Trigger the Resilience Chain.
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

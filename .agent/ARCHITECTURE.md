@@ -829,7 +829,7 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 
 - **Unified Agent**: reads `skills:` frontmatter → auto-loads SKILL.md on demand
 - **Claude Code (Variant A)**: dynamic loading — generated agents get a `> **Skills** — read these files` pointer block; no inline embedding. Eliminates duplication and the 100-line truncation limit.
-- **skill-server MCP** (Variant C): `local-skill-server` Go binary exposes `skills_load`, `skills_list`, `skills_search`, `agents_load`, `agents_list` tools via stdio JSON-RPC. Configured in `.mcp.json` (project) and `mcp_config.json`. Installed as `agent-kit-server` binary in `~/.local/bin/`.
+- **skill-server MCP** (Variant C): `local-skill-server` Go binary exposes `skills_load`, `skills_list`, `skills_search`, `agents_load`, `agents_list` tools via stdio JSON-RPC. Configured in `.mcp.json` (project) and `.agent/config/mcp_config.json`. Installed as `agent-kit-server` binary in `~/.local/bin/`.
 
 ### Slash Commands vs Subagents in Claude Code
 

@@ -117,9 +117,17 @@ class ResilientSession:
             # Auto-detect self-signed cert and retry with verify=False
             is_ssl_error = isinstance(e, requests.exceptions.SSLError)
             if is_ssl_error and self.verify_ssl:
-                print(f"[Resilience] SSL error detected (likely self-signed cert). Retrying with verify=False...", file=sys.stderr)
-                self.verify_ssl = False
-                return self.request(method, endpoint, data, retry_with_ip=retry_with_ip)
+                # Security: Only disable SSL for local/trusted infrastructure
+                host_lower = self.host.lower()
+                is_local = "localhost" in host_lower or "127.0.0.1" in host_lower or ".local" in host_lower
+                
+                if is_local:
+                    print(f"[Resilience] SSL error on local host. Retrying with verify=False...", file=sys.stderr)
+                    self.verify_ssl = False
+                    return self.request(method, endpoint, data, retry_with_ip=retry_with_ip)
+                else:
+                    print(f"[Resilience] SSL error on REMOTE host {self.host}. Security policy prevents auto-fallback.", file=sys.stderr)
+                    raise e
 
             # PHASE 2: Smart Resolution (Gateway DNS)
             is_auth_error = hasattr(e, 'response') and e.response is not None and e.response.status_code in [401, 403]

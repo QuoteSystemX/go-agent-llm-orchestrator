@@ -60,7 +60,7 @@ func (h *handler) runWorkflow(_ context.Context, req mcp.CallToolRequest) (*mcp.
 		Dir:     h.projectRoot,
 	}); err != nil {
 		h.finishJob(jobID, "failed")
-		return mcp.NewToolResultError(fmt.Sprintf("failed to queue workflow %q: %v", name, err)), nil
+		return mcp.NewToolResultError("failed to queue workflow \"" + name + "\": " + err.Error()), nil
 	}
 
 	return mcp.NewToolResultText(fmt.Sprintf(`{"job_id":%q,"status":"running","workflow":%q}`, jobID, name)), nil // nosec

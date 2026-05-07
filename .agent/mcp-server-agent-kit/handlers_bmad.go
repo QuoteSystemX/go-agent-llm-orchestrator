@@ -26,19 +26,55 @@ func (h *handler) decomposePRD(_ context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func (h *handler) getGraph(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Simple graph generation from file structure (recursive)
+	// 1. Get recent interactions from Metrics
+	metrics, err := h.db.GetMetrics()
+	if err != nil {
+		return mcp.NewToolResultError("failed to get metrics for graph: " + err.Error()), nil
+	}
+
 	var sb strings.Builder
-	sb.WriteString("graph TD\n")
-	nodeID := 0
-	filepath.Walk(h.projectRoot, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".md") {
-			return nil
+	sb.WriteString("graph LR\n")
+	sb.WriteString("  subgraph Agents\n")
+	
+	agents := make(map[string]bool)
+	tools := make(map[string]bool)
+	interactions := make(map[string]bool)
+
+	for _, m := range metrics {
+		agent, _ := m["agent_name"].(string)
+		tool, _ := m["tool_name"].(string)
+		if agent != "" && tool != "" {
+			agents[agent] = true
+			tools[tool] = true
+			interactions["    "+agent+" --> "+tool] = true
 		}
-		rel, _ := filepath.Rel(h.projectRoot, path)
-		sb.WriteString(fmt.Sprintf("  Node%d[\"%s\"]\n", nodeID, rel))
-		nodeID++
+	}
+
+	for agent := range agents {
+		sb.WriteString("    " + agent + "\n")
+	}
+	sb.WriteString("  end\n")
+
+	sb.WriteString("  subgraph Tools\n")
+	for tool := range tools {
+		sb.WriteString("    " + tool + "\n")
+	}
+	sb.WriteString("  end\n")
+
+	for edge := range interactions {
+		sb.WriteString(edge + "\n")
+	}
+
+	// 2. Add Documentation Nodes
+	sb.WriteString("  subgraph Wiki\n")
+	filepath.Walk(filepath.Join(h.projectRoot, "wiki"), func(path string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && strings.HasSuffix(path, ".md") {
+			rel, _ := filepath.Rel(h.projectRoot, path)
+			sb.WriteString(fmt.Sprintf("    Docs[\"%s\"]\n", rel))
+		}
 		return nil
 	})
+	sb.WriteString("  end\n")
 	
 	return mcp.NewToolResultText(sb.String()), nil
 }

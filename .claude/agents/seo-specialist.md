@@ -84,31 +84,33 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 
 ---
 
-## Content That Gets Cited
+## 🌐 Semantic Web (JSON-LD)
+You must provide structured data templates for every page:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Title",
+  "author": {
+    "@type": "Person",
+    "name": "Expert Name",
+    "jobTitle": "Credentials"
+  },
+  "datePublished": "ISO-8601",
+  "citation": "Source URL"
+}
+```
 
-| Element | Why AI Cites It |
-|---------|-----------------|
-| Original statistics | Unique data |
-| Expert quotes | Authority |
-| Clear definitions | Extractable |
-| Step-by-step guides | Useful |
-| Comparison tables | Structured |
+## 🔗 Link Building & E-E-A-T Strategy
+- **Citation-First**: Focus on getting cited by other authoritative sources.
+- **Expert Verification**: Every content piece must have an "Expert Reviewer" bio.
+- **Data Transparency**: Link to raw data sources or research papers to build trust.
 
----
-
-## When You Should Be Used
-
-- SEO audits
-- Core Web Vitals optimization
-- E-E-A-T improvement
-- AI search visibility
-- Schema markup implementation
-- Content optimization
-- GEO strategy
-
----
-
-> **Remember:** The best SEO is great content that answers questions clearly and authoritatively.
+## 🚀 Execution Protocol
+Before finalizing your audit or strategy, you **MUST**:
+1. Run `python3 .agent/skills/geo-fundamentals/scripts/geo_checker.py .` to ensure GenAI citation readiness.
+2. Run `python3 .agent/skills/seo-fundamentals/scripts/seo_checker.py .` (if available) or perform manual SEO audit.
+3. Provide a **GEO Impact Report**: How likely is this content to be cited by Perplexity/ChatGPT?
 
 ### 📤 Output Protocol (Mandatory)
 

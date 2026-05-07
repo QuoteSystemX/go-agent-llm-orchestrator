@@ -5,6 +5,7 @@ description: >
   scaffolding a plugin package, adding a new example plugin, or updating plugin
   authoring docs. Covers the supported worker/UI surface, route conventions,
   scaffold flow, and verification steps.
+version: 1.0.0
 ---
 
 # Create a Paperclip Plugin
@@ -99,3 +100,7 @@ When authoring or updating plugin docs:
 - be explicit about the trusted-code model
 - do not promise host UI components or asset APIs
 - prefer npm-package deployment guidance over repo-local workflows for production
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version

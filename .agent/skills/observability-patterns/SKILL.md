@@ -440,3 +440,7 @@ Link to post-mortem after resolution.
 | Sampling = 100% in prod | CPU/storage cost — use 10% + tail-sampling for errors |
 | Traces without baggage propagation | Always propagate `traceparent` header across HTTP/gRPC calls |
 | Grafana dashboard per engineer | One canonical dashboard per service, owned by team |
+
+## Changelog
+
+- **1.0.0** (2026-05-07): Initial version
