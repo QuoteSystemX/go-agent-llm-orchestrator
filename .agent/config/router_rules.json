@@ -34,32 +34,110 @@
   "rules": [
     {
       "complexity": "L4",
-      "keywords": ["critical audit", "auth security", "zero-day", "system refactor", "migration plan"],
-      "skills": ["security-auditor", "architecture"]
+      "keywords": [
+        "critical audit",
+        "auth security",
+        "zero-day",
+        "system refactor",
+        "migration plan"
+      ],
+      "skills": [
+        "security-auditor",
+        "architecture"
+      ]
     },
     {
       "complexity": "L3",
-      "keywords": ["debug", "audit", "security", "architecture", "design", "refactor", "optimization"],
-      "skills": ["penetration-tester", "architecture"]
+      "keywords": [
+        "debug",
+        "audit",
+        "security",
+        "architecture",
+        "design",
+        "refactor",
+        "optimization"
+      ],
+      "skills": [
+        "penetration-tester",
+        "architecture"
+      ]
     },
     {
       "complexity": "L1",
-      "keywords": ["lint", "typo", "spellcheck", "formatting", "documentation", "readme", "comment", "list files", "check status"],
-      "skills": ["explorer-agent"]
+      "keywords": [
+        "lint",
+        "typo",
+        "spellcheck",
+        "formatting",
+        "documentation",
+        "readme",
+        "comment",
+        "list files",
+        "check status"
+      ],
+      "skills": [
+        "explorer-agent"
+      ]
     },
     {
       "complexity": "L2",
-      "keywords": ["implement", "add feature", "create", "test", "fix"],
-      "skills": ["backend-specialist", "frontend-specialist"]
+      "keywords": [
+        "implement",
+        "add feature",
+        "create",
+        "test",
+        "fix"
+      ],
+      "skills": [
+        "backend-specialist",
+        "frontend-specialist"
+      ]
     }
   ],
   "models": {
+    "ollama": {
+      "L1": "qwen3:4b",
+      "L1_alt": ["qwen3:1.7b", "gemma3:4b"],
+      "L2": "qwen3:14b",
+      "L2_alt": ["deepseek-coder-v2:16b", "gpt-oss-20b"],
+      "L3": "devstral:24b",
+      "L3_alt": ["qwen3:30b-a3b", "deepseek-r1:32b"],
+      "L4": "qwen3-coder:30b-a3b",
+      "L4_alt": ["qwen2.5-coder:32b", "deepseek-r1:32b"]
+    },
     "antigravity": {
       "L1": "gemini-3-flash",
       "L2": "gemini-3.1-pro-low",
       "L3": "gemini-3.1-pro-high",
       "L4": "gpt-oss-120b"
     }
+  },
+  "hybrid_routing": {
+    "enabled": true,
+    "primary_provider": "ollama",
+    "cloud_fallback_provider": "antigravity",
+    "ollama_base_url": "http://localhost:11434",
+    "ollama_health_timeout_ms": 1500,
+    "cloud_on_tiers": ["L4"],
+    "comment": "L1-L3 go to local Ollama. L4 always goes to cloud. If Ollama is unreachable, all tiers fall back to cloud."
+  },
+  "model_quality_scores": {
+    "_comment": "ELO-style quality score (higher = better). Based on public benchmarks 2025-2026. Used to pick best available model from _alt list when primary is unavailable.",
+    "qwen3:4b":              52,
+    "qwen3:1.7b":            40,
+    "gemma3:4b":             48,
+    "qwen3:14b":             71,
+    "deepseek-coder-v2:16b": 68,
+    "gpt-oss-20b":           65,
+    "devstral:24b":          82,
+    "qwen3:30b-a3b":         78,
+    "deepseek-r1:32b":       85,
+    "qwen3-coder:30b-a3b":   88,
+    "qwen2.5-coder:32b":     84,
+    "gemini-3-flash":        60,
+    "gemini-3.1-pro-low":    75,
+    "gemini-3.1-pro-high":   88,
+    "gpt-oss-120b":          95
   },
   "fallbacks": {
     "L1": "L2",
