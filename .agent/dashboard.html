@@ -1,25 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Antigravity Health Dashboard</title>
+    <meta name="description" content="Real-time workspace health, security audit status, and agent performance monitoring for Antigravity Agent Kit.">
+    <meta property="og:title" content="Antigravity Health Dashboard">
+    <meta property="og:description" content="Unified monitoring for local agent orchestration.">
+    <meta property="og:type" content="website">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #eee; padding: 40px; }
-        .card { background: #2d2d2d; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 800px; margin: auto; }
-        h1 { color: #00bcd4; margin-top: 0; }
-        .score { font-size: 48px; font-weight: bold; color: #4caf50; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        td { padding: 12px; border-bottom: 1px solid #444; }
+        :root { --bg: #09090b; --card: #18181b; --text: #fafafa; --dim: #a1a1aa; --accent: #4caf50; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 60px 20px; margin: 0; }
+        .container { max-width: 700px; margin: auto; }
+        .card { 
+            background: var(--card); border-radius: 24px; padding: 40px; 
+            border: 1px solid #27272a; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at center, {color}1a 0%, transparent 70%);
+            pointer-events: none;
+        }
+        h1 { font-size: 14px; text-transform: uppercase; tracking: 0.2em; color: var(--dim); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        h1::before { content: '●'; color: var(--accent); }
+        .score-wrap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 40px; }
+        .score { font-size: 82px; font-weight: 800; color: var(--accent); letter-spacing: -0.05em; }
+        .score-label { font-size: 18px; color: var(--dim); font-weight: 500; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 16px 0; border-bottom: 1px solid #27272a; font-size: 15px; }
         tr:last-child td { border-bottom: none; }
+        .footer { margin-top: 40px; font-size: 12px; color: #52525b; display: flex; justify-content: space-between; font-family: monospace; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🚀 Workspace Health</h1>
-        <div class="score">100%</div>
-        <table>
-            <tr><td>Drift</td><td>0 issues</td></tr><tr><td>Recent Logs</td><td>0</td></tr><tr><td>Security</td><td>PASS</td></tr><tr><td>Tests</td><td>PASS</td></tr><tr><td>Cost Status</td><td>✅ OK</td></tr>
-        </table>
-        <p style="margin-top:24px; font-size:0.9em; color:#888;">Generated on: 2026-05-06 20:53:25</p>
+    <div class="container">
+        <div class="card" aria-label="Workspace Health Report">
+            <h1>Workspace Integrity Report</h1>
+            <div class="score-wrap">
+                <div class="score">95%</div>
+                <div class="score-label">Overall Health</div>
+            </div>
+            <table>
+                <tr><td>Drift</td><td style='text-align:right; font-weight:bold; color: #eee'>0 issues</td></tr><tr><td>UX Audit</td><td style='text-align:right; font-weight:bold; color: #4caf50'>PASS (with warnings)</td></tr><tr><td>SEO Status</td><td style='text-align:right; font-weight:bold; color: #eee'>Unknown (JSONDecodeError)</td></tr><tr><td>Recent Logs</td><td style='text-align:right; font-weight:bold; color: #eee'>0</td></tr><tr><td>Security</td><td style='text-align:right; font-weight:bold; color: #4caf50'>PASS</td></tr><tr><td>MCP Server</td><td style='text-align:right; font-weight:bold; color: #4caf50'>PASS</td></tr><tr><td>Tests</td><td style='text-align:right; font-weight:bold; color: #4caf50'>PASS</td></tr>
+            </table>
+            <div class="footer">
+                <span>SYSTEM_STATUS: OK</span>
+                <span>GENERATED: 2026-05-08 10:45:23</span>
+            </div>
+        </div>
     </div>
 </body>
 </html>

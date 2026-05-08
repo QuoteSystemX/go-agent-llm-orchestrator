@@ -39,11 +39,11 @@ def find_active_task() -> Path:
 def update_task_card(task_path: Path, files: list[str]):
     content = task_path.read_text(encoding="utf-8")
     
-    marker = "## 📂 Измененные файлы"
+    marker = "## 📂 Changed Files"
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_list = "\n".join([f"- `{f}`" for f in files])
     
-    new_entry = f"\n### 📝 Авто-трассировка [{timestamp}]\n{file_list}\n"
+    new_entry = f"\n### 📝 Auto-trace [{timestamp}]\n{file_list}\n"
     
     if marker in content:
         # Append to existing marker

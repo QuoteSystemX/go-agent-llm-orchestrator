@@ -45,6 +45,12 @@ This document contains "hard-won" technical insights and project-specific gotcha
 - **Root Cause**: `drift_detector.py` search path was hardcoded to `.agent/skills/`, missing components in `.agent/.shared/`.
 - **Prevention**: Updated `drift_detector.py` to scan both `skills/` and `.shared/` directories for `SKILL.md` files. Created missing `SKILL.md` for shared components.
 
+### [2026-05-08] [INFRA] [shared-context] .agent/bus/ directory must be initialized
+
+- **Context**: The context bus directory was missing, causing health check failures and preventing data sharing between agents.
+- **Root Cause**: The directory was likely removed or not created during a reset, and `bus_manager.py` did not automatically initialize it on every run.
+- **Prevention**: Use `python3 .agent/scripts/bus_manager.py clear` to ensure the directory and `context.json` are initialized if missing.
+
 ---
 
 ## How to add a lesson:

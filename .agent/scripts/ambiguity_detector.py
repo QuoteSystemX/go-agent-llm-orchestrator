@@ -10,7 +10,7 @@ def check_ambiguity(intent: str):
         print("⚠️  CRITICAL AMBIGUITY: Prompt is too short. Risk of hallucinations.")
         return False
     
-    vague_words = ["сделай", "улучши", "измени", "что-то", "как-то", "красиво", "нормально"]
+    vague_words = ["make", "improve", "change", "something", "somehow", "beautifully", "normally"]
     vague_count = sum(1 for w in words if w.lower() in vague_words)
     
     if vague_count / len(words) > 0.5:

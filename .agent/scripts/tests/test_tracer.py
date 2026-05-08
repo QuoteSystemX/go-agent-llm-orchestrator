@@ -36,7 +36,7 @@ class TestTaskTracer(unittest.TestCase):
         self.assertIn("Updated task card", msg)
         
         content = self.test_task_file.read_text(encoding="utf-8")
-        self.assertIn("## 📂 Измененные файлы", content)
+        self.assertIn("## 📂 Changed Files", content)
         self.assertIn("- file1.py", content.replace("`", "")) # Simple check
 
 if __name__ == "__main__":

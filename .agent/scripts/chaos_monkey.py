@@ -1,47 +1,83 @@
 #!/usr/bin/env python3
+"""
+Chaos Monkey - Resilience Testing & Failure Injection
+Intentionally injects failures into the orchestration pipeline to test stability.
+"""
 import os
 import sys
+import json
 import random
-from pathlib import Path
 import time
+import subprocess
+from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parent))
-from lib.common import load_json_safe, save_json_atomic
-from lib.paths import REPO_ROOT
+# Safety Switch
+CHAOS_ENABLED = os.environ.get("CHAOS_ENABLED") == "1"
 
-def break_something():
-    """Introduces a documentation drift defect."""
-    new_script = REPO_ROOT / ".agent" / "scripts" / "extremely_unique_chaos_script.py"
-    print(f"🐒 Chaos: Creating undocumented script {new_script.name}")
-    new_script.write_text('"""Extremely Unique Chaos Script — Used to test doc_healer resilience."""\nprint("Chaos!")\n', encoding="utf-8")
-    return new_script
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BUS_DIR = REPO_ROOT / ".agent" / "bus"
+
+def kill_mcp():
+    print("🔥 Chaos Monkey: Killing MCP Server...")
+    # Find process by name patterns
+    patterns = ["local-skill-server", "agent-kit-server"]
+    for p in patterns:
+        subprocess.run(["pkill", "-f", p], capture_output=True)
+    return True
+
+def corrupt_bus():
+    print("🦠 Chaos Monkey: Corrupting Context Bus...")
+    files = list(BUS_DIR.glob("*.json"))
+    if not files:
+        print("   No files to corrupt.")
+        return False
+    
+    target = random.choice(files)
+    try:
+        content = target.read_text()
+        # Inject invalid JSON (e.g., remove a closing brace)
+        if len(content) > 5:
+            corrupted = content[:-2] 
+            target.write_text(corrupted)
+            print(f"   Corrupted: {target.name}")
+            return True
+        return False
+    except Exception as e:
+        print(f"   Failed to corrupt: {e}")
+        return False
+
+def inject_latency():
+    print("⏳ Chaos Monkey: Injecting Latency (5s)...")
+    time.sleep(5)
+    return True
 
 def main():
-    print("🔥 AGENTIC CHAOS MONKEY STARTING...")
-    target_file = break_something()
+    if not CHAOS_ENABLED:
+        print("❌ CHAOS DISABLED. Set CHAOS_ENABLED=1 to run.")
+        sys.exit(0)
+
+    import argparse
+    parser = argparse.ArgumentParser(description="Chaos Monkey Failure Injector")
+    parser.add_argument("--kill-mcp", action="store_true", help="Kill the MCP server")
+    parser.add_argument("--corrupt-bus", action="store_true", help="Corrupt a random bus file")
+    parser.add_argument("--latency", action="store_true", help="Inject 5s latency")
     
-    print("⏳ Waiting for Immune System (5s)...")
-    time.sleep(5)
+    args = parser.parse_args()
     
-    print("🏥 Running Doc Healer to verify recovery...")
-    try:
-        subprocess.run("python3 .agent/scripts/doc_healer.py", shell=True, check=True, cwd=REPO_ROOT)
-    except Exception as e:
-        print(f"❌ Doc Healer failed: {e}")
-        sys.exit(1)
-        
-    # Check if ARCHITECTURE.md now contains the script
-    arch_path = REPO_ROOT / ".agent" / "ARCHITECTURE.md"
-    content = arch_path.read_text(encoding="utf-8")
-    if "extremely_unique_chaos_script.py" in content:
-        print(f"✅ SYSTEM RECOVERED: {target_file.name} is now documented.")
-        # Cleanup
-        target_file.unlink()
-    else:
-        print(f"❌ SYSTEM FAILED TO RECOVER: {target_file.name} still undocumented.")
-        target_file.unlink()
-        sys.exit(1)
+    # Log the start of chaos for the analyzer
+    BUS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(BUS_DIR / "chaos_event.json", "w") as f:
+        json.dump({
+            "type": "chaos_injection",
+            "timestamp": time.time(),
+            "args": sys.argv[1:]
+        }, f)
+
+    if args.kill_mcp: kill_mcp()
+    if args.corrupt_bus: corrupt_bus()
+    if args.latency: inject_latency()
+    
+    print("🍌 Chaos Monkey: Attack complete.")
 
 if __name__ == "__main__":
-    import subprocess
     main()

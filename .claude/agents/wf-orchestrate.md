@@ -37,6 +37,7 @@ _Context from user message is passed automatically by Claude Code._
 | **Full Stack** | project-planner, frontend-specialist, backend-specialist, devops-engineer |
 | **Debug** | debugger, explorer-agent, test-engineer |
 | **Security** | security-auditor, penetration-tester, devops-engineer |
+| **Knowledge** | archivist, documentation-writer, orchestrator |
 
 ---
 
@@ -83,8 +84,17 @@ Do you approve? (Y/N)
 | Foundation | `database-architect`, `security-auditor` |
 | Core | `backend-specialist`, `frontend-specialist` |
 | Polish | `test-engineer`, `devops-engineer` |
+| Retention | `archivist` |
 
 > ✅ After user approval, invoke multiple agents in PARALLEL.
+
+#### 🔧 Archivist Integration
+After the parallel implementation finishes, run the Archivist knowledge‑pipeline to prune the bus, distill lessons, draft ADRs and sync the Wiki:
+```bash
+python3 .agent/scripts/archivist_trigger.py
+```
+This step is mandatory for any L2‑L4 flow to guarantee **Knowledge Health**.
+
 
 ## Available Agents (17 total)
 
@@ -106,6 +116,7 @@ Do you approve? (Y/N)
 | `debugger` | Debug | Error analysis |
 | `game-developer` | Games | Unity, Godot |
 | `orchestrator` | Meta | Coordination |
+| `archivist` | Data | Knowledge & Reflection |
 
 ---
 
@@ -175,14 +186,18 @@ Use the project-planner agent to create PLAN.md:
 > ⚠️ **VIOLATION:** Invoking subagent without full context = subagent will make wrong assumptions!
 
 
-### Step 4: Verification (MANDATORY)
-The LAST agent must run appropriate verification scripts:
 ```bash
 python .agent/skills/vulnerability-scanner/scripts/security_scan.py .
 python .agent/skills/lint-and-validate/scripts/lint_runner.py .
 ```
 
-### Step 5: Synthesize Results
+### Step 5: Knowledge Retention (MANDATORY for L2-L4)
+Invoke the `archivist` agent to:
+1. Run `experience_distiller.py` on the session logs.
+2. Check for `drift_detector.py` issues.
+3. Update the Project Wiki with new mental models or patterns discovered.
+
+### Step 6: Synthesize Results
 Combine all agent outputs into unified report.
 
 ---
