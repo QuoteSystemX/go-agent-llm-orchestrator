@@ -8,7 +8,7 @@ from datetime import datetime
 
 try:
     from lib.paths import REPO_ROOT
-    from lib.common import load_json_safe
+    from lib.common import load_json_safe, discover_ollama_url
     from mcp_provisioner import check_mcp_health
     BUS_DIR = REPO_ROOT / ".agent" / "bus"
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
@@ -17,7 +17,7 @@ except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
     from lib.paths import REPO_ROOT
     BUS_DIR = REPO_ROOT / ".agent" / "bus"
-    from lib.common import load_json_safe
+    from lib.common import load_json_safe, discover_ollama_url
     from mcp_provisioner import check_mcp_health
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
     BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "budget_monitor.py"
@@ -178,7 +178,8 @@ def calculate_health():
         metrics["Intelligence ROI"] = "Unknown"
     try:
         import urllib.request
-        with urllib.request.urlopen("http://localhost:11434/api/tags") as response:
+        base_url = discover_ollama_url()
+        with urllib.request.urlopen(f"{base_url}/api/tags") as response:
             tags = json.loads(response.read().decode())
             models = [m["name"] for m in tags.get("models", [])]
             if "mxbai-embed-large:latest" in models or "mxbai-embed-large" in models:

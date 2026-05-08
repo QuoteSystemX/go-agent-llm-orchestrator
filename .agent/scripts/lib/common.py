@@ -45,3 +45,45 @@ def validate_json(data: Any, schema_path: Path) -> tuple[bool, str]:
         return True, "jsonschema not installed, skipping validation."
     except Exception as e:
         return False, str(e)
+
+def discover_ollama_url() -> str:
+    """
+    Universally discover Ollama URL across environments (Local, WSL, Docker).
+    Chain: OLLAMA_HOST env -> localhost -> WSL Gateway.
+    """
+    # 1. Check Env Variable
+    env_host = os.environ.get("OLLAMA_HOST")
+    if env_host:
+        if "://" not in env_host:
+            env_host = f"http://{env_host}"
+        return env_host.rstrip("/")
+
+    # 2. Try Localhost
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=0.5) as r:
+            if r.status == 200:
+                return "http://localhost:11434"
+    except:
+        pass
+
+    # 3. WSL Gateway Fallback
+    try:
+        if os.path.exists("/proc/version"):
+            with open("/proc/version", "r") as f:
+                if "microsoft" in f.read().lower():
+                    import subprocess
+                    cmd = "ip route | grep default | awk '{print $3}'"
+                    gw = subprocess.check_output(cmd, shell=True).decode().strip()
+                    if gw:
+                        test_url = f"http://{gw}:11434/api/tags"
+                        try:
+                            with urllib.request.urlopen(test_url, timeout=0.5) as r:
+                                if r.status == 200:
+                                    return f"http://{gw}:11434"
+                        except:
+                            pass
+    except:
+        pass
+
+    return "http://localhost:11434" # Default fallback
