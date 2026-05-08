@@ -8,7 +8,7 @@ import (
 
 func setupTestDB(t *testing.T) (*DB, func()) {
 	dbPath := filepath.Join(t.TempDir(), "test.db")
-	db, err := InitDB(dbPath)
+	db, err := InitDB(dbPath, "")
 	if err != nil {
 		t.Fatal(err)
 	}

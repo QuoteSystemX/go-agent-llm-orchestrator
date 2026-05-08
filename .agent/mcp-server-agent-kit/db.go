@@ -14,10 +14,14 @@ type DB struct {
 	connMetrics *sql.DB
 }
 
-func InitDB(projectRoot string) (*DB, error) {
-	dbPath := filepath.Join(projectRoot, ".agent", "mcp_main.db")
-	searchPath := filepath.Join(projectRoot, ".agent", "mcp_search.db")
-	metricsPath := filepath.Join(projectRoot, ".agent", "mcp_metrics.db")
+func InitDB(projectRoot string, mainDBPathOverride string) (*DB, error) {
+	dbPath := mainDBPathOverride
+	if dbPath == "" {
+		dbPath = filepath.Join(projectRoot, ".agent", "mcp_main.db")
+	}
+	dbDir := filepath.Dir(dbPath)
+	searchPath := filepath.Join(dbDir, "mcp_search.db")
+	metricsPath := filepath.Join(dbDir, "mcp_metrics.db")
 
 	initConn := func(path string) (*sql.DB, error) {
 		dsn := fmt.Sprintf("%s?_busy_timeout=10000&_journal_mode=WAL&_sync=NORMAL", path)

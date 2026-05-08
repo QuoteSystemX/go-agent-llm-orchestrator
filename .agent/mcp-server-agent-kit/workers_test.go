@@ -9,7 +9,7 @@ import (
 
 func TestWorkerPool_Execution(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "workers_exec.db")
-	db, _ := InitDB(dbPath)
+	db, _ := InitDB(dbPath, "")
 	d := NewDispatcher(db, 2)
 	d.Start()
 	defer d.Stop()
@@ -59,7 +59,7 @@ func TestWorkerPool_Execution(t *testing.T) {
 
 func TestWorkerPool_Recovery(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "workers_recovery.db")
-	db, _ := InitDB(dbPath)
+	db, _ := InitDB(dbPath, "")
 	
 	// 1. Prepare a pending job in DB
 	jobID := "RECOVER-ME"
@@ -99,7 +99,7 @@ func TestWorkerPool_Recovery(t *testing.T) {
 
 func TestWorkerPool_Concurrency(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "workers_concurrency.db")
-	db, _ := InitDB(dbPath)
+	db, _ := InitDB(dbPath, "")
 	
 	// Only 1 worker
 	d := NewDispatcher(db, 1)

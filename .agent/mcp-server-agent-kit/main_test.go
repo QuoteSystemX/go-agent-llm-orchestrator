@@ -22,7 +22,7 @@ func TestResolveProjectRoot(t *testing.T) {
 func TestHandlers(t *testing.T) {
 	root := resolveProjectRoot()
 	dbPath := filepath.Join(t.TempDir(), "test.db")
-	db, err := InitDB(dbPath)
+	db, err := InitDB(dbPath, "")
 	if err != nil {
 		t.Fatalf("failed to init test db: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestValidatePath(t *testing.T) {
 func TestLoadItemBoundary(t *testing.T) {
 	root := resolveProjectRoot()
 	dbPath := filepath.Join(t.TempDir(), "test.db")
-	db, _ := InitDB(dbPath)
+	db, _ := InitDB(dbPath, "")
 	h := &handler{projectRoot: root, db: db}
 
 	outsidePath := filepath.Join(root, "..", "..", "etc", "passwd")
@@ -89,7 +89,7 @@ func TestLoadItemBoundary(t *testing.T) {
 func TestSearchSkills(t *testing.T) {
 	root := resolveProjectRoot()
 	dbPath := filepath.Join(t.TempDir(), "test.db")
-	db, _ := InitDB(dbPath)
+	db, _ := InitDB(dbPath, "")
 	h := &handler{projectRoot: root, db: db}
 	ctx := context.Background()
 

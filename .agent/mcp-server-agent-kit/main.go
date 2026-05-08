@@ -55,6 +55,7 @@ func main() {
 	retentionDays := flag.Int("retention", 30, "Data retention in days (0 to use DB setting, default 30)")
 	indexDirs := flag.String("index-dirs", ".agent,wiki,tasks", "Comma-separated directories to index for FTS5")
 	root := flag.String("root", "", "project root path (overrides auto-detection)")
+	dbFile := flag.String("db", "", "main database file path (optional override)")
 	flag.Parse()
 
 	projectRoot := *root
@@ -67,7 +68,7 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "agent-kit: version %s, projectRoot: %q\n", serverVersion, projectRoot)
 
-	db, err := InitDB(projectRoot)
+	db, err := InitDB(projectRoot, *dbFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to init db: %v\n", err)
 		os.Exit(1)
