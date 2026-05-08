@@ -83,6 +83,7 @@ AGENT_DEFAULT_TOOLS: dict[str, str] = {
     "seo-specialist":         "Read, Write, Grep, Glob",
     "product-manager":        "Read, Write, Grep, Glob",
     "product-owner":          "Read, Write, Grep, Glob",
+    "python-specialist":      "Read, Write, Edit, Bash, Grep, Glob",
 }
 
 # Claude Code slash-command metadata (added on top of Antigravity workflow content).

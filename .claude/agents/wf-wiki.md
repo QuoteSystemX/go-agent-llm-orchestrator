@@ -34,11 +34,13 @@ Maintain the codebase knowledge base (Mental Models, ADRs, Intuition) in sync wi
    - If `audit`: 
      - Run `python3 .agent/scripts/drift_detector.py`. 
      - Run `python3 .agent/scripts/doc_healer.py` to automatically fix simple drifts.
+     - Run `python3 .agent/scripts/wiki_assembler.py` to refresh the hub/spoke views.
      - Pass remaining results to Wiki Architect.
    - If `design`: Search for code related to `<name>`. Extract patterns and write a Mental Model doc.
    - If `sync`: 
      - Check git history for files changed in `wiki/` vs `src/` and propose updates.
      - Run `python3 .agent/scripts/doc_healer.py` as a pre-sync check.
+     - Run `python3 .agent/scripts/wiki_assembler.py` after updates to finalize the global ARCHITECTURE.md.
 
 2. **Wiki Architect Context**:
    - Use `wiki-writing` skill.

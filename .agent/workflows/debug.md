@@ -22,6 +22,9 @@ When `/debug` is triggered:
    - Run `python3 .agent/scripts/post_mortem_runner.py` for visual analysis.
    - Run `python3 .agent/scripts/semantic_experience.py "<issue>"` for past lessons.
    - Run `python3 .agent/scripts/bus_debugger.py` to check data consistency.
+   - Run `python3 .agent/scripts/chaos_analyzer.py` to detect environment instability.
+   - Run `python3 .agent/scripts/hallucination_detector.py` to verify agent reasoning.
+   - Run `python3 .agent/scripts/incident_watcher.py` to correlate with recent system failures.
 
 2. **Gather information**
    - Error message

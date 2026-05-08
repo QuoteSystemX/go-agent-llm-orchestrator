@@ -19,8 +19,10 @@ This command activates the REVIEWER workflow for systematic repository auditing.
 When `/reviewer` is triggered:
 
 1. **🕵️ Reconnaissance**
+   - Run `python3 .agent/scripts/autonomous_reviewer_cron.py` to identify critical debt.
+   - Run `python3 .agent/scripts/quality_tracker.py` to get current health metrics.
+   - Run `python3 .agent/scripts/task_miner.py` to extract hidden TODOs and unoptimized paths.
    - Read `wiki/_index.md` and the `wiki/` folder to understand the intended architecture (GROUND TRUTH).
-   - Scan `internal/`, `pkg/`, and `cmd/` for deviations, bugs, missing tests, or unoptimized paths.
    - Audit the codebase against `.agent/KNOWLEDGE.md` patterns.
 
 2. **🔪 Decomposition**

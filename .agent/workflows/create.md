@@ -30,6 +30,8 @@ This command starts a new application creation process.
      - `database-architect` → Schema
      - `backend-specialist` → API
      - `frontend-specialist` → UI
+   - Run `python3 .agent/scripts/adr_generator.py` to document initial architecture.
+   - Run `python3 .agent/scripts/wiki_sync.py` to initialize project documentation fragments.
 
 4. **Preview**
    - Start with `auto_preview.py` when complete

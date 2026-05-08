@@ -41,6 +41,8 @@ This command adds features or makes updates to existing application.
    - Call relevant agents
    - Make changes
    - Test
+   - Run `python3 .agent/scripts/code_polisher.py` for final cleanup.
+   - Run `python3 .agent/scripts/adr_generator.py` to document the changes.
 
 5. **Update Preview**
    - Hot reload or restart

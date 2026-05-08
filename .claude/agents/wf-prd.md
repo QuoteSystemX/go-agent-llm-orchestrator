@@ -12,6 +12,20 @@ _Context from user message is passed automatically by Claude Code._
 
 ---
 
+## Step 0: Ambiguity & Intent Check
+Before drafting the PRD, run the "Requirement Hardening" suite:
+
+1. // turbo
+   Run `python3 .agent/scripts/ambiguity_detector.py`.
+2. // turbo
+   Run `python3 .agent/scripts/intent_validator.py "_Context from user message is passed automatically by Claude Code._"`.
+3. // turbo
+   Run `python3 .agent/scripts/resource_forecaster.py "_Context from user message is passed automatically by Claude Code._"`.
+4. If scores are low, run `python3 .agent/scripts/requirement_expander.py` to fill gaps in the `wiki/BRIEF.md`.
+5. Report the "Clarity Score" and "Resource Forecast" to the user before starting.
+
+---
+
 ## Purpose
 
 Convert the approved `wiki/BRIEF.md` into a full Product Requirements Document at `wiki/PRD.md`.

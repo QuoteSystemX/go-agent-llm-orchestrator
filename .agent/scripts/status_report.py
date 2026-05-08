@@ -151,7 +151,58 @@ def calculate_health():
     metrics["Resilience"] = f"MTTR {mttr:.1f}s" if mttr else "Untested"
     if chaos_data.get("status") == "FAILURE": score -= 15
 
-    # 9. Tests (Stub)
+    # 8a. AOS Foresight (Predictive Risk)
+    foresight_file = REPO_ROOT / ".agent" / "foresight" / "latest_risk_report.json"
+    if foresight_file.exists():
+        with open(foresight_file, 'r') as f:
+            risks = json.load(f)
+            if risks:
+                top_risk = risks[0]
+                metrics["Foresight"] = f"{top_risk['risk_score']} Risk ({top_risk['file']})"
+                if top_risk['risk_score'] > 60: score -= 10
+            else:
+                metrics["Foresight"] = "CLEAN"
+    else:
+        metrics["Foresight"] = "Untracked"
+
+    # 9. Intelligence ROI
+    try:
+        from agent_scorer import get_stats
+        stats = get_stats()
+        if stats:
+            avg_all = sum(s["avg"] for s in stats.values()) / len(stats)
+            metrics["Intelligence ROI"] = f"{avg_all:.1f}/5.0 (Avg Score)"
+        else:
+            metrics["Intelligence ROI"] = "No data"
+    except:
+        metrics["Intelligence ROI"] = "Unknown"
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://localhost:11434/api/tags") as response:
+            tags = json.loads(response.read().decode())
+            models = [m["name"] for m in tags.get("models", [])]
+            if "mxbai-embed-large:latest" in models or "mxbai-embed-large" in models:
+                metrics["Neural Memory"] = "READY"
+            else:
+                metrics["Neural Memory"] = "MISSING (ollama pull mxbai-embed-large)"
+                score -= 10
+    except:
+        metrics["Neural Memory"] = "OFFLINE"
+        score -= 5
+
+    # 11. Cost & Prompt Optimization
+    try:
+        from prompt_optimizer import analyze_telemetry
+        report = analyze_telemetry()
+        if "HIGH USAGE" in report:
+            metrics["Cost Logic"] = "WARN (High usage)"
+            score -= 5
+        else:
+            metrics["Cost Logic"] = "OPTIMIZED"
+    except:
+        metrics["Cost Logic"] = "Unknown"
+
+    # 12. Tests (Stub)
     metrics["Tests"] = "PASS"
 
     return max(0, score), metrics

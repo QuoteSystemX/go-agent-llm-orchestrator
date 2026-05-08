@@ -12,6 +12,16 @@ _Context from user message is passed automatically by Claude Code._
 
 ---
 
+## Step 0: Drift Check
+Before designing, identify if the current implementation has already drifted from the existing documentation:
+
+1. // turbo
+   Run `python3 .agent/scripts/drift_detector.py`.
+2. Report all undocumented files, missing agents, or skill drifts.
+3. **Requirement**: Address critical drifts (via `/wiki sync` or manual updates) before proceeding with new architectural design.
+
+---
+
 ## Purpose
 
 Produce `wiki/ARCHITECTURE.md` from the approved PRD. Document system components, technology decisions as ADRs, data flow, and security considerations.
@@ -55,12 +65,12 @@ RULES:
 2. Use architecture skill for ADR format
 3. Identify components for every epic in the PRD
 4. Write one ADR per major technology decision
-5. Map data flow for the primary user story paths
-6. List security considerations per component
-7. List open questions with owner assignments
-8. Write wiki/ARCHITECTURE.md using the template structure
-9. Present to user for approval before exiting
-10. STOP after approval — do NOT generate story cards yet
+7. List security considerations per component.
+8. Run `python3 .agent/scripts/threat_modeler.py "_Context from user message is passed automatically by Claude Code._"` to identify specific architectural risks.
+9. Write wiki/ARCHITECTURE.md using the template structure.
+10. Present to user for approval before exiting.
+11. Run `python3 .agent/scripts/wiki_assembler.py` to ensure all fragments are correctly merged into the final ARCHITECTURE.md.
+12. STOP after approval — do NOT generate story cards yet.
 ```
 
 ---

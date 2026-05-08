@@ -16,7 +16,7 @@ version: 1.0.0
 | Pillar | Tool | What it answers |
 | ------ | ---- | --------------- |
 | **Metrics** | Prometheus + Grafana | Is my system healthy? How fast? |
-| **Logs** | logrus → Loki → Grafana | Why did it fail? What happened? |
+| **Logs** | slog → Loki → Grafana | Why did it fail? What happened? |
 | **Traces** | OpenTelemetry → Jaeger/Tempo | Where is the bottleneck across services? |
 
 Implement all three — each answers different questions. Logs without traces are blind in microservices; metrics without logs hide the root cause.
@@ -178,22 +178,29 @@ groups:
 
 ---
 
-## 4. Structured Logging (logrus → Loki)
+## 4. Structured Logging (slog / zap)
 
 ### Setup — always structured, never fmt.Sprintf in log messages
 
 ```go
-import "github.com/sirupsen/logrus"
+import "log/slog"
 
-func NewLogger(service, version string) *logrus.Entry {
-    log := logrus.New()
-    log.SetFormatter(&logrus.JSONFormatter{
-        TimestampFormat: time.RFC3339Nano,
+func NewLogger(service, version string) *slog.Logger {
+    handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelInfo,
+        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+            // Standardize timestamp
+            if a.Key == slog.TimeKey {
+                a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339Nano))
+            }
+            return a
+        },
     })
-    return log.WithFields(logrus.Fields{
-        "service": service,
-        "version": version,
-    })
+    
+    return slog.New(handler).With(
+        slog.String("service", service),
+        slog.String("version", version),
+    )
 }
 ```
 
@@ -201,15 +208,15 @@ func NewLogger(service, version string) *logrus.Entry {
 
 ```go
 // ✅ Structured — Loki can index and filter
-log.WithFields(logrus.Fields{
-    "user_id":    userID,
-    "order_id":   orderID,
-    "amount":     amount,
-    "duration_ms": time.Since(start).Milliseconds(),
-}).Info("order processed")
+logger.InfoContext(ctx, "order processed",
+    slog.String("user_id", userID),
+    slog.String("order_id", orderID),
+    slog.Int64("amount", amount),
+    slog.Duration("duration", time.Since(start)),
+)
 
 // 🚫 Unstructured — Loki can only grep
-log.Infof("order %s processed for user %s in %dms", orderID, userID, ms)
+logger.Info(fmt.Sprintf("order %s processed for user %s", orderID, userID))
 ```
 
 ### Log levels — use consistently
@@ -243,23 +250,23 @@ pipeline_stages:
 
 ### Trace → Log correlation
 
-Always inject trace ID into log context:
+Always inject trace ID into log context using `slog`:
 
 ```go
-func logWithTrace(ctx context.Context, logger *logrus.Entry) *logrus.Entry {
+func (h *TraceHandler) Handle(ctx context.Context, r slog.Record) error {
     span := trace.SpanFromContext(ctx)
-    if !span.IsRecording() {
-        return logger
+    if span.IsRecording() {
+        sc := span.SpanContext()
+        r.AddAttrs(
+            slog.String("trace_id", sc.TraceID().String()),
+            slog.String("span_id", sc.SpanID().String()),
+        )
     }
-    sc := span.SpanContext()
-    return logger.WithFields(logrus.Fields{
-        "trace_id": sc.TraceID().String(),
-        "span_id":  sc.SpanID().String(),
-    })
+    return h.next.Handle(ctx, r)
 }
 
 // Usage:
-logWithTrace(ctx, log).WithField("user_id", id).Info("processing")
+logger.InfoContext(ctx, "processing order", slog.String("user_id", id))
 ```
 
 In Grafana: click a log line → jump directly to the trace. This is the key value of correlation.
@@ -439,7 +446,14 @@ Link to post-mortem after resolution.
 | SLO defined only on availability | Also define latency SLI — a slow response is a failure |
 | Sampling = 100% in prod | CPU/storage cost — use 10% + tail-sampling for errors |
 | Traces without baggage propagation | Always propagate `traceparent` header across HTTP/gRPC calls |
-| Grafana dashboard per engineer | One canonical dashboard per service, owned by team |
+| Using individual agents for collection | **Use Grafana Alloy** for unified collection of metrics, logs, and traces |
+
+---
+
+## 🛰️ Unified Telemetry (Grafana Alloy)
+
+In 2026, **Grafana Alloy** is the standard collector. It replaces Promtail, Otel Collector, and Agent.
+- **Pattern**: `otel.exporter.otlp` → `alloy` → `loki.write`, `prometheus.remote_write`, `tempo.write`.
 
 ## Changelog
 

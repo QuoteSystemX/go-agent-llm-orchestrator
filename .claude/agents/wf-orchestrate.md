@@ -15,6 +15,21 @@ _Context from user message is passed automatically by Claude Code._
 
 ---
 
+## Step 0: War Room Strategy
+Before selecting agents, run the "Strategic Conflict" suite:
+
+1. // turbo
+   Run `python3 .agent/scripts/hidden_war_room.py`.
+2. // turbo
+   Run `python3 .agent/scripts/war_room_manager.py`.
+3. // turbo
+   Run `python3 .agent/scripts/personality_adapter.py` to adapt agent personas to the task criticality.
+4. // turbo
+   Run `python3 .agent/scripts/context_recall_gate.py "_Context from user message is passed automatically by Claude Code._"`.
+5. **Goal**: Resolve architectural conflicts and establish a unified strategic intent before delegation.
+
+---
+
 ## 🔴 CRITICAL: Minimum Agent Requirement
 
 > ⚠️ **ORCHESTRATION = MINIMUM 3 DIFFERENT AGENTS**

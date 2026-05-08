@@ -202,7 +202,7 @@ And   a lockout notification is sent to their email
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
 | `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from a story description |
-| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | Expand terse requirements into detailed specs with feedback loop |
+| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | Expand terse requirements into detailed specs using Neural PRD patterns |
 | `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
 
 ### 📤 Output Protocol (Mandatory)
@@ -217,6 +217,7 @@ And   a lockout notification is sent to their email
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/plan-writing/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
+- `.agent/skills/neural-prd-engineering/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`

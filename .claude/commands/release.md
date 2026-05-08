@@ -14,9 +14,12 @@ $ARGUMENTS
 
 ## Phase 1: Pre-flight Audit
 1. **Release Manager** runs `python3 .agent/scripts/drift_detector.py`.
-2. If drift exists → **Analyst** creates documentation tasks first.
-3. **QA Engineer** runs `python3 .agent/scripts/test_runner.py` or equivalent.
-4. **Security Auditor** runs `python3 .agent/scripts/security_scan.py`.
+2. **Release Manager** runs `python3 .agent/scripts/pr_audit.py` to ensure all PRs are merged and reviewed.
+3. **Release Manager** runs `python3 .agent/scripts/visualize_deps.py` to detect dependency bloat.
+4. If drift exists → **Analyst** creates documentation tasks first.
+5. **QA Engineer** runs `python3 .agent/scripts/test_runner.py` or equivalent.
+6. **Security Auditor** runs `python3 .agent/scripts/security_scan.py`.
+7. **Social Proof Manager** runs `python3 .agent/scripts/social_proof_generator.py` to draft release announcements.
 
 ## Phase 2: Change Analysis
 1. **Release Manager** scans git logs since the last tag:

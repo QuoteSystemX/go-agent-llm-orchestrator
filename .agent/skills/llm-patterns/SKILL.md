@@ -29,9 +29,10 @@ Input = system prompt + history + retrieved docs + user message
 
 | Use Case | Model Class | Why |
 |----------|-------------|-----|
-| Complex reasoning, code, analysis | Claude Opus / GPT-4o | Best quality |
+| Complex reasoning, architecture | DeepSeek-R1 (Local/Cloud) | SOTA reasoning, chain-of-thought |
+| High-fidelity coding, refactoring | Qwen2.5-Coder (32B+) / Sonnet 4.6 | Best coding performance |
 | Balanced tasks, API backbone | Claude Sonnet / GPT-4o-mini | Speed + cost |
-| Classification, routing, simple extraction | Claude Haiku / GPT-3.5 | Cheapest |
+| Classification, routing, simple extraction | Claude Haiku / Llama-3.1-8B | Cheapest / Fast local |
 | Embeddings | text-embedding-3-small | Fast, cheap, 1536d |
 | Image understanding | Claude 3.5 / GPT-4o (vision) | Multimodal |
 | Function calling / tool use | Claude 3.x / GPT-4o | Best tool reliability |
@@ -163,6 +164,22 @@ def embed(text: str) -> list[float]:
 | Hallucination on missing info | Add: "If the answer is not in the context, say 'I don't know'" |
 | Slow retrieval | Pre-filter by metadata, reduce vector dim, use HNSW index |
 | Context too long | Rerank and keep top-3, use map-reduce for summarization |
+
+---
+
+## 🗺️ ADVANCED RAG (2026)
+
+### GraphRAG (Knowledge Graphs)
+Use when relationships between entities are more important than semantic similarity.
+- **Pattern**: Extract entities/relations (LLM) → Store in Neo4j/FalkorDB → Traverse for context.
+
+### Agentic RAG
+The agent decides *how* to search before searching.
+- **Pattern**: Multi-query generation → Decomposition → Parallel Retrieval → Synthesis.
+
+### Long-Context RAG
+Leverage 1M+ token windows (Gemini/Claude) by using "Recall-Optimized" prompts.
+- **Pattern**: Document stuffing with "Needle-in-a-haystack" markers for high precision.
 
 ---
 

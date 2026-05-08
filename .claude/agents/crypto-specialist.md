@@ -128,6 +128,8 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/ton-blockchain/SKILL.md`
+- `.agent/skills/stonfi-dex/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`

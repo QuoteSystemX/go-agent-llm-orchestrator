@@ -20,6 +20,9 @@ This command generates tests, runs existing tests, or checks test coverage.
 /test                - Run all tests
 /test [file/feature] - Generate tests for specific target
 /test coverage       - Show test coverage report
+/test chaos          - Run resilience tests via Chaos Monkey
+/test stress         - Run autonomous fuzzing (stress tests)
+/test audit          - Run security scans and auto-patching
 /test watch          - Run tests in watch mode
 ```
 
@@ -27,7 +30,7 @@ This command generates tests, runs existing tests, or checks test coverage.
 
 ## Behavior
 
-### Generate Tests
+### 1. Generate Tests
 
 When asked to test a file or feature:
 
@@ -49,6 +52,33 @@ When asked to test a file or feature:
    - Mock external dependencies
 
 ---
+
+### 2. Advanced Testing Modes
+
+#### Chaos Resilience (`/test chaos`)
+- Run `CHAOS_ENABLED=1 python3 .agent/scripts/chaos_monkey.py --corrupt-bus --kill-mcp`.
+- **Goal**: Verify if the system can detect and repair state corruption via `bus_debugger.py`.
+- **Success**: System remains operational and repairs corrupted files automatically.
+
+#### Stress Fuzzing (`/test stress`)
+- Run `python3 .agent/scripts/autonomous_fuzzer.py`.
+- **Goal**: Detect edge cases and panics through random input generation.
+
+#### 🟢 Mode: Audit (Architecture & Governance)
+1. // turbo
+   Run `python3 .agent/scripts/verify_all.py`
+2. // turbo
+   Run `python3 .agent/scripts/drift_detector.py`
+3. // turbo
+   Run `python3 .agent/scripts/hallucination_detector.py`
+4. // turbo
+   Run `python3 .agent/scripts/qa_golden_engine.py` to verify output against architectural standards.
+5. // turbo
+   Run `python3 .agent/scripts/security_scan.py` and `dependency_analyzer.py`.
+- If vulnerabilities found:
+  - // turbo
+    Run `python3 .agent/scripts/vulnerability_patcher.py` to prepare fixes.
+  - Apply fixes using `security-auditor` agent.
 
 ## Output Format
 

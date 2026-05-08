@@ -72,7 +72,11 @@ Run the experience distiller to archive old lessons and ensure the experience ba
 
 1. // turbo
    Run command: `python3 .agent/scripts/experience_distiller.py`
-2. Log the output of the distillation (e.g., `✅ Distillation complete: N active, M archived`).
+2. // turbo
+   Run command: `python3 .agent/scripts/knowledge_miner.py`
+3. // turbo
+   Run command: `python3 .agent/scripts/wiki_sync.py`
+4. Log the output of the semantic loop execution.
 
 ### Step 5: Summary
 

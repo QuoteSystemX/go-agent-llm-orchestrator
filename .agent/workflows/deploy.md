@@ -26,6 +26,22 @@ This command handles production deployment with pre-flight checks, deployment ex
 
 ---
 
+## Step 0: Safety & Quality Audit
+Before presenting the checklist, run the full verification suite:
+
+1. // turbo
+   Run `python3 .agent/scripts/security_scan.py` & `python3 .agent/scripts/dependency_analyzer.py`.
+2. // turbo
+   Run `python3 .agent/scripts/hallucination_detector.py`.
+3. // turbo
+   Run `python3 .agent/scripts/qa_golden_engine.py`.
+4. // turbo
+   Run `python3 .agent/scripts/guardrail_monitor.py` to verify budget and token safety.
+5. // turbo
+   Run `python3 .agent/scripts/status_report.py`. Health Score MUST be > 80%.
+
+---
+
 ## Pre-Deployment Checklist
 
 Before any deployment:
@@ -151,6 +167,17 @@ error TS2345: Argument of type 'string' is not assignable...
 Previous version (v1.2.2) is still active.
 Run `/deploy rollback` if needed.
 ```
+
+---
+
+## Failure Handling
+
+If a deployment or build fails:
+1. **Analyze logs** to identify the root cause.
+2. // turbo
+   Run `python3 .agent/scripts/ci_auto_fixer.py` to trigger autonomous healing and task generation.
+3. Inform the user and provide the link to the initiated healing task in `tasks/`.
+4. **Rollback** if necessary via `python3 .agent/scripts/rollback_task.py`.
 
 ---
 

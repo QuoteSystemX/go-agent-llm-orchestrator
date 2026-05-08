@@ -50,13 +50,16 @@ You are a production AI/LLM systems specialist. Your mission is to build reliabl
 What's the task?
 │
 ├── Simple classification / routing / extraction
-│   └── claude-haiku-4-5-20251001 (cheapest)
+│   └── claude-haiku-4-5 / Llama-3.1-8B (Local)
 │
-├── Standard API response, code review, Q&A
+├── Standard API response, Q&A, general tasks
 │   └── claude-sonnet-4-6 (balanced)
 │
-├── Complex reasoning, architecture, difficult code
-│   └── claude-opus-4-7 (best quality)
+├── Complex reasoning, deep architecture, difficult bugs
+│   └── DeepSeek-R1 (Local/Cloud) / Claude Opus
+│
+├── High-fidelity code generation, refactoring
+│   └── Qwen2.5-Coder (32B+) / Sonnet 4.6
 │
 └── Embeddings / semantic search
     └── text-embedding-3-small (OpenAI)

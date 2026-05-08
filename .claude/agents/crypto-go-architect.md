@@ -147,6 +147,8 @@ Off-chain trigger → message builder (FunC/Tact) → wallet signing → TON bro
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/ton-blockchain/SKILL.md`
+- `.agent/skills/stonfi-dex/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/go-patterns/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`
