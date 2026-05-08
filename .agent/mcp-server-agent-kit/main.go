@@ -76,7 +76,7 @@ func main() {
 	}
 	h.dispatcher.Start()
 	h.indexer.Start()
-	
+
 	// Data Retention initialization
 	if *retentionDays > 0 {
 		h.db.SetSetting("retention_days", fmt.Sprintf("%d", *retentionDays))
@@ -121,11 +121,11 @@ func main() {
 			}
 
 			res, err := hdlr(ctx, req)
-			
+
 			// Record Metric
 			duration := time.Since(start)
 			h.db.RecordMetric(toolName, agent, projectID, duration, err == nil)
-			
+
 			return res, err
 		}
 	}
@@ -153,7 +153,7 @@ func main() {
 		mcp.WithDescription("Read core knowledge artifacts (KNOWLEDGE.md, ARCHITECTURE.md)."),
 		mcp.WithString("name", mcp.Required(), mcp.Enum("KNOWLEDGE", "ARCHITECTURE")),
 	), withRBAC("knowledge_read", h.readKnowledge))
-	
+
 	s.AddTool(mcp.NewTool("search_knowledge",
 		mcp.WithDescription("Semantic search across project brain."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query")),
@@ -170,17 +170,17 @@ func main() {
 		mcp.WithString("bucket", mcp.Required(), mcp.Description("S3 Bucket name")),
 		mcp.WithString("endpoint", mcp.Required(), mcp.Description("S3 Endpoint URL")),
 	), withRBAC("backup_s3", h.backupS3))
-	
+
 	s.AddTool(mcp.NewTool("webhook_register",
 		mcp.WithDescription("Register an outbound webhook for system events."),
 		mcp.WithString("url", mcp.Required(), mcp.Description("Webhook URL")),
 		mcp.WithString("events", mcp.Required(), mcp.Description("Comma-separated events")),
 	), withRBAC("webhook_register", h.registerWebhook))
-	
+
 	s.AddTool(mcp.NewTool("metrics_get",
 		mcp.WithDescription("Retrieve tool execution performance metrics."),
 	), withRBAC("metrics_get", h.getMetrics))
-	
+
 	s.AddTool(mcp.NewTool("health_check",
 		mcp.WithDescription("Run workspace health report."),
 	), withRBAC("health_check", h.healthCheck))
@@ -190,10 +190,10 @@ func main() {
 	), withRBAC("health_fix", h.healthFix))
 
 	s.AddTool(mcp.NewTool("project_list", mcp.WithDescription("List all registered projects.")), withRBAC("project_list", h.listProjects))
-	
+
 	s.AddTool(mcp.NewTool("workspace_sync", mcp.WithDescription("Sync workspace with remote (git pull).")), withRBAC("workspace_sync", h.syncWorkspace))
 	s.AddTool(mcp.NewTool("workspace_push", mcp.WithDescription("Push local changes to remote.")), withRBAC("workspace_push", h.pushWorkspace))
-	s.AddTool(mcp.NewTool("workspace_checkout", 
+	s.AddTool(mcp.NewTool("workspace_checkout",
 		mcp.WithDescription("Switch to a different git branch."),
 		mcp.WithString("branch", mcp.Required(), mcp.Description("Branch name")),
 	), withRBAC("workspace_checkout", h.checkoutBranch))
@@ -225,7 +225,7 @@ func main() {
 		mcp.WithString("event", mcp.Required(), mcp.Description("Event type: on_read | on_change")),
 		mcp.WithString("script", mcp.Required(), mcp.Description("Path to the script to execute")),
 	), withRBAC("hook_register", h.registerHook))
-	
+
 	s.AddTool(mcp.NewTool("hook_list",
 		mcp.WithDescription("List all active resource hooks."),
 	), withRBAC("hook_list", h.listHooks))
@@ -242,7 +242,7 @@ func main() {
 		mcp.WithDescription("Get status of a specific job."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID")),
 	), withRBAC("jobs_status", h.getJobStatus))
-	
+
 	s.AddTool(mcp.NewTool("workflows_list", mcp.WithDescription("List available automation workflows.")), withRBAC("workflows_list", h.listWorkflows))
 	s.AddTool(mcp.NewTool("workflows_load",
 		mcp.WithDescription("Read the documentation for a specific workflow."),
@@ -326,7 +326,7 @@ func main() {
 		mcpHandler := loggingMiddleware(server.NewStreamableHTTPServer(s, server.WithStateLess(true)))
 		http.Handle("/mcp", mcpHandler)
 		http.Handle("/mcp/", mcpHandler)
-		
+
 		// SSE log streaming — tail audit.log
 		auditLogPath := filepath.Join(h.projectRoot, "audit.log")
 		http.HandleFunc("/logs/stream", func(w http.ResponseWriter, r *http.Request) {

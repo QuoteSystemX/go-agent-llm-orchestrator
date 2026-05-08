@@ -35,7 +35,8 @@ func resolveProjectRoot() string {
 	// Check if CWD or any parent is a project root
 	curr := cwd
 	for {
-		if _, err := os.Stat(filepath.Join(curr, ".agent")); err == nil {
+		agentPath := filepath.Join(curr, ".agent")
+		if info, err := os.Stat(agentPath); err == nil && info.IsDir() {
 			return curr
 		}
 		if _, err := os.Stat(filepath.Join(curr, "GEMINI.md")); err == nil {
