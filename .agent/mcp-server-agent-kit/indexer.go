@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,6 +51,15 @@ func (idx *Indexer) Start() {
 
 func (idx *Indexer) FullScan() {
 	fmt.Fprintf(os.Stderr, "Indexer: Starting full project scan...\n")
+	
+	// Use a single transaction for the whole scan to avoid locking overhead
+	tx, err := idx.db.connSearch.Begin()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Indexer: Failed to start transaction: %v\n", err)
+		return
+	}
+	defer tx.Rollback()
+
 	dirs := idx.indexDirs
 	for _, d := range dirs {
 		path := filepath.Join(idx.projectRoot, d)
@@ -61,10 +71,38 @@ func (idx *Indexer) FullScan() {
 				return nil
 			}
 			if strings.HasSuffix(p, ".md") || strings.HasSuffix(p, ".log") {
-				idx.IndexFile(p)
+				idx.IndexFileTx(tx, p)
 			}
 			return nil
 		})
+	}
+	
+	if err := tx.Commit(); err != nil {
+		fmt.Fprintf(os.Stderr, "Indexer: Failed to commit full scan: %v\n", err)
+	} else {
+		fmt.Fprintf(os.Stderr, "Indexer: Full scan completed successfully.\n")
+	}
+}
+
+func (idx *Indexer) IndexFileTx(tx *sql.Tx, path string) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+
+	rel, _ := filepath.Rel(idx.projectRoot, path)
+	docType := "doc"
+	if strings.HasSuffix(path, ".log") {
+		docType = "log"
+	} else if strings.Contains(path, "tasks") {
+		docType = "task"
+	}
+
+	tx.Exec("DELETE FROM documents_fts WHERE path = ?", rel)
+	_, err = tx.Exec("INSERT INTO documents_fts (path, content, type) VALUES (?, ?, ?)", 
+		rel, string(content), docType)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Indexer error indexing %s: %v\n", rel, err)
 	}
 }
 
@@ -82,10 +120,8 @@ func (idx *Indexer) IndexFile(path string) {
 		docType = "task"
 	}
 
-	// INSERT or REPLACE in FTS5 isn't direct like standard tables, 
-	// we delete first then insert to ensure no duplicates.
-	idx.db.conn.Exec("DELETE FROM documents_fts WHERE path = ?", rel)
-	_, err = idx.db.conn.Exec("INSERT INTO documents_fts (path, content, type) VALUES (?, ?, ?)", 
+	idx.db.connSearch.Exec("DELETE FROM documents_fts WHERE path = ?", rel)
+	_, err = idx.db.connSearch.Exec("INSERT INTO documents_fts (path, content, type) VALUES (?, ?, ?)", 
 		rel, string(content), docType)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Indexer error indexing %s: %v\n", rel, err)
@@ -153,7 +189,7 @@ func (idx *Indexer) Watch() {
 
 func (idx *Indexer) Search(query string) ([]map[string]string, error) {
 	// Using FTS5 highlight function for snippets
-	rows, err := idx.db.conn.Query(`
+	rows, err := idx.db.connSearch.Query(`
 		SELECT path, type, snippet(documents_fts, 1, '<b>', '</b>', '...', 64) as snippet
 		FROM documents_fts 
 		WHERE content MATCH ? 

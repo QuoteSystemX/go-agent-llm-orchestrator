@@ -9,13 +9,13 @@ func (d *DB) RecordMetric(tool, agent, project string, duration time.Duration, s
 	if !success {
 		status = "failure"
 	}
-	_, err := d.conn.Exec("INSERT INTO metrics (agent_name, tool_name, status, duration_ms, project_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+	_, err := d.connMetrics.Exec("INSERT INTO metrics (agent_name, tool_name, status, duration_ms, project_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 		agent, tool, status, duration.Milliseconds(), project, time.Now())
 	return err
 }
 
 func (d *DB) GetMetrics() ([]map[string]any, error) {
-	rows, err := d.conn.Query("SELECT tool_name, agent_name, status, duration_ms, created_at FROM metrics ORDER BY created_at DESC LIMIT 100")
+	rows, err := d.connMetrics.Query("SELECT tool_name, agent_name, status, duration_ms, created_at FROM metrics ORDER BY created_at DESC LIMIT 100")
 	if err != nil {
 		return nil, err
 	}
@@ -64,13 +64,13 @@ func (d *DB) GetWebhooks() ([]map[string]string, error) {
 func (d *DB) CleanupOldData(days int) error {
 	cutoff := time.Now().AddDate(0, 0, -days).Format("2006-01-02 15:04:05")
 	
-	// Delete old metrics
-	_, err := d.conn.Exec("DELETE FROM metrics WHERE created_at < ?", cutoff)
+	// Delete old metrics from metrics DB
+	_, err := d.connMetrics.Exec("DELETE FROM metrics WHERE created_at < ?", cutoff)
 	if err != nil {
 		return err
 	}
 	
-	// Delete old completed/failed jobs
+	// Delete old completed/failed jobs from main DB
 	_, err = d.conn.Exec("DELETE FROM jobs WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled') AND completed_at < ?", cutoff)
 	return err
 }

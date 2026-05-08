@@ -18,10 +18,27 @@ import (
 
 const serverVersion = "1.7.0"
 
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func (rw *responseWriter) Flush() {
+	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(os.Stderr, "[HTTP] %s %s %s\n", r.Method, r.URL.Path, r.URL.RawQuery)
-		next.ServeHTTP(w, r)
+		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rw, r)
+		fmt.Fprintf(os.Stderr, "[HTTP] %s %s %s -> %d\n", r.Method, r.URL.Path, r.URL.RawQuery, rw.status)
 	})
 }
 
@@ -38,7 +55,6 @@ func main() {
 	retentionDays := flag.Int("retention", 30, "Data retention in days (0 to use DB setting, default 30)")
 	indexDirs := flag.String("index-dirs", ".agent,wiki,tasks", "Comma-separated directories to index for FTS5")
 	root := flag.String("root", "", "project root path (overrides auto-detection)")
-	dbFile := flag.String("db", "", "database file path (optional)")
 	flag.Parse()
 
 	projectRoot := *root
@@ -51,11 +67,7 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "agent-kit: version %s, projectRoot: %q\n", serverVersion, projectRoot)
 
-	dbPath := *dbFile
-	if dbPath == "" {
-		dbPath = filepath.Join(projectRoot, ".agent", "mcp_server.db")
-	}
-	db, err := InitDB(dbPath)
+	db, err := InitDB(projectRoot)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to init db: %v\n", err)
 		os.Exit(1)
@@ -323,7 +335,7 @@ func main() {
 			fmt.Fprintf(w, `{"status":"ok","version":"%s"}`, serverVersion)
 		})
 
-		mcpHandler := loggingMiddleware(server.NewStreamableHTTPServer(s, server.WithStateLess(true)))
+		mcpHandler := loggingMiddleware(server.NewStreamableHTTPServer(s))
 		http.Handle("/mcp", mcpHandler)
 		http.Handle("/mcp/", mcpHandler)
 
