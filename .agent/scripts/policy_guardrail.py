@@ -36,6 +36,10 @@ def check_secrets(content):
     return issues
 
 def check_prose_first(content, file_path):
+    # Ignore fragments as they are part of a larger document
+    if "wiki/fragments" in str(file_path):
+        return []
+        
     if "wiki" not in str(file_path) and "docs/adr" not in str(file_path):
         return []
     
