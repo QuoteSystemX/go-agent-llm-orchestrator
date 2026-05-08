@@ -3,7 +3,16 @@
 # Used by .mcp.json or .agent/config/mcp_config.json as the MCP command.
 set -e
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+# Resolves symlink to find the real directory of the script
+SOURCE="${BASH_SOURCE[0]}"
+if [ -z "$SOURCE" ]; then SOURCE="$0"; fi
+while [ -L "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 RAW_ARCH="$(uname -m)"
 

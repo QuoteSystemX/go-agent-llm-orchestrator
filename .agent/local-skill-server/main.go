@@ -26,21 +26,37 @@ func main() {
 	s := server.NewMCPServer("agent-kit", serverVersion)
 
 	// --- Skills Tools ---
-	s.AddTool(mcp.NewTool("skills_list", mcp.WithDescription("List all available skill names.")), h.listSkills)
+	s.AddTool(mcp.NewTool("skills_list",
+		mcp.WithDescription("List all available skill names."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.listSkills)
 	s.AddTool(mcp.NewTool("skills_load",
 		mcp.WithDescription("Load full SKILL.md content."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Skill name")),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
 	), h.loadSkill)
 
 	// --- Agents Tools ---
-	s.AddTool(mcp.NewTool("agents_list", mcp.WithDescription("List all specialist agents.")), h.listAgents)
+	s.AddTool(mcp.NewTool("agents_list",
+		mcp.WithDescription("List all specialist agents."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.listAgents)
 	s.AddTool(mcp.NewTool("agents_load",
 		mcp.WithDescription("Load agent profile (persona and rules)."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Agent name (e.g. orchestrator, analyst)")),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
 	), h.loadAgent)
 
 	// --- Workflows Tools ---
-	s.AddTool(mcp.NewTool("workflows_list", mcp.WithDescription("List all automated workflows.")), h.listWorkflows)
+	s.AddTool(mcp.NewTool("workflows_list",
+		mcp.WithDescription("List all automated workflows."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.listWorkflows)
 	s.AddTool(mcp.NewTool("workflows_run",
 		mcp.WithDescription("Run a workflow pattern safely."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Workflow name (e.g. full_cycle, reviewer)")),
@@ -59,17 +75,29 @@ func main() {
 	s.AddTool(mcp.NewTool("knowledge_read",
 		mcp.WithDescription("Read core knowledge artifacts (KNOWLEDGE.md, ARCHITECTURE.md)."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Artifact name (e.g. KNOWLEDGE, ARCHITECTURE)")),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
 	), h.readKnowledge)
 
 	// --- Logging & Observability ---
 	s.AddTool(mcp.NewTool("logs_tail",
 		mcp.WithDescription("Get recent agent execution logs."),
 		mcp.WithNumber("lines", mcp.Description("Number of lines to return (default 20)")),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
 	), h.tailLogs)
 
 	// --- Status & BMAD Tools ---
-	s.AddTool(mcp.NewTool("bmad_status", mcp.WithDescription("Check the status of the BMAD lifecycle.")), h.bmadStatus)
-	s.AddTool(mcp.NewTool("status_summary", mcp.WithDescription("Get Agent Kit summary.")), h.statusSummary)
+	s.AddTool(mcp.NewTool("bmad_status",
+		mcp.WithDescription("Check the status of the BMAD lifecycle."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.bmadStatus)
+	s.AddTool(mcp.NewTool("status_summary",
+		mcp.WithDescription("Get Agent Kit summary."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.statusSummary)
 
 	// --- Stdout Protection & Panic Recovery ---
 	// Any stray output to stdout during init will break the MCP protocol.
