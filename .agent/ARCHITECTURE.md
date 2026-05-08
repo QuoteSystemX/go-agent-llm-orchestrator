@@ -8,9 +8,9 @@
 
 Unified Agent Kit is a modular system consisting of:
 
-- **39 Specialist Agents** - Role-based AI personas
-- **55 Skills** - Domain-specific knowledge modules
-- **21 Workflows** - Slash command procedures
+- **43 Specialist Agents** - Role-based AI personas
+- **63 Skills** - Domain-specific knowledge modules
+- **22 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 - **Autonomous SRE** - Incident Watcher, War Room Manager
@@ -361,7 +361,7 @@ func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 - `python3 .agent/scripts/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
-## 🤖 Agents (36)
+## 🤖 Agents (43)
 
 Specialist AI personas for different domains.
 
@@ -376,8 +376,8 @@ Specialist AI personas for different domains.
 | `mobile-developer`       | iOS, Android, RN           | mobile-design, i18n-localization                                  |
 | `game-developer`         | Game logic, mechanics      | game-development                                                  |
 | `go-specialist`          | Go, gRPC, Concurrency, Perf | go-patterns, godoc-patterns, api-patterns, architecture          |
-| `crypto-specialist`      | TON, DEX, Exchange, Trading | api-patterns, architecture                                       |
-| `crypto-go-architect`    | Go + Crypto system design   | go-patterns, api-patterns, architecture, brainstorming           |
+| `crypto-specialist`      | TON, DEX, Exchange, Trading | ton-blockchain, stonfi-dex, api-patterns, architecture                                       |
+| `crypto-go-architect`    | Go + Crypto system design   | ton-blockchain, stonfi-dex, go-patterns, api-patterns, architecture, brainstorming           |
 | `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                          |
 | `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                           |
 | `penetration-tester`     | Offensive security         | red-team-tactics                                                  |
@@ -404,10 +404,12 @@ Specialist AI personas for different domains.
 | `cloud-engineer`         | Multi-cloud infrastructure | cloud-patterns, terraform-patterns, deployment-procedures         |
 | `visual-designer`      | UI/UX aesthetics          | frontend-design, web-design-guidelines                            |
 | `release-manager`     | Versioning & SemVer       | git-master, testing-patterns, lint-and-validate                   |
+| `prompt-specialist`   | LLM Optimization & QA     | prompt-engineering, clean-code, telemetry, bmad-lifecycle        |
+| `python-specialist`   | Python Ecosystem Expert   | python-patterns, python-expert-advanced, python-ecosystem-mastery |
 
 ---
 
-## 🧩 Skills (53)
+## 🧩 Skills (63)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -431,6 +433,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `go-patterns`           | Go frameworks, gRPC, buf                                    |
 | `rust-pro`              | Rust patterns, systems                                      |
 | `typescript-expert`     | Strict-mode TS, OpenAPI→TS generation, SDK type design, Zod |
+| `prompt-engineering`   | Chain-of-Thought, Few-shot, ReAct, A/B Testing |
 
 ### Database
 
@@ -525,12 +528,11 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 ---
 
-## 🔄 Workflows (21)
-
 Slash command procedures. Invoke with `/command`.
 
 | Command               | Description                            |
 | --------------------- | -------------------------------------- |
+| `/auto-sync`          | Autonomous Documentation Sync          |
 | `/brainstorm`         | Socratic discovery                     |
 | `/create`             | Create new features                    |
 | `/debug`              | Debug issues                           |
@@ -550,6 +552,7 @@ Slash command procedures. Invoke with `/command`.
 | `/stories`            | BMAD Phase 4 — Story card batch        |
 | `/sprint`             | BMAD Phase 5 — Sprint board            |
 | `/close-sprint`       | BMAD — Close sprint, archive artifacts |
+| `/auto-sync`          | Autonomous Documentation Sync          |
 
 ---
 

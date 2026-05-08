@@ -30,30 +30,43 @@ class GoldenSetEngine:
         self.save()
 
     def validate_output(self, query, actual_output):
-        """Validate an agent's output against the most similar golden pair."""
-        # Simple string matching for finding the pair (can be upgraded to semantic search later)
-        best_match = None
-        for pair in self.golden_set:
-            if pair["query"].lower() in query.lower() or query.lower() in pair["query"].lower():
-                best_match = pair
-                break
+        """Validate an agent's output using multiple evaluators."""
+        best_match = self._find_best_match(query)
         
         if not best_match:
             return {"status": "SKIPPED", "reason": "No golden pair found for this query."}
 
+        results = {
+            "query": query,
+            "status": "PASS",
+            "score": 1.0,
+            "missing_patterns": [],
+            "feedback": ""
+        }
+
+        # 1. Pattern Matching (Baseline)
         missing = []
         for pattern in best_match["expected_patterns"]:
             if pattern.lower() not in actual_output.lower():
                 missing.append(pattern)
-
-        if missing:
-            return {
-                "status": "FAIL",
-                "missing_patterns": missing,
-                "golden_query": best_match["query"]
-            }
         
-        return {"status": "PASS", "golden_query": best_match["query"]}
+        if missing:
+            results["status"] = "FAIL"
+            results["missing_patterns"] = missing
+            results["score"] -= 0.5
+
+        # 2. Semantic/LLM Evaluation (Placeholder for Agent tool call)
+        # In a real run, the Prompt Specialist would use 'agent' tool 
+        # to compare semantic similarity or logic adherence.
+        
+        return results
+
+    def _find_best_match(self, query):
+        """Find the most relevant golden pair using basic search."""
+        for pair in self.golden_set:
+            if pair["query"].lower() in query.lower() or query.lower() in pair["query"].lower():
+                return pair
+        return None
 
 if __name__ == "__main__":
     engine = GoldenSetEngine()
