@@ -57,6 +57,8 @@ graph TD
 | **Product Def**     | "requirements", "user story", "backlog", "MVP"           | `product-owner`                           | ✅ YES       |
 | **E2E / QA**        | "playwright", "cypress", "e2e", "pipeline", "regression" | `qa-automation-engineer`                  | ✅ YES       |
 | **Audit**           | "audit", "scan code", "tech debt", "generate tasks"      | `reviewer`                                | ✅ YES       |
+| **CTO / Tech Lead** | "architecture", "technical roadmap", "roadmap", "technical feasibility", "complexity-to-value", "build vs buy", "cto" | `cto` | ✅ YES |
+| **Risk Manager / CRO** | "risk", "kelly criterion", "stop loss", "leverage", "exposure", "position sizing", "portfolio audit", "cro" | `risk-manager` | ✅ YES |
 | **Cloud Infra**     | "aws", "gcp", "azure", "iam", "vpc", "kms", "s3", "blob" | `cloud-engineer`                          | ✅ YES       |
 | **Reliability**     | "slo", "sli", "metrics", "dashboard", "alert", "sre"     | `sre-engineer`                            | ✅ YES       |
 | **Release**         | "release", "version", "tag", "changelog", "semver"       | `release-manager`                         | ✅ YES       |
