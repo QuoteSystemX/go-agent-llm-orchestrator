@@ -11,57 +11,44 @@ without duplicating content or leaking sensitive application-specific details
 to downstream repositories.
 """
 
-def assemble_wiki(template_path, output_path, profile="hub"):
-    """
-    Assembles a markdown file from a template by injecting fragments.
+FRAGMENTS_BASE = Path("wiki/fragments")
+LOCAL_APP_DIR = FRAGMENTS_BASE / "local"
+
+def get_local_fragments() -> str:
+    if not LOCAL_APP_DIR.exists():
+        return ""
     
-    Tags: <!-- @INJECT:path/to/fragment -->
-    """
+    fragments = sorted(list(LOCAL_APP_DIR.glob("*.md")))
+    return "\n---\n".join(f.read_text() for f in fragments) if fragments else ""
+
+def resolve_fragment(fragment_id: str, profile: str) -> str:
+    if fragment_id == "SPOKE_LOCAL_APP":
+        return get_local_fragments()
+
+    if profile == "spoke" and fragment_id.startswith("app/"):
+        return f"<!-- SKIPPED: {fragment_id} for spoke profile -->"
+        
+    path = FRAGMENTS_BASE / f"{fragment_id}.md"
+    return path.read_text() if path.exists() else f"<!-- ERROR: Fragment missing: {fragment_id} -->"
+
+def assemble_wiki(template_path: Path, output_path: Path, profile: str = "hub"):
     if not template_path.exists():
-        print(f"Template not found: {template_path}")
         return
 
-    content = template_path.read_text()
+    template = template_path.read_text()
+    assembled = re.sub(
+        r'<!--\s*@INJECT:(.*?)\s*-->', 
+        lambda m: resolve_fragment(m.group(1).strip(), profile), 
+        template
+    )
     
-    def inject_fragment(match):
-        fragment_rel_path = match.group(1)
-        
-        # Handle Auto-Discovery for Spoke Local App fragments
-        if fragment_rel_path == "SPOKE_LOCAL_APP":
-            local_dir = Path("wiki/fragments/local")
-            if local_dir.exists():
-                local_fragments = sorted(list(local_dir.glob("*.md")))
-                if local_fragments:
-                    return "\n---\n".join([f.read_text() for f in local_fragments])
-            return "" # Nothing to inject
+    # Clean up redundant separators
+    assembled = re.sub(r'\n---\n\s*<!-- SKIPPED:.*? -->\s*\n---\n', '\n---\n', assembled)
+    assembled = re.sub(r'---\n\s*---\n', '---\n', assembled)
 
-        # Provisioning Logic: Skip app fragments if profile is 'spoke'
-        if profile == "spoke" and fragment_rel_path.startswith("app/"):
-            return f"<!-- SKIPPED: {fragment_rel_path} for spoke profile -->"
-            
-        fragment_path = Path("wiki/fragments") / f"{fragment_rel_path}.md"
-        
-        if fragment_path.exists():
-            return fragment_path.read_text()
-        else:
-            return f"<!-- ERROR: Fragment not found at {fragment_path} -->"
-
-    # Replace injection tags
-    assembled_content = re.sub(r'<!-- @INJECT:(.*?) -->', inject_fragment, content)
-    
-    # Cleanup: Remove doubled separators and empty sections
-    assembled_content = re.sub(r'\n---\n\s*<!-- SKIPPED:.*? -->\s*\n---\n', '\n---\n', assembled_content)
-    assembled_content = re.sub(r'---\n\s*---\n', '---\n', assembled_content)
-
-    output_path.write_text(assembled_content)
-    print(f"✅ Wiki assembled to {output_path} (Profile: {profile})")
+    output_path.write_text(assembled)
+    print(f"✅ Wiki assembled: {output_path} ({profile})")
 
 if __name__ == "__main__":
-    profile_arg = "hub"
-    if len(sys.argv) > 1 and sys.argv[1] == "--spoke":
-        profile_arg = "spoke"
-        
-    template = Path("wiki/ARCHITECTURE.template.md")
-    output = Path("wiki/ARCHITECTURE.md")
-    
-    assemble_wiki(template, output, profile=profile_arg)
+    profile = "spoke" if "--spoke" in sys.argv else "hub"
+    assemble_wiki(Path("wiki/ARCHITECTURE.template.md"), Path("wiki/ARCHITECTURE.md"), profile)
