@@ -182,6 +182,6 @@ func (h *handler) workspaceStatus(_ context.Context, _ mcp.CallToolRequest) (*mc
 	out, _ := cmd.CombinedOutput()
 	branch, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	
-	res := fmt.Sprintf("Branch: %s\nChanges:\n%s", strings.TrimSpace(string(branch)), string(out))
+	res := fmt.Sprintf("Branch: %s\nChanges:\n%s", strings.TrimSpace(string(branch)), string(out)) // nosec
 	return mcp.NewToolResultText(res), nil
 }

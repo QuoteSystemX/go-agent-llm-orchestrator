@@ -27,7 +27,9 @@ Unified Agent Kit is a modular system consisting of:
 ├── agents/                  # Specialist Agents profiles (.md) — with profile: frontmatter
 ├── skills/                  # Skills (Domain-specific knowledge modules)
 ├── workflows/               # Slash Commands for Unified Agent (+ Local triggers)
-├── rules/                   # Global Rules (GEMINI.md)
+├── rules/                   # Global Rules (Modular source in gemini/)
+│   ├── gemini/              # Modular rule source files (.md)
+│   └── GEMINI.md            # Compiled rule artifact (auto-generated)
 ├── scripts/                 # Master Validation Scripts
 │   ├── lib/                 # Core Infrastructure Libraries
 │   │   ├── paths.py         # Dynamic path resolution
@@ -355,6 +357,7 @@ func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 ## 🛠️ Workspace Management & Hygiene
 
 - `python3 .agent/scripts/status_report.py` - Unified Dashboard (Tech + Business)
+- `python3 .agent/scripts/compile_rules.py` - Compile modular Gemini rules
 - `python3 .agent/scripts/task_helper.py` - Task card generator for `tasks/`
 - `python3 .agent/scripts/drift_detector.py` - Wiki vs Code drift detection
 - `python3 .agent/scripts/metrics_dashboard.py` - Real-time agent telemetry

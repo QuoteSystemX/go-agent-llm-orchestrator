@@ -2,6 +2,13 @@
 trigger: always_on
 ---
 
+<!-- 
+🔴 ATTENTION: THIS FILE IS AUTO-GENERATED. 
+DO NOT EDIT MANUALLY. YOUR CHANGES WILL BE OVERWRITTEN.
+Source of truth is in .agent/rules/gemini/*.md
+Run 'python3 .agent/scripts/compile_rules.py' to update this file.
+-->
+
 # GEMINI.md - Unified Agent Kit
 
 > This file defines how the AI behaves in this workspace.
@@ -23,7 +30,9 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 1. **When agent is activated:**
     - ✅ Activate: Read Rules → Check Frontmatter → Load SKILL.md → Apply All.
-2. **Forbidden:** Never skip reading agent rules or skill instructions. "Read → Understand → Apply" is mandatory.
+2. **When rules are modified:**
+    - ✅ **MANDATORY:** After editing files in `.agent/rules/gemini/`, you MUST run `python3 .agent/scripts/compile_rules.py` (or `/sync-rules`) to update the monolithic rule file.
+3. **Forbidden:** Never skip reading agent rules or skill instructions. "Read → Understand → Apply" is mandatory.
 
 ---
 
@@ -57,6 +66,8 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
    - L2+: `🤖 Flow: [L3 -> L2]` (plus Model/History details)
 4. **Apply**: Generate response using the selected levels and agents.
 
+---
+
 ## 📤 OUTPUT GATEWAY (MANDATORY)
 
 **Every response that involves code changes, features, or complex logic MUST be validated via `bin/output-bridge`.**
@@ -87,7 +98,6 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 - 📈 **Outcome/Result**: Verification status
 
 **Rules:**
-
 
 1. **Silent Analysis**: No verbose meta-commentary ("I am analyzing...").
 2. **Respect Overrides**: If user mentions `@agent`, use it.
@@ -156,7 +166,7 @@ When user's prompt is NOT in English:
 4.  **Reporting**: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
 5.  **Durable State**: Update task metadata and create child issues for delegated work.
 
-### 📁 File Dependency Awareness
+### �� File Dependency Awareness
 
 **Before modifying ANY file:**
 
@@ -270,7 +280,7 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 | `lighthouse_audit.py`      | performance-profiling | Before deploy       |
 | `playwright_runner.py`     | webapp-testing        | Before deploy       |
 
-> 🔴 **Agents & Skills can invoke ANY script** via `python .agent/skills/<skill>/scripts/<script>.py`
+> 🔴 **Agents & Skills can invoke ANY script** via `python .agent/scripts/<script>.py`
 
 ### 🎭 Gemini Mode Mapping
 
@@ -324,5 +334,3 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 - **Scanners**: `security_scan.py`, `dependency_analyzer.py`
 - **Audits**: `ux_audit.py`, `mobile_audit.py`, `lighthouse_audit.py`, `seo_checker.py`
 - **Test**: `playwright_runner.py`, `test_runner.py`
-
----

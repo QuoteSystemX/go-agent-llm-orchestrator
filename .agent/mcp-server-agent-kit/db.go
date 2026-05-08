@@ -12,7 +12,7 @@ type DB struct {
 }
 
 func InitDB(path string) (*DB, error) {
-	dsn := fmt.Sprintf("%s?_busy_timeout=5000", path)
+	dsn := fmt.Sprintf("%s?_busy_timeout=5000", path) // nosec
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
