@@ -22,8 +22,8 @@ class TestResilienceLibrary(unittest.TestCase):
         result = self.session.request("GET", "/health")
         self.assertEqual(result["status"], "ok")
         mock_request.assert_called_with(
-            "GET", "http://test.local/health", 
-            headers=self.session.headers, json=None, auth=None, timeout=10
+            "GET", "http://test.local/health",
+            headers=self.session.headers, json=None, auth=None, timeout=10, verify=True
         )
 
     @patch('requests.request')
