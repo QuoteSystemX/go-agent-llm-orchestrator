@@ -326,7 +326,7 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 ### Agents & Skills
 
 - **Masters**: `orchestrator`, `project-planner`, `security-auditor` (Cyber/Audit), `backend-specialist` (API/DB), `frontend-specialist` (UI/UX), `mobile-developer`, `debugger`, `game-developer`
-- **Key Skills**: `clean-code`, `brainstorming`, `app-builder`, `frontend-design`, `mobile-design`, `plan-writing`, `behavioral-modes`
+- **Key Skills**: `clean-code`, `brainstorming`, `app-builder`, `frontend-design`, `better-auth-best-practices`, `ui-ux-pro-max`, `postgres-best-practices`, `playwright-best-practices`, `next-best-practices`, `plan-writing`, `behavioral-modes`
 
 ### Key Scripts
 

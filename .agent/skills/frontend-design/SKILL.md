@@ -44,18 +44,18 @@ version: 1.0.0
 
 > **STOP! If the user's request is open-ended, DO NOT default to your favorites.**
 
-### When User Prompt is Vague, ASK:
+### When User Prompt is Vague, ASK
 
 **Color not specified?** Ask:
 > "What color palette do you prefer? (blue/green/orange/neutral/other?)"
 
-**Style not specified?** Ask: 
+**Style not specified?** Ask:
 > "What style are you going for? (minimal/bold/retro/futuristic/organic?)"
 
 **Layout not specified?** Ask:
 > "Do you have a layout preference? (single column/grid/asymmetric/full-width?)"
 
-### ⛔ DEFAULT TENDENCIES TO AVOID (ANTI-SAFE HARBOR):
+### ⛔ DEFAULT TENDENCIES TO AVOID (ANTI-SAFE HARBOR)
 
 | AI Default Tendency | Why It's Bad | Think Instead |
 |---------------------|--------------|---------------|
@@ -426,11 +426,13 @@ After implementing your design, run the audit:
 > For Next.js 16+ projects, use the native `next/form` component instead of standard HTML `<form>` for all GET-based search/filter operations.
 
 ### The `<Form>` Component Advantage
+
 - **Automatic Client Navigation:** Performs client-side transitions on submit.
 - **Progressive Enhancement:** Works even without JavaScript.
 - **URL Sync:** Automatically encodes input values into search params.
 
 ### Implementation Example (Search Bar)
+
 ```tsx
 import Form from 'next/form'
 
@@ -448,7 +450,8 @@ export default function SearchBar() {
 }
 ```
 
-### When to use `<Form>` vs. standard `<form>`:
+### When to use `<Form>` vs. standard `<form>`
+
 - **Use `next/form`** for: Search, Filtering, Sorting, Pagination (GET requests).
 - **Use standard `<form>`** for: Mutations, Login, Data Entry (POST requests via Server Actions).
 
