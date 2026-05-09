@@ -1109,3 +1109,16 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server/db_security.go` | System module for db_security.go. |
 | `fix_design.js` | System module for fix_design.js. |
 | `.agent/scripts/agent_scorer.py` | Log a quality score for an agent's work. |
+| `.agent/skills/nextflow-development/scripts/utils/ncbi_utils.py` | NCBI Utilities for GEO/SRA Data Access |
+| `paperclip-plugin-auth-hub/src/ui/entry.ts` | System module for entry.ts. |
+| `.agent/skills/skill-creator/scripts/improve_description.py` | Improve a skill description based on eval results. |
+| `.agent/skills/skill-creator/scripts/quick_validate.py` | Quick validation script for skills - minimal version |
+| `.agent/skills/nextflow-development/scripts/utils/sample_inference.py` | Sample name and metadata inference from filenames. |
+| `paperclip-plugin-auth-hub/src/ui/AuthDashboard.tsx` | System module for AuthDashboard.tsx. |
+| `.agent/skills/skill-creator/scripts/aggregate_benchmark.py` | Aggregate individual run results into benchmark summary statistics. |
+| `paperclip-plugin-auth-hub/src/handlers/google.ts` | System module for google.ts. |
+| `.agent/skills/skill-creator/scripts/generate_report.py` | Generate an HTML report from run_loop.py output. |
+| `paperclip-plugin-auth-hub/src/handlers/claude.ts` | System module for claude.ts. |
+| `.agent/skills/nextflow-development/scripts/utils/validators.py` | Samplesheet validation utilities. |
+| `paperclip-plugin-auth-hub/src/ui/AuthSidebar.tsx` | System module for AuthSidebar.tsx. |
+| `.agent/skills/nextflow-development/scripts/utils/file_discovery.py` | File discovery utilities for FASTQ, BAM, and CRAM files. |
