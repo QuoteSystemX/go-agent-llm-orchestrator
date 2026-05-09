@@ -406,9 +406,10 @@ def route(task_description, override_model=None):
         model_reason = cloud_reason
 
     # Log Routing Decision — always to stderr to keep stdout clean
+    provider_icon = "🏠" if target_provider == "ollama" else "☁️"
     print(f"🤖 **Adaptive Routing 2.3** (Hybrid + Quality):", file=sys.stderr)
     print(f"   ├─ Score: {score}/18 → Tier: {tier}", file=sys.stderr)
-    print(f"   ├─ Provider: {target_provider.upper()} ({routing_reason})", file=sys.stderr)
+    print(f"   ├─ Provider: {provider_icon} {target_provider.upper()} ({routing_reason})", file=sys.stderr)
     print(f"   └─ Model: `{model_id}` [{model_reason}]", file=sys.stderr)
     if warning:
         print(f"\n{warning}", file=sys.stderr)

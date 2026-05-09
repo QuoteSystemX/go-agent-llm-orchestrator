@@ -103,12 +103,12 @@
       "L3": "qwen2.5-coder:32b",
       "L3_alt": [
         "deepseek-r1:32b",
-        "qwen3-coder:30b"
+        "qwen3.6:27b"
       ],
       "L4": "qwen2.5-coder:32b",
       "L4_alt": [
         "deepseek-r1:32b",
-        "qwen3-coder:30b"
+        "qwen3.6:27b"
       ]
     },
     "antigravity": {
@@ -138,7 +138,7 @@
     "gemma3:12b": 75,
     "qwen2.5-coder:32b": 92,
     "deepseek-r1:32b": 91,
-    "qwen3-coder:30b": 94,
+    "qwen3.6:27b": 96,
     "gemini-3-flash": 60,
     "gemini-3.1-pro-low": 75,
     "gemini-3.1-pro-high": 88,
