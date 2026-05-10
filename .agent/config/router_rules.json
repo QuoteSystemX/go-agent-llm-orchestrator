@@ -28,94 +28,105 @@
   "rules": [
     {
       "complexity": "L4",
-      "keywords": [
-        "critical audit",
-        "auth security",
-        "zero-day",
-        "system refactor",
-        "migration plan"
-      ],
-      "skills": [
-        "security-auditor",
-        "architecture"
-      ]
+      "keywords": ["critical audit", "auth security", "zero-day", "system refactor", "migration plan"],
+      "skills": ["security-auditor", "architecture"]
     },
     {
       "complexity": "L3",
-      "keywords": [
-        "debug",
-        "audit",
-        "security",
-        "architecture",
-        "design",
-        "refactor",
-        "optimization"
-      ],
-      "skills": [
-        "penetration-tester",
-        "architecture"
-      ]
-    },
-    {
-      "complexity": "L1",
-      "keywords": [
-        "lint",
-        "typo",
-        "spellcheck",
-        "formatting",
-        "documentation",
-        "readme",
-        "comment",
-        "list files",
-        "check status"
-      ],
-      "skills": [
-        "explorer-agent"
-      ]
+      "keywords": ["debug", "audit", "security", "architecture", "design", "refactor", "optimization"],
+      "skills": ["penetration-tester", "architecture"]
     },
     {
       "complexity": "L2",
-      "keywords": [
-        "implement",
-        "add feature",
-        "create",
-        "test",
-        "fix"
-      ],
-      "skills": [
-        "backend-specialist",
-        "frontend-specialist"
-      ]
+      "keywords": ["implement", "add feature", "create", "test", "fix"],
+      "skills": ["backend-specialist", "frontend-specialist"]
+    },
+    {
+      "complexity": "L1",
+      "keywords": ["lint", "typo", "spellcheck", "formatting", "documentation", "readme", "comment", "list files", "check status"],
+      "skills": ["explorer-agent"]
     }
   ],
   "models": {
     "ollama": {
       "L1": "codestral:22b",
-      "L1_alt": [
-        "deepseek-r1:8b",
-        "gemma2:9b"
-      ],
+      "L1_alt": ["deepseek-r1:8b", "gemma2:9b"],
       "L2": "qwen2.5-coder:14b",
-      "L2_alt": [
-        "deepseek-r1:14b",
-        "gemma3:12b"
-      ],
+      "L2_alt": ["deepseek-r1:14b", "gemma3:12b"],
       "L3": "qwen2.5-coder:32b",
-      "L3_alt": [
-        "qwen3-coder:30b",
-        "qwen3.6:27b"
-      ],
-      "L4": "qwen3.6:27b",
-      "L4_alt": [
-        "qwen3:32b",
-        "qwen3-coder:30b"
-      ]
+      "L3_alt": ["qwen3-coder:30b", "qwen3.6:27b"],
+      "L4": "qwen3-coder:30b",
+      "L4_alt": ["qwen3:32b", "qwen3.6:27b"]
     },
     "antigravity": {
       "L1": "gemini-3-flash",
       "L2": "gemini-3.1-pro-low",
       "L3": "gemini-3.1-pro-high",
       "L4": "gpt-oss-120b"
+    }
+  },
+  "model_rankings": {
+    "_formula": "rank_score = quality * 5 + tps * 0.5 - time",
+    "_benchmark_date": "2026-05-10",
+    "codestral:22b": {
+      "tier": "L1",
+      "quality_score": 82,
+      "benchmark": {"avg_time": 7.4, "avg_tps": 39, "success": 100},
+      "rank_score": 422
+    },
+    "qwen2.5-coder:14b": {
+      "tier": "L2",
+      "quality_score": 80,
+      "benchmark": {"avg_time": 6.4, "avg_tps": 61, "success": 100},
+      "rank_score": 424
+    },
+    "qwen2.5-coder:32b": {
+      "tier": "L3",
+      "quality_score": 92,
+      "benchmark": {"avg_time": 13.6, "avg_tps": 28, "success": 100},
+      "rank_score": 460
+    },
+    "qwen3-coder:30b": {
+      "tier": "L4",
+      "quality_score": 88,
+      "benchmark": {"avg_time": 3.6, "avg_tps": 129, "success": 100},
+      "rank_score": 501
+    },
+    "qwen3:32b": {
+      "tier": "L4-alt",
+      "quality_score": 94,
+      "benchmark": {"avg_time": 29.3, "avg_tps": 15, "success": 100},
+      "rank_score": 448
+    },
+    "qwen3.6:27b": {
+      "tier": "L4-alt",
+      "quality_score": 96,
+      "benchmark": {"avg_time": 53.8, "avg_tps": 8, "success": 100},
+      "rank_score": 430
+    },
+    "deepseek-r1:8b": {
+      "tier": "L1-alt",
+      "quality_score": 63,
+      "benchmark": {"avg_time": 15, "avg_tps": 20, "success": 100},
+      "rank_score": 310
+    },
+    "gemma2:9b": {
+      "tier": "L1-alt",
+      "quality_score": 62,
+      "benchmark": {"avg_time": 18, "avg_tps": 18, "success": 100},
+      "rank_score": 295
+    },
+    "deepseek-r1:14b": {
+      "tier": "L2-alt",
+      "quality_score": 79,
+      "benchmark": {"avg_time": 12, "avg_tps": 35, "success": 100},
+      "rank_score": 397
+    },
+    "gemma3:12b": {
+      "tier": "L2-alt",
+      "quality_score": 75,
+      "benchmark": {"avg_time": 14, "avg_tps": 30, "success": 100},
+      "rank_score": 368
     }
   },
   "hybrid_routing": {
@@ -126,28 +137,6 @@
     "ollama_health_timeout_ms": 1500,
     "cloud_on_tiers": [],
     "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud."
-  },
-  "model_quality_scores": {
-    "_comment": "ELO-style quality score (higher = better). Based on SWE-bench/LiveCodeBench 2025-2026 benchmarks. qwen3.6:27b = best local dense, qwen2.5-coder:32b = top coder.",
-    "qwen2.5-coder:7b": 65,
-    "deepseek-r1:8b": 63,
-    "gemma2:9b": 62,
-    "codestral:22b": 82,
-    "qwen2.5-coder:14b": 80,
-    "deepseek-r1:14b": 79,
-    "gemma3:12b": 75,
-    "qwen2.5-coder:32b": 92,
-    "deepseek-r1:32b": 91,
-    "qwen3.6:27b": 96,
-    "qwen3-coder:30b": 88,
-    "qwen3:32b": 94,
-    "qwen3:14b": 78,
-    "phi4:14b": 85,
-    "deepseek-coder-v2:16b": 77,
-    "gemini-3-flash": 60,
-    "gemini-3.1-pro-low": 75,
-    "gemini-3.1-pro-high": 88,
-    "gpt-oss-120b": 95
   },
   "fallbacks": {
     "L1": "L2",

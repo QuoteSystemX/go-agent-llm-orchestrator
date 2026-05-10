@@ -87,6 +87,58 @@ def scan_type_coverage(project_path: Path) -> dict:
     passed = code == 0
     return {"name": "type-coverage", "passed": passed, "output": coverage_match.group(1) if coverage_match else "Analyzed", "issues": len(re.findall(r"\[X\]", stdout))}
 
+def scan_import_consistency(project_path: Path) -> dict:
+    """Check for import inconsistencies in .agent/scripts/."""
+    scripts_path = project_path / ".agent" / "scripts"
+    if not scripts_path.exists():
+        return {"name": "import-check", "passed": True, "output": "N/A"}
+    
+    issues = []
+    # Scripts that should use lib.common but don't
+    scripts_with_json = []
+    scripts_with_lib = []
+    
+    for py_file in scripts_path.glob("*.py"):
+        if py_file.name.startswith("test_") or py_file.name.endswith("_test.py"):
+            continue
+        content = py_file.read_text(errors="ignore")
+        
+        # Check if script uses json directly
+        if "import json" in content and "from lib.common" not in content:
+            scripts_with_json.append(py_file.name)
+        
+        # Check if script uses lib.common
+        if "from lib.common" in content:
+            scripts_with_lib.append(py_file.name)
+        
+        # Check for broken imports (modules in scripts dir)
+        for line in content.split("\n"):
+            if line.startswith("from ") and not line.startswith("from lib") and not line.startswith("from typing") and not line.startswith("from dataclasses"):
+                if not ("import " in line and "os" in line or "sys" in line or "pathlib" in line or "json" in line or "subprocess" in line or "re" in line or "urllib" in line):
+                    if ".agent" not in line and "scripts" not in line:
+                        pass  # external import, ok
+                    elif py_file.parent.name not in ["lib", "tests"]:
+                        if "embedding_client" in line or "vector_store" in line:
+                            issues.append(f"{py_file.name}: Broken import '{line.strip()}' - needs sys.path fix")
+    
+    total_scripts = len(list(scripts_path.glob("*.py")))
+    lib_usage = len(scripts_with_lib)
+    no_lib_usage = len(scripts_with_json)
+    
+    passed = len(issues) == 0
+    return {
+        "name": "import-check", 
+        "passed": passed, 
+        "issues": issues,
+        "stats": {
+            "total_scripts": total_scripts,
+            "using_lib_common": lib_usage,
+            "using_direct_import": no_lib_usage,
+            "lib_coverage": f"{int(lib_usage/total_scripts*100)}%" if total_scripts > 0 else "N/A"
+        },
+        "output": f"{lib_usage}/{total_scripts} scripts use lib.common" + (f", {len(issues)} issues" if issues else "")
+    }
+
 def detect_project_type(project_path: Path):
     if (project_path / "package.json").exists(): return "node"
     if (project_path / "go.mod").exists(): return "go"
@@ -122,6 +174,7 @@ def main():
     drift = scan_documentation_drift(project_path)
     commit = validate_commit_msg(project_path)
     types = scan_type_coverage(project_path)
+    imports = scan_import_consistency(project_path)
     
     p_type = detect_project_type(project_path)
     linters = get_linters(p_type, args.fix)
@@ -145,7 +198,7 @@ def main():
         stdout, stderr, code = run_command(l['cmd'], project_path)
         linter_results.append({"name": l['name'], "passed": code == 0, "output": stdout, "error": stderr})
 
-    all_checks = [garbage, drift, commit, types] + linter_results
+    all_checks = [garbage, drift, commit, types, imports] + linter_results
     passed = all(c["passed"] for c in all_checks)
     
     print("\n" + "="*60 + "\nSUMMARY\n" + "="*60)
@@ -153,6 +206,7 @@ def main():
     print(f"[{'PASS' if drift['passed'] else 'FAIL'}] drift-check: {drift['output']}")
     print(f"[{'PASS' if commit['passed'] else 'FAIL'}] commit-lint: {commit['output'] if 'output' in commit else commit['msg']}")
     print(f"[{'PASS' if types['passed'] else 'FAIL'}] type-coverage: {types['output']}")
+    print(f"[{'PASS' if imports['passed'] else 'FAIL'}] import-check: {imports['output']}")
     for r in linter_results:
         print(f"[{'PASS' if r['passed'] else 'FAIL'}] {r['name']}")
     
@@ -163,6 +217,7 @@ def main():
         "drift_check": drift,
         "commit_lint": commit,
         "type_coverage": types,
+        "import_check": imports,
         "linters": linter_results,
         "passed": passed
     }

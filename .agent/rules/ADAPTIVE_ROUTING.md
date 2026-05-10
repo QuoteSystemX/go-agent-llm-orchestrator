@@ -27,7 +27,8 @@ Before any tool use, the system MUST perform an **Impact Scan** to determine the
 
 - **Score 1-3**: L1 (Sprint)
 - **Score 4-6**: L2 (Pro)
-- **Score 7-10**: L3 (Council)
+- **Score 7-9**: L3 (Council)
+- **Score 10+**: L4 (Control)
 
 ### 2. Risk Assessment (The "Red Flag" check)
 
@@ -68,3 +69,48 @@ The system will report the selected Flow at the start of every response:
 1. **Phase 1 (Strategy)**: Planning with L3.
 2. **Phase 2 (Action)**: Implementation with L2.
 3. **Phase 3 (Audit)**: Verification with L4.
+
+---
+
+## 🎯 SKILL ROUTING PROTOCOL
+
+When a task involves a domain with multiple specialized skills, use the **router skill** first.
+
+### How It Works
+
+```
+Task: "build API for user management"
+    │
+    └── Detect domain: API Development
+            │
+            └── Use router: @[skills/api-development]
+                    │
+                    ├── Determine stack (go.mod → Go)
+                    ├── Route to: @[skills/go-patterns]
+                    ├── Apply security: @[skills/vulnerability-scanner]
+                    └── Generate contracts: @[skills/typed-service-contracts]
+```
+
+### Router Skills Registry
+
+| Domain | Router Skill | Children |
+|--------|--------------|----------|
+| **API Development** | `api-development` | api-patterns, nodejs/python/go/rust, security, contracts |
+| **Frontend** | `frontend-development` (future) | frontend-design, nextjs, mobile-design, ui-ux-pro-max |
+| **Backend** | `backend-development` (future) | api-development, nodejs/python/go, database-design |
+
+### When to Use Router Skills
+
+1. **Task mentions general domain**: "build API", "build UI", "build backend"
+2. **Multiple skills could apply**: Check router skill's routing matrix
+3. **Unclear which specific skill**: Router skill determines based on context
+
+### Rule
+
+> 🔴 **If >3 related skills exist for a domain, there MUST be a router skill.**
+> When creating new skills, check if a router skill needs updating.
+
+### Enforcement
+
+Router skills are documented in `LESSONS_LEARNED.md` under "Skill Router Registry".
+Run `python3 .agent/scripts/experience_distiller.py --skill intelligent-routing` to see current routers.

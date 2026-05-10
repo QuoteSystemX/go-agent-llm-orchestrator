@@ -3,8 +3,10 @@ import os
 import subprocess
 import json
 import re
+import time
 from pathlib import Path
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     from lib.paths import REPO_ROOT
@@ -14,6 +16,8 @@ try:
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
     BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "budget_monitor.py"
     SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "sync_agents.py"
+    WSL_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "wsl_health_collector.py"
+    MCP_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "mcp_health_collector.py"
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
     from lib.paths import REPO_ROOT
@@ -21,8 +25,6 @@ except ImportError:
     from lib.common import load_json_safe, discover_ollama_url
     from mcp_provisioner import check_mcp_health
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
-    BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "budget_monitor.py"
-    SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "sync_agents.py"
 
 def run_external_check(cmd):
     """Run an external check script and return its parsed JSON output."""
@@ -59,21 +61,76 @@ def calculate_health():
         with open(ux_file, 'r') as f:
             ux_data = json.load(f)
 
-    # 0a. Run & Load Blue Team Metrics
-    subprocess.run(["python3", str(MONITOR_SCRIPT)], capture_output=True)
-    subprocess.run(["python3", str(BUDGET_SCRIPT)], capture_output=True)
-    
-    blue_data = {}
-    blue_file = BUS_DIR / "blue_team_status.json"
-    if blue_file.exists():
-        with open(blue_file, 'r') as f:
-            blue_data = json.load(f)
-            
-    budget_data = {}
-    budget_file = BUS_DIR / "budget_status.json"
-    if budget_file.exists():
-        with open(budget_file, 'r') as f:
-            budget_data = json.load(f)
+    # Cache TTLs (seconds)
+    CACHE_TTL = {
+        "budget": 300,       # 5 min
+        "wsl": 300,          # 5 min
+        "mcp": 120,           # 2 min
+        "blue_team": 0,       # always run (no cache)
+    }
+
+    def _load_cached(name: str, ttl: int):
+        """Load cached JSON from bus dir if fresh enough."""
+        f = BUS_DIR / f"{name}_status.json"
+        if not f.exists():
+            return None
+        age = time.time() - f.stat().st_mtime
+        if age > ttl:
+            return None
+        try:
+            with open(f) as fp:
+                return json.load(fp)
+        except:
+            return None
+
+    def _run_parallel(scripts: list, cache_ttls: dict):
+        """Run scripts in parallel, respecting cache TTLs. blue_team always runs."""
+        # blue_team always runs; others check cache first
+        to_run = []
+        cached = {}
+
+        for name, script in scripts:
+            ttl = cache_ttls.get(name, 60)
+            if name == "blue_team":
+                to_run.append((name, script))
+            else:
+                cached[name] = _load_cached(name, ttl)
+                if cached[name] is None:
+                    to_run.append((name, script))
+
+        if not to_run:
+            print(f"  (all cached, skipping)")
+            return cached
+
+        # Parallel execution
+        def run_one(name, script):
+            t0 = time.perf_counter()
+            r = subprocess.run(["python3", str(script)], capture_output=True, text=True)
+            elapsed = time.perf_counter() - t0
+            return name, r.returncode == 0, elapsed
+
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            futures = {ex.submit(run_one, n, s): n for n, s in to_run}
+            for future in as_completed(futures):
+                name, ok, elapsed = future.result()
+                print(f"  ✅ {name}: {elapsed:.1f}s")
+                cached[name] = _load_cached(name, 9999)  # reload fresh file
+
+        return cached
+
+    # Collect health data with parallelism + caching
+    scripts = [
+        ("blue_team", MONITOR_SCRIPT),
+        ("budget", BUDGET_SCRIPT),
+        ("wsl", WSL_COLLECTOR),
+        ("mcp", MCP_COLLECTOR),
+    ]
+
+    cached = _run_parallel(scripts, CACHE_TTL)
+
+    # Load collected data
+    blue_data = cached.get("blue_team", {})
+    budget_data = cached.get("budget", {})
 
     # 0b. Load Ethics & Policy Metrics
     hallucination_data = {}
@@ -112,6 +169,18 @@ def calculate_health():
     if debt_file.exists():
         with open(debt_file, 'r') as f:
             debt_data = json.load(f)
+
+    wsl_data = {}
+    wsl_file = BUS_DIR / "wsl_health_metrics.json"
+    if wsl_file.exists():
+        with open(wsl_file, 'r') as f:
+            wsl_data = json.load(f)
+
+    mcp_data = {}
+    mcp_file = BUS_DIR / "mcp_health_metrics.json"
+    if mcp_file.exists():
+        with open(mcp_file, 'r') as f:
+            mcp_data = json.load(f)
     
     # 1. Check for Documentation Drift
     try:
@@ -135,15 +204,33 @@ def calculate_health():
     # 3. Security (Real check if script exists)
     metrics["Security"] = "PASS"
     
-    # 4. MCP Server Health (Self-healing)
+    # 4. MCP Multi-Server Health
     try:
-        is_healthy, msg = check_mcp_health()
-        metrics["MCP Server"] = "PASS" if is_healthy else "FAIL"
-        if not is_healthy:
+        mcp_status = mcp_data.get("status", "Unknown")
+        metrics["MCP Services"] = mcp_status
+        if mcp_status == "WARN":
+            score -= 10
+            # List down services
+            down = [k.replace("svc_", "") for k, v in mcp_data.get("metrics", {}).items() if v.get("status") == "WARN"]
+            if down: metrics["MCP Services"] += f" (Down: {', '.join(down)})"
+        elif mcp_status == "FAIL":
             score -= 20
-            metrics["MCP Server"] += f" ({msg})"
+        elif mcp_status == "PASS":
+            metrics["MCP Services"] = f"✅ {len(mcp_data.get('metrics', {}))} active"
     except:
-        metrics["MCP Server"] = "Unknown"
+        metrics["MCP Services"] = "Unknown"
+
+    # 4a. WSL & Host Connectivity
+    try:
+        if wsl_data:
+            wsl_status = wsl_data.get("status", "Unknown")
+            gw_ip = wsl_data.get("metrics", {}).get("gateway_ip", {}).get("value", "N/A")
+            metrics["WSL Environment"] = f"{wsl_status} (GW: {gw_ip})"
+            if wsl_status == "WARN": score -= 5
+        else:
+            metrics["WSL Environment"] = "Non-WSL/Local"
+    except:
+        metrics["WSL Environment"] = "Unknown"
 
     # 5. UX Audit
     metrics["UX Audit"] = "PASS" if ux_data.get("passed", True) else "WARN"

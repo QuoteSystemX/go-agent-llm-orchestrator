@@ -76,17 +76,51 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 2.  **Validation**: Run `cat response.md | bin/output-bridge`.
 3.  **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
 
-### 🧠 HYBRID ROUTING PROTOCOL (MANDATORY)
+### 🧠 HYBRID ROUTING PROTOCOL (MANDATORY - ENFORCED)
 
 **Before executing ANY sub-task or delegation, the agent MUST:**
 
 1. **Call the Router**: Run `python3 .agent/scripts/model_router.py "<task_description>" --json`.
-2. **Respect the Decision**: 
-   - If `provider == "ollama"`, use local models via MCP/Ollama.
-   - If `provider == "antigravity"`, stay in cloud.
-3. **Context Bus Check**: Check `.agent/bus/` for recent `routing_event` objects to maintain consistency across the session.
+2. **Respect the Decision**:
+   - If `provider == "ollama"`, use `ollama_agent.py` with local models.
+   - If `provider == "antigravity"`, use built-in cloud agents (fallback only).
+3. **Context Bus Check**: Check `.agent/bus/` for recent `routing_event` objects.
 
-*Rationale: This ensures optimal cost/performance balance and enables the self-learning loop via router_trainer.py.*
+**🔴 ENFORCEMENT: Ollama is PRIMARY, Cloud is FALLBACK only**
+
+```bash
+# CORRECT workflow for ANY Ollama task:
+python3 .agent/scripts/model_router.py "task description" --json
+# → Response: {"provider": "ollama", "model_id": "qwen3-coder:30b", "tier": "L4"}
+
+# Use ollama_agent.py for filesystem-aware analysis:
+python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-archaeologist --model qwen3-coder:30b
+
+# WRONG (violation): Using built-in cloud agents when Ollama available
+```
+
+**WSL Support**: Router auto-detects WSL via `_is_wsl()` and routes to Windows Ollama at `172.31.0.1:11434`.
+
+**Required Logging**:
+```
+🤖 Flow: [L<N>]
+🧠 Provider: Ollama (WSL auto-detected)
+🧠 Model: <model_id>
+🧠 Score: <score>/18
+✅ Cost saved vs cloud
+```
+
+**Benchmark Results (2026-05-10, simple/medium/complex tasks)**:
+
+| Tier | Best Model | Avg Time | Avg TPS | Success |
+|------|------------|----------|---------|---------|
+| L1 | codestral:22b | 7.4s | 39 tok/s | 100% |
+| L2 | qwen2.5-coder:14b | **6.4s** | **61 tok/s** | 100% |
+| L3 | qwen2.5-coder:32b | 13.6s | 28 tok/s | 100% |
+| L4 | qwen3-coder:30b | **3.6s** | **129 tok/s** | 100% |
+| L4-alt | qwen3.6:27b | 53.8s | 8 tok/s | 100% |
+
+*Rationale: This ensures optimal cost/performance balance via ollama_agent.py with filesystem context.*
 
 ---
 

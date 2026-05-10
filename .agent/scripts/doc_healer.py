@@ -66,6 +66,15 @@ def heal_docs():
             print(f"✨ Healed documentation for: {file_path}")
 
     arch_path.write_text(content, encoding="utf-8")
+    
+    # Auto-update dependency graph
+    try:
+        from visualize_deps import generate_mermaid
+        print("📊 Updating dependency graph...")
+        print(generate_mermaid())
+    except Exception as e:
+        print(f"⚠️ Failed to update dependency graph: {e}")
+
     return "✅ Documentation healing complete."
 
 if __name__ == "__main__":

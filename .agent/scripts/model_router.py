@@ -56,6 +56,7 @@ try:
     from lib.common import load_json_safe
     import bus_manager
 except ImportError:
+    # When lib.common is unavailable, provide minimal fallback
     RULES_FILE = REPO_ROOT / ".agent" / "config" / "router_rules.json"
     TELEMETRY_PATH = REPO_ROOT / ".agent" / "bus" / "telemetry.json"
     LESSONS_PATH = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
@@ -201,45 +202,44 @@ def get_ollama_local_models(base_url: str) -> set[str]:
 def pick_best_available(
     tier: str,
     model_map: dict,
-    quality_scores: dict,
+    model_rankings: dict,
     ollama_alive: bool,
     ollama_base_url: str,
 ) -> tuple[str | None, str]:
-    """Return (model_id, reason) choosing the highest-quality available model.
+    """Return (model_id, reason) choosing the best model by rank_score.
 
-    Returns (None, reason) when Ollama is alive but NO candidate is pulled locally,
-    signalling route() to fall back to the cloud provider.
-
-    Strategy:
-      1. Build candidate list: [primary] + _alt (sorted by quality score desc).
-      2. For Ollama: check which models are pulled via /api/tags.
-         - Match found  → return best match.
-         - No match     → return (None, reason) to trigger cloud fallback.
-      3. Cloud provider: return top quality-ranked candidate directly.
+    rank_score = quality * 10 + tps * 0.1 - time * 0.5
+    This considers quality, speed (TPS), and latency together.
     """
     primary = model_map.get(tier, "")
     alts: list[str] = model_map.get(f"{tier}_alt", [])
 
-    # Sort all candidates by quality score, highest first
+    # Sort by rank_score, highest first (considers quality + speed - latency)
     all_candidates = [primary] + [m for m in alts if m != primary]
-    all_candidates.sort(key=lambda m: quality_scores.get(m, 0), reverse=True)
+    all_candidates.sort(
+        key=lambda m: model_rankings.get(m, {}).get("rank_score", 0) 
+        if "rank_score" in model_rankings.get(m, {}) 
+        else model_rankings.get(m, {}).get("quality_score", 0) * 10,
+        reverse=True
+    )
 
     if ollama_alive:
         available = get_ollama_local_models(ollama_base_url)
         if available:
             for model in all_candidates:
                 if model in available:
-                    reason = "quality-ranked, locally available"
+                    r = model_rankings.get(model, {})
+                    rank = r.get("rank_score", 0)
+                    reason = f"rank-score {rank:.1f}, locally available"
                     if model != primary:
-                        reason += f" (alt over '{primary}')"
+                        reason += f" (over '{primary}')"
                     return model, reason
             # Ollama is up, but NONE of the candidates are pulled
             missing = ", ".join(f"`{m}`" for m in all_candidates[:3])
             return None, f"no local models pulled ({missing}) → cloud fallback"
-        # /api/tags returned empty list (Ollama is brand-new, no models at all)
         return None, "Ollama has no models pulled yet → cloud fallback"
 
-    # Cloud provider — just use quality ranking, no availability check needed
+    # Cloud provider — use quality ranking
     best = all_candidates[0] if all_candidates else primary
     reason = "quality-ranked"
     if best != primary:
@@ -360,14 +360,14 @@ def route(task_description, override_model=None):
 
     # 4. Quality-ranked Model Selection
     models = rules.get("models", {})
-    quality_scores = rules.get("model_quality_scores", {})
+    model_rankings = rules.get("model_rankings", rules.get("model_quality_scores", {}))
     model_map = models.get(target_provider, models.get(cloud_provider, {}))
     ollama_url = hybrid.get("ollama_base_url", "http://localhost:11434")
 
     model_id, model_reason = pick_best_available(
         tier=tier,
         model_map=model_map,
-        quality_scores=quality_scores,
+        model_rankings=model_rankings,
         ollama_alive=(target_provider == "ollama" and ollama_alive),
         ollama_base_url=active_url,
     )
@@ -398,7 +398,7 @@ def route(task_description, override_model=None):
         cloud_best, cloud_reason = pick_best_available(
             tier=tier,
             model_map=cloud_map,
-            quality_scores=quality_scores,
+            model_rankings=model_rankings,
             ollama_alive=False,
             ollama_base_url=ollama_url,
         )

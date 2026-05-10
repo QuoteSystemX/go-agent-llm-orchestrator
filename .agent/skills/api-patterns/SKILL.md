@@ -37,9 +37,9 @@ version: 1.0.0
 
 | Need | Skill |
 |------|-------|
-| API implementation | `@[skills/backend-development]` |
+| API implementation | `@[skills/api-development]` |
 | Data structure | `@[skills/database-design]` |
-| Security details | `@[skills/security-hardening]` |
+| Security details | `@[skills/vulnerability-scanner]` |
 
 ---
 

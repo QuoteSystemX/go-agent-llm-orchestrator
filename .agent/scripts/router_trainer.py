@@ -14,14 +14,19 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 RULES_FILE = REPO_ROOT / ".agent" / "config" / "router_rules.json"
 LESSONS_FILE = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
 
-def load_json(path):
-    if not path.exists(): return {}
-    with open(path, 'r') as f:
-        return json.load(f)
-
-def save_json(path, data):
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=2)
+# Import shared utilities (deduplicated - was local load_json/save_json)
+try:
+    sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
+    from lib.common import load_json_safe as load_json, save_json_atomic as save_json
+except ImportError:
+    # Fallback if lib.common unavailable
+    def load_json(path):
+        if not path.exists(): return {}
+        with open(path, 'r') as f:
+            return json.load(f)
+    def save_json(path, data):
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=2)
 
 def extract_lessons(content):
     """Split LESSONS_LEARNED.md into individual lesson blocks."""

@@ -77,9 +77,11 @@ def generate_mermaid():
         marker_end = "<!-- DEPENDENCY_GRAPH_END -->"
         
         if marker_start in content and marker_end in content:
+            pattern = f"{re.escape(marker_start)}.*?{re.escape(marker_end)}"
+            replacement = f"{marker_start}\n{mermaid_str}\n{marker_end}"
             new_content = re.sub(
-                f"{marker_start}.*?{marker_end}",
-                f"{marker_start}\n{mermaid_str}\n{marker_end}",
+                pattern,
+                lambda _: replacement,
                 content,
                 flags=re.DOTALL
             )

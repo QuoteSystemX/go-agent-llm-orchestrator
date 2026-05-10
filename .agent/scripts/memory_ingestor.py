@@ -1,6 +1,11 @@
 import os
 import sys
 from pathlib import Path
+
+# Add scripts/ to path for local modules (embedding_client, vector_store)
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_REPO_ROOT / ".agent" / "scripts"))
+
 from embedding_client import OllamaEmbeddingClient
 from vector_store import SimpleVectorStore
 

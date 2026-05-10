@@ -341,6 +341,46 @@ WHEN agent returns error or partial result:
 
 ---
 
+## 🔴 PRE-FLIGHT CHECK (MANDATORY BEFORE EVERY AGENT INVOCATION)
+
+**Before invoking ANY specialist agent, you MUST:**
+
+### 1. Call the Model Router (REQUIRED)
+```bash
+python3 .agent/scripts/model_router.py "<task_description>" --json
+```
+
+### 2. If Provider == "ollama" (WSL Support)
+```bash
+# Router auto-detects WSL via _is_wsl() and routes to 172.31.0.1:11434
+# NO manual override needed - it's automatic
+```
+
+### 3. Execute via Ollama (NOT built-in agents)
+```bash
+# WRONG (violation):
+task(tool, description="...", subagent_type="code-archaeologist")
+
+# CORRECT:
+python3 .agent/scripts/model_router.py "analyze technical debt" --json
+# → Response: {"provider": "ollama", "model_id": "qwen3.6:27b"}
+# → Then use: task(tool, description="...", subagent_type="general")
+#   with prompt: "Use model: ollama/qwen3.6:27b for this analysis"
+```
+
+### 4. Log the Decision
+```
+🤖 Flow: [L<N>]
+🧠 Provider: <provider> (Ollama/Cloud)
+🧠 Model: <model_id>
+🧠 Score: <score>/18
+✅ Cost saved vs cloud
+```
+
+**🔴 VIOLATION: Skipping router call or ignoring Ollama decision = FAILED ORCHESTRATION**
+
+---
+
 ## 🛡️ Approval Flow for Dangerous Commands
 
 **Purpose**: Prevent catastrophic operations (data loss, force pushes, credential exposure) by validating commands and file edits against `watchdog_rules.json` before execution.

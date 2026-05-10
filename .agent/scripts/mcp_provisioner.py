@@ -7,44 +7,55 @@ from pathlib import Path
 def get_repo_root():
     return Path(__file__).resolve().parents[2]
 
-def check_mcp_health():
+def check_mcp_health(command_name: str = "local-skill-server", custom_cmd: list = None):
     root = get_repo_root()
-    launcher = root / ".agent" / "local-skill-server" / "local-skill-server.sh"
     
-    if not launcher.exists():
-        return False, f"Launcher not found: {launcher}"
+    if custom_cmd:
+        cmd = custom_cmd
+    else:
+        launcher = root / ".agent" / "local-skill-server" / "local-skill-server.sh"
+        if not launcher.exists():
+            return False, f"Launcher not found: {launcher}"
+        cmd = [str(launcher)]
     
-    # On macOS, if it's an ELF binary, it will fail.
-    # We should also check if the binary it points to exists.
-    
-    if not os.access(launcher, os.X_OK):
-        os.chmod(launcher, 0o755)
-        print(f"Fixed permissions for {launcher}")
+    if not custom_cmd:
+        if not os.access(launcher, os.X_OK):
+            os.chmod(launcher, 0o755)
+            print(f"Fixed permissions for {launcher}")
 
     # Try to run the script and get the help output or just version info
     try:
         # We use a short timeout and send an empty line to see if it starts
         process = subprocess.Popen(
-            [str(launcher)],
+            cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=str(root)
+            cwd=str(root),
+            env=os.environ.copy()
         )
+        
         # Give it a moment to start
         try:
-            _, stderr = process.communicate(input="", timeout=1)
-            if "Starting agent-kit-server" in stderr:
-                return True, "MCP Server is healthy"
-        except subprocess.TimeoutExpired:
-            # If it timed out, it means it's waiting for input, which is GOOD
-            process.kill()
-            return True, "MCP Server is responsive"
+            # We don't want to block forever if it's a daemon
+            # If it exits with error quickly, it's FAIL.
+            # If it keeps running, it's PASS for our 'ping' check.
+            stdout, stderr = process.communicate(input="", timeout=2)
             
-        return False, "MCP Server failed to start correctly"
+            # If it finished within 2 seconds, check if it was successful
+            if process.returncode == 0:
+                return True, f"{command_name} started and exited successfully (likely a CLI tool)"
+            else:
+                return False, f"{command_name} failed: {stderr or stdout}"
+                
+        except subprocess.TimeoutExpired:
+            # If it timed out, it means it's running (daemon), which is PASS
+            process.kill()
+            return True, f"{command_name} is running/responsive"
+            
     except Exception as e:
-        return False, f"Error checking MCP: {str(e)}"
+        return False, f"Error checking {command_name}: {str(e)}"
 
 def provision_mcp():
     print("🛠 Starting MCP Server provisioning...")

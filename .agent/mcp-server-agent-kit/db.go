@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"path/filepath"
 
 	_ "modernc.org/sqlite"
@@ -24,7 +25,12 @@ func InitDB(projectRoot string, mainDBPathOverride string) (*DB, error) {
 	metricsPath := filepath.Join(dbDir, "mcp_metrics.db")
 
 	initConn := func(path string) (*sql.DB, error) {
-		dsn := fmt.Sprintf("%s?_busy_timeout=10000&_journal_mode=WAL&_sync=NORMAL", path)
+		q := url.Values{}
+		q.Set("_busy_timeout", "10000")
+		q.Set("_journal_mode", "WAL")
+		q.Set("_sync", "NORMAL")
+
+		dsn := fmt.Sprintf("%s?%s", path, q.Encode())
 		db, err := sql.Open("sqlite", dsn)
 		if err != nil {
 			return nil, err
