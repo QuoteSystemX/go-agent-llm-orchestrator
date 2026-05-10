@@ -252,7 +252,7 @@ def should_include_agent(src: Path, profile_name: str, extra_agents: set) -> boo
     except Exception:
         return True # Fallback to include
 
-def sync_mcp_config(target: str, dry_run: bool):
+def sync_mcp_config(target: str, dry_run: bool, check: bool):
     if target != "opencode":
         return # Claude uses symlinks or global config
     
@@ -267,34 +267,41 @@ def sync_mcp_config(target: str, dry_run: bool):
         with open(src_path, "r") as f:
             src_data = json.load(f)
         
+        # Always use the latest instructions and permissions from the hub template
+        base_template = {
+            "$schema": "https://opencode.ai/config.json",
+            "default_agent": "orchestrator",
+            "instructions": [
+                ".agent/agents/core/orchestrator.md",
+                ".agent/rules/gemini/00_protocol.md",
+                ".agent/rules/gemini/01_classifier.md",
+                ".agent/rules/gemini/02_routing.md",
+                ".agent/rules/ADAPTIVE_ROUTING.md",
+                ".agent/rules/gemini/03_gateway.md",
+                ".agent/rules/gemini/04_tier0_universal.md",
+                ".agent/rules/gemini/05_tier1_code.md",
+                ".agent/rules/gemini/06_tier2_design.md",
+                ".agent/rules/gemini/07_reference.md",
+                ".agent/rules/LESSONS_LEARNED.md"
+            ],
+            "permission": {
+                "shell": "allow",
+                "file": "allow",
+                "network": "allow"
+            },
+            "mcp": {}
+        }
+
         if dest_path.exists():
             with open(dest_path, "r") as f:
                 dest_data = json.load(f)
+            # Provisioning: Always overwrite core sections from hub
+            dest_data["instructions"] = base_template["instructions"]
+            dest_data["permission"] = base_template["permission"]
+            dest_data["$schema"] = base_template["$schema"]
+            dest_data["default_agent"] = base_template["default_agent"]
         else:
-            # Create a basic template if missing
-            dest_data = {
-                "$schema": "https://opencode.ai/config.json",
-                "default_agent": "orchestrator",
-                "instructions": [
-                    ".agent/agents/core/orchestrator.md",
-                    ".agent/rules/gemini/00_protocol.md",
-                    ".agent/rules/gemini/01_classifier.md",
-                    ".agent/rules/gemini/02_routing.md",
-                    ".agent/rules/ADAPTIVE_ROUTING.md",
-                    ".agent/rules/gemini/03_gateway.md",
-                    ".agent/rules/gemini/04_tier0_universal.md",
-                    ".agent/rules/gemini/05_tier1_code.md",
-                    ".agent/rules/gemini/06_tier2_design.md",
-                    ".agent/rules/gemini/07_reference.md",
-                    ".agent/rules/LESSONS_LEARNED.md"
-                ],
-                "permission": {
-                    "shell": "allow",
-                    "file": "allow",
-                    "network": "allow"
-                },
-                "mcp": {}
-            }
+            dest_data = base_template
         
         mcp_servers = src_data.get("mcpServers", {})
         converted = {}
@@ -313,9 +320,20 @@ def sync_mcp_config(target: str, dry_run: bool):
         
         dest_data["mcp"] = converted
         
+        new_content = json.dumps(dest_data, indent=2) + "\n"
+        
+        if check:
+            if not dest_path.exists():
+                print(f"  [MISSING] {dest_path.relative_to(REPO_ROOT)}")
+                sys.exit(1)
+            existing = dest_path.read_text()
+            if existing.strip() != new_content.strip():
+                print(f"  [DRIFT] {dest_path.relative_to(REPO_ROOT)}")
+                sys.exit(1)
+            return
+
         if not dry_run:
-            with open(dest_path, "w") as f:
-                json.dump(dest_data, f, indent=2)
+            dest_path.write_text(new_content)
             print(f"  ✓ {dest_path.relative_to(REPO_ROOT)} (MCP Synced)")
         else:
             print(f"  [DRY] {dest_path.relative_to(REPO_ROOT)} (MCP Sync)")
@@ -368,7 +386,7 @@ def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: st
 
     # 4. Config Sync
     if not only_agent:
-        sync_mcp_config(target, dry_run)
+        sync_mcp_config(target, dry_run, check)
 
     # 5. Cleanup
     if not only_agent and not profile:
