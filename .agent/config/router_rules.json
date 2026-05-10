@@ -102,13 +102,13 @@
       ],
       "L3": "qwen2.5-coder:32b",
       "L3_alt": [
-        "deepseek-r1:32b",
+        "qwen3-coder:30b",
         "qwen3.6:27b"
       ],
-      "L4": "qwen2.5-coder:32b",
+      "L4": "qwen3.6:27b",
       "L4_alt": [
-        "deepseek-r1:32b",
-        "qwen3.6:27b"
+        "qwen3:32b",
+        "qwen3-coder:30b"
       ]
     },
     "antigravity": {
@@ -128,7 +128,7 @@
     "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud."
   },
   "model_quality_scores": {
-    "_comment": "ELO-style quality score (higher = better). Based on public benchmarks 2025-2026. Used to pick best available model from _alt list when primary is unavailable.",
+    "_comment": "ELO-style quality score (higher = better). Based on SWE-bench/LiveCodeBench 2025-2026 benchmarks. qwen3.6:27b = best local dense, qwen2.5-coder:32b = top coder.",
     "qwen2.5-coder:7b": 65,
     "deepseek-r1:8b": 63,
     "gemma2:9b": 62,
@@ -139,6 +139,11 @@
     "qwen2.5-coder:32b": 92,
     "deepseek-r1:32b": 91,
     "qwen3.6:27b": 96,
+    "qwen3-coder:30b": 88,
+    "qwen3:32b": 94,
+    "qwen3:14b": 78,
+    "phi4:14b": 85,
+    "deepseek-coder-v2:16b": 77,
     "gemini-3-flash": 60,
     "gemini-3.1-pro-low": 75,
     "gemini-3.1-pro-high": 88,
