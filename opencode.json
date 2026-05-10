@@ -17,6 +17,7 @@
     "local-skill-server": {
       "type": "local",
       "command": [
+        "/usr/bin/env",
         "agent-kit-server"
       ],
       "enabled": true,

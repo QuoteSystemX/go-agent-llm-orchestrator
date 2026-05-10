@@ -274,13 +274,19 @@ def sync_mcp_config(target: str, dry_run: bool):
             # Create a basic template if missing
             dest_data = {
                 "$schema": "https://opencode.ai/config.json",
+                "default_agent": "orchestrator",
                 "instructions": [
+                    ".agent/agents/core/orchestrator.md",
                     ".agent/rules/gemini/00_protocol.md",
                     ".agent/rules/gemini/01_classifier.md",
                     ".agent/rules/gemini/02_routing.md",
+                    ".agent/rules/ADAPTIVE_ROUTING.md",
                     ".agent/rules/gemini/03_gateway.md",
                     ".agent/rules/gemini/04_tier0_universal.md",
-                    ".agent/rules/gemini/05_tier1_code.md"
+                    ".agent/rules/gemini/05_tier1_code.md",
+                    ".agent/rules/gemini/06_tier2_design.md",
+                    ".agent/rules/gemini/07_reference.md",
+                    ".agent/rules/LESSONS_LEARNED.md"
                 ],
                 "permission": {
                     "shell": "allow",
