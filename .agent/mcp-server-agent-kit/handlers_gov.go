@@ -18,7 +18,8 @@ func (h *handler) listProposals(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 
 	var lines []string
 	for _, p := range ps {
-		lines = append(lines, fmt.Sprintf("[%s] %s: %d/%d votes - %s", p.ID, p.Title, p.Votes, p.Required, p.Status)) // nosec
+		// Format: [ID] Title: Votes/Required votes - Status | Proposer | CommandType | CommandData
+		lines = append(lines, fmt.Sprintf("[%s] %s: %d/%d votes - %s | %s | %s | %s", p.ID, p.Title, p.Votes, p.Required, p.Status, p.Proposer, p.CommandType, p.CommandData)) // nosec
 	}
 	if len(lines) == 0 {
 		return mcp.NewToolResultText("No active proposals."), nil

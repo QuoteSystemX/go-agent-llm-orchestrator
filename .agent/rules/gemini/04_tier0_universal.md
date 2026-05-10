@@ -33,16 +33,6 @@ When user's prompt is NOT in English:
 
 > 🔴 **MANDATORY**: A task is only complete if `checklist.py . --fix` has been run and returns success.
 
-### 📎 Paperclip Heartbeat Protocol (MANDATORY)
-
-**Every session with ANY agent MUST follow the Paperclip Heartbeat cycle (Skill: @[skills/paperclip]):**
-
-1.  **Awareness**: Sync with current task and read `.agent/bus/` for context.
-2.  **Lenses**: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
-3.  **Action**: Do not stop at planning; perform actionable work in the same heartbeat.
-4.  **Reporting**: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
-5.  **Durable State**: Update task metadata and create child issues for delegated work.
-
 ### �� File Dependency Awareness
 
 **Before modifying ANY file:**

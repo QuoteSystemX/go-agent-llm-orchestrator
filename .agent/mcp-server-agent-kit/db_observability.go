@@ -63,15 +63,25 @@ func (d *DB) GetWebhooks() ([]map[string]string, error) {
 }
 func (d *DB) CleanupOldData(days int) error {
 	cutoff := time.Now().AddDate(0, 0, -days).Format("2006-01-02 15:04:05")
+	expiryCutoff := time.Now().AddDate(0, 0, -7).Format("2006-01-02 15:04:05") // 7 days for proposals
 	
 	// Delete old metrics from metrics DB
-	_, err := d.connMetrics.Exec("DELETE FROM metrics WHERE created_at < ?", cutoff)
-	if err != nil {
+	if _, err := d.connMetrics.Exec("DELETE FROM metrics WHERE created_at < ?", cutoff); err != nil {
 		return err
 	}
 	
 	// Delete old completed/failed jobs from main DB
-	_, err = d.conn.Exec("DELETE FROM jobs WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled') AND completed_at < ?", cutoff)
+	if _, err := d.conn.Exec("DELETE FROM jobs WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled') AND completed_at < ?", cutoff); err != nil {
+		return err
+	}
+
+	// 1. Mark stale open proposals as 'expired' (older than 7 days)
+	if _, err := d.conn.Exec("UPDATE proposals SET status = 'expired' WHERE status = 'open' AND created_at < ?", expiryCutoff); err != nil {
+		return err
+	}
+
+	// 2. Delete very old proposals (older than retention days)
+	_, err := d.conn.Exec("DELETE FROM proposals WHERE (status = 'executed' OR status = 'rejected' OR status = 'expired' OR status = 'approved') AND created_at < ?", cutoff)
 	return err
 }
 

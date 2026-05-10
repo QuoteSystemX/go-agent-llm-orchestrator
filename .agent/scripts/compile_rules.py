@@ -13,20 +13,31 @@ def compile_gemini_rules():
         filepath = os.path.join(rules_dir, filename)
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-            # Remove YAML frontmatter from all but the first file if needed, 
-            # or just strip it and add a single one at the top.
-            # In our case, we'll strip frontmatter from every file and wrap the result.
             
-            # Simple frontmatter stripper
+            # Extract frontmatter if present
             lines = content.splitlines()
+            frontmatter = []
+            body = []
             if lines and lines[0] == "---":
                 try:
                     end_idx = lines.index("---", 1)
-                    lines = lines[end_idx+1:]
+                    frontmatter = lines[1:end_idx]
+                    body = lines[end_idx+1:]
                 except ValueError:
-                    pass
+                    body = lines
+            else:
+                body = lines
             
-            compiled_content.append("\n".join(lines).strip())
+            # Format module header with metadata if available
+            module_content = []
+            if frontmatter:
+                module_content.append("> [!NOTE]")
+                for fm_line in frontmatter:
+                    module_content.append(f"> **{fm_line.strip()}**")
+                module_content.append("")
+            
+            module_content.extend(body)
+            compiled_content.append("\n".join(module_content).strip())
     
     final_output = """---
 trigger: always_on

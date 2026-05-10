@@ -9,6 +9,10 @@ Source of truth is in .agent/rules/gemini/*.md
 Run 'python3 .agent/scripts/compile_rules.py' to update this file.
 -->
 
+> [!NOTE]
+> **trigger: always_on**
+
+
 # GEMINI.md - Unified Agent Kit
 
 > This file defines how the AI behaves in this workspace.
@@ -36,6 +40,10 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 ---
 
+> [!NOTE]
+> **trigger: always_on**
+
+
 ## 📥 REQUEST CLASSIFIER (STEP 1)
 
 **Before ANY action, classify the request:**
@@ -50,6 +58,10 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 | **SLASH CMD**    | /create, /orchestrate, /debug              | Command-specific flow          | Variable                    |
 
 ---
+
+> [!NOTE]
+> **trigger: always_on**
+
 
 ## 🤖 INTELLIGENT AGENT ROUTING (STEP 2 - AUTO)
 
@@ -67,6 +79,10 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 4. **Apply**: Generate response using the selected levels and agents.
 
 ---
+
+> [!NOTE]
+> **trigger: always_on**
+
 
 ## 📤 OUTPUT GATEWAY (MANDATORY)
 
@@ -159,6 +175,10 @@ python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-arc
 
 ---
 
+> [!NOTE]
+> **trigger: always_on**
+
+
 ## TIER 0: UNIVERSAL RULES (Always Active)
 
 ### 🌐 Language Handling
@@ -189,16 +209,6 @@ When user's prompt is NOT in English:
 5.  **Browser Access**: If web access is needed, MUST use `bin/browser-bridge`. Never attempt raw browser calls without the resilience bridge.
 
 > 🔴 **MANDATORY**: A task is only complete if `checklist.py . --fix` has been run and returns success.
-
-### 📎 Paperclip Heartbeat Protocol (MANDATORY)
-
-**Every session with ANY agent MUST follow the Paperclip Heartbeat cycle (Skill: @[skills/paperclip]):**
-
-1.  **Awareness**: Sync with current task and read `.agent/bus/` for context.
-2.  **Lenses**: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
-3.  **Action**: Do not stop at planning; perform actionable work in the same heartbeat.
-4.  **Reporting**: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
-5.  **Durable State**: Update task metadata and create child issues for delegated work.
 
 ### �� File Dependency Awareness
 
@@ -232,6 +242,10 @@ When user's prompt is NOT in English:
 3. How does this DIFFER from generic output?
 
 ---
+
+> [!NOTE]
+> **trigger: always_on**
+
 
 ## TIER 1: CODE RULES (When Writing Code)
 
@@ -335,6 +349,10 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 
 ---
 
+> [!NOTE]
+> **trigger: always_on**
+
+
 ## TIER 2: DESIGN RULES (Reference)
 
 > **Design rules are in the specialist agents, NOT here.**
@@ -355,6 +373,10 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 
 ---
 
+> [!NOTE]
+> **trigger: always_on**
+
+
 ## 📁 QUICK REFERENCE
 
 ### Agents & Skills
@@ -368,3 +390,45 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 - **Scanners**: `security_scan.py`, `dependency_analyzer.py`
 - **Audits**: `ux_audit.py`, `mobile_audit.py`, `lighthouse_audit.py`, `seo_checker.py`
 - **Test**: `playwright_runner.py`, `test_runner.py`
+
+---
+
+> [!NOTE]
+> **trigger: paperclip_infra_only**
+> **scope: "active on: paperclip paths, agentic orchestration tasks, or explicit agentic keywords"**
+
+
+## TIER 3: PAPERCLIP AGENTIC PROTOCOLS
+
+### 📎 Paperclip Heartbeat Protocol (MANDATORY)
+
+Every session with ANY agent MUST follow the Paperclip Heartbeat cycle (Skill: @[skills/paperclip]):
+
+1. **Awareness**: Sync with current task and read `.agent/bus/` for context.
+2. **Lenses**: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
+3. **Action**: Do not stop at planning; perform actionable work in the same heartbeat.
+4. **Reporting**: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
+5. **Durable State**: Update task metadata and create child issues for delegated work.
+
+### 🚀 High-Agency Completion
+
+Agents in this workspace operate under the **"End-to-End"** principle.
+
+1. **Never stop at planning**: If the path is clear, proceed to implementation in the same response.
+2. **Hygiene is Mandatory**: Every code change must include necessary imports, basic error handling, and lint fixes.
+3. **Self-Correction**: If a tool fails, analyze the error and attempt a fix or alternative path immediately without asking for permission for trivial adjustments.
+
+### 📎 Paperclip Paradigm Alignment
+
+All development must respect the Paperclip Core Architecture:
+
+1. **Infrastructure First**: Prefer dynamic discovery (FS/API) over hardcoded registries in databases.
+2. **MCP Integration**: New functionality should ideally be exposed via MCP tools to ensure cross-agent accessibility.
+3. **Workspace Integrity**: Respect the `/paperclip` hierarchy and the separation of instances/workspaces.
+
+### 🎯 Mission Awareness
+
+We are building the future of agentic orchestration.
+
+- **Goal**: Create a robust, premium, and autonomous ecosystem.
+- **Standard**: "Minimum Viable Product" is not enough. Aim for "Production Ready" and "Feature Complete".
