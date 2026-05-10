@@ -107,7 +107,7 @@ Workflows in `.agent/workflows/` define procedures. Claude MUST read them before
 - `python3 .agent/scripts/status_report.py` - Check workspace health.
 - `python3 .agent/scripts/checklist.py .` - Priority-based validation.
 - `python3 .agent/scripts/compile_rules.py` - After editing Gemini rules.
-- `python .agent/scripts/sync_claude_agents.py` - **MANDATORY** after editing agents or skills.
+- `python .agent/scripts/sync_agents.py --target claude` - **MANDATORY** after editing agents or skills.
 
 ## Architecture Reference
 

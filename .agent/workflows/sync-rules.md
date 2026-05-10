@@ -5,9 +5,9 @@ This workflow compiles modular Gemini rules from `.agent/rules/gemini/` into the
 ## Steps
 
 1. **Awareness**: Sync with current task.
-2. **Action**: Run the compilation script.
+2. **Action**: Run the compilation and synchronization scripts.
    // turbo
-   `python3 .agent/scripts/compile_rules.py`
+   `python3 .agent/scripts/compile_rules.py && python3 .agent/scripts/sync_agents.py --target claude && python3 .agent/scripts/sync_agents.py --target opencode`
 3. **Verification**: Confirm the file was updated.
 4. **Reporting**: Report completion to the user.
 

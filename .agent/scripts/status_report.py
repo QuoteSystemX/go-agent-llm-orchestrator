@@ -13,6 +13,7 @@ try:
     BUS_DIR = REPO_ROOT / ".agent" / "bus"
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
     BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "budget_monitor.py"
+    SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "sync_agents.py"
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent))
     from lib.paths import REPO_ROOT
@@ -21,6 +22,7 @@ except ImportError:
     from mcp_provisioner import check_mcp_health
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
     BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "budget_monitor.py"
+    SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "sync_agents.py"
 
 def run_external_check(cmd):
     """Run an external check script and return its parsed JSON output."""
@@ -85,6 +87,31 @@ def calculate_health():
     if pol_file.exists():
         with open(pol_file, 'r') as f:
             policy_data = json.load(f)
+
+    # 0c. Load New Modular Metrics
+    ki_data = {}
+    ki_file = BUS_DIR / "ki_coverage_metrics.json"
+    if ki_file.exists():
+        with open(ki_file, 'r') as f:
+            ki_data = json.load(f)
+
+    sync_parity_data = {}
+    sync_parity_file = BUS_DIR / "sync_parity_metrics.json"
+    if sync_parity_file.exists():
+        with open(sync_parity_file, 'r') as f:
+            sync_parity_data = json.load(f)
+
+    roi_data = {}
+    roi_file = BUS_DIR / "intelligence_roi_metrics.json"
+    if roi_file.exists():
+        with open(roi_file, 'r') as f:
+            roi_data = json.load(f)
+
+    debt_data = {}
+    debt_file = BUS_DIR / "linter_debt_metrics.json"
+    if debt_file.exists():
+        with open(debt_file, 'r') as f:
+            debt_data = json.load(f)
     
     # 1. Check for Documentation Drift
     try:
@@ -128,6 +155,47 @@ def calculate_health():
     if not seo_data.get("passed", True):
         score -= 5
 
+    # 6a. Sync Status (Universal)
+    try:
+        from sync_agents import TARGETS
+        sync_results = ["✅ antigravity (source)"]
+        for target in TARGETS:
+            # Check detailed parity data first
+            target_data = sync_parity_data.get("metrics", {}).get("targets", {}).get("value", {}).get(target, {})
+            if target_data.get("status") == "OK":
+                sync_results.append(f"✅ {target}")
+            elif target_data.get("status") == "DRIFT":
+                sync_results.append(f"❌ {target} ({len(target_data.get('issues', []))} issues)")
+                score -= 10
+            else:
+                # Fallback to direct check if no JSON data
+                res = subprocess.run(["python3", str(SYNC_SCRIPT), "--target", target, "--check"], capture_output=True, text=True)
+                if res.returncode == 0:
+                    sync_results.append(f"✅ {target}")
+                else:
+                    sync_results.append(f"❌ {target}")
+                    score -= 10
+        metrics["Sync Status"] = " | ".join(sync_results)
+    except Exception as e:
+        metrics["Sync Status"] = f"Unknown ({e})"
+
+    # 6b. KI Coverage
+    ki_metrics = ki_data.get("metrics", {}).get("coverage_pct", {})
+    metrics["KI Coverage"] = ki_metrics.get("value", "No data")
+    if ki_metrics.get("status") == "FAIL": score -= 15
+    if ki_metrics.get("status") == "WARN": score -= 5
+
+    # 6c. Intelligence ROI
+    roi_metrics = roi_data.get("metrics", {}).get("local_ratio", {})
+    metrics["Intelligence ROI"] = f"{roi_metrics.get('value', 'Unknown')} (Local Ratio)"
+    if roi_data.get("status") == "WARN": score -= 5
+
+    # 6d. Linter Debt
+    debt_metrics = debt_data.get("metrics", {}).get("debt_index", {})
+    metrics["Linter Debt"] = debt_metrics.get("value", "No data")
+    if debt_metrics.get("status") == "FAIL": score -= 10
+    if debt_metrics.get("status") == "WARN": score -= 5
+
     # 7. Stability & Budget (Blue Team)
     metrics["Stability"] = blue_data.get("status", "Unknown")
     metrics["Budget"] = f"{budget_data.get('percent', 0):.1f}% used"
@@ -165,17 +233,6 @@ def calculate_health():
     else:
         metrics["Foresight"] = "Untracked"
 
-    # 9. Intelligence ROI
-    try:
-        from agent_scorer import get_stats
-        stats = get_stats()
-        if stats:
-            avg_all = sum(s["avg"] for s in stats.values()) / len(stats)
-            metrics["Intelligence ROI"] = f"{avg_all:.1f}/5.0 (Avg Score)"
-        else:
-            metrics["Intelligence ROI"] = "No data"
-    except:
-        metrics["Intelligence ROI"] = "Unknown"
     try:
         import urllib.request
         base_url = discover_ollama_url()

@@ -827,7 +827,7 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 - `~/.claude/.mcp.json` — User-level MCP config (skill-server at absolute path)
 - `.claude/agents/*.md` — 41 specialist agents + 20 workflow agents (generated, @-invokable)
 - `.claude/commands/*.md` — 20 slash commands `/name` (generated, same source as workflows)
-- `.agent/scripts/sync_claude_agents.py` — Generator script (`--profile`, `--agent`, `--dry-run`, supports `agents/**/` subdirs)
+- `.agent/scripts/sync_agents.py` — Universal generator script (`--target [claude|opencode]`, `--profile`, `--agent`, `--dry-run`)
 - `.agent/local-skill-server/` — Go MCP binary source (`agents_*`, `skills_*`, `workflows_*` tools)
 - `.agent/mcp-server-agent-kit/` — Extended Go MCP binary (Council, Jobs, RBAC, Governance)
 
@@ -848,16 +848,17 @@ Both are generated from the same `.agent/workflows/` source. Use the right one f
 
 ```bash
 # After editing .agent/agents/, .agent/skills/, or .agent/workflows/:
-python3 .agent/scripts/sync_claude_agents.py
+python3 .agent/scripts/sync_agents.py --target claude
+python3 .agent/scripts/sync_agents.py --target opencode
 
 # Agents only (skip commands):
-python3 .agent/scripts/sync_claude_agents.py --no-commands
+python3 .agent/scripts/sync_agents.py --target claude --no-commands
 
 # Single agent only:
-python3 .agent/scripts/sync_claude_agents.py --agent debugger
+python3 .agent/scripts/sync_agents.py --target claude --agent debugger
 
 # Preview without writing:
-python3 .agent/scripts/sync_claude_agents.py --dry-run
+python3 .agent/scripts/sync_agents.py --target claude --dry-run
 
 # Distribution profile — only agents relevant for the target repo type:
 python3 .agent/scripts/sync_claude_agents.py --profile go-service
@@ -868,7 +869,7 @@ python3 .agent/scripts/sync_claude_agents.py --profile mobile
 
 ### CI Distribution
 
-`distribute-agentic-kit.yml` runs `sync_claude_agents.py` (optionally with `--profile`) before rsync and distributes:
+`distribute-agentic-kit.yml` runs `sync_agents.py` (optionally with `--profile`) before rsync and distributes:
 
 - `.agent/` — Unified Agent Kit (unchanged)
 - `.claude/agents/` — Claude Code subagents (generated, filtered by profile if set)
