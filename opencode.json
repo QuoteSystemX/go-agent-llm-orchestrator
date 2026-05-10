@@ -1,0 +1,76 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".agent/rules/gemini/00_protocol.md",
+    ".agent/rules/gemini/01_classifier.md",
+    ".agent/rules/gemini/02_routing.md",
+    ".agent/rules/gemini/03_gateway.md",
+    ".agent/rules/gemini/04_tier0_universal.md",
+    ".agent/rules/gemini/05_tier1_code.md"
+  ],
+  "permission": {
+    "shell": "allow",
+    "file": "allow",
+    "network": "allow"
+  },
+  "mcp": {
+    "local-skill-server": {
+      "type": "local",
+      "command": [
+        "agent-kit-server"
+      ],
+      "enabled": true,
+      "env": {}
+    },
+    "shadcn": {
+      "type": "local",
+      "command": [
+        "npx",
+        "shadcn@latest",
+        "mcp"
+      ],
+      "enabled": true,
+      "env": {}
+    },
+    "wikipedia": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "wikipedia-mcp"
+      ],
+      "enabled": true,
+      "env": {}
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "sh",
+        "-c",
+        "npx -y @modelcontextprotocol/server-filesystem $(pwd)"
+      ],
+      "enabled": true,
+      "env": {}
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "enabled": true,
+      "env": {}
+    },
+    "browser": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "enabled": true,
+      "env": {}
+    }
+  }
+}
