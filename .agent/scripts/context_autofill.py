@@ -27,7 +27,7 @@ def search_codebase(intent: str):
             
     return results
 
-def main():
+def main() -> None:
     if len(sys.argv) < 2:
         sys.exit(1)
         

@@ -51,7 +51,7 @@ def inject_latency():
     time.sleep(5)
     return True
 
-def main():
+def main() -> None:
     if not CHAOS_ENABLED:
         print("❌ CHAOS DISABLED. Set CHAOS_ENABLED=1 to run.")
         sys.exit(0)

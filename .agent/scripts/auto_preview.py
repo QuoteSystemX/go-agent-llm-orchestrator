@@ -130,7 +130,7 @@ def status_server():
         print("⚪ Status: Stopped")
     print("===================\n")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["start", "stop", "status"])
     parser.add_argument("port", nargs="?", default="3000")

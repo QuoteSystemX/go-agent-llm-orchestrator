@@ -62,7 +62,7 @@ def create_adr_draft(filename):
     adr_path.write_text(content, encoding='utf-8')
     return adr_path, None
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="ADR Generator - Create draft ADRs based on documentation drift")
     parser.add_argument("--all", action="store_true", help="Generate drafts for all drifting files")
     parser.add_argument("--file", help="Specific file to generate ADR for")

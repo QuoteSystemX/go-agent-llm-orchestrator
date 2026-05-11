@@ -148,7 +148,7 @@ def wait_for_object(obj_id: str, timeout: int = 30) -> Optional[dict]:
     print(f"❌ Timeout: Object '{obj_id}' not found after {timeout}s.")
     return None
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Context Bus Manager")
     sub = parser.add_subparsers(dest="command", help="Command")
 

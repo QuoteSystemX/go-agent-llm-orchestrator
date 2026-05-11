@@ -1,4 +1,5 @@
 import sys
+from typing import List, Dict, Any, Optional, Tuple
 import os
 import subprocess
 import json
@@ -26,7 +27,7 @@ except ImportError:
     from mcp_provisioner import check_mcp_health
     MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "blue_team_monitor.py"
 
-def run_external_check(cmd):
+def run_external_check(cmd: List[str]) -> Optional[Dict[str, Any]]:
     """Run an external check script and return its parsed JSON output."""
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -43,7 +44,7 @@ def run_external_check(cmd):
     except:
         return None
 
-def calculate_health():
+def calculate_health() -> Tuple[int, Dict[str, Any]]:
     """Calculate a workspace health score based on multiple metrics."""
     score = 100
     metrics = {}
@@ -69,7 +70,7 @@ def calculate_health():
         "blue_team": 0,       # always run (no cache)
     }
 
-    def _load_cached(name: str, ttl: int):
+    def _load_cached(name: str, ttl: int) -> Optional[Dict[str, Any]]:
         """Load cached JSON from bus dir if fresh enough."""
         f = BUS_DIR / f"{name}_status.json"
         if not f.exists():
@@ -83,7 +84,7 @@ def calculate_health():
         except:
             return None
 
-    def _run_parallel(scripts: list, cache_ttls: dict):
+    def _run_parallel(scripts: List[Tuple[str, str]], cache_ttls: Dict[str, int]) -> Dict[str, Any]:
         """Run scripts in parallel, respecting cache TTLs. blue_team always runs."""
         # blue_team always runs; others check cache first
         to_run = []
@@ -103,7 +104,7 @@ def calculate_health():
             return cached
 
         # Parallel execution
-        def run_one(name, script):
+        def run_one(name: str, script: str) -> Tuple[str, bool, float]:
             t0 = time.perf_counter()
             r = subprocess.run(["python3", str(script)], capture_output=True, text=True)
             elapsed = time.perf_counter() - t0
@@ -390,7 +391,7 @@ def export_to_html(score: int, metrics: dict):
         f.write(content)
     return f"✅ Dashboard exported to {html_path}"
 
-def main():
+def main() -> None:
     score, metrics = calculate_health()
     
     if "--html" in sys.argv:

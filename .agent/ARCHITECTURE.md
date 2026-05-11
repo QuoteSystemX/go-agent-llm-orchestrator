@@ -104,12 +104,14 @@ graph TD
   db --> filepath
   db --> sql
   db --> sqlite
+  db --> url
   db_security --> sql
   discovery_brain_sync --> lib
   discovery_brain_sync --> semantic_brain_engine
   distill_context --> argparse
   doc_healer --> drift_detector
   doc_healer --> lib
+  doc_healer --> visualize_deps
   drift_detector --> argparse
   embedding_client --> urllib
   experience_distiller --> lib
@@ -169,7 +171,7 @@ graph TD
 func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	agent, _ := req.RequireString(
   handlers_gov --> %d
-  handlers_gov --> %d votes - %s
+  handlers_gov --> %d votes - %s | %s | %s | %s
   handlers_gov --> filepath
   handlers_gov --> mcp
   handlers_hooks --> mcp
@@ -302,6 +304,13 @@ func (h *handler) syncWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.
   knowledge_synergy --> argparse
   knowledge_synergy --> lib
   linter_debt_collector --> lib
+  lsp --> 
+  lsp --> definition
+  lsp --> exec
+  lsp --> filepath
+  lsp --> hover
+  lsp --> json
+  lsp --> mcp
   main -->  --- Agents Tools ---
 	s.AddTool(mcp.NewTool(
   main -->  --- Architecture & Status ---
@@ -369,6 +378,7 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 	name, _ := req.RequireString(
   main --> filepath
   main --> fs
+  main --> hover info for a symbol.
   main --> http
   main --> mcp
   main --> readiness probes.
@@ -385,6 +395,7 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 	for {
 		agentPath := filepath.Join(curr, 
   maintenance --> filepath
+  mcp_health_collector --> concurrent
   mcp_health_collector --> lib
   mcp_health_collector --> mcp_provisioner
   memory_ingestor --> embedding_client
@@ -432,6 +443,7 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
   skill_factory --> unittest
   skill_versioning --> argparse
   social_proof_generator --> jinja2
+  status_report --> concurrent
   status_report --> drift_detector
   status_report --> lib
   status_report --> mcp_provisioner
@@ -1272,3 +1284,4 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/skills/nextflow-development/scripts/utils/validators.py` | Samplesheet validation utilities. |
 | `paperclip-plugin-auth-hub/src/ui/AuthSidebar.tsx` | System module for AuthSidebar.tsx. |
 | `.agent/skills/nextflow-development/scripts/utils/file_discovery.py` | File discovery utilities for FASTQ, BAM, and CRAM files. |
+| `.agent/local-skill-server/lsp.go` | System module for lsp.go. |

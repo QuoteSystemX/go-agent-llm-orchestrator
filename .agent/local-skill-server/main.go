@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"os/signal"
+	"syscall"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -17,11 +19,20 @@ const serverVersion = "1.1.0"
 
 type handler struct {
 	projectRoot string
+	lsp         *LSPManager
 }
 
 func main() {
+	// Emergency boot log
+	f, _ := os.OpenFile("server_boot.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if f != nil { defer f.Close(); fmt.Fprintf(f, "BOOT: Process started PID=%d\n", os.Getpid()) }
 	root := resolveProjectRoot()
-	h := &handler{projectRoot: root}
+	fmt.Fprintf(os.Stderr, "DEBUG: Initializing handler with root %s\n", root)
+	h := &handler{
+		projectRoot: root,
+		lsp:         NewLSPManager(root),
+	}
+	fmt.Fprintf(os.Stderr, "DEBUG: Handler initialized\n")
 
 	s := server.NewMCPServer("agent-kit", serverVersion)
 
@@ -99,6 +110,21 @@ func main() {
 		mcp.WithDestructiveHintAnnotation(false),
 	), h.statusSummary)
 
+	// --- Semantic Tools (LSP) ---
+	s.AddTool(mcp.NewTool("semantic_definition",
+		mcp.WithDescription("Get definition of a symbol."),
+		mcp.WithString("file", mcp.Required(), mcp.Description("File path")),
+		mcp.WithNumber("line", mcp.Required(), mcp.Description("Line number (0-indexed)")),
+		mcp.WithNumber("char", mcp.Required(), mcp.Description("Character offset (0-indexed)")),
+	), h.semanticDefinition)
+
+	s.AddTool(mcp.NewTool("semantic_hover",
+		mcp.WithDescription("Get documentation/hover info for a symbol."),
+		mcp.WithString("file", mcp.Required(), mcp.Description("File path")),
+		mcp.WithNumber("line", mcp.Required(), mcp.Description("Line number (0-indexed)")),
+		mcp.WithNumber("char", mcp.Required(), mcp.Description("Character offset (0-indexed)")),
+	), h.semanticHover)
+
 	// --- Stdout Protection & Panic Recovery ---
 	// Any stray output to stdout during init will break the MCP protocol.
 	originalStdout := os.Stdout
@@ -112,6 +138,16 @@ func main() {
 	}()
 
 	fmt.Fprintf(os.Stderr, "Starting agent-kit-server v%s (root: %s)...\n", serverVersion, root)
+
+	// Catch signals for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Fprintf(os.Stderr, "Shutting down agent-kit-server...\n")
+		h.lsp.Close()
+		os.Exit(0)
+	}()
 
 	// Restore stdout just before serving
 	os.Stdout = originalStdout

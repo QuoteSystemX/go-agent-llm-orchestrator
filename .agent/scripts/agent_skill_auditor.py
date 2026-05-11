@@ -48,7 +48,7 @@ def audit_agent(path: Path):
 
     return issues
 
-def main():
+def main() -> None:
     print("🕵️  Agent Skill Audit starting...")
     all_agents = list(AGENT_DIR.glob("*.md"))
     total_issues = 0

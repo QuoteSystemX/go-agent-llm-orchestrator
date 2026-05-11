@@ -38,7 +38,7 @@ def get_current_usage():
     # In practice: for f in BUS_DIR.glob("telemetry-*.json"): ...
     return 15000 # Mocked current usage for demonstration
 
-def main():
+def main() -> None:
     print(f"\n{'='*60}")
     print(f"💰 BUDGET WARDEN - Priority Guard")
     print(f"{'='*60}")

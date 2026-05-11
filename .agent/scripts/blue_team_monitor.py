@@ -64,7 +64,7 @@ def log_metrics(metrics, status):
     with open(METRICS_FILE, 'w') as f:
         json.dump(history, f, indent=2)
 
-def main():
+def main() -> None:
     print(f"\n{'='*60}")
     print(f"🔵 BLUE TEAM MONITOR - Stability Check")
     print(f"{'='*60}")

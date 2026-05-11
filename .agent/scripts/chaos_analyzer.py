@@ -15,7 +15,7 @@ BUS_DIR = REPO_ROOT / ".agent" / "bus"
 CHAOS_EVENT_FILE = BUS_DIR / "chaos_event.json"
 BLUE_STATUS_FILE = BUS_DIR / "blue_team_status.json"
 
-def main():
+def main() -> None:
     print(f"\n{'='*60}")
     print(f"📊 CHAOS ANALYZER - MTTR Report")
     print(f"{'='*60}")

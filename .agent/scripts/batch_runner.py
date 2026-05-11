@@ -180,7 +180,7 @@ def generate_batch(agents: str, task: str) -> None:
     print(json.dumps(batch, indent=2))
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Batch Runner — Parallel Agent Task Dispatcher")
     parser.add_argument("batch_file", nargs="?", help="Path to batch JSON file")
     parser.add_argument("--generate", action="store_true", help="Generate a batch template")

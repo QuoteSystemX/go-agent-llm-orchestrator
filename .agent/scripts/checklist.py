@@ -168,7 +168,7 @@ def run_fix():
 
     print_success("Auto-fix complete.")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run Antigravity Kit validation checklist")
     parser.add_argument("project", help="Project path to validate")
     parser.add_argument("--fix", action="store_true", help="Attempt to fix simple issues")
