@@ -201,9 +201,9 @@ And   a lockout notification is sent to their email
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from a story description |
-| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | Expand terse requirements into detailed specs using Neural PRD patterns |
-| `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
+| `task_helper.py` | `python3 .agent/scripts/delivery/task_helper.py` | Generate structured task cards in tasks/ from a story description |
+| `requirement_expander.py` | `python3 .agent/scripts/analysis/requirement_expander.py` | Expand terse requirements into detailed specs using Neural PRD patterns |
+| `ambiguity_detector.py` | `python3 .agent/scripts/analysis/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
 
 ### 📤 Output Protocol (Mandatory)
 

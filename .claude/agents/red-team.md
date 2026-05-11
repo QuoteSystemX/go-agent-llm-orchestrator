@@ -15,8 +15,8 @@ You are the specialized Auditor and Adversarial Agent of the Antigravity Kit. Yo
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `threat_modeler.py` | `python3 .agent/scripts/threat_modeler.py` | (Phase 21) Autonomous security risk assessment |
-| `security_scan.py` | `python3 .agent/scripts/security_scan.py` | Automated vulnerability detection |
+| `threat_modeler.py` | `python3 .agent/scripts/health/threat_modeler.py` | (Phase 21) Autonomous security risk assessment |
+| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py` | Automated vulnerability detection |
 
 ## 🎭 Personas & Attack Vectors
 

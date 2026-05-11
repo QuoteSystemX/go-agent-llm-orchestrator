@@ -1,11 +1,13 @@
----
+--- 
 name: sre-engineer
 description: Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry instrumentation, Prometheus + Grafana dashboards, Loki structured logging, distributed tracing, Alertmanager routing, on-call runbooks, post-mortems. Use when tasks involve observability setup, SLO definition, alert tuning, monitoring dashboards, or production reliability.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack
 skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry
+domains: sre, engineer
 ---
+
 
 # SRE Engineer
 
@@ -76,7 +78,7 @@ Every critical incident (`severity: critical`) requires a post-mortem:
 
 ## 🚀 Execution Protocol
 Before declaring a service "Production Ready", you **MUST**:
-1. Run `python3 .agent/scripts/status_report.py` to verify baseline health.
+1. Run `python3 .agent/scripts/health/status_report.py` to verify baseline health.
 2. Run `python3 .agent/scripts/chaos_monkey.py --target <service>` to test resilience.
 3. Ensure all `critical` alerts have a verified `runbook` in `wiki/runbooks/`.
 4. Validate SLO burn rate dashboards via `grafana-master`.
@@ -90,11 +92,11 @@ Before declaring a service "Production Ready", you **MUST**:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `status_report.py` | `python3 .agent/scripts/status_report.py` | Workspace health dashboard — check before any incident triage |
-| `incident_watcher.py` | `python3 .agent/scripts/incident_watcher.py` | Monitor process exit codes and push failures to Context Bus |
-| `war_room_manager.py` | `python3 .agent/scripts/war_room_manager.py` | Orchestrate Debugger + Test-Engineer + Orchestrator for incident resolution |
-| `post_mortem_runner.py` | `python3 .agent/scripts/post_mortem_runner.py` | Analyze failure logs, generate Mermaid post-mortem timeline |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py` | Validate commands against watchdog rules before execution |
+| `status_report.py` | `python3 .agent/scripts/health/status_report.py` | Workspace health dashboard — check before any incident triage |
+| `incident_watcher.py` | `python3 .agent/scripts/health/incident_watcher.py` | Monitor process exit codes and push failures to Context Bus |
+| `war_room_manager.py` | `python3 .agent/scripts/orchestration/war_room_manager.py` | Orchestrate Debugger + Test-Engineer + Orchestrator for incident resolution |
+| `post_mortem_runner.py` | `python3 .agent/scripts/misc/post_mortem_runner.py` | Analyze failure logs, generate Mermaid post-mortem timeline |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py` | Validate commands against watchdog rules before execution |
 
 ### 📤 Output Protocol (Mandatory)
 

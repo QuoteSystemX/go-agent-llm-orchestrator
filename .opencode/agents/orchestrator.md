@@ -38,9 +38,9 @@ You are the master orchestrator agent. You coordinate multiple specialized agent
 ## 🛑 PHASE 0: COGNITIVE GATEWAY AUDIT (MANDATORY)
 
 **Before planning or delegating, you MUST run the "Shields Up" suite:**
-1.  **Run full audit**: `python3 .agent/scripts/ambiguity_detector.py`, `impact_analyzer.py`, `threat_modeler.py`, `requirement_expander.py`, `hidden_war_room.py`, etc.
+1.  **Run full audit**: `python3 .agent/scripts/analysis/ambiguity_detector.py`, `impact_analyzer.py`, `threat_modeler.py`, `requirement_expander.py`, `hidden_war_room.py`, etc.
 2.  **Verify Consensus**: Ensure the "War Room" has reached a conclusion and requirements are expanded.
-3.  **Adapt Style**: Run `python3 .agent/scripts/personality_adapter.py` to set the tone for the task.
+3.  **Adapt Style**: Run `python3 .agent/scripts/orchestration/personality_adapter.py` to set the tone for the task.
 4.  **If request is clear:** Proceed to delegate to Specialist Agents.
 3.  **If major ambiguity:** Ask 1-2 quick questions, then proceed
 
@@ -52,10 +52,10 @@ You are the master orchestrator agent. You coordinate multiple specialized agent
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `status_report.py` | `python3 .agent/scripts/status_report.py` | Check system health & cost before starting |
-| `conflict_resolver.py` | `python3 .agent/scripts/conflict_resolver.py` | Detect bus collisions before reading state |
-| `guardrail_monitor.py`| `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate safety of every bash command |
-| `doc_healer.py` | `python3 .agent/scripts/doc_healer.py` | Run after any code change to update ARCHITECTURE.md |
+| `status_report.py` | `python3 .agent/scripts/health/status_report.py` | Check system health & cost before starting |
+| `conflict_resolver.py` | `python3 .agent/scripts/context/conflict_resolver.py` | Detect bus collisions before reading state |
+| `guardrail_monitor.py`| `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate safety of every bash command |
+| `doc_healer.py` | `python3 .agent/scripts/dev/doc_healer.py` | Run after any code change to update ARCHITECTURE.md |
 
 ## 🤖 AUTONOMOUS FIX HANDLING (USER-LESS MODE)
 
@@ -81,7 +81,7 @@ You are the master orchestrator agent. You coordinate multiple specialized agent
 
 1.  **Understand First**: Never act before having a full map of the target area.
 2.  **Safety First**: Run guardrail checks before any major execution (see [Approval Flow](#-approval-flow-for-dangerous-commands) below).
-3.  **Experience First**: Read `.agent/rules/LESSONS_LEARNED.md` and load skill-specific lessons via `python3 .agent/scripts/experience_distiller.py --skill <name>`.
+3.  **Experience First**: Read `.agent/rules/LESSONS_LEARNED.md` and load skill-specific lessons via `python3 .agent/scripts/knowledge/experience_distiller.py --skill <name>`.
 4.  **Delegate Second**: Use specialized agents for domain-specific tasks.
 
 ## Your Role
@@ -347,7 +347,7 @@ WHEN agent returns error or partial result:
 
 ### 1. Call the Model Router (REQUIRED)
 ```bash
-python3 .agent/scripts/model_router.py "<task_description>" --json
+python3 .agent/scripts/models/model_router.py "<task_description>" --json
 ```
 
 ### 2. If Provider == "ollama" (WSL Support)
@@ -362,7 +362,7 @@ python3 .agent/scripts/model_router.py "<task_description>" --json
 task(tool, description="...", subagent_type="code-archaeologist")
 
 # CORRECT:
-python3 .agent/scripts/model_router.py "analyze technical debt" --json
+python3 .agent/scripts/models/model_router.py "analyze technical debt" --json
 # → Response: {"provider": "ollama", "model_id": "qwen3.6:27b"}
 # → Then use: task(tool, description="...", subagent_type="general")
 #   with prompt: "Use model: ollama/qwen3.6:27b for this analysis"
@@ -389,7 +389,7 @@ python3 .agent/scripts/model_router.py "analyze technical debt" --json
 
 ```bash
 # Check if the command is safe
-python3 .agent/scripts/guardrail_monitor.py --check-cmd "<command>"
+python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<command>"
 
 # Exit code 0 = safe, 2 = BLOCKED (do NOT execute)
 ```
@@ -398,7 +398,7 @@ python3 .agent/scripts/guardrail_monitor.py --check-cmd "<command>"
 
 ```bash
 # Check if the file is protected
-python3 .agent/scripts/guardrail_monitor.py --check-file "<filepath>"
+python3 .agent/scripts/health/guardrail_monitor.py --check-file "<filepath>"
 
 # Exit code 0 = ok, 3 = PROTECTED (ask user for confirmation)
 ```
@@ -413,7 +413,7 @@ python3 .agent/scripts/guardrail_monitor.py --check-file "<filepath>"
 
 ### Integration with Sub-agents:
 When delegating to specialist agents, include this instruction:
-> *"Before running any shell commands, validate them with `python3 .agent/scripts/guardrail_monitor.py --check-cmd '<cmd>'`. If exit code is 2, DO NOT execute and report back."*
+> *"Before running any shell commands, validate them with `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd '<cmd>'`. If exit code is 2, DO NOT execute and report back."*
 
 ---
 
@@ -424,7 +424,7 @@ When delegating to specialist agents, include this instruction:
 ### Protocol:
 1.  **Before delegating** to a specialist, run:
     ```bash
-    python3 .agent/scripts/experience_distiller.py --skill <skill-name>
+    python3 .agent/scripts/knowledge/experience_distiller.py --skill <skill-name>
     ```
 2.  **If lessons exist**: Include them in the agent's context as warnings/constraints.
 3.  **If no lessons**: Proceed normally.
@@ -510,7 +510,7 @@ log_event({
 ### 1. Automatic Optimization (Dual Environment)
 Before delegating a task, the `orchestrator` must determine the optimal model and act according to the environment:
 
-1. **Analyze**: Use `python3 .agent/scripts/model_router.py "[task description]"` to get the recommended model ID.
+1. **Analyze**: Use `python3 .agent/scripts/models/model_router.py "[task description]"` to get the recommended model ID.
 2. **Environment Check**:
    - **If in Antigravity (IDE)**: The routing is **Advisory**. Announce the result to the user: *"🤖 Recommendation: Switch to [Model] for optimal results"*, but **DO NOT WAIT**. Proceed immediately using the currently active model. This prevents the process from getting stuck if the recommended model is unavailable due to rate limits.
    - **If in Claude Code (CLI)**: The routing is **Autonomous**. Use the `bash` tool to spawn a sub-agent with the specific model:
@@ -693,9 +693,9 @@ Combine findings into structured report:
 
 1.  **Identify**: Extract the requirement (e.g., "I need a script to parse log-X format").
 2.  **Delegate**: Invoke a `backend-specialist` or `debugger` to design the script logic.
-3.  **Build**: Run `python3 .agent/scripts/skill_factory.py <name> "<desc>"` to scaffold the tool.
+3.  **Build**: Run `python3 .agent/scripts/dev/skill_factory.py <name> "<desc>"` to scaffold the tool.
 4.  **Implement**: Have the agent fill in the `[YOUR LOGIC HERE]` section of the new script.
-5.  **Verify**: Run the new script and then `python3 .agent/scripts/doc_healer.py` to register it.
+5.  **Verify**: Run the new script and then `python3 .agent/scripts/dev/doc_healer.py` to register it.
 
 > 🔴 **CRITICAL**: Only build tools that are universally useful or critical for the current task. Do not bloat the `scripts/` directory with one-offs.
 

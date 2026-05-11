@@ -190,9 +190,9 @@ What's slow?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `analyze_efficiency.py` | `python3 .agent/scripts/analyze_efficiency.py` | Analyze token usage and latency stats from metrics log |
-| `prompt_optimizer.py` | `python3 .agent/scripts/prompt_optimizer.py` | Identify high-token operations and suggest cheaper alternatives |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py` | Check budget constraints before expensive operations |
+| `analyze_efficiency.py` | `python3 .agent/scripts/analysis/analyze_efficiency.py` | Analyze token usage and latency stats from metrics log |
+| `prompt_optimizer.py` | `python3 .agent/scripts/models/prompt_optimizer.py` | Identify high-token operations and suggest cheaper alternatives |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py` | Check budget constraints before expensive operations |
 
 ### 📤 Output Protocol (Mandatory)
 

@@ -59,28 +59,28 @@ When asked to test a file or feature:
 ### 2. Advanced Testing Modes
 
 #### Chaos Resilience (`/test chaos`)
-- Run `CHAOS_ENABLED=1 python3 .agent/scripts/chaos_monkey.py --corrupt-bus --kill-mcp`.
+- Run `CHAOS_ENABLED=1 python3 .agent/scripts/chaos/chaos_monkey.py --corrupt-bus --kill-mcp`.
 - **Goal**: Verify if the system can detect and repair state corruption via `bus_debugger.py`.
 - **Success**: System remains operational and repairs corrupted files automatically.
 
 #### Stress Fuzzing (`/test stress`)
-- Run `python3 .agent/scripts/autonomous_fuzzer.py`.
+- Run `python3 .agent/scripts/chaos/autonomous_fuzzer.py`.
 - **Goal**: Detect edge cases and panics through random input generation.
 
 #### 🟢 Mode: Audit (Architecture & Governance)
 1. // turbo
-   Run `python3 .agent/scripts/verify_all.py`
+   Run `python3 .agent/scripts/dev/verify_all.py`
 2. // turbo
-   Run `python3 .agent/scripts/drift_detector.py`
+   Run `python3 .agent/scripts/health/drift_detector.py`
 3. // turbo
-   Run `python3 .agent/scripts/hallucination_detector.py`
+   Run `python3 .agent/scripts/health/hallucination_detector.py`
 4. // turbo
-   Run `python3 .agent/scripts/qa_golden_engine.py` to verify output against architectural standards.
+   Run `python3 .agent/scripts/dev/qa_golden_engine.py` to verify output against architectural standards.
 5. // turbo
-   Run `python3 .agent/scripts/security_scan.py` and `dependency_analyzer.py`.
+   Run `python3 .agent/scripts/health/security_scan.py` and `dependency_analyzer.py`.
 - If vulnerabilities found:
   - // turbo
-    Run `python3 .agent/scripts/vulnerability_patcher.py` to prepare fixes.
+    Run `python3 .agent/scripts/dev/vulnerability_patcher.py` to prepare fixes.
   - Apply fixes using `security-auditor` agent.
 
 ## Output Format

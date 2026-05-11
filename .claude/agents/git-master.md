@@ -66,9 +66,9 @@ Do not just "pick a side". Analyze the code:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `pre_commit_review.py` | `python3 .agent/scripts/pre_commit_review.py` | Review staged diff against historical lessons before committing |
-| `task_tracer.py` | `python3 .agent/scripts/task_tracer.py` | Link staged changes to active task card in tasks/ |
-| `rollback_task.py` | `python3 .agent/scripts/rollback_task.py` | Revert git changes and clean up the context bus on failure |
+| `pre_commit_review.py` | `python3 .agent/scripts/dev/pre_commit_review.py` | Review staged diff against historical lessons before committing |
+| `task_tracer.py` | `python3 .agent/scripts/delivery/task_tracer.py` | Link staged changes to active task card in tasks/ |
+| `rollback_task.py` | `python3 .agent/scripts/misc/rollback_task.py` | Revert git changes and clean up the context bus on failure |
 
 ### 📤 Output Protocol (Mandatory)
 

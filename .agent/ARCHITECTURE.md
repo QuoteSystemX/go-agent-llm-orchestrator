@@ -52,40 +52,6 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
-  adr_generator --> argparse
-  agent_skill_auditor --> lib
-  analyze_efficiency --> collections
-  arbitrator --> bus_manager
-  arbitrator --> lib
-  auto_preview --> argparse
-  auto_preview --> signal
-  autonomous_fuzzer --> random
-  autonomous_reviewer_cron --> drift_detector
-  autonomous_reviewer_cron --> lib
-  autonomous_reviewer_cron --> status_report
-  batch_runner --> argparse
-  blue_team_monitor --> psutil
-  bus_debugger --> lib
-  bus_manager --> argparse
-  bus_manager --> lib
-  bus_manager --> typing
-  business_dashboard --> rich
-  chaos_monkey --> argparse
-  chaos_monkey --> random
-  checklist --> argparse
-  checklist --> doc_healer
-  checklist --> lib
-  checklist --> prompt_optimizer
-  checklist --> status_report
-  checklist --> task_tracer
-  checklist --> typing
-  checklist --> visualize_deps
-  conflict_resolver --> collections
-  conflict_resolver --> lib
-  context_autofill --> lib
-  context_recall_gate --> embedding_client
-  context_recall_gate --> semantic_context_optimizer
-  context_recall_gate --> vector_store
   db -->  Migrations
 	mainQueries := []string{
 		`CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, name TEXT, status TEXT, progress INTEGER, message TEXT, started_at DATETIME, completed_at DATETIME, command TEXT, task_data TEXT);`,
@@ -106,22 +72,6 @@ graph TD
   db --> sqlite
   db --> url
   db_security --> sql
-  discovery_brain_sync --> lib
-  discovery_brain_sync --> semantic_brain_engine
-  distill_context --> argparse
-  doc_healer --> drift_detector
-  doc_healer --> lib
-  doc_healer --> visualize_deps
-  drift_detector --> argparse
-  embedding_client --> urllib
-  experience_distiller --> lib
-  experience_distiller --> semantic_brain_engine
-  generate_adr --> lib
-  grafana_manager --> argparse
-  grafana_manager --> resilience
-  grafana_manager --> typing
-  guardrail_monitor --> fnmatch
-  guardrail_monitor --> lib
   handlers_bmad -->  2. Add Documentation Nodes
 	sb.WriteString(
   handlers_bmad -->  nosec
@@ -280,8 +230,6 @@ func (h *handler) syncWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 	fullPath := filepath.Join(tempDir, relPath)
 	t.Logf(
   hooks_test --> filepath
-  incident_watcher --> bus_manager
-  incident_watcher --> lib
   indexer --> filepath
   indexer --> fsnotify
   indexer --> sql
@@ -296,14 +244,6 @@ func (h *handler) syncWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 	var count int
 	err = db.conn.QueryRow(
   indexer_test --> filepath
-  install_hooks --> lib
-  install_hooks --> shutil
-  intelligence_roi_collector --> lib
-  intent_validator --> lib
-  ki_coverage_collector --> lib
-  knowledge_synergy --> argparse
-  knowledge_synergy --> lib
-  linter_debt_collector --> lib
   lsp --> 
   lsp --> definition
   lsp --> exec
@@ -395,76 +335,6 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 	for {
 		agentPath := filepath.Join(curr, 
   maintenance --> filepath
-  mcp_health_collector --> concurrent
-  mcp_health_collector --> lib
-  mcp_health_collector --> mcp_provisioner
-  memory_ingestor --> embedding_client
-  memory_ingestor --> vector_store
-  metrics_dashboard --> rich
-  model_benchmark --> argparse
-  model_benchmark --> concurrent
-  model_benchmark --> dataclasses
-  model_benchmark --> typing
-  model_benchmark --> urllib
-  model_router --> argparse
-  model_router --> bus_manager
-  model_router --> dataclasses
-  model_router --> lib
-  model_router --> urllib
-  ollama_agent --> argparse
-  ollama_agent --> lib
-  ollama_agent --> urllib
-  post_mortem_runner --> lib
-  pr_audit --> lib
-  pre_commit_review --> conflict_resolver
-  pre_commit_review --> lib
-  pre_commit_review --> status_report
-  pre_commit_review --> task_tracer
-  prompt_optimizer --> collections
-  prompt_optimizer --> lib
-  quality_tracker --> argparse
-  quality_tracker --> collections
-  quality_tracker --> urllib
-  rollback_task --> argparse
-  rollback_task --> lib
-  router_trainer --> lib
-  sandbox_runner --> ast
-  sandbox_runner --> tempfile
-  security_scan --> argparse
-  security_scan --> lib
-  self_healer --> traceback
-  semantic_brain_engine --> lib
-  semantic_brain_engine --> typing
-  semantic_experience --> lib
-  session_manager --> argparse
-  session_manager --> typing
-  skill_factory --> argparse
-  skill_factory --> lib
-  skill_factory --> unittest
-  skill_versioning --> argparse
-  social_proof_generator --> jinja2
-  status_report --> concurrent
-  status_report --> drift_detector
-  status_report --> lib
-  status_report --> mcp_provisioner
-  status_report --> prompt_optimizer
-  status_report --> sync_agents
-  status_report --> urllib
-  sync_agents --> argparse
-  sync_agents --> yaml
-  sync_parity_collector --> lib
-  sync_parity_collector --> sync_agents
-  task_helper --> argparse
-  task_miner --> argparse
-  task_miner --> lib
-  task_tracer --> lib
-  ux_conversion_audit --> bs4
-  vector_store --> math
-  verify_all --> argparse
-  verify_all --> typing
-  visualize_deps --> lib
-  war_room_manager --> bus_manager
-  war_room_manager --> lib
   workers --> exec
   workers --> json
   workers_test -->  1. Prepare a pending job in DB
@@ -497,8 +367,6 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 		case <-timeout:
 			t.Fatal(
   workers_test --> filepath
-  wsl_health_collector --> lib
-  wsl_health_collector --> platform
 ```
 <!-- DEPENDENCY_GRAPH_END -->
 
@@ -513,12 +381,12 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 
 ## 🛠️ Workspace Management & Hygiene
 
-- `python3 .agent/scripts/status_report.py` - Unified Dashboard (Tech + Business)
-- `python3 .agent/scripts/compile_rules.py` - Compile modular Gemini rules
-- `python3 .agent/scripts/task_helper.py` - Task card generator for `tasks/`
-- `python3 .agent/scripts/drift_detector.py` - Wiki vs Code drift detection
-- `python3 .agent/scripts/metrics_dashboard.py` - Real-time agent telemetry
-- `python3 .agent/scripts/business_dashboard.py` - Story card progress tracking
+- `python3 .agent/scripts/health/status_report.py` - Unified Dashboard (Tech + Business)
+- `python3 .agent/scripts/dev/compile_rules.py` - Compile modular Gemini rules
+- `python3 .agent/scripts/delivery/task_helper.py` - Task card generator for `tasks/`
+- `python3 .agent/scripts/health/drift_detector.py` - Wiki vs Code drift detection
+- `python3 .agent/scripts/misc/metrics_dashboard.py` - Real-time agent telemetry
+- `python3 .agent/scripts/misc/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
 ## 🤖 Agents (43)
@@ -801,10 +669,10 @@ Master validation scripts that orchestrate skill-level scripts.
 
 ```bash
 # Quick validation during development
-python .agent/scripts/checklist.py .
+python .agent/scripts/dev/checklist.py .
 
 # Full verification before deployment
-python .agent/scripts/verify_all.py . --url http://localhost:3000
+python .agent/scripts/dev/verify_all.py . --url http://localhost:3000
 ```
 
 ### What They Check
@@ -852,7 +720,7 @@ The following tools are available in `.agent/scripts/` for maintenance and safet
 
 Master validation runner.
 
-- `python3 .agent/scripts/checklist.py .` - Run all core checks.
+- `python3 .agent/scripts/dev/checklist.py .` - Run all core checks.
 - `--fix` - Automatically fix simple configuration and directory issues.
 - `--url <URL>` - Include performance and E2E checks.
 
@@ -867,7 +735,7 @@ Safety and budget watchdog.
 
 Learning and knowledge maintenance.
 
-- `python3 .agent/scripts/experience_distiller.py` - Archive lessons older than 30 days.
+- `python3 .agent/scripts/knowledge/experience_distiller.py` - Archive lessons older than 30 days.
 - `--skill <name>` - Filter and display lessons for a specific skill (searches active and archives).
 - `--list-skills` - List all unique skill tags in the knowledge base.
 
@@ -883,37 +751,37 @@ Context Bus administration.
 
 Dependency Graph Generator.
 
-- `python3 .agent/scripts/visualize_deps.py` - Scans imports and updates the Mermaid diagram in `ARCHITECTURE.md`.
+- `python3 .agent/scripts/dev/visualize_deps.py` - Scans imports and updates the Mermaid diagram in `ARCHITECTURE.md`.
 
 ### `status_report.py`
 
 Workspace Health Dashboard.
 
-- `python3 .agent/scripts/status_report.py` - Shows the Health Score (0-100%) based on drift, logs, security, and tests.
+- `python3 .agent/scripts/health/status_report.py` - Shows the Health Score (0-100%) based on drift, logs, security, and tests.
 
 ### `generate_adr.py`
 
 Architecture Decision Record Generator.
 
-- `python3 .agent/scripts/generate_adr.py "<Title>" "<Context>" "<Decision>"` - Creates a new ADR in `wiki/decisions/`.
+- `python3 .agent/scripts/knowledge/generate_adr.py "<Title>" "<Context>" "<Decision>"` - Creates a new ADR in `wiki/decisions/`.
 
 ### `post_mortem_runner.py`
 
 Failure Analysis Tool.
 
-- `python3 .agent/scripts/post_mortem_runner.py` - Analyzes recent logs and suggests a lesson learned.
+- `python3 .agent/scripts/misc/post_mortem_runner.py` - Analyzes recent logs and suggests a lesson learned.
 
 ### `pre_commit_review.py`
 
 Git Hook Reviewer.
 
-- `python3 .agent/scripts/pre_commit_review.py` - Checks staged diffs against historical lessons in `LESSONS_LEARNED.md`.
+- `python3 .agent/scripts/dev/pre_commit_review.py` - Checks staged diffs against historical lessons in `LESSONS_LEARNED.md`.
 
 ### `rollback_task.py`
 
 Task & State Undo.
 
-- `python3 .agent/scripts/rollback_task.py [--author <name>]` - Reverts git changes and cleans up the context bus.
+- `python3 .agent/scripts/misc/rollback_task.py [--author <name>]` - Reverts git changes and cleans up the context bus.
 
 ### `test_factory.py`
 
@@ -925,43 +793,43 @@ Unit Test Generator.
 
 Security Auto-patch Helper.
 
-- `python3 .agent/scripts/vulnerability_patcher.py <type> <file> <context>` - Formats a secure fix request for an agent.
+- `python3 .agent/scripts/dev/vulnerability_patcher.py <type> <file> <context>` - Formats a secure fix request for an agent.
 
 ### `bus_debugger.py`
 
 Interactive Bus Inspector.
 
-- `python3 .agent/scripts/bus_debugger.py` - Interactive shell to list and peek at bus objects.
+- `python3 .agent/scripts/context/bus_debugger.py` - Interactive shell to list and peek at bus objects.
 
 ### `task_tracer.py`
 
 Git-to-Task Traceability.
 
-- `python3 .agent/scripts/task_tracer.py` - Links staged changes to active cards in `tasks/`. Triggered by `pre-commit`.
+- `python3 .agent/scripts/delivery/task_tracer.py` - Links staged changes to active cards in `tasks/`. Triggered by `pre-commit`.
 
 ### `prompt_optimizer.py`
 
 Cost & Prompt Efficiency.
 
-- `python3 .agent/scripts/prompt_optimizer.py` - Analyzes telemetry and suggests token reductions.
+- `python3 .agent/scripts/models/prompt_optimizer.py` - Analyzes telemetry and suggests token reductions.
 
 ### `conflict_resolver.py`
 
 Bus Arbitration.
 
-- `python3 .agent/scripts/conflict_resolver.py` - Detects ID collisions and state conflicts.
+- `python3 .agent/scripts/context/conflict_resolver.py` - Detects ID collisions and state conflicts.
 
 ### `semantic_experience.py`
 
 Contextual Knowledge Search.
 
-- `python3 .agent/scripts/semantic_experience.py <query>` - Searches LESSONS_LEARNED.md using keyword overlap.
+- `python3 .agent/scripts/models/semantic_experience.py <query>` - Searches LESSONS_LEARNED.md using keyword overlap.
 
 ### `doc_healer.py`
 
 Self-healing Documentation.
 
-- `python3 .agent/scripts/doc_healer.py` - Analyzes code and updates ARCHITECTURE.md for new files.
+- `python3 .agent/scripts/dev/doc_healer.py` - Analyzes code and updates ARCHITECTURE.md for new files.
 
 ---
 
@@ -988,7 +856,7 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 - `~/.claude/.mcp.json` — User-level MCP config (skill-server at absolute path)
 - `.claude/agents/*.md` — 41 specialist agents + 20 workflow agents (generated, @-invokable)
 - `.claude/commands/*.md` — 20 slash commands `/name` (generated, same source as workflows)
-- `.agent/scripts/sync_agents.py` — Universal generator script (`--target [claude|opencode]`, `--profile`, `--agent`, `--dry-run`)
+- `.agent/scripts/delivery/sync_agents.py` — Universal generator script (`--target [claude|opencode]`, `--profile`, `--agent`, `--dry-run`)
 - `.agent/local-skill-server/` — Go MCP binary source (`agents_*`, `skills_*`, `workflows_*` tools)
 - `.agent/mcp-server-agent-kit/` — Extended Go MCP binary (Council, Jobs, RBAC, Governance)
 
@@ -1009,17 +877,17 @@ Both are generated from the same `.agent/workflows/` source. Use the right one f
 
 ```bash
 # After editing .agent/agents/, .agent/skills/, or .agent/workflows/:
-python3 .agent/scripts/sync_agents.py --target claude
-python3 .agent/scripts/sync_agents.py --target opencode
+python3 .agent/scripts/delivery/sync_agents.py --target claude
+python3 .agent/scripts/delivery/sync_agents.py --target opencode
 
 # Agents only (skip commands):
-python3 .agent/scripts/sync_agents.py --target claude --no-commands
+python3 .agent/scripts/delivery/sync_agents.py --target claude --no-commands
 
 # Single agent only:
-python3 .agent/scripts/sync_agents.py --target claude --agent debugger
+python3 .agent/scripts/delivery/sync_agents.py --target claude --agent debugger
 
 # Preview without writing:
-python3 .agent/scripts/sync_agents.py --target claude --dry-run
+python3 .agent/scripts/delivery/sync_agents.py --target claude --dry-run
 
 # Distribution profile — only agents relevant for the target repo type:
 python3 .agent/scripts/sync_claude_agents.py --profile go-service
@@ -1214,42 +1082,42 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 
 | File | Description |
 | --- | --- |
-| `.agent/scripts/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
-| `.agent/scripts/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
-| `.agent/scripts/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
-| `.agent/scripts/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
-| `.agent/scripts/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
-| `.agent/scripts/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
-| `.agent/scripts/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
+| `.agent/scripts/misc/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
+| `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
+| `.agent/scripts/orchestration/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
+| `.agent/scripts/orchestration/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
+| `.agent/scripts/dev/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
+| `.agent/scripts/delivery/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
+| `.agent/scripts/misc/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
 | `.agent/scripts/chaos_monkey.py` | Deliberate fault injection for resilience testing (run on throwaway branches only). |
-| `.agent/scripts/semantic_brain_engine.py` | TF-IDF semantic search engine over LESSONS_LEARNED and global knowledge base. |
-| `.agent/scripts/agent_skill_auditor.py` | Ensures every agent has mandatory skills (clean-code) and valid SKILL.md metadata. |
-| `.agent/scripts/ci_auto_fixer.py` | Auto-healing: detects failing CI jobs and proposes targeted fix commits. |
+| `.agent/scripts/knowledge/semantic_brain_engine.py` | TF-IDF semantic search engine over LESSONS_LEARNED and global knowledge base. |
+| `.agent/scripts/orchestration/agent_skill_auditor.py` | Ensures every agent has mandatory skills (clean-code) and valid SKILL.md metadata. |
+| `.agent/scripts/dev/ci_auto_fixer.py` | Auto-healing: detects failing CI jobs and proposes targeted fix commits. |
 | `.agent/scripts/context_autofill.py` | Autonomous context investigator — pulls ADRs, lessons, and bus state before an agent starts. |
-| `.agent/scripts/discovery_brain_sync.py` | Syncs discovery output to Semantic Brain for future semantic search queries. |
-| `.agent/scripts/intent_validator.py` | Phase 18 gate — detects architectural conflicts before implementation begins. |
-| `.agent/scripts/ambiguity_detector.py` | Socratic gate — identifies vague or ambiguous requirements before coding. |
-| `.agent/scripts/impact_analyzer.py` | Estimates blast radius of a change across the codebase before execution. |
-| `.agent/scripts/code_polisher.py` | Applies senior-level polish: removes dead code, enforces naming conventions, simplifies logic. |
-| `.agent/scripts/failure_correlator.py` | Cross-references recent failures with LESSONS_LEARNED to detect repeated mistakes. |
-| `.agent/scripts/threat_modeler.py` | STRIDE-based threat modeler — generates threat model for a given component or PR. |
-| `.agent/scripts/resource_optimizer.py` | Economic audit — identifies high-token operations and suggests cheaper alternatives. |
-| `.agent/scripts/ghost_prototyper.py` | Creates throwaway proof-of-concept branches to validate architectural hypotheses. |
-| `.agent/scripts/autonomous_fuzzer.py` | Generates randomized edge-case inputs to stress-test functions and APIs. |
-| `.agent/scripts/resource_forecaster.py` | Predicts token and wall-clock budget for a task before execution (Phase 23 gate). |
-| `.agent/scripts/hidden_war_room.py` | 4-participant strategic debate: Optimist, Skeptic, Advocate, Arbitrator — for major decisions. |
-| `.agent/scripts/truth_validator.py` | Cross-references Local Brain, global knowledge, and external sources for contradictions. |
-| `.agent/scripts/personality_adapter.py` | Detects user stylistic DNA (Minimalism/Pragmatism) and adapts agent response style. |
-| `.agent/scripts/requirement_expander.py` | Cascading knowledge retrieval — expands terse requirements into detailed specs with feedback loop. |
-| `.agent/scripts/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
+| `.agent/scripts/knowledge/discovery_brain_sync.py` | Syncs discovery output to Semantic Brain for future semantic search queries. |
+| `.agent/scripts/analysis/intent_validator.py` | Phase 18 gate — detects architectural conflicts before implementation begins. |
+| `.agent/scripts/analysis/ambiguity_detector.py` | Socratic gate — identifies vague or ambiguous requirements before coding. |
+| `.agent/scripts/analysis/impact_analyzer.py` | Estimates blast radius of a change across the codebase before execution. |
+| `.agent/scripts/dev/code_polisher.py` | Applies senior-level polish: removes dead code, enforces naming conventions, simplifies logic. |
+| `.agent/scripts/misc/failure_correlator.py` | Cross-references recent failures with LESSONS_LEARNED to detect repeated mistakes. |
+| `.agent/scripts/health/threat_modeler.py` | STRIDE-based threat modeler — generates threat model for a given component or PR. |
+| `.agent/scripts/analysis/resource_optimizer.py` | Economic audit — identifies high-token operations and suggests cheaper alternatives. |
+| `.agent/scripts/analysis/ghost_prototyper.py` | Creates throwaway proof-of-concept branches to validate architectural hypotheses. |
+| `.agent/scripts/chaos/autonomous_fuzzer.py` | Generates randomized edge-case inputs to stress-test functions and APIs. |
+| `.agent/scripts/analysis/resource_forecaster.py` | Predicts token and wall-clock budget for a task before execution (Phase 23 gate). |
+| `.agent/scripts/orchestration/hidden_war_room.py` | 4-participant strategic debate: Optimist, Skeptic, Advocate, Arbitrator — for major decisions. |
+| `.agent/scripts/analysis/truth_validator.py` | Cross-references Local Brain, global knowledge, and external sources for contradictions. |
+| `.agent/scripts/orchestration/personality_adapter.py` | Detects user stylistic DNA (Minimalism/Pragmatism) and adapts agent response style. |
+| `.agent/scripts/analysis/requirement_expander.py` | Cascading knowledge retrieval — expands terse requirements into detailed specs with feedback loop. |
+| `.agent/scripts/knowledge/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
 | `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
-| `.agent/scripts/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
-| `.agent/scripts/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
-| `.agent/scripts/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
-| `.agent/scripts/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
-| `.agent/scripts/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
-| `.agent/scripts/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
-| `.agent/scripts/session_manager.py` | Session Manager - Antigravity Kit |
+| `.agent/scripts/misc/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
+| `.agent/scripts/delivery/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
+| `.agent/scripts/delivery/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
+| `.agent/scripts/knowledge/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
+| `.agent/scripts/misc/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
+| `.agent/scripts/misc/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
+| `.agent/scripts/misc/session_manager.py` | Session Manager - Antigravity Kit |
 | `.agent/mcp-server/indexer.go` | System module for indexer.go. |
 | `.agent/mcp-server/helpers.go` | System module for helpers.go. |
 | `.agent/mcp-server/workers.go` | System module for workers.go. |
@@ -1257,7 +1125,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server/db_hooks.go` | System module for db_hooks.go. |
 | `.agent/mcp-server/handlers_hooks.go` | System module for handlers_hooks.go. |
 | `.agent/mcp-server/handlers_bmad.go` | System module for handlers_bmad.go. |
-| `.agent/scripts/auto_preview.py` | Auto Preview - Antigravity Kit |
+| `.agent/scripts/delivery/auto_preview.py` | Auto Preview - Antigravity Kit |
 | `.agent/mcp-server/handlers_jobs.go` | System module for handlers_jobs.go. |
 | `.agent/mcp-server/handlers_gov.go` | System module for handlers_gov.go. |
 | `.agent/mcp-server/db_ops.go` | System module for db_ops.go. |
@@ -1270,7 +1138,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server/handlers_infra.go` | System module for handlers_infra.go. |
 | `.agent/mcp-server/db_security.go` | System module for db_security.go. |
 | `fix_design.js` | System module for fix_design.js. |
-| `.agent/scripts/agent_scorer.py` | Log a quality score for an agent's work. |
+| `.agent/scripts/orchestration/agent_scorer.py` | Log a quality score for an agent's work. |
 | `.agent/skills/nextflow-development/scripts/utils/ncbi_utils.py` | NCBI Utilities for GEO/SRA Data Access |
 | `paperclip-plugin-auth-hub/src/ui/entry.ts` | System module for entry.ts. |
 | `.agent/skills/skill-creator/scripts/improve_description.py` | Improve a skill description based on eval results. |
@@ -1285,3 +1153,12 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `paperclip-plugin-auth-hub/src/ui/AuthSidebar.tsx` | System module for AuthSidebar.tsx. |
 | `.agent/skills/nextflow-development/scripts/utils/file_discovery.py` | File discovery utilities for FASTQ, BAM, and CRAM files. |
 | `.agent/local-skill-server/lsp.go` | System module for lsp.go. |
+| `.agent/scripts/analysis/impact_to_roles.py` | System module for impact_to_roles.py. |
+| `.agent/scripts/orchestration_session.py` | System module for orchestration_session.py. |
+| `.agent/scripts/models/profile_routing.py` | Profiling script for L1 and L2 routing performance. |
+| `.agent/scripts/orchestration/wave_dispatcher.py` | Упрощенный парсер Mermaid DAG для извлечения узлов и зависимостей. |
+| `.agent/scripts/orchestration/agent_auctioneer.py` | Динамически собирает матрицу агентов, сканируя папку .agent/agents/ |
+| `.agent/scripts/orchestration/agent_arena.py` | Генерирует 'Сценарий поединка' для LLM.  |
+| `.agent/scripts/health/dependency_analyzer.py` | Dependency Analyzer — Checks for outdated or insecure dependencies. |
+| `.agent/scripts/analysis/dead_code_detector.py` | Dead Code Detector — Finds unreferenced scripts in the workspace. |
+| `.agent/scripts/health/alignment_oracle.py` | Alignment Oracle — Predicts long-term impact of decisions on project health. |

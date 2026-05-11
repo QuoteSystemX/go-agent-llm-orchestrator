@@ -171,8 +171,8 @@ Scale & requirements?
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
 | `context_autofill.py` | `python3 .agent/scripts/context_autofill.py "<intent>"` | Investigate codebase context autonomously before building any LLM feature |
-| `model_router.py` | `python3 .agent/scripts/model_router.py` | Route task complexity (L1-L3) to the most cost-effective model |
-| `sandbox_runner.py` | `python3 .agent/scripts/sandbox_runner.py <file>` | AST-safe execution sandbox for untrusted LLM-generated code |
+| `model_router.py` | `python3 .agent/scripts/models/model_router.py` | Route task complexity (L1-L3) to the most cost-effective model |
+| `sandbox_runner.py` | `python3 .agent/scripts/dev/sandbox_runner.py <file>` | AST-safe execution sandbox for untrusted LLM-generated code |
 
 ### 📤 Output Protocol (Mandatory)
 

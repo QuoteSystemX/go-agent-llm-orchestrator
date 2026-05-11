@@ -1,11 +1,13 @@
----
+--- 
 name: crypto-specialist
 description: Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/off-chain architecture, and financial math. Language-agnostic — focuses on WHAT to build, not HOW in Go. Triggers on ton, crypto, exchange, trading, blockchain, hft, quotes, dex, amm, func, tact, mev, wallet, jetton. For Go implementation of crypto systems use crypto-go-architect instead.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service
 skills: ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry
+domains: crypto, specialist
 ---
+
 
 # Crypto Specialist
 

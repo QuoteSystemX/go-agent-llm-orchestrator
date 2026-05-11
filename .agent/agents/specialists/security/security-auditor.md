@@ -1,10 +1,12 @@
----
+--- 
 name: security-auditor
 description: Elite cybersecurity expert. Think like an attacker, defend like an expert. OWASP 2025, supply chain security, zero trust architecture. Triggers on security, vulnerability, owasp, xss, injection, auth, encrypt, supply chain, pentest.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry
+domains: security, audit, vulnerabilities
 ---
+
 
 # Security Auditor
 
@@ -147,10 +149,10 @@ Is it actively exploited (EPSS >0.5)?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path> --output summary` | OWASP static scan — hardcoded secrets, dangerous patterns, weak hashes |
-| `threat_modeler.py` | `python3 .agent/scripts/threat_modeler.py` | STRIDE-based threat model for a component or PR |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate commands for secret leaks and dangerous operation patterns |
-| `vulnerability_patcher.py` | `python3 .agent/scripts/vulnerability_patcher.py <type> <file> <ctx>` | Format a targeted secure fix request for patching |
+| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py <path> --output summary` | OWASP static scan — hardcoded secrets, dangerous patterns, weak hashes |
+| `threat_modeler.py` | `python3 .agent/scripts/health/threat_modeler.py` | STRIDE-based threat model for a component or PR |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate commands for secret leaks and dangerous operation patterns |
+| `vulnerability_patcher.py` | `python3 .agent/scripts/dev/vulnerability_patcher.py <type> <file> <ctx>` | Format a targeted secure fix request for patching |
 
 ---
 

@@ -147,10 +147,29 @@ def generate_html(data: dict, auto_refresh: bool = False, skill_name: str = "") 
 </head>
 <body>
     <h1>""" + title_prefix + """Skill Description Optimization</h1>
+"""]
+
+    # Validation Alert Section (Restored & Improved)
+    validation = data.get("validation", {})
+    if validation:
+        if not validation.get("valid", True):
+            errors = validation.get("errors", [])
+            html_parts.append(f"""
+    <div class="score-bad" style="padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c44;">
+        <strong>⚠️ Structural Validation Failed:</strong>
+        <ul style="margin: 10px 0 0 20px;">
+            {''.join(f'<li>{html.escape(e)}</li>' for e in errors)}
+        </ul>
+    </div>
+""")
+        else:
+            html_parts.append('<div class="score-good" style="padding: 10px; border-radius: 6px; margin-bottom: 20px;">✅ Structural Validation Passed</div>')
+
+    html_parts.append("""
     <div class="explainer">
         <strong>Optimizing your skill's description.</strong> This page updates automatically as Claude tests different versions of your skill's description. Each row is an iteration — a new description attempt. The columns show test queries: green checkmarks mean the skill triggered correctly (or correctly didn't trigger), red crosses mean it got it wrong. The "Train" score shows performance on queries used to improve the description; the "Test" score shows performance on held-out queries the optimizer hasn't seen. When it's done, Claude will apply the best-performing description to your skill.
     </div>
-"""]
+""")
 
     # Summary section
     best_test_score = data.get('best_test_score')
@@ -291,9 +310,6 @@ def generate_html(data: dict, auto_refresh: bool = False, skill_name: str = "") 
     html_parts.append("""        </tbody>
     </table>
     </div>
-""")
-
-    html_parts.append("""
 </body>
 </html>
 """)

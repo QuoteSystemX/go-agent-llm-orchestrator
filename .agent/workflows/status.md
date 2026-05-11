@@ -87,12 +87,12 @@ Show current project and agent status.
 ## Technical
 
 Status uses these scripts:
-- `python3 .agent/scripts/status_report.py` (Unified Dashboard)
-- `python3 .agent/scripts/business_dashboard.py` (Business Progress)
-- `python3 .agent/scripts/drift_detector.py` (Documentation Drift)
-- `python3 .agent/scripts/guardrail_monitor.py` (Safety & Budget)
-- `python3 .agent/scripts/analyze_efficiency.py` (Performance/Cost)
-- `python3 .agent/scripts/prompt_optimizer.py` (Token Optimization)
-- `python3 .agent/scripts/conflict_resolver.py` (Bus Conflicts)
-- `python3 .agent/scripts/session_manager.py status`
-- `python3 .agent/scripts/auto_preview.py status`
+- `python3 .agent/scripts/health/status_report.py` (Unified Dashboard)
+- `python3 .agent/scripts/health/business_dashboard.py` (Business Progress)
+- `python3 .agent/scripts/health/drift_detector.py` (Documentation Drift)
+- `python3 .agent/scripts/health/guardrail_monitor.py` (Safety & Budget)
+- `python3 .agent/scripts/analysis/analyze_efficiency.py` (Performance/Cost)
+- `python3 .agent/scripts/models/prompt_optimizer.py` (Token Optimization)
+- `python3 .agent/scripts/context/conflict_resolver.py` (Bus Conflicts)
+- `python3 .agent/scripts/orchestration/session_manager.py status`
+- `python3 .agent/scripts/delivery/auto_preview.py status`

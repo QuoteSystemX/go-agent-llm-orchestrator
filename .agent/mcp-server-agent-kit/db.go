@@ -30,7 +30,7 @@ func InitDB(projectRoot string, mainDBPathOverride string) (*DB, error) {
 		q.Set("_journal_mode", "WAL")
 		q.Set("_sync", "NORMAL")
 
-		dsn := fmt.Sprintf("%s?%s", path, q.Encode())
+		dsn := path + "?" + q.Encode()
 		db, err := sql.Open("sqlite", dsn)
 		if err != nil {
 			return nil, err

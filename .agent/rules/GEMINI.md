@@ -6,7 +6,7 @@ trigger: always_on
 🔴 ATTENTION: THIS FILE IS AUTO-GENERATED. 
 DO NOT EDIT MANUALLY. YOUR CHANGES WILL BE OVERWRITTEN.
 Source of truth is in .agent/rules/gemini/*.md
-Run 'python3 .agent/scripts/compile_rules.py' to update this file.
+Run 'python3 .agent/scripts/dev/compile_rules.py' to update this file.
 -->
 
 > [!NOTE]
@@ -35,7 +35,7 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 1. **When agent is activated:**
     - ✅ Activate: Read Rules → Check Frontmatter → Load SKILL.md → Apply All.
 2. **When rules are modified:**
-    - ✅ **MANDATORY:** After editing files in `.agent/rules/gemini/`, you MUST run `python3 .agent/scripts/compile_rules.py` (or `/sync-rules`) to update the monolithic rule file.
+    - ✅ **MANDATORY:** After editing files in `.agent/rules/gemini/`, you MUST run `python3 .agent/scripts/dev/compile_rules.py` (or `/sync-rules`) to update the monolithic rule file.
 3. **Forbidden:** Never skip reading agent rules or skill instructions. "Read → Understand → Apply" is mandatory.
 
 ---
@@ -80,37 +80,39 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 ---
 
-> [!NOTE]
-> **trigger: always_on**
+# Output Gateway Protocol
 
+---
+trigger: always_on
+---
 
 ## 📤 OUTPUT GATEWAY (MANDATORY)
 
 **Every response that involves code changes, features, or complex logic MUST be validated via `bin/output-bridge`.**
 
-1.  **Format**: Follow the structure: Header, Goal, Implementation, Components, Result.
-2.  **Validation**: Run `cat response.md | bin/output-bridge`.
-3.  **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
+1. **Format**: Follow the structure: Header, Goal, Implementation, Components, Result.
+2. **Validation**: Run `cat response.md | bin/output-bridge`.
+3. **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
 
 ### 🧠 HYBRID ROUTING PROTOCOL (MANDATORY - ENFORCED)
 
 **Before executing ANY sub-task or delegation, the agent MUST:**
 
-1. **Call the Router**: Run `python3 .agent/scripts/model_router.py "<task_description>" --json`.
+1. **Call the Router**: Run `python3 .agent/scripts/models/model_router.py "<task_description>" --json`.
 2. **Respect the Decision**:
    - If `provider == "ollama"`, use `ollama_agent.py` with local models.
    - If `provider == "antigravity"`, use built-in cloud agents (fallback only).
 3. **Context Bus Check**: Check `.agent/bus/` for recent `routing_event` objects.
 
-**🔴 ENFORCEMENT: Ollama is PRIMARY, Cloud is FALLBACK only**
+### 🔴 ENFORCEMENT: Ollama is PRIMARY, Cloud is FALLBACK only
 
 ```bash
 # CORRECT workflow for ANY Ollama task:
-python3 .agent/scripts/model_router.py "task description" --json
+python3 .agent/scripts/models/model_router.py "task description" --json
 # → Response: {"provider": "ollama", "model_id": "qwen3-coder:30b", "tier": "L4"}
 
 # Use ollama_agent.py for filesystem-aware analysis:
-python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-archaeologist --model qwen3-coder:30b
+python3 .agent/scripts/models/ollama_agent.py "analyze technical debt" --agent code-archaeologist --model qwen3-coder:30b
 
 # WRONG (violation): Using built-in cloud agents when Ollama available
 ```
@@ -118,7 +120,8 @@ python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-arc
 **WSL Support**: Router auto-detects WSL via `_is_wsl()` and routes to Windows Ollama at `172.31.0.1:11434`.
 
 **Required Logging**:
-```
+
+```text
 🤖 Flow: [L<N>]
 🧠 Provider: Ollama (WSL auto-detected)
 🧠 Model: <model_id>
@@ -129,7 +132,7 @@ python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-arc
 **Benchmark Results (2026-05-10, simple/medium/complex tasks)**:
 
 | Tier | Best Model | Avg Time | Avg TPS | Success |
-|------|------------|----------|---------|---------|
+| :--- | :--- | :--- | :--- | :--- |
 | L1 | codestral:22b | 7.4s | 39 tok/s | 100% |
 | L2 | qwen2.5-coder:14b | **6.4s** | **61 tok/s** | 100% |
 | L3 | qwen2.5-coder:32b | 13.6s | 28 tok/s | 100% |
@@ -138,10 +141,18 @@ python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-arc
 
 *Rationale: This ensures optimal cost/performance balance via ollama_agent.py with filesystem context.*
 
----
+### 🧠 IDENTITY HEADER PROTOCOL (MANDATORY)
 
-**Mandatory Structure:**
-- 🤖 **Agent Header**: specialist-name
+Every response MUST start with the following header (replace placeholders with real values):
+
+
+```text
+🤖 Flow: **[L<N>]**
+🧠 Team Consensus: **[Brief summary of consensus]**
+👤 Agent: **@agent-name** | 🛠 Skills: **[skill-1, skill-2]** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
+```
+**Mandatory Content Structure:**
+
 - 🎯 **Context/Goal**: Brief description
 - 🛠 **Technical Implementation**: Technical details
 - 📂 **Impacted Components**: Absolute file paths
@@ -158,7 +169,7 @@ python3 .agent/scripts/ollama_agent.py "analyze technical debt" --agent code-arc
 **Before ANY code or design work, you MUST complete this mental checklist:**
 
 | Step | Check | If Unchecked |
-|------|-------|--------------|
+| :--- | :--- | :--- |
 | 1 | Did I identify the correct agent for this domain? | → STOP. Analyze request domain first. |
 | 2 | Did I READ the agent's `.md` file (or recall its rules)? | → STOP. Open `.agent/agents/{agent}.md` |
 | 3 | Did I announce `🤖 Applying knowledge of @[agent]...`? | → STOP. Add announcement before response. |
@@ -203,11 +214,11 @@ When user's prompt is NOT in English:
 
 **Before performing ANY task that modifies code or project state:**
 
-1.  **Check Health**: Run `python3 .agent/scripts/status_report.py`. If score < 80, investigate why.
+1.  **Check Health**: Run `python3 .agent/scripts/health/status_report.py`. If score < 80, investigate why.
 2.  **Check Semantic Gateway**: Ensure `gopls` and `marksman` are active via `semantic_hover` probe.
-3.  **Check Conflicts**: Run `python3 .agent/scripts/conflict_resolver.py`. DO NOT proceed if conflicts exist.
-3.  **Check Budget**: Run `python3 .agent/scripts/guardrail_monitor.py`. DO NOT exceed token/cost limits.
-4.  **Check Experience**: Run `python3 .agent/scripts/experience_distiller.py`. Learn from past failures.
+3.  **Check Conflicts**: Run `python3 .agent/scripts/context/conflict_resolver.py`. DO NOT proceed if conflicts exist.
+3.  **Check Budget**: Run `python3 .agent/scripts/health/guardrail_monitor.py`. DO NOT exceed token/cost limits.
+4.  **Check Experience**: Run `python3 .agent/scripts/knowledge/experience_distiller.py`. Learn from past failures.
 5.  **Browser Access**: If web access is needed, MUST use `bin/browser-bridge`. Never attempt raw browser calls without the resilience bridge.
 
 > 🔴 **MANDATORY**: A task is only complete if `checklist.py . --fix` has been run and returns success.
@@ -301,8 +312,8 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 
 | Task Stage       | Command                                            | Purpose                        |
 | ---------------- | -------------------------------------------------- | ------------------------------ |
-| **Manual Audit** | `python .agent/scripts/checklist.py .`             | Priority-based project audit   |
-| **Pre-Deploy**   | `python .agent/scripts/checklist.py . --url <URL>` | Full Suite + Performance + E2E |
+| **Manual Audit** | `python .agent/scripts/dev/checklist.py .`             | Priority-based project audit   |
+| **Pre-Deploy**   | `python .agent/scripts/dev/checklist.py . --url <URL>` | Full Suite + Performance + E2E |
 
 **Priority Execution Order:**
 
@@ -388,7 +399,7 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 
 ### Key Scripts
 
-- **Verify**: `.agent/scripts/verify_all.py`, `.agent/scripts/checklist.py`
+- **Verify**: `.agent/scripts/dev/verify_all.py`, `.agent/scripts/dev/checklist.py`
 - **Scanners**: `security_scan.py`, `dependency_analyzer.py`
 - **Audits**: `ux_audit.py`, `mobile_audit.py`, `lighthouse_audit.py`, `seo_checker.py`
 - **Test**: `playwright_runner.py`, `test_runner.py`

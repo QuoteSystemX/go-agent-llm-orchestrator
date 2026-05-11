@@ -54,8 +54,8 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 
 | Task Stage       | Command                                            | Purpose                        |
 | ---------------- | -------------------------------------------------- | ------------------------------ |
-| **Manual Audit** | `python .agent/scripts/checklist.py .`             | Priority-based project audit   |
-| **Pre-Deploy**   | `python .agent/scripts/checklist.py . --url <URL>` | Full Suite + Performance + E2E |
+| **Manual Audit** | `python .agent/scripts/dev/checklist.py .`             | Priority-based project audit   |
+| **Pre-Deploy**   | `python .agent/scripts/dev/checklist.py . --url <URL>` | Full Suite + Performance + E2E |
 
 **Priority Execution Order:**
 

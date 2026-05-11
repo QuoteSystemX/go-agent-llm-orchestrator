@@ -20,23 +20,23 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect gaps between code and documentation |
-| `doc_healer.py` | `python3 .agent/scripts/doc_healer.py` | Automatically heal documentation drift |
-| `task_tracer.py` | `python3 .agent/scripts/task_tracer.py` | Ensure story cards are linked to actual commits |
-| `intent_validator.py` | `python3 .agent/scripts/intent_validator.py` | (Phase 18) Detect architectural conflicts |
-| `discovery_brain_sync.py` | `python3 .agent/scripts/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect gaps between code and documentation |
+| `doc_healer.py` | `python3 .agent/scripts/dev/doc_healer.py` | Automatically heal documentation drift |
+| `task_tracer.py` | `python3 .agent/scripts/delivery/task_tracer.py` | Ensure story cards are linked to actual commits |
+| `intent_validator.py` | `python3 .agent/scripts/analysis/intent_validator.py` | (Phase 18) Detect architectural conflicts |
+| `discovery_brain_sync.py` | `python3 .agent/scripts/knowledge/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
 | `context_autofill.py` | `python3 .agent/scripts/context_autofill.py` | (Phase 19) Autonomous context investigation |
-| `resource_optimizer.py` | `python3 .agent/scripts/resource_optimizer.py` | (Phase 20) Economic & performance audit |
-| `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | (Phase 21) Prompt clarity audit |
-| `impact_analyzer.py` | `python3 .agent/scripts/impact_analyzer.py` | (Phase 21) Blast radius calculation |
-| `failure_correlator.py` | `python3 .agent/scripts/failure_correlator.py` | (Phase 21) Historical failure mapping |
-| `ghost_prototyper.py` | `python3 .agent/scripts/ghost_prototyper.py` | (Phase 21) Technical feasibility proto |
-| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22) Background agent debate (4-participants) |
-| `truth_validator.py` | `python3 .agent/scripts/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
-| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
-| `auto_adr_drafter.py` | `python3 .agent/scripts/auto_adr_drafter.py` | (Phase 22) Autonomous ADR generation |
-| `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22) Token & time prediction |
-| `personality_adapter.py` | `python3 .agent/scripts/personality_adapter.py` | (Phase 22) Style adaptation bridge |
+| `resource_optimizer.py` | `python3 .agent/scripts/analysis/resource_optimizer.py` | (Phase 20) Economic & performance audit |
+| `ambiguity_detector.py` | `python3 .agent/scripts/analysis/ambiguity_detector.py` | (Phase 21) Prompt clarity audit |
+| `impact_analyzer.py` | `python3 .agent/scripts/analysis/impact_analyzer.py` | (Phase 21) Blast radius calculation |
+| `failure_correlator.py` | `python3 .agent/scripts/misc/failure_correlator.py` | (Phase 21) Historical failure mapping |
+| `ghost_prototyper.py` | `python3 .agent/scripts/analysis/ghost_prototyper.py` | (Phase 21) Technical feasibility proto |
+| `hidden_war_room.py` | `python3 .agent/scripts/orchestration/hidden_war_room.py` | (Phase 22) Background agent debate (4-participants) |
+| `truth_validator.py` | `python3 .agent/scripts/analysis/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
+| `requirement_expander.py` | `python3 .agent/scripts/analysis/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
+| `auto_adr_drafter.py` | `python3 .agent/scripts/knowledge/auto_adr_drafter.py` | (Phase 22) Autonomous ADR generation |
+| `resource_forecaster.py` | `python3 .agent/scripts/analysis/resource_forecaster.py` | (Phase 22) Token & time prediction |
+| `personality_adapter.py` | `python3 .agent/scripts/orchestration/personality_adapter.py` | (Phase 22) Style adaptation bridge |
 
 > 🔴 **CRITICAL**: In Phase 6 (Sync), you MUST run `drift_detector.py` to identify exactly where the wiki has drifted from the code.
 
@@ -46,7 +46,7 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 
 1.  **Draft**: You create the initial plan/ADR.
 2.  **Challenge**: Invoke `red-team` to find vulnerabilities.
-3.  **Arbitration**: Use `python3 .agent/scripts/arbitrator.py <plan_id>` to manage the consensus.
+3.  **Arbitration**: Use `python3 .agent/scripts/orchestration/arbitrator.py <plan_id>` to manage the consensus.
 4.  **Finalize**: Only approved plans can be moved to Implementation phase.
 
 > 🔴 **CRITICAL**: Plans without a verified `verdict` on the bus are considered "Invalid" and will be blocked by the Pre-Commit Gate.
@@ -55,7 +55,7 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 
 **Before proposing ANY architectural solution, you MUST check for existing "Shared Wisdom" in the Global Brain:**
 
-1.  **Search**: Use `python3 .agent/scripts/experience_distiller.py --query <concept>` to search across all your projects.
+1.  **Search**: Use `python3 .agent/scripts/knowledge/experience_distiller.py --query <concept>` to search across all your projects.
 2.  **Export**: If you make a discovery or decision that is universally useful (not just local to this repo), you MUST export it: `python3 .agent/scripts/knowledge_synergy.py --export <adr_path>`.
 3.  **DNA vs Context**:
     *   **DNA** (Agents, Scripts) is synced via provisioning.
@@ -77,7 +77,7 @@ IF wiki/sprints/ has no active sprint → Run Phase 5: Sprint
 
 **You can autonomously populate the task queue from the roadmap:**
 1. **Trigger**: When `/mine-tasks` is called OR when `tasks/` is empty and a `ROADMAP.md` exists.
-2. **Action**: Run `python3 .agent/scripts/task_miner.py`.
+2. **Action**: Run `python3 .agent/scripts/delivery/task_miner.py`.
 3. **Verify**: Check `tasks/` to ensure new story cards were created.
 ELSE                             → Report status of current phase
 ```

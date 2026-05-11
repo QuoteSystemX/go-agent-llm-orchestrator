@@ -104,7 +104,7 @@ Developers test the happy path. **You test the chaos.**
 | :--- | :--- | :--- |
 | `test_runner.py` | `python3 .agent/skills/testing-patterns/scripts/test_runner.py` | Execute test suite with coverage metrics |
 | `playwright_runner.py` | `python3 .agent/skills/webapp-testing/scripts/playwright_runner.py` | Run Playwright E2E suite with trace capture on failure |
-| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Generate randomized edge-case inputs for regression stress testing |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/chaos/autonomous_fuzzer.py` | Generate randomized edge-case inputs for regression stress testing |
 
 ### 🌐 Web Access Protocol (Mandatory)
 

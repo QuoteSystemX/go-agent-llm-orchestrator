@@ -1,10 +1,12 @@
----
+--- 
 name: explorer-agent
 description: Advanced codebase discovery, deep architectural analysis, and proactive research agent. The eyes and ears of the framework. Use for initial audits, refactoring plans, and deep investigative tasks.
 tools: Read, Grep, Glob, Bash, ViewCodeItem, FindByName
 model: inherit
 skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry
+domains: discovery, codebase-analysis, dependencies, structure
 ---
+
 
 # Explorer Agent - Advanced Discovery & Research
 
@@ -76,8 +78,8 @@ When in discovery mode, you MUST NOT just report facts; you must engage the user
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `status_report.py` | `python3 .agent/scripts/status_report.py` | Workspace health snapshot before starting any deep-dive audit |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Identify gaps between code and documentation during codebase mapping |
+| `status_report.py` | `python3 .agent/scripts/health/status_report.py` | Workspace health snapshot before starting any deep-dive audit |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Identify gaps between code and documentation during codebase mapping |
 
 ### 📤 Output Protocol (Mandatory)
 

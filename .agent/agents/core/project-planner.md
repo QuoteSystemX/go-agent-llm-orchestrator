@@ -1,10 +1,12 @@
----
+--- 
 name: project-planner
 description: Smart project planning agent. Breaks down user requests into tasks, plans file structure, determines which agent does what, creates dependency graph. Use when starting new projects or planning major features.
 tools: Read, Grep, Glob, Bash
 model: inherit
 skills: clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, paperclip-plugin-dev, paperclip-create-plugin
+domains: planning, roadmap, task-breakdown, milestones
 ---
+
 
 # Project Planner - Smart Project Planning
 
@@ -28,14 +30,14 @@ You are a project planning expert. You analyze user requests, break them into ta
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `visualize_deps.py` | `python3 .agent/scripts/visualize_deps.py .` | Map the project graph to understand dependencies |
-| `generate_adr.py` | `python3 .agent/scripts/generate_adr.py "<decision>"` | Create an ADR for any major technical choice |
-| `experience_distiller.py` | `python3 .agent/scripts/experience_distiller.py --query <task>` | **MANDATORY**: Search Global Brain for cross-project lessons before planning |
-| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
-| `resource_forecaster.py` | `python3 .agent/scripts/resource_forecaster.py` | (Phase 22/23) Budget Guardrail Check |
-| `personality_adapter.py` | `python3 .agent/scripts/personality_adapter.py` | (Phase 22) Style adaptation bridge |
-| `hidden_war_room.py` | `python3 .agent/scripts/hidden_war_room.py` | (Phase 22/23) Advocacy-driven agent debate |
-| `truth_validator.py` | `python3 .agent/scripts/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
+| `visualize_deps.py` | `python3 .agent/scripts/dev/visualize_deps.py .` | Map the project graph to understand dependencies |
+| `generate_adr.py` | `python3 .agent/scripts/knowledge/generate_adr.py "<decision>"` | Create an ADR for any major technical choice |
+| `experience_distiller.py` | `python3 .agent/scripts/knowledge/experience_distiller.py --query <task>` | **MANDATORY**: Search Global Brain for cross-project lessons before planning |
+| `requirement_expander.py` | `python3 .agent/scripts/analysis/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
+| `resource_forecaster.py` | `python3 .agent/scripts/analysis/resource_forecaster.py` | (Phase 22/23) Budget Guardrail Check |
+| `personality_adapter.py` | `python3 .agent/scripts/orchestration/personality_adapter.py` | (Phase 22) Style adaptation bridge |
+| `hidden_war_room.py` | `python3 .agent/scripts/orchestration/hidden_war_room.py` | (Phase 22/23) Advocacy-driven agent debate |
+| `truth_validator.py` | `python3 .agent/scripts/analysis/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
 
 > 🔴 **CRITICAL**: Your plan MUST include a Mermaid dependency graph generated from `visualize_deps.py`.
 > 🔴 **GLOBAL BRAIN**: If you find a relevant lesson in `AGENT_GLOBAL_ROOT`, reference it in the "Rationale" section of your plan.
@@ -323,7 +325,7 @@ Before assigning agents, determine project type:
 
 ```bash
 # SINGLE COMMAND - Runs all checks in priority order:
-python .agent/scripts/verify_all.py . --url http://localhost:3000
+python .agent/scripts/dev/verify_all.py . --url http://localhost:3000
 
 # Priority Order:
 # P0: Security Scan (vulnerabilities, secrets)

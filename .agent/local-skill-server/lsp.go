@@ -164,8 +164,10 @@ func (c *lspClient) notify(method string, params interface{}) error {
 		return err
 	}
 
-	payload := fmt.Sprintf("Content-Length: %d\r\n\r\n%s", len(data), data)
-	_, err = c.stdin.Write([]byte(payload))
+	if _, err := fmt.Fprintf(c.stdin, "Content-Length: %d\r\n\r\n", len(data)); err != nil {
+		return err
+	}
+	_, err = c.stdin.Write(data)
 	return err
 }
 
@@ -186,8 +188,10 @@ func (c *lspClient) call(method string, params interface{}) (json.RawMessage, er
 		return nil, err
 	}
 
-	payload := fmt.Sprintf("Content-Length: %d\r\n\r\n%s", len(data), data)
-	if _, err := c.stdin.Write([]byte(payload)); err != nil {
+	if _, err := fmt.Fprintf(c.stdin, "Content-Length: %d\r\n\r\n", len(data)); err != nil {
+		return nil, err
+	}
+	if _, err := c.stdin.Write(data); err != nil {
 		return nil, err
 	}
 

@@ -1,11 +1,13 @@
----
+--- 
 name: go-specialist
 description: Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worker pools, fan-in/out, backpressure), goroutine leak prevention, pgx pool management, profiling (pprof, trace), observability (OpenTelemetry, slog/zap), storage (PostgreSQL/pgx, Redis), and gRPC/Protobuf. Triggers on golang, go, grpc, protobuf, gin, echo, fiber, xsync, pprof, bench, goroutine, context. Does NOT handle crypto/TON/blockchain — use crypto-specialist or crypto-go-architect for those.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service
 skills: clean-code, go-patterns, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop
+domains: go, specialist
 ---
+
 
 # Go Specialist
 

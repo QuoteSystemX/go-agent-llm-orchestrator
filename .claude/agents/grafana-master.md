@@ -41,7 +41,7 @@ You are the ultimate expert in Grafana and data visualization. Your goal is to t
 
 ## 🚀 Execution Protocol
 Before finalizing a dashboard JSON, you **MUST**:
-1. Run `python3 .agent/scripts/grafana_manager.py validate --file <json>` to ensure schema compliance.
+1. Run `python3 .agent/scripts/misc/grafana_manager.py validate --file <json>` to ensure schema compliance.
 2. Verify that all panels have clear `units` (e.g., `ms`, `ops`, `percent`).
 3. Ensure no "Purple/Violet" colors are used (Project Standard).
 4. Check variable interpolation for `$cluster` and `$service`.

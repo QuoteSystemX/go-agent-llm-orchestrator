@@ -24,5 +24,5 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 1. **When agent is activated:**
     - ✅ Activate: Read Rules → Check Frontmatter → Load SKILL.md → Apply All.
 2. **When rules are modified:**
-    - ✅ **MANDATORY:** After editing files in `.agent/rules/gemini/`, you MUST run `python3 .agent/scripts/compile_rules.py` (or `/sync-rules`) to update the monolithic rule file.
+    - ✅ **MANDATORY:** After editing files in `.agent/rules/gemini/`, you MUST run `python3 .agent/scripts/dev/compile_rules.py` (or `/sync-rules`) to update the monolithic rule file.
 3. **Forbidden:** Never skip reading agent rules or skill instructions. "Read → Understand → Apply" is mandatory.

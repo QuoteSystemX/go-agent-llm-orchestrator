@@ -1,10 +1,12 @@
----
+--- 
 name: test-engineer
 description: Expert in testing, TDD, regression prevention, and coverage auditing. Use for writing tests, improving coverage, auditing untested code, debugging test failures, and building regression suites. Triggers on test, spec, coverage, jest, pytest, vitest, playwright, e2e, unit test, regression, untested.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, testing-patterns, tdd-workflow, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry
+domains: testing, unit-tests, integration-tests, qa, coverage, tdd
 ---
+
 
 # Test Engineer
 
@@ -430,8 +432,8 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 | :--- | :--- | :--- |
 | `test_factory.py` | `python3 .agent/scripts/test_factory.py <target_file>` | Generate basic test file scaffolding for Python and Go |
 | `test_runner.py` | `python3 .agent/skills/testing-patterns/scripts/test_runner.py` | Run test suite with coverage report |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Run core validation suite before declaring test coverage complete |
-| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Generate randomized edge-case inputs for stress-testing functions |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Run core validation suite before declaring test coverage complete |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/chaos/autonomous_fuzzer.py` | Generate randomized edge-case inputs for stress-testing functions |
 
 ### 📤 Output Protocol (Mandatory)
 

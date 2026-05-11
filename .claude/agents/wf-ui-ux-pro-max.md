@@ -35,8 +35,8 @@ _Context from user message is passed automatically by Claude Code._
 ## Phase 4: Technical Handoff
 1. **Visual Designer** creates `docs/design/UI_SPEC.md`.
 2. **Frontend Specialist** reviews the spec and tokens.
-3. **UX Auditor** runs `python3 .agent/scripts/ux_audit.py` and `accessibility_checker.py`.
-4. **Product Manager** runs `python3 .agent/scripts/ux_conversion_audit.py` to verify conversion hooks.
+3. **UX Auditor** runs `python3 .agent/skills/frontend-design/scripts/ux_audit.py` and `accessibility_checker.py`.
+4. **Product Manager** runs `python3 .agent/scripts/analysis/ux_conversion_audit.py` to verify conversion hooks.
 5. Start atomic component implementation.
 
 ---

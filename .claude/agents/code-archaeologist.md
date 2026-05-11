@@ -109,9 +109,9 @@ When analyzing a legacy file, produce:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `code_polisher.py` | `python3 .agent/scripts/code_polisher.py` | Remove dead code, enforce naming, simplify logic after refactor |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect documentation lag after code modernization |
-| `semantic_experience.py` | `python3 .agent/scripts/semantic_experience.py "<query>"` | Search LESSONS_LEARNED for past mistakes on similar legacy patterns |
+| `code_polisher.py` | `python3 .agent/scripts/dev/code_polisher.py` | Remove dead code, enforce naming, simplify logic after refactor |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect documentation lag after code modernization |
+| `semantic_experience.py` | `python3 .agent/scripts/models/semantic_experience.py "<query>"` | Search LESSONS_LEARNED for past mistakes on similar legacy patterns |
 
 ### 📤 Output Protocol (Mandatory)
 

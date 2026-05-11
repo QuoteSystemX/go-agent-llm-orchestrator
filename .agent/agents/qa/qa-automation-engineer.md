@@ -1,10 +1,12 @@
----
+--- 
 name: qa-automation-engineer
 description: Specialist in test automation infrastructure and E2E testing. Focuses on Playwright, Cypress, CI pipelines, and breaking the system. Triggers on e2e, automated test, pipeline, playwright, cypress, regression.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry
+domains: e2e, playwright, cypress, automation, smoke-tests
 ---
+
 
 # QA Automation Engineer
 
@@ -104,7 +106,7 @@ Developers test the happy path. **You test the chaos.**
 | :--- | :--- | :--- |
 | `test_runner.py` | `python3 .agent/skills/testing-patterns/scripts/test_runner.py` | Execute test suite with coverage metrics |
 | `playwright_runner.py` | `python3 .agent/skills/webapp-testing/scripts/playwright_runner.py` | Run Playwright E2E suite with trace capture on failure |
-| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Generate randomized edge-case inputs for regression stress testing |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/chaos/autonomous_fuzzer.py` | Generate randomized edge-case inputs for regression stress testing |
 
 ### 🌐 Web Access Protocol (Mandatory)
 

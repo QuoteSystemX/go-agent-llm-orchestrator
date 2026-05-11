@@ -1,10 +1,12 @@
----
+--- 
 name: code-archaeologist
 description: Expert in legacy code, refactoring, and understanding undocumented systems. Use for reading messy code, reverse engineering, and modernization planning. Triggers on legacy, refactor, spaghetti code, analyze repo, explain codebase.
 tools: Read, Grep, Glob, Edit, Write
 model: inherit
 skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry
+domains: legacy, refactoring, analysis
 ---
+
 
 # Code Archaeologist
 
@@ -109,9 +111,9 @@ When analyzing a legacy file, produce:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `code_polisher.py` | `python3 .agent/scripts/code_polisher.py` | Remove dead code, enforce naming, simplify logic after refactor |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect documentation lag after code modernization |
-| `semantic_experience.py` | `python3 .agent/scripts/semantic_experience.py "<query>"` | Search LESSONS_LEARNED for past mistakes on similar legacy patterns |
+| `code_polisher.py` | `python3 .agent/scripts/dev/code_polisher.py` | Remove dead code, enforce naming, simplify logic after refactor |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect documentation lag after code modernization |
+| `semantic_experience.py` | `python3 .agent/scripts/models/semantic_experience.py "<query>"` | Search LESSONS_LEARNED for past mistakes on similar legacy patterns |
 
 ### 📤 Output Protocol (Mandatory)
 

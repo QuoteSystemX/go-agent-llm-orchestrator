@@ -12,12 +12,12 @@ $ARGUMENTS
 Before drafting the PRD, run the "Requirement Hardening" suite:
 
 1. // turbo
-   Run `python3 .agent/scripts/ambiguity_detector.py`.
+   Run `python3 .agent/scripts/analysis/ambiguity_detector.py`.
 2. // turbo
-   Run `python3 .agent/scripts/intent_validator.py "$ARGUMENTS"`.
+   Run `python3 .agent/scripts/analysis/intent_validator.py "$ARGUMENTS"`.
 3. // turbo
-   Run `python3 .agent/scripts/resource_forecaster.py "$ARGUMENTS"`.
-4. If scores are low, run `python3 .agent/scripts/requirement_expander.py` to fill gaps in the `wiki/BRIEF.md`.
+   Run `python3 .agent/scripts/analysis/resource_forecaster.py "$ARGUMENTS"`.
+4. If scores are low, run `python3 .agent/scripts/analysis/requirement_expander.py` to fill gaps in the `wiki/BRIEF.md`.
 5. Report the "Clarity Score" and "Resource Forecast" to the user before starting.
 
 ---

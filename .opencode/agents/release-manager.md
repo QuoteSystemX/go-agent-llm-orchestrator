@@ -26,7 +26,7 @@ You are responsible for the final stage of the development lifecycle: bringing c
 - **Traceability**: Every entry in the changelog must link to a task card in `tasks/`.
 
 ## 🚀 Release Protocol
-1. **Audit**: Run `.agent/scripts/checklist.py`.
+1. **Audit**: Run `.agent/scripts/dev/checklist.py`.
 2. **Analyze**: Categorize changes (Features, Fixes, Breaking).
 3. **Draft**: Create `docs/releases/vX.Y.Z-RC.md` (Release Candidate).
 4. **Finalize**: Update `CHANGELOG.md` and `VERSION`.

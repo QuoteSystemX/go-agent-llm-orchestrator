@@ -6,26 +6,20 @@ description: Coordinate multiple agents for complex tasks. Use for multi-perspec
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-# Multi-Agent Orchestration
-
-You are now in **ORCHESTRATION MODE**. Your task: coordinate specialized agents to solve this complex problem.
-
-## Task to Orchestrate
-_Context from user message is passed automatically by Claude Code._
-
----
-
 ## Step 0: War Room Strategy
+
+Before selecting agents, run the "Strategic Conflict" suite:
+
 Before selecting agents, run the "Strategic Conflict" suite:
 
 1. // turbo
-   Run `python3 .agent/scripts/hidden_war_room.py`.
+   Run `python3 .agent/scripts/orchestration/hidden_war_room.py`.
 2. // turbo
-   Run `python3 .agent/scripts/war_room_manager.py`.
+   Run `python3 .agent/scripts/orchestration/war_room_manager.py`.
 3. // turbo
-   Run `python3 .agent/scripts/personality_adapter.py` to adapt agent personas to the task criticality.
+   Run `python3 .agent/scripts/orchestration/personality_adapter.py` to adapt agent personas to the task criticality.
 4. // turbo
-   Run `python3 .agent/scripts/context_recall_gate.py "_Context from user message is passed automatically by Claude Code._"`.
+   Run `python3 .agent/scripts/context/context_recall_gate.py "_Context from user message is passed automatically by Claude Code._"`.
 5. **Goal**: Resolve architectural conflicts and establish a unified strategic intent before delegation.
 
 ---
@@ -44,7 +38,7 @@ Before selecting agents, run the "Strategic Conflict" suite:
 ### Agent Selection Matrix
 
 | Task Type | REQUIRED Agents (minimum) |
-|-----------|---------------------------|
+| :--- | :--- |
 | **Web App** | frontend-specialist, backend-specialist, test-engineer |
 | **API** | backend-specialist, security-auditor, test-engineer |
 | **UI/Design** | frontend-specialist, seo-specialist, performance-optimizer |
@@ -59,7 +53,7 @@ Before selecting agents, run the "Strategic Conflict" suite:
 ## Pre-Flight: Mode Check
 
 | Current Mode | Task Type | Action |
-|--------------|-----------|--------|
+| :--- | :--- | :--- |
 | **plan** | Any | ✅ Proceed with planning-first approach |
 | **edit** | Simple execution | ✅ Proceed directly |
 | **edit** | Complex/multi-file | ⚠️ Ask: "This task requires planning. Switch to plan mode?" |
@@ -72,15 +66,15 @@ Before selecting agents, run the "Strategic Conflict" suite:
 ### PHASE 1: PLANNING (Sequential - NO parallel agents)
 
 | Step | Agent | Action |
-|------|-------|--------|
-| 1 | `project-planner` | Create docs/PLAN.md |
-| 2 | (optional) `explorer-agent` | Codebase discovery if needed |
+| :--- | :--- | :--- |
+| 1 | project-planner | Create docs/PLAN.md (must include Mermaid DAG) |
+| 2 | (optional) explorer-agent | Codebase discovery & dependency mapping |
 
 > 🔴 **NO OTHER AGENTS during planning!** Only project-planner and explorer-agent.
 
 ### ⏸️ CHECKPOINT: User Approval
 
-```
+```bash
 After PLAN.md is complete, ASK:
 
 "✅ Plan created: docs/PLAN.md
@@ -95,7 +89,7 @@ Do you approve? (Y/N)
 ### PHASE 2: IMPLEMENTATION (Parallel agents after approval)
 
 | Parallel Group | Agents |
-|----------------|--------|
+| :--- | :--- |
 | Foundation | `database-architect`, `security-auditor` |
 | Core | `backend-specialist`, `frontend-specialist` |
 | Polish | `test-engineer`, `devops-engineer` |
@@ -106,7 +100,7 @@ Do you approve? (Y/N)
 #### 🔧 Archivist Integration
 After the parallel implementation finishes, run the Archivist knowledge‑pipeline to prune the bus, distill lessons, draft ADRs and sync the Wiki:
 ```bash
-python3 .agent/scripts/archivist_trigger.py
+python3 .agent/scripts/knowledge/archivist_trigger.py
 ```
 This step is mandatory for any L2‑L4 flow to guarantee **Knowledge Health**.
 
@@ -114,7 +108,7 @@ This step is mandatory for any L2‑L4 flow to guarantee **Knowledge Health**.
 ## Available Agents (17 total)
 
 | Agent | Domain | Use When |
-|-------|--------|----------|
+| :--- | :--- | :--- |
 | `project-planner` | Planning | Task breakdown, PLAN.md |
 | `explorer-agent` | Discovery | Codebase mapping |
 | `frontend-specialist` | UI/UX | React, Vue, CSS, HTML |
@@ -135,9 +129,15 @@ This step is mandatory for any L2‑L4 flow to guarantee **Knowledge Health**.
 
 ---
 
-## Orchestration Protocol
+### Step 1: Initialize Session & Analyze Task Domains
 
-### Step 1: Analyze Task Domains
+1. **Initialize Session**:
+   ```bash
+   python3 .agent/scripts/orchestration/orchestration_session.py init
+   ```
+   → Use the returned UUID as `SESSION_ID` for all subsequent steps.
+
+2. **Identify Domains**:
 Identify ALL domains this task touches:
 ```
 □ Security     → security-auditor, penetration-tester
@@ -162,18 +162,34 @@ Identify ALL domains this task touches:
 ### Step 3: Execute Based on Phase
 
 **PHASE 1 (Planning):**
-```
-Use the project-planner agent to create PLAN.md
-→ STOP after plan is created
+
+```bash
+1. Use the project-planner agent to create PLAN.md.
+2. For each task in PLAN.md, run the Auctioneer:
+   python3 .agent/scripts/orchestration/agent_auctioneer.py $SESSION_ID "Role_Name" "Task Description"
+3. If [PENDING_ARENA] is returned, proceed to Phase 3.
+→ STOP after plan is finalized
 → ASK user for approval
 ```
 
-**PHASE 2 (Implementation - after approval):**
+**PHASE 2 (The Arena - if needed):**
+
+```bash
+1. Run the Arena Protocol:
+   python3 .agent/scripts/orchestration/agent_arena.py $SESSION_ID "Role" "Task" "Candidate1,Candidate2"
+2. Execute the debate (2 rounds of reasoning).
+3. The project-planner selects the winner and records 'Mitigation Plan' from the loser.
 ```
-Invoke agents in PARALLEL:
-Use the frontend-specialist agent to [task]
-Use the backend-specialist agent to [task]
-Use the test-engineer agent to [task]
+
+**PHASE 3 (Implementation - after approval):**
+
+```bash
+1. Run Wave Dispatcher:
+   python3 .agent/scripts/orchestration/wave_dispatcher.py $SESSION_ID docs/PLAN.md
+
+2. Invoke agents in PARALLEL according to Waves:
+   Use the frontend-specialist agent to [task] --session-id $SESSION_ID
+   Use the backend-specialist agent to [task] --session-id $SESSION_ID
 ```
 
 **🔴 CRITICAL: Context Passing (MANDATORY)**
@@ -207,12 +223,14 @@ python .agent/skills/lint-and-validate/scripts/lint_runner.py .
 ```
 
 ### Step 5: Knowledge Retention (MANDATORY for L2-L4)
+
 Invoke the `archivist` agent to:
 1. Run `experience_distiller.py` on the session logs.
 2. Check for `drift_detector.py` issues.
 3. Update the Project Wiki with new mental models or patterns discovered.
 
 ### Step 6: Synthesize Results
+
 Combine all agent outputs into unified report.
 
 ---
@@ -228,30 +246,51 @@ Combine all agent outputs into unified report.
 ### Mode
 [Current Antigravity Agent mode: plan/edit/ask]
 
+### 📊 Dependency Graph
+```mermaid
+[Insert Mermaid DAG from PLAN.md here]
+```
+
 ### Agents Invoked (MINIMUM 3)
+
 | # | Agent | Focus Area | Status |
-|---|-------|------------|--------|
+| :--- | :--- | :--- | :--- |
 | 1 | project-planner | Task breakdown | ✅ |
 | 2 | frontend-specialist | UI implementation | ✅ |
 | 3 | test-engineer | Verification scripts | ✅ |
 
-### Verification Scripts Executed
-- [x] security_scan.py → Pass/Fail
-- [x] lint_runner.py → Pass/Fail
+### 🛡️ Security & Quality Gate
 
-### Key Findings
+- [ ] **security_scan.py** → [Status]
+- [ ] **lint_runner.py** → [Status]
+- [ ] **resource_forecaster.py** → [Budget Impact]
+
+### 💡 Key Findings
+
 1. **[Agent 1]**: Finding
 2. **[Agent 2]**: Finding
 3. **[Agent 3]**: Finding
 
-### Deliverables
-- [ ] PLAN.md created
+### 📦 Deliverables
+
+- [ ] PLAN.md (with DAG) created
 - [ ] Code implemented
 - [ ] Tests passing
 - [ ] Scripts verified
+- [ ] Experience distilled by `archivist`
 
-### Summary
+### 📝 Summary
+
 [One paragraph synthesis of all agent work]
+
+```markdown
+[Orchestration Metadata: Session ID, Duration, Token Count]
+```
+
+### 🧹 Cleanup
+Run the following after completion:
+```bash
+python3 .agent/scripts/orchestration/orchestration_session.py close $SESSION_ID
 ```
 
 ---

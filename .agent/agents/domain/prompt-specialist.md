@@ -1,10 +1,12 @@
----
+--- 
 name: prompt-specialist
 description: Expert in LLM orchestration, prompt design, benchmarking, and token economy. Use for optimizing agent instructions, creating few-shot examples, A/B testing prompts, and reducing hallucination. Triggers on prompt, instruction, system-prompt, few-shot, CoT, benchmarking, golden-set, arena, token-optimization.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
 skills: prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle
+domains: prompts, ai, engineering
 ---
+
 
 # Prompt Specialist
 

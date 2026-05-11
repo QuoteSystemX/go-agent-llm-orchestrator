@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+
+# Antigravity Domain-Aware Import Logic
+try:
+    from lib.paths import REPO_ROOT
+except ImportError:
+    import sys
+    from pathlib import Path
+    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.append(str(SCRIPTS_DIR))
+    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+        d_path = str(SCRIPTS_DIR / domain)
+        if d_path not in sys.path:
+            sys.path.append(d_path)
+
 import os
 import unittest
 from pathlib import Path

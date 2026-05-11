@@ -17,6 +17,20 @@ This document defines the 4 levels of depth for request processing and the logic
 | **L3** | **Council (Совет Мудрецов)** | Synthetic consensus of multiple perspectives before action. | Architect + Specialist + SRE |
 | **L4** | **Control (Красная Группа)** | Mission-critical audit with shadow review and security testing. | Red Team + Security + QA |
 
+> 💡 **Default Agent**: `orchestrator` является основным агентом системы и используется как "Fallback" (запасной вариант), если специалист не определен или задача требует кросс-доменного управления.
+> 🔍 **Dynamic Discovery**: Система автоматически находит агентов, сканируя папку `.agent/agents/` и анализируя поле `domains` в их frontmatter. Никаких статических списков (agent_matrix.json) больше не требуется.
+
+---
+
+## 🧭 DYNAMIC DISCOVERY PROTOCOL
+
+Аукционист (`agent_auctioneer.py`) работает по следующему алгоритму:
+
+1. **Scan**: Обход всех `.md` файлов в `.agent/agents/`.
+2. **Extract**: Парсинг Frontmatter для извлечения `domains` и `skills`.
+3. **Match**: Подсчет Score на основе вхождения ключевых слов домена в описание задачи.
+4. **Identity Match**: Если ID агента (имя файла) упомянуто в задаче, он получает приоритет (+2 к Score).
+
 ---
 
 ## 🤖 AUTOMATIC TRANSITION LOGIC (PRE-ANALYSIS)
@@ -78,7 +92,7 @@ When a task involves a domain with multiple specialized skills, use the **router
 
 ### How It Works
 
-```
+```text
 Task: "build API for user management"
     │
     └── Detect domain: API Development
@@ -94,7 +108,7 @@ Task: "build API for user management"
 ### Router Skills Registry
 
 | Domain | Router Skill | Children |
-|--------|--------------|----------|
+| :--- | :--- | :--- |
 | **API Development** | `api-development` | api-patterns, nodejs/python/go/rust, security, contracts |
 | **Frontend** | `frontend-development` (future) | frontend-design, nextjs, mobile-design, ui-ux-pro-max |
 | **Backend** | `backend-development` (future) | api-development, nodejs/python/go, database-design |
@@ -113,4 +127,4 @@ Task: "build API for user management"
 ### Enforcement
 
 Router skills are documented in `LESSONS_LEARNED.md` under "Skill Router Registry".
-Run `python3 .agent/scripts/experience_distiller.py --skill intelligent-routing` to see current routers.
+Run `python3 .agent/scripts/knowledge/experience_distiller.py --skill intelligent-routing` to see current routers.

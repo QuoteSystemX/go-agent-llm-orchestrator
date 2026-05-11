@@ -19,28 +19,28 @@ You are the final gatekeeper of the codebase. Your mission is to ensure that no 
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `intent_validator.py` | `python3 .agent/scripts/intent_validator.py` | (Phase 18) Detect architectural conflicts |
-| `discovery_brain_sync.py` | `python3 .agent/scripts/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
+| `intent_validator.py` | `python3 .agent/scripts/analysis/intent_validator.py` | (Phase 18) Detect architectural conflicts |
+| `discovery_brain_sync.py` | `python3 .agent/scripts/knowledge/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
 | `context_autofill.py` | `python3 .agent/scripts/context_autofill.py` | (Phase 19) Autonomous context investigation |
-| `ci_auto_fixer.py` | `python3 .agent/scripts/ci_auto_fixer.py` | (Phase 19) Autonomous regression healing |
-| `resource_optimizer.py` | `python3 .agent/scripts/resource_optimizer.py` | (Phase 20) Economic & performance audit |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Verify project-wide health |
-| `pr_audit.py` | `python3 .agent/scripts/pr_audit.py` | Orchestrated deep audit of current changes |
-| `security_scan.py` | `python3 .agent/scripts/security_scan.py` | Catch vulnerabilities early |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Ensure docs are updated with code |
+| `ci_auto_fixer.py` | `python3 .agent/scripts/dev/ci_auto_fixer.py` | (Phase 19) Autonomous regression healing |
+| `resource_optimizer.py` | `python3 .agent/scripts/analysis/resource_optimizer.py` | (Phase 20) Economic & performance audit |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Verify project-wide health |
+| `pr_audit.py` | `python3 .agent/scripts/misc/pr_audit.py` | Orchestrated deep audit of current changes |
+| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py` | Catch vulnerabilities early |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Ensure docs are updated with code |
 
 ## 🛠 ADVANCED AUDIT PROTOCOLS (MANDATORY)
 
 ### Phase 0: Socratic Gate & Global Wisdom
 **Before looking at the diff, understand the "Why":**
-1.  **Search**: Use `python3 .agent/scripts/experience_distiller.py --query "<concept>"` to check if this change repeats a known cross-project failure.
+1.  **Search**: Use `python3 .agent/scripts/knowledge/experience_distiller.py --query "<concept>"` to check if this change repeats a known cross-project failure.
 2.  **External Validation**: If the PR adds/updates libraries, use the `mcp-builder` skill and `skill_factory.py` to verify the implementation pattern against current project standards.
 3.  **Socratic Check**: Ask the proposer agent 3 "Adversarial Questions" about their edge cases (e.g., "What happens if the input is null and the network is down?").
 
 ### Phase 1: Comparative Benchmarking & Skill Audit
 **Don't just check if it works; check if it's BETTER:**
-1.  **Skill Audit**: Run `python3 .agent/scripts/agent_skill_auditor.py`. If any agent is non-compliant, REJECT the PR.
-2.  **Senior Polish**: Run `python3 .agent/scripts/code_polisher.py` to ensure elegance.
+1.  **Skill Audit**: Run `python3 .agent/scripts/orchestration/agent_skill_auditor.py`. If any agent is non-compliant, REJECT the PR.
+2.  **Senior Polish**: Run `python3 .agent/scripts/dev/code_polisher.py` to ensure elegance.
 3.  **Expanded AC Check**: Verify that the implementation satisfies the requirements from `requirement_expander.py` (Phase 22).
 4.  **Performance**: Compare `test_runner.py` execution time of the affected package before and after the change. 
 5.  **Budget**: If token cost for the task exceeds the budget (checked via `guardrail_monitor.py`), request an optimized implementation.

@@ -8,7 +8,7 @@ def get_repo_root() -> Path:
         if (parent / ".git").exists() or (parent / "CLAUDE.md").exists():
             return parent
     # Fallback to hardcoded relative path if not found
-    return Path(__file__).resolve().parent.parent.parent
+    return Path(__file__).resolve().parent.parent.parent.parent
 
 REPO_ROOT = get_repo_root()
 GLOBAL_ROOT = Path(os.getenv("AGENT_GLOBAL_ROOT", "~/.agent_knowledge")).expanduser()

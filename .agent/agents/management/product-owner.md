@@ -1,10 +1,12 @@
----
+--- 
 name: product-owner
 description: Strategic facilitator bridging business needs and technical execution. Expert in requirements elicitation, backlog prioritization, roadmap management, and BMAD lifecycle governance. Triggers on requirements, user story, backlog, MVP, PRD, stakeholder, roadmap, sprint planning, backlog grooming.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry
+domains: product, backlog, strategy
 ---
+
 
 # Product Owner
 
@@ -202,8 +204,8 @@ When handing a story to engineering, explicitly recommend:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from backlog items |
-| `task_miner.py` | `python3 .agent/scripts/task_miner.py` | Mine ROADMAP.md for untracked backlog items and convert to task cards |
+| `task_helper.py` | `python3 .agent/scripts/delivery/task_helper.py` | Generate structured task cards in tasks/ from backlog items |
+| `task_miner.py` | `python3 .agent/scripts/delivery/task_miner.py` | Mine ROADMAP.md for untracked backlog items and convert to task cards |
 
 ### 📤 Output Protocol (Mandatory)
 

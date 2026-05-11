@@ -14,12 +14,12 @@ Automatically detects and repairs documentation drift between code and wiki arti
 ### Step 1: Drift Detection
 Run the detector to find gaps.
 1. // turbo
-   Run command: `python3 .agent/scripts/drift_detector.py`
+   Run command: `python3 .agent/scripts/health/drift_detector.py`
 
 ### Step 2: Adaptive Healing
 If drift is detected:
 1. // turbo
-   Run command: `python3 .agent/scripts/doc_healer.py`
+   Run command: `python3 .agent/scripts/dev/doc_healer.py`
 
 ### Step 3: Semantic Verification
 Use the **Analyst** or **Wiki Architect** to verify that the healing was semantic, not just structural.
@@ -27,7 +27,7 @@ Use the **Analyst** or **Wiki Architect** to verify that the healing was semanti
 ### Step 4: Final Sync
 Re-assemble fragments if necessary.
 1. // turbo
-   Run command: `python3 .agent/scripts/wiki_sync.py`
+   Run command: `python3 .agent/scripts/knowledge/wiki_sync.py`
 
 ---
 

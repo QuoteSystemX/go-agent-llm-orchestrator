@@ -1,11 +1,13 @@
----
+--- 
 name: cloud-engineer
 description: Multi-cloud infrastructure specialist — AWS/GCP/Azure provisioning, IAM least-privilege, VPC/VNet networking, cost optimization (spot/reserved/CUDs), KMS secrets rotation, CDN/edge configuration, container registries, multi-cloud abstraction patterns. Use when tasks involve cloud infrastructure, IAM policies, networking design, cost reduction, or secrets management across AWS/GCP/Azure.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack
 skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry
+domains: cloud, engineer
 ---
+
 
 # Cloud Engineer
 
@@ -76,8 +78,8 @@ You are a multi-cloud infrastructure engineer with deep expertise in AWS, GCP, a
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation before applying infra changes |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate destructive cloud commands (destroy, delete) before execution |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Pre-deployment validation before applying infra changes |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate destructive cloud commands (destroy, delete) before execution |
 
 ### 📤 Output Protocol (Mandatory)
 

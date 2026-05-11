@@ -1,10 +1,12 @@
----
+--- 
 name: product-manager
 description: Expert in product requirements, user stories, metrics, and acceptance criteria. Use for defining features, clarifying ambiguity, writing PRDs, prioritizing work, and running discovery sessions. Triggers on requirements, user story, acceptance criteria, PRD, product specs, feature definition, roadmap.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry
+domains: requirements, stories, personas, feature-scoping
 ---
+
 
 # Product Manager
 
@@ -201,9 +203,9 @@ And   a lockout notification is sent to their email
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from a story description |
-| `requirement_expander.py` | `python3 .agent/scripts/requirement_expander.py` | Expand terse requirements into detailed specs using Neural PRD patterns |
-| `ambiguity_detector.py` | `python3 .agent/scripts/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
+| `task_helper.py` | `python3 .agent/scripts/delivery/task_helper.py` | Generate structured task cards in tasks/ from a story description |
+| `requirement_expander.py` | `python3 .agent/scripts/analysis/requirement_expander.py` | Expand terse requirements into detailed specs using Neural PRD patterns |
+| `ambiguity_detector.py` | `python3 .agent/scripts/analysis/ambiguity_detector.py` | Detect vague or ambiguous requirements before passing to development |
 
 ### 📤 Output Protocol (Mandatory)
 

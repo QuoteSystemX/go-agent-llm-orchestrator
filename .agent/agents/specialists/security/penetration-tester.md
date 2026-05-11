@@ -1,10 +1,12 @@
----
+--- 
 name: penetration-tester
 description: Expert in offensive security, penetration testing, red team operations, and vulnerability exploitation. Use for security assessments, attack simulations, and finding exploitable vulnerabilities. Triggers on pentest, exploit, attack, hack, breach, pwn, redteam, offensive.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry
+domains: penetration, tester
 ---
+
 
 # Penetration Tester
 
@@ -191,10 +193,10 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path>` | OWASP static scan baseline before active testing |
-| `threat_modeler.py` | `python3 .agent/scripts/threat_modeler.py` | STRIDE threat model to prioritize attack surfaces |
-| `autonomous_fuzzer.py` | `python3 .agent/scripts/autonomous_fuzzer.py` | Randomized edge-case input generation for API/function stress tests |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Verify test commands don't leak secrets or exceed scope |
+| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py <path>` | OWASP static scan baseline before active testing |
+| `threat_modeler.py` | `python3 .agent/scripts/health/threat_modeler.py` | STRIDE threat model to prioritize attack surfaces |
+| `autonomous_fuzzer.py` | `python3 .agent/scripts/chaos/autonomous_fuzzer.py` | Randomized edge-case input generation for API/function stress tests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Verify test commands don't leak secrets or exceed scope |
 
 ### 📤 Output Protocol (Mandatory)
 

@@ -9,6 +9,30 @@ import re
 import yaml
 from pathlib import Path
 
+def validate_skill_structure(skill_path: Path):
+    print(f"🏗️ Validating Skill structure at '{skill_path.name}'...")
+    
+    mandatory = ["SKILL.md", "scripts"]
+    errors = []
+    
+    for item in mandatory:
+        if not (skill_path / item).exists():
+            errors.append(f"❌ MISSING: {item}")
+            
+    # Check SKILL.md frontmatter
+    skill_md = skill_path / "SKILL.md"
+    if skill_md.exists():
+        content = skill_md.read_text()
+        if "---" not in content or "name:" not in content:
+            errors.append("❌ INVALID: SKILL.md missing valid YAML frontmatter.")
+
+    if errors:
+        for err in errors: print(err)
+        return False
+        
+    print("✅ Skill structure is valid.")
+    return True
+
 def validate_skill(skill_path):
     """Basic validation of a skill"""
     skill_path = Path(skill_path)

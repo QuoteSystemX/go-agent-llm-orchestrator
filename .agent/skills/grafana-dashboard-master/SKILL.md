@@ -70,7 +70,7 @@ Always parameterize dashboards for scalability:
 
 ## 5. Automation via API
 
-Use `python3 .agent/scripts/grafana_manager.py` for:
+Use `python3 .agent/scripts/misc/grafana_manager.py` for:
 - **Snapshotting**: Back up a dashboard before major edits.
 - **Validation**: Check if a dashboard JSON is valid before push.
 - **Discovery**: Search for existing dashboards to avoid duplication.

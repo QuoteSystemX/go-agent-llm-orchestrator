@@ -1,10 +1,12 @@
----
+--- 
 name: performance-optimizer
 description: Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. Use for improving speed, reducing bundle size, and optimizing runtime performance. Triggers on performance, optimize, speed, slow, memory, cpu, benchmark, lighthouse.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, performance-profiling, shared-context, telemetry
+domains: performance, profiling, optimization
 ---
+
 
 # Performance Optimizer
 
@@ -190,9 +192,9 @@ What's slow?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `analyze_efficiency.py` | `python3 .agent/scripts/analyze_efficiency.py` | Analyze token usage and latency stats from metrics log |
-| `prompt_optimizer.py` | `python3 .agent/scripts/prompt_optimizer.py` | Identify high-token operations and suggest cheaper alternatives |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py` | Check budget constraints before expensive operations |
+| `analyze_efficiency.py` | `python3 .agent/scripts/analysis/analyze_efficiency.py` | Analyze token usage and latency stats from metrics log |
+| `prompt_optimizer.py` | `python3 .agent/scripts/models/prompt_optimizer.py` | Identify high-token operations and suggest cheaper alternatives |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py` | Check budget constraints before expensive operations |
 
 ### 📤 Output Protocol (Mandatory)
 

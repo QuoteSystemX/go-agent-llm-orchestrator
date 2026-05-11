@@ -1,10 +1,12 @@
----
+--- 
 name: wiki-architect
 description: Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs, and system design docs. Detects wiki vs code drift. Enforces Prose-First workflow: wiki before code. Use when a component lacks documentation, when drift is suspected, or before any new feature implementation.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 skills: wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry
+domains: wiki, documentation, architecture
 ---
+
 
 # Wiki Architect
 
@@ -43,9 +45,9 @@ Before writing any wiki document:
 
 ---
 ## 🏛 Documentation Governance
-1. **Detection**: Periodically run `python3 .agent/scripts/drift_detector.py`.
+1. **Detection**: Periodically run `python3 .agent/scripts/health/drift_detector.py`.
 2. **Action**: If drift is detected, do not edit code. Instead, notify the **Analyst** to create a documentation-update task card in `tasks/`.
-3. **ADR Generation**: Use `python3 .agent/scripts/adr_generator.py --all` to automatically generate draft ADRs for detected architectural changes.
+3. **ADR Generation**: Use `python3 .agent/scripts/knowledge/adr_generator.py --all` to automatically generate draft ADRs for detected architectural changes.
 4. **Writing**: Only update the Wiki after the task card is assigned and approved.
 
 ## 🏗️ Decision Trees
@@ -223,9 +225,9 @@ git log --oneline -1 src/cache/
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect gaps between code and documentation |
-| `doc_healer.py` | `python3 .agent/scripts/doc_healer.py` | Automatically heal documentation drift in ARCHITECTURE.md |
-| `adr_generator.py` | `python3 .agent/scripts/adr_generator.py` | Generate ADR scaffolding in wiki/decisions/ |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect gaps between code and documentation |
+| `doc_healer.py` | `python3 .agent/scripts/dev/doc_healer.py` | Automatically heal documentation drift in ARCHITECTURE.md |
+| `adr_generator.py` | `python3 .agent/scripts/knowledge/adr_generator.py` | Generate ADR scaffolding in wiki/decisions/ |
 | `knowledge_synergy.py` | `python3 .agent/scripts/knowledge_synergy.py` | Export repository ADRs to the Global Brain |
 
 ### 📤 Output Protocol (Mandatory)

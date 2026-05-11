@@ -202,8 +202,8 @@ When handing a story to engineering, explicitly recommend:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `task_helper.py` | `python3 .agent/scripts/task_helper.py` | Generate structured task cards in tasks/ from backlog items |
-| `task_miner.py` | `python3 .agent/scripts/task_miner.py` | Mine ROADMAP.md for untracked backlog items and convert to task cards |
+| `task_helper.py` | `python3 .agent/scripts/delivery/task_helper.py` | Generate structured task cards in tasks/ from backlog items |
+| `task_miner.py` | `python3 .agent/scripts/delivery/task_miner.py` | Mine ROADMAP.md for untracked backlog items and convert to task cards |
 
 ### 📤 Output Protocol (Mandatory)
 

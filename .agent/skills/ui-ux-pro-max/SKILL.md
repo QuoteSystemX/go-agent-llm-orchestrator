@@ -20,6 +20,18 @@ Advanced design intelligence for creating high-fidelity, user-centric interfaces
 - **Hick's Law**: Reduce cognitive load by simplifying choices.
 - **Micro-animations**: Use subtle transitions to guide user focus without being distracting.
 
+## 🏗 Scripts
+
+- `core.py`: Main engine for generating design tokens and coordinating layouts.
+- `search.py`: Specialized design discovery tool for palettes and typography.
+- `design_system.py`: Manages style application to components.
+
+## 🛑 Mandatory Rules
+
+1. **Purple Ban**: Do not use purple or violet shades unless explicitly requested.
+2. **Template Ban**: Avoid standard "header-sidebar-footer" layouts. Use unique, dynamic compositions.
+3. **Typography**: Always use Google Fonts (Inter, Roboto, Outfit) instead of browser defaults.
+
 ## 🏗 Implementation Strategy
 
 1.  **Define Product Type**: (e.g., "OAuth Dashboard", "Settings Panel").
@@ -28,4 +40,4 @@ Advanced design intelligence for creating high-fidelity, user-centric interfaces
 4.  **Verify Accessibility**: Ensure high contrast and screen reader compatibility.
 
 ---
-> **Note**: This skill was imported from `skills.sh` to elevate the visual quality of Paperclip plugins.
+> **Note**: This skill was imported and consolidated from `.agent/.shared/` to unify design intelligence.

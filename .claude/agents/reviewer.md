@@ -42,7 +42,7 @@ When invoked, scan the entire codebase for:
 
 ```bash
 # Search Global Brain for common issues relevant to this project type
-python3 .agent/scripts/experience_distiller.py --query "common pitfalls"
+python3 .agent/scripts/knowledge/experience_distiller.py --query "common pitfalls"
 ```
 
 ### Step 1: Discovery
@@ -185,10 +185,10 @@ After writing all task cards, produce a summary:
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `experience_distiller.py` | `python3 .agent/scripts/experience_distiller.py --query "<topic>"` | Query past lessons before writing task cards |
-| `security_scan.py` | `python3 .agent/scripts/security_scan.py <path>` | OWASP static scan to populate security task cards |
-| `drift_detector.py` | `python3 .agent/scripts/drift_detector.py` | Detect documentation gaps to generate `[DOCS]` task cards |
-| `pr_audit.py` | `python3 .agent/scripts/pr_audit.py` | Deep PR audit — security, drift, quality — before writing audit report |
+| `experience_distiller.py` | `python3 .agent/scripts/knowledge/experience_distiller.py --query "<topic>"` | Query past lessons before writing task cards |
+| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py <path>` | OWASP static scan to populate security task cards |
+| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect documentation gaps to generate `[DOCS]` task cards |
+| `pr_audit.py` | `python3 .agent/scripts/misc/pr_audit.py` | Deep PR audit — security, drift, quality — before writing audit report |
 
 ### 📤 Output Protocol (Mandatory)
 

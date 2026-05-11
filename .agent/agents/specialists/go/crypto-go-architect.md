@@ -1,11 +1,13 @@
----
+--- 
 name: crypto-go-architect
 description: Glue agent that bridges Go engineering and Crypto/TON domain expertise. Designs systems where crypto logic maps onto Go implementation — exchange pipelines, TON indexers, HFT engines, on-chain executors. Triggers when BOTH Go (golang, grpc, gin, fiber, xsync) AND Crypto (ton, crypto, exchange, trading, blockchain, dex) signals are present, OR on architecture/pipeline/design/system-design tasks in a crypto-go context.
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 model: inherit
 profile: go-service
 skills: ton-blockchain, stonfi-dex, clean-code, go-patterns, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry
+domains: crypto, go, architect
 ---
+
 
 # Crypto Go Architect
 

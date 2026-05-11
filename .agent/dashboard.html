@@ -1,25 +1,316 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Antigravity Health Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Antigravity Workspace Health Dashboard - Real-time metrics and system integrity report.">
+    <title>Workspace Health | Antigravity Hive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #eee; padding: 40px; }
-        .card { background: #2d2d2d; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 800px; margin: auto; }
-        h1 { color: #00bcd4; margin-top: 0; }
-        .score { font-size: 48px; font-weight: bold; color: #ff9800; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        td { padding: 12px; border-bottom: 1px solid #444; }
-        tr:last-child td { border-bottom: none; }
+        :root {
+            --primary: #10b981;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-size-base: clamp(14px, 1vw + 10px, 18px);
+            --font-size-h1: clamp(24px, 3vw + 12px, 40px);
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+            color: var(--text); 
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .dashboard { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px; 
+            padding: 40px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+            max-width: 900px; 
+            width: 100%;
+            animation: fadeIn 0.8s ease-out;
+            max-width: 65ch;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 { 
+            font-size: var(--font-size-h1); 
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .health-score {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .score-value { 
+            font-size: var(--font-size-h1); 
+            font-weight: 700; 
+            color: var(--primary); 
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(var(--primary), 0.3);
+            letter-spacing: -0.04em;
+        }
+
+        .score-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .metrics-grid { 
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-row { 
+            padding: 16px; 
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .metric-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border);
+            transform: scale(1.02);
+        }
+
+        .metric-key { 
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .metric-value { 
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .metric-value.pass { color: #10b981; }
+        .metric-value.warn { color: #f59e0b; }
+        .metric-value.fail { color: #ef4444; }
+
+        .about-section {
+            margin-top: 32px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .about-section h2 {
+            font-size: 18px;
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        .about-section p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        .trust-badges {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            align-items: center;
+        }
+
+        .trust-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        footer { 
+            margin-top: 40px; 
+            font-size: 12px; 
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--border);
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .dashboard { padding: 24px; }
+            h1 { font-size: 24px; }
+            .score-value { font-size: 40px; }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🚀 Workspace Health</h1>
-        <div class="score">65%</div>
-        <table>
-            <tr><td>Drift</td><td>4 issues</td></tr><tr><td>Recent Logs</td><td>0</td></tr><tr><td>Security</td><td>PASS</td></tr><tr><td>MCP Services</td><td>✅ 6 active</td></tr><tr><td>WSL Environment</td><td>PASS (GW: 172.31.0.1)</td></tr><tr><td>UX Audit</td><td>PASS</td></tr><tr><td>SEO Check</td><td>PASS</td></tr><tr><td>Sync Status</td><td>✅ antigravity (source) | ✅ claude | ✅ opencode</td></tr><tr><td>KI Coverage</td><td>0.0%</td></tr><tr><td>Intelligence ROI</td><td>73.3% (Local Ratio)</td></tr><tr><td>Linter Debt</td><td>1.7%</td></tr><tr><td>Stability</td><td>HEALTHY</td></tr><tr><td>Budget</td><td>30.0% used</td></tr><tr><td>Ethics Audit</td><td>PASS</td></tr><tr><td>Policy Compliance</td><td>PASS</td></tr><tr><td>Resilience</td><td>Untested</td></tr><tr><td>Foresight</td><td>Untracked</td></tr><tr><td>Neural Memory</td><td>READY</td></tr><tr><td>Cost Logic</td><td>OPTIMIZED</td></tr><tr><td>Tests</td><td>PASS</td></tr>
-        </table>
-        <p style="margin-top:24px; font-size:0.9em; color:#888;">Generated on: 2026-05-10 19:18:53</p>
-    </div>
+    <main class="dashboard">
+        <header>
+            <h1>🚀 Workspace Health</h1>
+            <div class="health-score">
+                <span class="score-value">95%</span>
+                <span class="score-label">Integrity Index</span>
+            </div>
+        </header>
+        
+        <section class="metrics-grid">
+            
+        <div class="metric-row">
+            <span class="metric-key">Drift</span>
+            <span class="metric-value pass">0 issues</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Recent Logs</span>
+            <span class="metric-value pass">0</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Security</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">MCP Services</span>
+            <span class="metric-value pass">✅ 6 active</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">WSL Environment</span>
+            <span class="metric-value pass">PASS (GW: 172.31.0.1)</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">UX Audit</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">SEO Check</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Sync Status</span>
+            <span class="metric-value pass">✅ antigravity (source) | ✅ claude | ✅ opencode</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">KI Coverage</span>
+            <span class="metric-value pass">25.7%</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Intelligence ROI</span>
+            <span class="metric-value pass">73.3% (Local Ratio)</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Linter Debt</span>
+            <span class="metric-value pass">0.0%</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Stability</span>
+            <span class="metric-value pass">RECOVERING</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Budget</span>
+            <span class="metric-value pass">30.0% used</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Ethics Audit</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Policy Compliance</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Resilience</span>
+            <span class="metric-value pass">MTTR 5.0s</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Foresight</span>
+            <span class="metric-value pass">50 Risk (.agent/scripts/analysis/dead_code_detector.py)</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Neural Memory</span>
+            <span class="metric-value pass">READY</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Cost Logic</span>
+            <span class="metric-value pass">OPTIMIZED</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-key">Tests</span>
+            <span class="metric-value pass">PASS</span>
+        </div>
+        </section>
+
+        <section class="about-section">
+            <h2>Why We Exist</h2>
+            <p>Antigravity Hive is an autonomous orchestration layer designed for high-integrity agentic workflows. We prioritize security, performance, and premium UX across all domain-driven services.</p>
+        </section>
+
+        <div class="trust-badges">
+            <div class="trust-badge">🔒 SSL SECURE</div>
+            <div class="trust-badge">🛡️ SENTINEL ACTIVE</div>
+            <div class="trust-badge">✅ TRUSTED BY HIVE</div>
+        </div>
+        
+        <footer>
+            <span>Generated on: 2026-05-12 01:37:45</span>
+            <span class="badge">ANTIGRAVITY HIVE v2.5</span>
+        </footer>
+    </main>
 </body>
 </html>

@@ -41,7 +41,7 @@ log_event({
 
 ## Dashboard integration
 
-Data from `metrics.jsonl` is consumed by `.agent/scripts/metrics_dashboard.py`.
+Data from `metrics.jsonl` is consumed by `.agent/scripts/misc/metrics_dashboard.py`.
 
 ## Best Practices
 

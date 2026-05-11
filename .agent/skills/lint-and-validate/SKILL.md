@@ -34,7 +34,7 @@ If any linting or formatting check fails, you MUST attempt self-healing before m
 ## The Quality Loop
 1. **Write/Edit Code**
 2. **Run Self-Heal**: `python3 .agent/scripts/self_heal.py .`
-3. **Analyze Master Checklist**: `python3 .agent/scripts/checklist.py .`
+3. **Analyze Master Checklist**: `python3 .agent/scripts/dev/checklist.py .`
 4. **Fix & Repeat**: Submitting code with failures in the Master Checklist is NOT allowed.
 
 ---

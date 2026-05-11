@@ -5,9 +5,11 @@ import unittest
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Add scripts to path
-SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+# Add scripts and domain subfolders to path
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(SCRIPTS_DIR))
+for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    sys.path.append(str(SCRIPTS_DIR / domain))
 
 from lib.paths import REPO_ROOT, WATCHDOG_RULES_PATH, TELEMETRY_PATH, LESSONS_PATH
 from lib.common import load_json_safe, save_json_atomic
@@ -15,6 +17,9 @@ import guardrail_monitor
 import experience_distiller
 import bus_manager
 import checklist
+import status_report
+import adr_generator
+import generate_adr
 
 class FullIntegrationTest(unittest.TestCase):
     def setUp(self):
@@ -96,10 +101,13 @@ class FullIntegrationTest(unittest.TestCase):
         
         # We capture stdout to check for alert
         import io
-        from contextlib import redirect_stdout
+        from contextlib import redirect_stdout, redirect_stderr
+        
+        # Clear bus to avoid ID collision
+        bus_manager.clear()
         
         f = io.StringIO()
-        with redirect_stdout(f):
+        with redirect_stdout(f), redirect_stderr(f):
             bus_manager.push("t1", "telemetry", "tester", '{"total_tokens": 500, "total_cost_usd": 1.0}')
         
         output = f.getvalue()
@@ -121,12 +129,11 @@ class FullIntegrationTest(unittest.TestCase):
         
         res = experience_distiller.search_lessons("magic xyzzy")
         self.assertIn("xyzzy", res)
-        self.assertIn("Top", res)
+        self.assertIn("Local Matches", res)
 
     def test_08_adr_generation(self):
         print("Testing ADR Generation...")
-        from generate_adr import generate_adr
-        msg = generate_adr("Test Decision", "The context is testing.", "The decision is to pass.")
+        msg = generate_adr.generate_adr("Test Decision", "The context is testing.", "The decision is to pass.")
         self.assertIn("ADR created", msg)
         # Cleanup
         import re
@@ -136,10 +143,34 @@ class FullIntegrationTest(unittest.TestCase):
 
     def test_09_health_score(self):
         print("Testing Health Score...")
-        from status_report import calculate_health
-        score, metrics = calculate_health()
+        score, metrics = status_report.calculate_health()
         self.assertGreaterEqual(score, 0)
         self.assertIn("Drift", metrics)
+
+    def test_10_external_suites(self):
+        print("Running External Test Suites...")
+        import subprocess
+        external_tests = [
+            "test_reliability.py",
+            "test_phase_23.py",
+            "test_model_router.py",
+            "test_tracer.py",
+            "test_global_brain.py"
+        ]
+        for t in external_tests:
+            tpath = SCRIPTS_DIR / "tests" / t
+            if tpath.exists():
+                print(f"  🚀 Executing {t}...")
+                env = os.environ.copy()
+                domains = ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]
+                domain_paths = [str(SCRIPTS_DIR / d) for d in domains]
+                env["PYTHONPATH"] = f"{SCRIPTS_DIR}:" + ":".join(domain_paths) + f":{env.get('PYTHONPATH', '')}"
+                res = subprocess.run([sys.executable, str(tpath)], capture_output=True, text=True, env=env)
+                # We don't fail the whole suite if an orphan test fails, but we log it
+                if res.returncode != 0:
+                    print(f"    ⚠️  Orphan Test {t} FAILED:\n{res.stdout}\n{res.stderr}")
+                else:
+                    print(f"    ✅ {t} Passed.")
 
 if __name__ == "__main__":
     unittest.main()

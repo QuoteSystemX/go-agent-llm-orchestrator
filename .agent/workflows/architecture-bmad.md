@@ -12,7 +12,7 @@ $ARGUMENTS
 Before designing, identify if the current implementation has already drifted from the existing documentation:
 
 1. // turbo
-   Run `python3 .agent/scripts/drift_detector.py`.
+   Run `python3 .agent/scripts/health/drift_detector.py`.
 2. Report all undocumented files, missing agents, or skill drifts.
 3. **Requirement**: Address critical drifts (via `/wiki sync` or manual updates) before proceeding with new architectural design.
 
@@ -62,10 +62,10 @@ RULES:
 3. Identify components for every epic in the PRD
 4. Write one ADR per major technology decision
 7. List security considerations per component.
-8. Run `python3 .agent/scripts/threat_modeler.py "$ARGUMENTS"` to identify specific architectural risks.
+8. Run `python3 .agent/scripts/health/threat_modeler.py "$ARGUMENTS"` to identify specific architectural risks.
 9. Write wiki/ARCHITECTURE.md using the template structure.
 10. Present to user for approval before exiting.
-11. Run `python3 .agent/scripts/wiki_assembler.py` to ensure all fragments are correctly merged into the final ARCHITECTURE.md.
+11. Run `python3 .agent/scripts/knowledge/wiki_assembler.py` to ensure all fragments are correctly merged into the final ARCHITECTURE.md.
 12. STOP after approval — do NOT generate story cards yet.
 ```
 

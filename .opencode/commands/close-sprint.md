@@ -70,11 +70,11 @@ Check `tasks/` for any remaining `[STORY]` or `[FEAT]` cards.
 Run the experience distiller to archive old lessons and ensure the experience base remains relevant.
 
 1. // turbo
-   Run command: `python3 .agent/scripts/experience_distiller.py`
+   Run command: `python3 .agent/scripts/knowledge/experience_distiller.py`
 2. // turbo
-   Run command: `python3 .agent/scripts/knowledge_miner.py`
+   Run command: `python3 .agent/scripts/knowledge/knowledge_miner.py`
 3. // turbo
-   Run command: `python3 .agent/scripts/wiki_sync.py`
+   Run command: `python3 .agent/scripts/knowledge/wiki_sync.py`
 4. Log the output of the semantic loop execution.
 
 ### Step 5: Summary

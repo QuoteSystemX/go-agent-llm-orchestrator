@@ -185,8 +185,8 @@ Cloud provider?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation — security, schema, lint before applying manifests |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate kubectl/helm commands against dangerous operation rules |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Pre-deployment validation — security, schema, lint before applying manifests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate kubectl/helm commands against dangerous operation rules |
 
 ### 📤 Output Protocol (Mandatory)
 

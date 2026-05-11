@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+
+# Antigravity Domain-Aware Import Logic
+try:
+    from lib.paths import REPO_ROOT
+except ImportError:
+    import sys
+    from pathlib import Path
+    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.append(str(SCRIPTS_DIR))
+    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+        d_path = str(SCRIPTS_DIR / domain)
+        if d_path not in sys.path:
+            sys.path.append(d_path)
+
+import json
+import os
+from pathlib import Path
+from datetime import datetime
+
+REPO_ROOT = Path(__file__).parent.parent.parent.parent
+METRICS_FILE = REPO_ROOT / ".agent" / "logs" / "metrics.jsonl"
+
+def load_metrics():
+    if not METRICS_FILE.exists():
+        return []
+    metrics = []
+    with open(METRICS_FILE, "r") as f:
+        for line in f:
+            try:
+                metrics.append(json.loads(line))
+            except:
+                pass
+    return metrics
+
+def format_text_dashboard():
+    metrics = load_metrics()
+    if not metrics:
+        return "No metrics available."
+    
+    header = f"{'Timestamp':<10} | {'Agent':<20} | {'Metric':<20} | {'Value':<10} | {'Status'}"
+    separator = "-" * len(header)
+    lines = [header, separator]
+    
+    for m in metrics[-20:]:
+        ts = m.get("ts", "").split("T")[-1][:8]
+        agent = m.get("agent", "unknown")
+        metric = m.get("metric", "N/A")
+        val = str(m.get("value", "N/A"))
+        status = m.get("status", "N/A")
+        lines.append(f"{ts:<10} | {agent:<20} | {metric:<20} | {val:<10} | {status}")
+    
+    return "\n".join(lines)
+
+def run_rich_dashboard():
+    try:
+        from rich.console import Console
+        from rich.table import Table
+        from rich.live import Live
+        from rich import box
+        
+        console = Console()
+        
+        def generate_table():
+            metrics = load_metrics()
+            table = Table(title="🚀 Universal Live Metrics", box=box.ROUNDED, expand=True)
+            table.add_column("Timestamp", style="cyan")
+            table.add_column("Agent", style="magenta")
+            table.add_column("Metric", style="yellow")
+            table.add_column("Value", style="green")
+            table.add_column("Status", style="bold")
+            
+            for m in metrics[-15:]:
+                ts = m.get("ts", "").split("T")[-1][:8]
+                status = m.get("status", "N/A")
+                status_style = "green" if status == "success" else "red" if status == "error" else "white"
+                table.add_row(
+                    ts,
+                    m.get("agent", "unknown"),
+                    m.get("metric", "N/A"),
+                    str(m.get("value", "N/A")),
+                    f"[{status_style}]{status}[/]"
+                )
+            return table
+
+        if os.environ.get("NON_INTERACTIVE"):
+            console.print(generate_table())
+        else:
+            with Live(generate_table(), refresh_per_second=1) as live:
+                try:
+                    while True:
+                        live.update(generate_table())
+                        import time
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    pass
+    except ImportError:
+        print(format_text_dashboard())
+
+if __name__ == "__main__":
+    run_rich_dashboard()

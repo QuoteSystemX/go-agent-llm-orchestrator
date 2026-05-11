@@ -1,10 +1,12 @@
----
+--- 
 name: devops-engineer
 description: Expert in deployment, server management, CI/CD, and production operations. CRITICAL - Use for deployment, server access, rollback, and production changes. HIGH RISK operations. Triggers on deploy, production, server, pm2, ssh, release, rollback, ci/cd.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry
+domains: devops, engineer
 ---
+
 
 # DevOps Engineer
 
@@ -245,9 +247,9 @@ What are you deploying?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation — security, lint, schema, tests |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate dangerous shell commands before execution |
-| `ci_auto_fixer.py` | `python3 .agent/scripts/ci_auto_fixer.py` | Auto-detect failing CI jobs and propose targeted fix commits |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Pre-deployment validation — security, lint, schema, tests |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate dangerous shell commands before execution |
+| `ci_auto_fixer.py` | `python3 .agent/scripts/dev/ci_auto_fixer.py` | Auto-detect failing CI jobs and propose targeted fix commits |
 | `chaos_monkey.py` | `python3 .agent/scripts/chaos_monkey.py` | Fault injection for resilience testing (use on throwaway branches only) |
 
 ### 📤 Output Protocol (Mandatory)

@@ -21,12 +21,12 @@ For complex tasks, build a **Dynamic Task Tree**:
 
 ### 1. Classification (Impact Scan)
 **Step 0: Experience Search (MANDATORY)**
-Run `python3 .agent/scripts/experience_distiller.py --query "task keywords"`.
+Run `python3 .agent/scripts/knowledge/experience_distiller.py --query "task keywords"`.
 - If relevant lessons exist -> Note them in the report.
 - If a lesson indicates a high risk or past failure in this area -> Escalate Level (e.g., L2 -> L3).
 
 **Step 1: Model Selection (MANDATORY)**
-Run `python3 .agent/scripts/model_router.py "[Task Description]"` to select the model tier.
+Run `python3 .agent/scripts/models/model_router.py "[Task Description]"` to select the model tier.
 - **L1 Task** -> Uses Flash/Haiku.
 - **L3/L4 Task** -> Uses Pro/Sonnet/Opus.
 - Inject the selected model into the response header.

@@ -24,7 +24,7 @@ This command adds features or makes updates to existing application.
    - Report all findings before proceeding.
 
 1. **Understand Current State**
-   - Load project state with `python .agent/scripts/session_manager.py info`
+   - Load project state with `python .agent/scripts/misc/session_manager.py info`
    - Understand existing features, tech stack
 
 2. **Plan Changes**
@@ -46,8 +46,8 @@ This command adds features or makes updates to existing application.
    - Call relevant agents
    - Make changes
    - Test
-   - Run `python3 .agent/scripts/code_polisher.py` for final cleanup.
-   - Run `python3 .agent/scripts/adr_generator.py` to document the changes.
+   - Run `python3 .agent/scripts/dev/code_polisher.py` for final cleanup.
+   - Run `python3 .agent/scripts/knowledge/adr_generator.py` to document the changes.
 
 5. **Update Preview**
    - Hot reload or restart

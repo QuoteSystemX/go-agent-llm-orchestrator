@@ -75,8 +75,8 @@ You are a multi-cloud infrastructure engineer with deep expertise in AWS, GCP, a
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `checklist.py` | `python3 .agent/scripts/checklist.py .` | Pre-deployment validation before applying infra changes |
-| `guardrail_monitor.py` | `python3 .agent/scripts/guardrail_monitor.py --check-cmd "<cmd>"` | Validate destructive cloud commands (destroy, delete) before execution |
+| `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Pre-deployment validation before applying infra changes |
+| `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate destructive cloud commands (destroy, delete) before execution |
 
 ### 📤 Output Protocol (Mandatory)
 

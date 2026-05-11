@@ -24,13 +24,13 @@ Provides a unified "Command Center" view of the agent's internal state, project 
 Run the core diagnostic scripts to gather real-time data:
 
 1. // turbo
-   Run command: `python3 .agent/scripts/status_report.py`
+   Run command: `python3 .agent/scripts/health/status_report.py`
 2. // turbo
-   Run command: `python3 .agent/scripts/metrics_dashboard.py`
+   Run command: `python3 .agent/scripts/health/metrics_dashboard.py`
 3. // turbo
-   Run command: `python3 .agent/scripts/bus_debugger.py`
+   Run command: `python3 .agent/scripts/context/bus_debugger.py`
 4. // turbo
-   Run command: `python3 .agent/scripts/guardrail_monitor.py`
+   Run command: `python3 .agent/scripts/health/guardrail_monitor.py`
 
 ### Step 2: Synthesis
 Aggregate the findings into a structured report using the **Architect** agent.
