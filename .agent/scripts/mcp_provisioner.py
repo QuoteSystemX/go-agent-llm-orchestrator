@@ -79,12 +79,13 @@ def provision_mcp():
         
         # 2. Create the .sh launcher (overwriting any binary that was there)
         print(f"📝 Creating launcher script at {launcher}...")
-        binary_path = "bin/local-skill-server-darwin" if is_darwin else "bin/local-skill-server-linux-amd64"
         
-        script_content = f"""#!/bin/bash
-# Auto-generated launcher for MCP Server
-# Resolves symlink to find the real directory of the script
-SOURCE="${{BASH_SOURCE[0]}}"
+        script_content = """#!/bin/bash
+# Universal MCP Server Launcher
+# Works on any platform - selects the correct binary at runtime
+
+# Resolve symlinks to find the real directory
+SOURCE="${BASH_SOURCE[0]}"
 while [ -L "$SOURCE" ]; do
   DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
   SOURCE="$(readlink "$SOURCE")"
@@ -92,7 +93,33 @@ while [ -L "$SOURCE" ]; do
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-exec "$DIR/{binary_path}" "$@"
+# Detect OS and architecture, select appropriate binary
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+
+case "$OS" in
+  Darwin)
+    case "$ARCH" in
+      arm64) BIN="local-skill-server-darwin";;      # Universal binary (amd64 + arm64)
+      *)    BIN="local-skill-server-darwin-amd64";;
+    esac
+    ;;
+  Linux)
+    case "$ARCH" in
+      x86_64)  BIN="local-skill-server-linux-amd64";;
+      aarch64) BIN="local-skill-server-linux-arm64";;
+      *)      BIN="local-skill-server-linux-amd64"; # fallback
+    esac
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    BIN="local-skill-server-darwin"  # Use Darwin as fallback
+    ;;
+  *)
+    BIN="local-skill-server-darwin"  # Unknown OS - try Darwin
+    ;;
+esac
+
+exec "$DIR/bin/$BIN" "$@"
 """
         with open(launcher, "w") as f:
             f.write(script_content)
