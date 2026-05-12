@@ -450,6 +450,7 @@ go tool trace trace.out
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/go-patterns/SKILL.md`
+- `.agent/skills/go-dependency-manager/SKILL.md`
 - `.agent/skills/godoc-patterns/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/database-design/SKILL.md`

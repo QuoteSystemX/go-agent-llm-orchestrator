@@ -151,6 +151,7 @@ Off-chain trigger → message builder (FunC/Tact) → wallet signing → TON bro
 - `.agent/skills/stonfi-dex/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/go-patterns/SKILL.md`
+- `.agent/skills/go-dependency-manager/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`

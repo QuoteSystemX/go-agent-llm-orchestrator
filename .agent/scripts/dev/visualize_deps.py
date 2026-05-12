@@ -40,11 +40,28 @@ def scan_go_imports(file_path: Path) -> list[str]:
     try:
         with open(file_path, "r", encoding="utf-8", errors='ignore') as f:
             content = f.read()
-        # Find imports in quotes
-        imports = re.findall(r'"([^"]+)"', content)
-        # Only take local-ish imports or meaningful ones
-        return [imp.split('/')[-1] for imp in imports if '/' in imp]
-    except:
+        
+        # More robust Go import scanning:
+        # 1. Single line imports: import "..."
+        # 2. Block imports: import ( ... )
+        
+        found_imports = []
+        
+        # Single line: import "pkg" or import alias "pkg"
+        single_matches = re.findall(r'import\s+(?:[\w\.]+\s+)??"([^"]+)"', content)
+        found_imports.extend(single_matches)
+        
+        # Block: import ( ... )
+        block_matches = re.findall(r'import\s*\((.*?)\)', content, re.DOTALL)
+        for block in block_matches:
+            # Extract quoted strings from the block
+            quoted_in_block = re.findall(r'"([^"]+)"', block)
+            found_imports.extend(quoted_in_block)
+            
+        # Filter for local project imports (usually contain /) or meaningful ones
+        # and extract the last part of the path
+        return [imp.split('/')[-1] for imp in found_imports if '/' in imp]
+    except Exception:
         return []
 
 def generate_mermaid():

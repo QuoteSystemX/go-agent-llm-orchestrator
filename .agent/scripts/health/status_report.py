@@ -162,8 +162,8 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
     cached = _run_parallel(scripts, CACHE_TTL)
 
     # Load collected data
-    blue_data = cached.get("blue_team", {})
-    budget_data = cached.get("budget", {})
+    blue_data = cached.get("blue_team") or {}
+    budget_data = cached.get("budget") or {}
 
     # 0b. Load Ethics & Policy Metrics
     hallucination_data = {}

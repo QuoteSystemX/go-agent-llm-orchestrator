@@ -4,7 +4,7 @@ description: gRPC and Protobuf contract architect for Go microservices. Designs 
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service
-skills: go-patterns, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code
+skills: go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code
 domains: grpc, architect
 ---
 

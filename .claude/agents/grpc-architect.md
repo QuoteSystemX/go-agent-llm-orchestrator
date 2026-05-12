@@ -151,6 +151,7 @@ buf generate                                      # Generated code compiles
 
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/go-patterns/SKILL.md`
+- `.agent/skills/go-dependency-manager/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/architecture/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
