@@ -16,7 +16,7 @@ except ImportError:
     SCRIPTS_DIR = Path(__file__).resolve().parents[1]
     if str(SCRIPTS_DIR) not in sys.path:
         sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
         d_path = str(SCRIPTS_DIR / domain)
         if d_path not in sys.path:
             sys.path.append(d_path)
@@ -173,11 +173,17 @@ def run_fix():
             
         status_report.export_to_html(score, metrics)
         
-        # Doc Healer: Auto-repair documentation drift
-        import doc_healer
-        doc_healer.heal_docs()
+        # Bridge Team: Sync knowledge to Obsidian and external agents
+        print_step("Mirroring knowledge via Bridge Team...")
+        try:
+            import obsidian_sync
+            import sync_agents
+            obsidian_sync.sync_to_obsidian()
+            # sync_agents.run_sync() # Optional: heavy sync, maybe keep it manual or for releases
+        except Exception as e:
+            print_warning(f"Bridge Team sync failed: {e}")
         
-        print_success("Visualization, Dashboard, and Documentation updated.")
+        print_success("Visualization, Dashboard, Documentation, and Bridge Sync updated.")
     except Exception as e:
         print_warning(f"Failed to update visualization: {e}")
 

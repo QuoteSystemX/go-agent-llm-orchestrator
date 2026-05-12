@@ -1,0 +1,10 @@
+{
+    "vault_path": "/Users/artur/Documents/prompt-library/wiki/obsidian_vault",
+    "sync_folders": [
+        ".agent/knowledge",
+        "wiki/mental-models",
+        "wiki/decisions"
+    ],
+    "auto_tag": true,
+    "add_metadata": true
+}
