@@ -6,24 +6,39 @@ version: 1.0.0
 
 # 🎭 Playwright Best Practices
 
-Guidelines for creating stable, fast, and maintainable browser automation and UI tests.
+Expert guidelines for building robust, fast, and reliable End-to-End (E2E) tests with Playwright.
 
-## 🛠 Stability & Reliability
+## 🏗 Test Strategy
 
-- **Auto-waiting**: Rely on Playwright's built-in auto-waiting for elements to be visible/stable. Avoid `time.sleep()` or fixed timeouts.
-- **Locators**: Use user-visible locators like `getByRole` or `getByText` instead of fragile CSS selectors or XPaths.
-- **Web-First Assertions**: Use `expect(page).toHaveURL()` instead of manual URL checks.
+- **Web-First Assertions**: Always use `expect(locator).toBeVisible()` or similar. Playwright will automatically wait for the condition to be met.
+- **Isolation**: Each test should be independent. Use `beforeEach` to set up state (auth, cookies) rather than chaining tests.
+- **Parallelism**: Design tests to run in parallel. Avoid shared global state that can cause race conditions.
 
-## 🐛 Debugging in Complex Environments (WSL/CI)
+## 🎯 Locators & Selectors
 
-- **Headless Debugging**: Use `page.screenshot()` and `browserContext.tracing` to visualize failures in CI/headless modes.
-- **Networking**: Use `--host-resolver-rules` for custom DNS mapping without modifying `/etc/hosts`.
-- **Ignore HTTPS Errors**: Use `ignoreHTTPSErrors: true` for local development with self-signed certificates.
+- **Semantic Locators**: Prefer `getByRole`, `getByLabel`, `getByText`. This ensures your tests also verify accessibility.
+- **Data Attributes**: Use `data-testid` for elements that don't have a clear semantic role or are prone to text changes.
+- **Brittle Selectors**: NEVER use auto-generated CSS selectors (e.g., `.css-1v23...`) or deep XPath.
 
-## 🚀 Performance
+## 🚀 Tools & Verification
 
-- **Parallelization**: Run tests in parallel to reduce CI time.
-- **Resource Reuse**: Reuse browser contexts and authentication states to avoid repeated logins.
+### 1. Test Quality Auditor
+Run the internal audit script to check for brittle selectors and hardcoded waits:
+
+```bash
+python3 .agent/skills/playwright-best-practices/scripts/verify_tests.py
+```
+
+### 2. Standard Patterns
+Refer to `examples/basic-e2e.spec.ts` for a "Golden Path" implementation of a stable dashboard test.
+
+## 📈 Testing Checklist
+- [ ] Are web-first assertions used instead of manual waits?
+- [ ] Are semantic locators (`getByRole`) prioritized?
+- [ ] Are tests isolated and parallelizable?
+- [ ] Is there a `data-testid` for non-semantic elements?
+- [ ] Does the test verify the success/failure UI state?
 
 ---
-> **Note**: This skill was imported from `skills.sh` to stabilize UI interactions within Paperclip.
+> **Note**: This skill ensures that Paperclip features are verified automatically without brittle regressions.
+

@@ -5,53 +5,41 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
 ---
 
-# Database Design
+# 🏗 Database Design & Architecture
 
-> **Learn to THINK, not copy SQL patterns.**
+Expert guidelines for designing scalable, maintainable, and efficient database architectures for the Paperclip ecosystem.
 
-## 🎯 Selective Reading Rule
+## 🏗 Core Principles
 
-**Read ONLY files relevant to the request!** Check the content map, find what you need.
+- **Normalization**: Aim for 3NF (Third Normal Form) to eliminate data redundancy. Denormalize only after measuring performance bottlenecks.
+- **Relational Integrity**: Use Foreign Keys with appropriate `ON DELETE` actions (`CASCADE`, `SET NULL`) to ensure data consistency.
+- **Atomic Operations**: Design transactions to be as small and fast as possible to minimize locking.
 
-| File | Description | When to Read |
-|------|-------------|--------------|
-| `database-selection.md` | PostgreSQL vs Neon vs Turso vs SQLite | Choosing database |
-| `orm-selection.md` | Drizzle vs Prisma vs Kysely | Choosing ORM |
-| `schema-design.md` | Normalization, PKs, relationships | Designing schema |
-| `indexing.md` | Index types, composite indexes | Performance tuning |
-| `optimization.md` | N+1, EXPLAIN ANALYZE | Query optimization |
-| `migrations.md` | Safe migrations, serverless DBs | Schema changes |
+## 📡 Relationship Patterns
 
----
+- **One-to-Many (1:N)**: Use foreign keys on the "many" side.
+- **Many-to-Many (M:N)**: Use a join table with composite primary keys.
+- **Polymorphic**: Use "exclusive belongs to" or a central "entity" table to avoid brittle polymorphic associations.
 
-## ⚠️ Core Principle
+## 🚀 Tools & Verification
 
-- ASK user for database preferences when unclear
-- Choose database/ORM based on CONTEXT
-- Don't default to PostgreSQL for everything
+### 1. Normalization Auditor
+Run the internal script to check for missing primary keys and potential denormalization issues:
 
----
+```bash
+python3 .agent/skills/database-design/scripts/analyze_normalization.py
+```
 
-## Decision Checklist
+### 2. Standard Designs
+Refer to `examples/normalized-schema.md` for a "Golden Path" ER diagram of a core Paperclip module.
 
-Before designing schema:
-
-- [ ] Asked user about database preference?
-- [ ] Chosen database for THIS context?
-- [ ] Considered deployment environment?
-- [ ] Planned index strategy?
-- [ ] Defined relationship types?
+## 📈 Architecture Checklist
+- [ ] Are all tables in at least 3NF?
+- [ ] Do all tables have a Primary Key?
+- [ ] Are Foreign Keys used for all relationships?
+- [ ] Is data types consistency maintained across tables?
+- [ ] Is there an ER diagram for the proposed change?
 
 ---
+> **Note**: This skill ensures that Paperclip's foundation is built on solid data architectural principles.
 
-## Anti-Patterns
-
-❌ Default to PostgreSQL for simple apps (SQLite may suffice)
-❌ Skip indexing
-❌ Use SELECT * in production
-❌ Store JSON when structured data is better
-❌ Ignore N+1 queries
-
-## Changelog
-
-- **1.0.0** (2026-04-26): Initial version

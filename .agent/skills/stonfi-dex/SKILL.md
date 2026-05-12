@@ -5,15 +5,15 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
 ---
 
-# Ston.fi DEX Skill (2026)
+# 💎 Ston.fi DEX Integration (2026)
 
-> Mastering the primary liquidity hub on TON.
+Expert guidelines for integrating with Ston.fi, the leading decentralized exchange on the TON blockchain.
 
----
+## 🏗 Core Integration Patterns
 
-## 🏗️ SDK Integration (Ston.fi SDK)
+Ston.fi uses a request-response pattern for swaps and liquidity provision.
 
-### Basic Swap Pattern
+### Basic Swap Pattern (SDK)
 ```typescript
 import { StonApiClient, Router } from '@ston-fi/sdk';
 
@@ -37,50 +37,32 @@ const tx = await router.buildSwapTx({
 });
 ```
 
----
+## 🚀 Swap Execution Logic
 
-## 💧 Liquidity Provision
+To execute a swap on Ston.fi:
+1. **Fetch Rates**: Query the API or use the SDK to get the current expected output and price impact.
+2. **Jetton Wallets**: Find the **User's Jetton Wallet** address for that specific Jetton by calling `get_wallet_address` on the Jetton Master.
+3. **Prepare Transaction**: Build a Jetton transfer with a custom payload containing the swap parameters.
+4. **Gas Constants**: Swap (~0.15 - 0.25 TON), Jetton Transfer (~0.05 TON).
 
-| Action | Pattern |
-|--------|---------|
-| **Add Liquidity** | Provide both Jettons to the Pool contract via Router. |
-| **Remove Liquidity** | Burn LP tokens to receive underlying Jettons. |
-| **Claim Fees** | Fees are usually auto-compounded in V2. |
+## 🛠 Tools & Verification
 
----
+### 1. Pool Data Query
+Use the internal script to fetch live data for any Ston.fi pool:
 
-## 🚦 Operational Rules
+```bash
+python3 .agent/skills/stonfi-dex/scripts/query_stonfi_rates.py <POOL_ADDRESS>
+```
 
-### 1. Jetton Wallets
-In TON, you don't interact with the Token contract directly for transfers. You must find the **User's Jetton Wallet** address for that specific Jetton.
-- **Action**: `get_wallet_address` call on the Jetton Master.
+### 2. Implementation Reference
+Refer to `examples/swap-execution.ts` for a "Golden Path" implementation using the `@ston-fi/sdk`.
 
-### 2. Slippage Management
-Ston.fi V2 uses aggressive routing. Always calculate `minAskAmount` based on `slippage` to prevent front-running.
-
-### 3. Gas Constants
-TON gas is non-deterministic but follows predictable ranges:
-- **Swap**: ~0.15 - 0.25 TON
-- **Jetton Transfer**: ~0.05 TON
-
----
-
-## 📊 Monitoring & Analytics
-
-Use Ston.fi API for:
-- **Pool Volume**: Check 24h volume before recommending a route.
-- **TVL**: High TVL = lower price impact.
-- **Pairs**: Verify if a direct pair exists or if multi-hop routing is needed.
+## 📈 Integration Checklist
+- [ ] Is the Router address correct for the target network (Mainnet/Testnet)?
+- [ ] Have you calculated slippage and set `min_out` accordingly?
+- [ ] Is the Jetton transfer payload properly formatted?
+- [ ] Are you handling the router's "Excesses" and "Success" notifications?
+- [ ] Is there a timeout/retry strategy for network congestion?
 
 ---
-
-## 🛠 Automation Tools
-
-| Tool | Action |
-| :--- | :--- |
-| `stonfi_analyzer.py` | Fetches pool health and price impact for a given pair. |
-| `boc_inspector.py` | Decodes swap messages to verify `minAskAmount` before signing. |
-
----
-
-> **Rule:** Always verify the Router address. Phishing routers are common in DeFi.
+> **Note**: This skill ensures that Paperclip's DeFi integrations on TON are efficient and secure.

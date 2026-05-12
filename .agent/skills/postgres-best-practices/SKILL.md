@@ -6,24 +6,39 @@ version: 1.0.0
 
 # 🐘 Postgres Best Practices
 
-Expert guidelines for designing and managing high-performance PostgreSQL databases within the Paperclip platform.
+Expert guidelines for designing high-performance, scalable, and maintainable PostgreSQL databases.
 
 ## 🏗 Schema Design
 
-- **Normalization**: Aim for 3NF but denormalize strategically for read-heavy operations (e.g., dashboard stats).
-- **Data Types**: Use `UUID` for primary keys, `TIMESTAMPTZ` for dates, and `JSONB` only for unstructured or frequently changing metadata.
-- **Indexes**: Create indexes for all foreign keys and frequently filtered columns (`WHERE` clauses). Use `GIN` indexes for `JSONB`.
+- **Naming Conventions**: Use `snake_case` for all table and column names. Postgres is case-insensitive by default, making CamelCase painful.
+- **Primary Keys**: Use `UUID` or `BIGINT` for primary keys. UUIDs are better for distributed systems; BIGINT is more efficient for local storage.
+- **Timestamps**: Always use `TIMESTAMPTZ` (TIMESTAMP WITH TIME ZONE) to avoid timezone-related bugs.
 
-## 🚀 Performance Optimization
+## 🚀 Performance & Optimization
 
-- **Query Analysis**: Use `EXPLAIN ANALYZE` to identify slow queries.
-- **Connection Pooling**: Always use a pooler (e.g., PgBouncer) in high-concurrency environments.
-- **Batching**: Use `INSERT ... ON CONFLICT` for bulk updates to reduce round-trips.
+- **Indexing**: Always index foreign keys. Use `CREATE INDEX CONCURRENTLY` in production to avoid locking the table.
+- **Partial Indexes**: Use partial indexes (`WHERE status = 'active'`) to reduce index size and speed up specific queries.
+- **Normalization**: Aim for 3NF (Third Normal Form) but don't be afraid to denormalize for read-heavy operations if measured.
 
-## 🛠 Migrations & Maintenance
+## 🛠 Tools & Verification
 
-- **Zero-Downtime**: Use `ALTER TABLE ... ADD COLUMN ... DEFAULT NULL` to avoid locking tables.
-- **Backup Strategy**: Regular snapshots and WAL-based point-in-time recovery.
+### 1. Schema Auditor
+Run the internal script to check for missing indexes and naming violations in SQL migrations:
+
+```bash
+python3 .agent/skills/postgres-best-practices/scripts/verify_schema.py
+```
+
+### 2. Standard Patterns
+Refer to `examples/schema-migration.sql` for a "Golden Path" implementation of a relational schema.
+
+## 📈 Database Hygiene Checklist
+- [ ] Are all table and column names `snake_case`?
+- [ ] Are foreign keys indexed?
+- [ ] Is `TIMESTAMPTZ` used for all date/time fields?
+- [ ] Are `UUID`s used where appropriate?
+- [ ] Is there an `updated_at` trigger?
 
 ---
-> **Note**: This skill was imported from `skills.sh` to ensure Auth Hub's OAuth storage is stable and scalable.
+> **Note**: This skill ensures that Paperclip's data layer is robust, fast, and ready for scale.
+

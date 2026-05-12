@@ -11,19 +11,34 @@ Expert guidelines for building secure, fast, and automated pipelines for the Pap
 ## 🏗 Workflow Design
 
 - **Triggers**: Use granular triggers (`on: push: paths: [...]`) to avoid unnecessary builds.
-- **Caching**: Always cache `node_modules` and build outputs to speed up subsequent runs.
-- **Matrices**: Use strategy matrices for testing across multiple Node.js or OS versions.
+- **Caching**: Always cache `node_modules`, `~/.npm`, and build outputs to speed up subsequent runs.
+- **Matrices**: Use strategy matrices for testing across multiple Node.js or OS versions, but keep them lean to control costs.
 
 ## 🛡 Security Best Practices
 
-- **Secrets**: Use GitHub Secrets for all sensitive data. NEVER hardcode tokens.
-- **Permissions**: Follow the principle of least privilege for `GITHUB_TOKEN`.
-- **Pinned Actions**: Pin third-party actions to a specific commit SHA for supply chain security.
+- **Secrets**: Use GitHub Secrets for all sensitive data. NEVER hardcode tokens in the workflow YAML.
+- **Permissions**: Follow the principle of least privilege for `GITHUB_TOKEN`. Explicitly set `permissions: contents: read`.
+- **Pinned Actions**: Pin third-party actions to a specific commit SHA (e.g., `uses: actions/checkout@8ade135...`) for supply chain security.
 
-## 🚀 Optimization
+## 🚀 Tools & Verification
 
-- **Job Dependencies**: Use `needs` to chain jobs and fail early if a critical step (like linting) fails.
-- **Environment Management**: Define separate environments for `production` and `staging` with required approvals.
+### 1. Workflow Validator
+Run the internal verification script before committing changes to `.github/workflows`:
+
+```bash
+python3 .agent/skills/github-actions-expert/scripts/verify_workflows.py
+```
+
+### 2. Standard Templates
+Refer to `examples/ci-standard.yml` for the "Golden Path" of a Paperclip CI pipeline.
+
+## 📈 Optimization Checklist
+- [ ] Are path filters used?
+- [ ] Is caching enabled?
+- [ ] Are jobs using `needs` to fail fast?
+- [ ] Is `GITHUB_TOKEN` scoped?
+- [ ] Are actions pinned?
 
 ---
-> **Note**: This skill was imported from `skills.sh` to optimize the Auth Hub CI/CD pipeline.
+> **Note**: This skill ensures that CI/CD pipelines are not just functional, but resilient and secure.
+

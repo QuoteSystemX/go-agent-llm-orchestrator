@@ -6,25 +6,40 @@ version: 1.0.0
 
 # 🧠 Prompt Engineering Best Practices
 
-Expert guidelines for crafting high-performance prompts and structured reasoning for AI agents.
+Expert guidelines for crafting high-performance prompts and structured reasoning for AI agents within the Paperclip ecosystem.
 
 ## 🏗 Structural Patterns
 
-- **Role Priming**: Always define a clear persona (e.g., "Expert Go Developer", "SRE Lead").
-- **Context Pinning**: Explicitly mention current constraints, project state, and critical files.
-- **Few-Shot Examples**: Provide 2-3 examples of the desired output format for complex tasks.
+- **Role Priming**: Define a clear persona with deep domain expertise (e.g., "You are a Senior SRE...").
+- **Context Pinning**: Provide specific project state, critical file contents, and environmental constraints.
+- **Few-Shot Examples**: Include 2-3 examples of the input-output mapping to guide the model towards the desired logic.
+- **Output Schemas**: Explicitly define the output format (Markdown, JSON, XML) to ensure machine-readability.
 
-## 🛠 Reasoning Techniques
+## 🛠 Reasoning & Safety
 
-- **Chain of Thought (CoT)**: Break down complex problems into logical steps before providing a final answer.
-- **Socratic Gate**: Always ask clarifying questions if the request has even 1% ambiguity.
-- **Reflection**: Periodically review the task progress and self-correct if the direction is deviating from the goal.
+- **Chain of Thought**: Explicitly ask the model to "think step-by-step" or "analyze the problem before answering".
+- **Constraints**: Use negative constraints ("NEVER...", "AVOID...") to keep the model within safety guardrails.
+- **Socratic Gate**: Instruct the model to ask clarifying questions if the input is ambiguous.
 
-## 💅 Output Formatting
+## 🚀 Tools & Verification
 
-- **Markdown-First**: Use GitHub Flavored Markdown for all technical reports and code blocks.
-- **Basenames**: Use file basenames in links for better readability.
-- **Conciseness**: Avoid verbosity; focus on actionable information and technical accuracy.
+### 1. Prompt Auditor
+Run the internal script to analyze agent definitions for missing roles or constraints:
+
+```bash
+python3 .agent/skills/prompts-best-practices/scripts/verify_prompts.py
+```
+
+### 2. Standard Templates
+Refer to `examples/expert-role.md` for a "Golden Path" implementation of a structured expert prompt.
+
+## 📈 Prompt Hygiene Checklist
+- [ ] Is there a clear Role defined?
+- [ ] Are there explicit Constraints?
+- [ ] Is the Output Format specified?
+- [ ] Is Context provided or requested?
+- [ ] Does it encourage reasoning (CoT)?
 
 ---
-> **Note**: This skill was created to ensure all agents working on Paperclip maintain the highest cognitive performance.
+> **Note**: This skill ensures that all agents maintain the highest cognitive performance and reliability.
+

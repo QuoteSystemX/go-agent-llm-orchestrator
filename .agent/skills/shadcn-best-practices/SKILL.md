@@ -4,26 +4,41 @@ description: Standards for adding, styling, and composing shadcn/ui components i
 version: 1.0.0
 ---
 
-# 🎨 Shadcn UI Best Practices
+# 🎨 shadcn/ui Best Practices
 
-Guidelines for maintaining a consistent and scalable UI system using shadcn/ui components.
+Expert guidelines for building beautiful, accessible, and themeable components using shadcn/ui and Tailwind CSS.
 
-## 🏗 Component Management
+## 🏗 Component Architecture
 
-- **Atomic Addition**: Add only the components you need (`npx shadcn@latest add ...`).
-- **Customization**: Do not edit the `components/ui` folder directly for global changes; use the `ui-ux-pro-max` design tokens via `tailwind.config.ts`.
-- **Composition**: Prefer composing simple components (e.g., `Button` + `Dropdown`) into complex widgets rather than building monolithic components.
+- **Composition**: Prefer composing simple components (Slot, Button, Input) into complex ones rather than creating massive "God Components".
+- **Ref Forwarding**: Always use `React.forwardRef` to allow components to be used with libraries like Framer Motion or React Hook Form.
+- **Display Name**: Explicitly set `.displayName` on all exported components for better debugging.
 
-## 💅 Styling & Theme
+## 💅 Theming & Styling
 
-- **Tailwind-First**: Use Tailwind utility classes for all styling.
-- **Color Variables**: Reference CSS variables (e.g., `--primary`, `--background`) to support dynamic theming and Dark Mode.
-- **Consistency**: Follow the Paperclip design system spacing and border-radius tokens.
+- **CSS Variables**: Use CSS variables (e.g., `bg-background`, `text-primary`) for all colors to support Dark Mode and dynamic themes automatically.
+- **CN Utility**: Always use the `cn` utility to merge classNames and handle Tailwind conflicts.
+- **CVA**: Use `class-variance-authority` (CVA) to define component variants (sizes, colors, shapes) in a type-safe way.
 
-## 🧱 Accessible Forms
+## 🚀 Tools & Verification
 
-- **React Hook Form**: Use with `Zod` for type-safe validation.
-- **Accessible Labels**: Ensure every input has a corresponding `Label` and correct `aria-describedby` attributes.
+### 1. Component Linter
+Run the internal audit script to ensure UI components follow shadcn standards:
+
+```bash
+python3 .agent/skills/shadcn-best-practices/scripts/verify_components.py
+```
+
+### 2. Custom Patterns
+Refer to `examples/custom-component.tsx` for a "Golden Path" implementation of a variant-heavy component with glassmorphism support.
+
+## 📈 UI Hygiene Checklist
+- [ ] Does it use `cn()` for class merging?
+- [ ] Is `forwardRef` implemented correctly?
+- [ ] Is `.displayName` set?
+- [ ] Are hardcoded colors replaced with CSS variables?
+- [ ] Are accessibility attributes (ARIA) present?
 
 ---
-> **Note**: This skill was imported from `skills.sh` to ensure Auth Hub's UI is consistent with Paperclip core.
+> **Note**: This skill ensures that the Paperclip interface remains premium, accessible, and easy to theme.
+

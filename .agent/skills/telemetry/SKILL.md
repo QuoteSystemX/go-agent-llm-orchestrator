@@ -18,51 +18,56 @@ version: 1.0.0
 
 ## Tools & Usage
 
-### 1. log_event
-Log a metric event.
+### 1. log_event (Python Script)
+Record a metric event using the provided script.
 
-**Fields**:
-- `ts`: ISO timestamp
-- `agent`: Name of the agent
-- `metric`: Type of metric (`prompt_tokens`, `completion_tokens`, `cache_hit`, `latency_ms`, `status`)
-- `value`: Numeric or string value
-- `cache_hit`: Boolean (true if the prompt was cached)
-- `session_id`: UUID for the current session (optional)
-
-**Example**:
-```javascript
-log_event({
-  agent: "backend-specialist",
-  metric: "latency_ms",
-  value: 4500,
-  metadata: { model: "gemini-1.5-pro" }
-});
+**Usage**:
+```bash
+python3 .agent/skills/telemetry/scripts/log_event.py \
+  --agent "frontend-specialist" \
+  --metric "latency_ms" \
+  --value "4500" \
+  --meta '{"model": "gemini-1.5-pro", "step": "layout-gen"}'
 ```
 
-## Dashboard integration
+**Metric Types**:
+- `prompt_tokens`: Number of tokens in the request.
+- `completion_tokens`: Number of tokens in the response.
+- `latency_ms`: Time taken for the action.
+- `cache_hit`: Boolean (1 or 0) for caching status.
+- `status`: Execution status (`success`, `fail`, `retry`).
 
-Data from `metrics.jsonl` is consumed by `.agent/scripts/misc/metrics_dashboard.py`.
+## Dashboard & Analysis
+
+Data from `metrics.jsonl` can be analyzed using:
+1. `.agent/scripts/misc/metrics_dashboard.py` (Visual representation)
+2. `.agent/scripts/knowledge/experience_distiller.py` (Historical patterns)
 
 ## Best Practices
 
-1. **Non-blocking**: Logging should be extremely fast (simple file append).
+1. **Non-blocking**: Logging should be fast. Use the CLI tool asynchronously if possible.
 2. **Granularity**: Log both successful completions and errors/retries.
-3. **Consistency**: Use standardized metric names.
+3. **Consistency**: Use standardized metric names as listed above.
 
 ---
 
-## Implementation Details (Python)
+## Implementation Details (Python API)
+
+You can also import the logger directly in other scripts:
 
 ```python
-import json
-from datetime import datetime, timezone
+from .agent.skills.telemetry.scripts.log_event import log_event
 
-def log_event(data):
-    data["ts"] = datetime.now(timezone.utc).isoformat()
-    with open(".agent/logs/metrics.jsonl", "a") as f:
-        f.write(json.dumps(data) + "\n")
+log_event(
+    agent="my-agent",
+    metric="custom_stat",
+    value=100,
+    metadata={"env": "prod"}
+)
 ```
 
 ## Changelog
 
+- **1.1.0** (2026-05-12): Added `log_event.py` script and CLI interface.
 - **1.0.0** (2026-05-07): Initial version
+

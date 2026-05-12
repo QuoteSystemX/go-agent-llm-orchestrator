@@ -5,56 +5,49 @@ allowed-tools: Read, Glob, Grep
 version: 1.0.0
 ---
 
-# Architecture Decision Framework
+# 🏛 System Architecture & Design
 
-> "Requirements drive architecture. Trade-offs inform decisions. ADRs capture rationale."
+Expert guidelines for designing scalable, maintainable, and resilient software architectures.
 
-## 🎯 Selective Reading Rule
+## 🏗 Core Methodology: ADR-First
 
-**Read ONLY files relevant to the request!** Check the content map, find what you need.
+Every significant architectural change MUST be documented in an **Architecture Decision Record (ADR)**. This ensures transparency, history, and rationale for future maintainers.
 
-| File | Description | When to Read |
-|------|-------------|--------------|
-| `context-discovery.md` | Questions to ask, project classification | Starting architecture design |
-| `trade-off-analysis.md` | ADR templates, trade-off framework | Documenting decisions |
-| `pattern-selection.md` | Decision trees, anti-patterns | Choosing patterns |
-| `examples.md` | MVP, SaaS, Enterprise examples | Reference implementations |
-| `patterns-reference.md` | Quick lookup for patterns | Pattern comparison |
+### Key Sections of an ADR:
+1. **Context**: Why are we doing this?
+2. **Decision Drivers**: What metrics or goals are we optimizing for?
+3. **Considered Options**: What else did we look at?
+4. **Outcome**: What did we choose and why?
+5. **Consequences**: What are the trade-offs (positive and negative)?
+
+## 🎯 Decision Drivers & Lenses
+
+Apply these lenses to every architectural proposal:
+- **Scalability**: Can it handle 10x load?
+- **Maintainability**: Can a new developer understand this in 30 minutes?
+- **Observability**: How will we know when it breaks?
+- **Security**: Is it secure by default?
+- **Cost**: Is it cloud-native and cost-efficient?
+
+## 🚀 Tools & Verification
+
+### 1. ADR Scaffolder
+Create a new architectural decision record using the internal tool:
+
+```bash
+python3 .agent/skills/architecture/scripts/generate_adr.py "Decision Title"
+```
+
+### 2. Architecture Linter
+Refer to `examples/adr-001-template.md` for a "Golden Path" of ADR documentation.
+
+## 📈 Architecture Checklist
+- [ ] Is there an ADR for this change?
+- [ ] Are trade-offs explicitly documented?
+- [ ] Is the dependency flow unidirectional (Inner → Outer)?
+- [ ] Is the data model decoupled from the UI?
+- [ ] Are failure modes identified and mitigated?
 
 ---
+> **Note**: This skill ensures that Paperclip's evolution is deliberate, documented, and durable.
 
-## 🔗 Related Skills
-
-| Skill | Use For |
-|-------|---------|
-| `@[skills/database-design]` | Database schema design |
-| `@[skills/api-patterns]` | API design patterns |
-| `@[skills/deployment-procedures]` | Deployment architecture |
-
----
-
-## Core Principle
-
-**"Simplicity is the ultimate sophistication."**
-
-- Start simple
-- Add complexity ONLY when proven necessary
-- You can always add patterns later
-- Removing complexity is MUCH harder than adding it
-
----
-
-## Validation Checklist
-
-Before finalizing architecture:
-
-- [ ] Requirements clearly understood
-- [ ] Constraints identified
-- [ ] Each decision has trade-off analysis
-- [ ] Simpler alternatives considered
-- [ ] ADRs written for significant decisions
-- [ ] Team expertise matches chosen patterns
-
-## Changelog
-
-- **1.0.0** (2026-04-26): Initial version

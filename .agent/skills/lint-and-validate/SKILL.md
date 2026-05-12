@@ -5,57 +5,43 @@ allowed-tools: Read, Glob, Grep, Bash
 version: 1.0.0
 ---
 
-# Lint and Validate Skill
+# 🧹 Lint & Validate
 
-> **MANDATORY:** Run appropriate validation tools after EVERY code change. Do not finish a task until the code is error-free.
+Expert guidelines for maintaining code quality, consistency, and correctness through automated validation pipelines.
 
-### Procedures by Ecosystem
+## 🏗 Quality Gates
 
-#### Node.js / TypeScript
-1. **Lint/Fix:** `npm run lint` or `npx eslint "path" --fix`
-2. **Types:** `npx tsc --noEmit`
-3. **Security:** `npm audit --audit-level=high`
+Every code change must pass through a series of quality gates before being merged. This ensures that the codebase remains clean and bug-free.
 
-#### Python
-1. **Linter (Ruff):** `ruff check "path" --fix` (Fast & Modern)
-2. **Security (Bandit):** `bandit -r "path" -ll`
-3. **Types (MyPy):** `mypy "path"`
+### The 4 Pillars of Validation:
+1. **Static Analysis**: Linter (ESLint, Flake8) to catch syntax and style issues.
+2. **Type Safety**: Type checkers (TypeScript, MyPy) to prevent runtime type errors.
+3. **Security Scanning**: Automated tools to find hardcoded secrets and vulnerabilities.
+4. **Architectural Guardrails**: Custom scripts to verify project-specific patterns (e.g., RSC boundaries).
 
-## 🛠 Self-Healing Protocol (MANDATORY)
+## 🚀 Tools & Automation
 
+### 1. Universal Validator
+Run the all-in-one validation script to check the entire project state:
+
+```bash
+python3 .agent/skills/lint-and-validate/scripts/full_validate.py
+```
+
+### 2. Self-Healing Protocol
 If any linting or formatting check fails, you MUST attempt self-healing before making manual edits:
 
-1. **Invoke Self-Heal**: `python3 .agent/scripts/self_heal.py .`
-2. **Review Result**: If it returns `SUCCESS`, verify that the code still functions correctly.
-3. **Manual Fix**: Only if `self_heal.py` cannot fix the remaining errors, proceed with manual code corrections.
+```bash
+python3 .agent/scripts/self_heal.py .
+```
+
+## 📈 Quality Checklist
+- [ ] Does it pass ESLint/Flake8?
+- [ ] Are there any TypeScript/MyPy errors?
+- [ ] Have custom validators (e.g., RSC check) been run?
+- [ ] Are all new files covered by the linter?
+- [ ] Is there any dead code or unused imports?
 
 ---
+> **Note**: This skill ensures that Paperclip's codebase remains professional, predictable, and performant.
 
-## The Quality Loop
-1. **Write/Edit Code**
-2. **Run Self-Heal**: `python3 .agent/scripts/self_heal.py .`
-3. **Analyze Master Checklist**: `python3 .agent/scripts/dev/checklist.py .`
-4. **Fix & Repeat**: Submitting code with failures in the Master Checklist is NOT allowed.
-
----
-
-## Error Handling
-- If `lint` fails: Fix the style or syntax issues immediately.
-- If `tsc` fails: Correct type mismatches before proceeding.
-- If no tool is configured: Check the project root for `.eslintrc`, `tsconfig.json`, `pyproject.toml` and suggest creating one.
-
----
-**Strict Rule:** No code should be committed or reported as "done" without passing these checks.
-
----
-
-## Scripts
-
-| Script | Purpose | Command |
-|--------|---------|---------|
-| `scripts/lint_runner.py` | Unified lint check | `python scripts/lint_runner.py <project_path>` |
-| `scripts/type_coverage.py` | Type coverage analysis | `python scripts/type_coverage.py <project_path>` |
-
-## Changelog
-
-- **1.0.0** (2026-04-26): Initial version

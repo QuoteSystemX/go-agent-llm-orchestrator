@@ -4,52 +4,54 @@ description: Standards and tools for resolving WSL-specific networking, DNS, and
 version: 1.0.0
 ---
 
-# WSL Interoperability & Networking
+# 🖥 WSL Interoperability & Performance
 
-> Standardizing how agents bypass WSL networking restrictions.
+Expert guidelines for optimizing the Windows Subsystem for Linux (WSL) environment for high-performance development.
 
-## Overview
+## 🏗 Core Configuration
 
-WSL (Windows Subsystem for Linux) uses a virtualized network stack that often fails to resolve local domains (e.g., `.lab`, `.me`) or access services on the Windows host/router without explicit gateway discovery.
+To ensure seamless interoperability and maximum performance, your WSL environment should be properly configured.
 
-## 1. Resilience Chain (Python)
+### Key Files:
+1. **`/etc/wsl.conf` (Inside WSL)**: Controls drive mounting and interop.
+2. **`.wslconfig` (In Windows Home)**: Controls global WSL 2 settings (Memory, CPU, Networking).
 
-All Python scripts MUST use the shared `ResilientSession` library to ensure connectivity.
+## 🚀 Mirrored Networking (WSL 2.0+)
+
+For modern web development, **Mirrored Networking** is highly recommended. It allows WSL to share the same IP addresses as Windows, making `localhost` binding much more reliable.
+
+**`.wslconfig` example**:
+```ini
+[wsl2]
+networkingMode=mirrored
+```
+
+## 🛠 Tools & Verification
+
+### 1. WSL Config Auditor
+Run the internal script to check your current WSL settings and networking mode:
+
+```bash
+python3 .agent/skills/wsl-interop/scripts/check_wsl_config.py
+```
+
+### 2. Resilience Chain
+All Python scripts SHOULD use the shared `ResilientSession` library to ensure connectivity across the WSL/Windows boundary.
 
 ```python
 from lib.resilience import ResilientSession
 
 # Automatically handles Gateway DNS and Browser fallback
-session = ResilientSession(host="http://grafana.lab.me")
-response = session.request("GET", "/api/health")
+session = ResilientSession(host="http://my-service.local")
 ```
 
-## 2. Gateway Discovery (Bash)
-
-If you need to find the host/router IP from within WSL:
-
-```bash
-# Discover the Gateway IP
-GW=$(ip route | grep default | awk '{print $3}')
-
-# Test connectivity to host service
-curl -H "Host: service.local" http://$GW:8080
-```
-
-## 3. DNS Resolution Issues
-
-If a domain doesn't resolve:
-1.  Try `nslookup <domain> <gateway_ip>`.
-2.  If it resolves there but not in WSL `etc/resolv.conf`, use the IP directly and force the `Host` header in your HTTP client.
-
-## 4. Headless Browser Bridge
-
-As a final fallback, use **Playwright (Chromium)** to execute requests. Chromium in WSL can often reach resources that the standard Linux networking stack (glibc/musl) cannot due to how it handles proxying and DNS.
+## 📈 Interop Checklist
+- [ ] Is the project located in the Linux filesystem?
+- [ ] Is Mirrored Networking enabled?
+- [ ] Is `interop` enabled in `/etc/wsl.conf`?
+- [ ] Are memory limits set in `.wslconfig`?
+- [ ] Can you run `explorer.exe .` from the terminal?
 
 ---
+> **Note**: This skill ensures that development in WSL is as fast and stable as native Linux.
 
-> **Rule**: If a network request fails in WSL, DO NOT just report an error. Trigger the Resilience Chain.
-
-## Changelog
-
-- **1.0.0** (2026-05-07): Initial version
