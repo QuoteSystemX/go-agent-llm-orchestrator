@@ -3,7 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eval Set Review - __SKILL_NAME_PLACEHOLDER__</title>
+  <meta name="description" content="Antigravity Evaluation Set Review - A dedicated tool for defining and refining agentic skill evaluation datasets, ensuring robust performance across diverse query triggers.">
+  <title>Evaluation Set Review | Antigravity Skill Creator | Agentic Data Management</title>
+  <!-- OpenGraph Tags -->
+  <meta property="og:title" content="Evaluation Set Review | Antigravity Hive">
+  <meta property="og:description" content="Refine and manage evaluation datasets for agentic skills within the Antigravity ecosystem.">
+  <meta property="og:type" content="website">
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Antigravity Evaluation Set Review",
+    "description": "Tool for defining agentic skill evaluation datasets.",
+    "applicationCategory": "DeveloperTool",
+    "operatingSystem": "All"
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
@@ -40,6 +56,7 @@
 <body>
   <h1>Eval Set Review: <span id="skill-name">__SKILL_NAME_PLACEHOLDER__</span></h1>
   <p class="description">Current description: <span id="skill-desc">__SKILL_DESCRIPTION_PLACEHOLDER__</span></p>
+  <p class="description"><strong>Dataset Intuition:</strong> A robust evaluation set must cover both positive triggers (queries the agent should handle) and negative boundaries (queries it should explicitly ignore). This dual-sided approach prevents over-triggering and ensures architectural precision in agentic routing.</p>
 
   <div class="controls">
     <button class="btn btn-add" onclick="addRow()">+ Add Query</button>

@@ -13,7 +13,7 @@ import sys
 import json
 import re
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 try:
     from bs4 import BeautifulSoup
 except ImportError:
@@ -183,7 +183,7 @@ def main():
     # Export for status_report.py
     with open(".agent/bus/seo_metrics.json", "w") as f:
         json.dump({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "results": auditor.results,
             "passed": all(not r.get("issues") for r in auditor.results)
         }, f, indent=2)

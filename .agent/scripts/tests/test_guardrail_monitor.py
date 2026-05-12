@@ -21,7 +21,8 @@ from pathlib import Path
 
 # Add scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from guardrail_monitor import (
+import health.guardrail_monitor; import sys; sys.modules['guardrail_monitor'] = sys.modules['health.guardrail_monitor']
+from health.guardrail_monitor import (
     check_budget,
     check_dangerous_command,
     check_protected_file,

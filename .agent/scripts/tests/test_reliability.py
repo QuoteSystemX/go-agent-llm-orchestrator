@@ -22,7 +22,8 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(SCRIPTS_DIR))
 
 from lib.paths import REPO_ROOT
-from guardrail_monitor import _split_commands, check_secret_leak, _is_command_match
+import health.guardrail_monitor; import sys; sys.modules['guardrail_monitor'] = sys.modules['health.guardrail_monitor']
+from health.guardrail_monitor import _split_commands, check_secret_leak, _is_command_match
 
 class TestReliability(unittest.TestCase):
     def test_command_splitting(self):

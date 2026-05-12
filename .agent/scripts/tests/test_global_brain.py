@@ -25,8 +25,8 @@ import importlib
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import GLOBAL_ROOT, GLOBAL_LESSONS_PATH
-import knowledge_synergy
-import experience_distiller
+import knowledge.knowledge_synergy; import sys; sys.modules['knowledge_synergy'] = sys.modules['knowledge.knowledge_synergy']; import knowledge.knowledge_synergy as knowledge_synergy
+import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
 
 class TestGlobalBrain(unittest.TestCase):
     def setUp(self):
@@ -45,7 +45,7 @@ class TestGlobalBrain(unittest.TestCase):
         importlib.reload(lib.paths)
         importlib.reload(knowledge_synergy)
         importlib.reload(experience_distiller)
-        import semantic_brain_engine
+        import knowledge.semantic_brain_engine; import sys; sys.modules['semantic_brain_engine'] = sys.modules['knowledge.semantic_brain_engine']; import knowledge.semantic_brain_engine as semantic_brain_engine
         importlib.reload(semantic_brain_engine)
         
         self.global_root = lib.paths.GLOBAL_ROOT

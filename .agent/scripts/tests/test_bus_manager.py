@@ -25,7 +25,7 @@ from io import StringIO
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-import bus_manager
+import context.bus_manager; import sys; sys.modules['bus_manager'] = sys.modules['context.bus_manager']; import context.bus_manager as bus_manager
 
 
 class TestBusManager(unittest.TestCase):

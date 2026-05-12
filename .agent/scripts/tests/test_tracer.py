@@ -25,7 +25,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(SCRIPTS_DIR))
 
 from lib.paths import REPO_ROOT
-import task_tracer
+import delivery.task_tracer; import sys; sys.modules['task_tracer'] = sys.modules['delivery.task_tracer']; import delivery.task_tracer as task_tracer
 
 class TestTaskTracer(unittest.TestCase):
     @classmethod

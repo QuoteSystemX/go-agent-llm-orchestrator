@@ -24,10 +24,10 @@ from contextlib import redirect_stdout
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(SCRIPTS_DIR))
 
-import hidden_war_room
-import truth_validator
-import resource_forecaster
-import requirement_expander
+import orchestration.hidden_war_room; import sys; sys.modules['hidden_war_room'] = sys.modules['orchestration.hidden_war_room']; import orchestration.hidden_war_room as hidden_war_room
+import analysis.truth_validator; import sys; sys.modules['truth_validator'] = sys.modules['analysis.truth_validator']; import analysis.truth_validator as truth_validator
+import analysis.resource_forecaster; import sys; sys.modules['resource_forecaster'] = sys.modules['analysis.resource_forecaster']; import analysis.resource_forecaster as resource_forecaster
+import analysis.requirement_expander; import sys; sys.modules['requirement_expander'] = sys.modules['analysis.requirement_expander']; import analysis.requirement_expander as requirement_expander
 
 class TestPhase23(unittest.TestCase):
 

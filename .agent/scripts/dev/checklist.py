@@ -150,10 +150,10 @@ def run_fix():
     # 4. Auto-update Visualization and Dashboard
     print_step("Updating Visualization and Dashboard...")
     try:
-        import visualize_deps
-        import status_report
-        import task_tracer
-        import prompt_optimizer
+        import dev.visualize_deps; import sys; sys.modules['visualize_deps'] = sys.modules['dev.visualize_deps']; import dev.visualize_deps as visualize_deps
+        import health.status_report; import sys; sys.modules['status_report'] = sys.modules['health.status_report']; import health.status_report as status_report
+        import delivery.task_tracer; import sys; sys.modules['task_tracer'] = sys.modules['delivery.task_tracer']; import delivery.task_tracer as task_tracer
+        import models.prompt_optimizer; import sys; sys.modules['prompt_optimizer'] = sys.modules['models.prompt_optimizer']; import models.prompt_optimizer as prompt_optimizer
         
         # Trace check: warning if changes exist but no task is active
         staged = task_tracer.get_staged_files()
@@ -176,8 +176,8 @@ def run_fix():
         # Bridge Team: Sync knowledge to Obsidian and external agents
         print_step("Mirroring knowledge via Bridge Team...")
         try:
-            import obsidian_sync
-            import sync_agents
+            import knowledge.obsidian_sync; import sys; sys.modules['obsidian_sync'] = sys.modules['knowledge.obsidian_sync']; import knowledge.obsidian_sync as obsidian_sync
+            import delivery.sync_agents; import sys; sys.modules['sync_agents'] = sys.modules['delivery.sync_agents']; import delivery.sync_agents as sync_agents
             obsidian_sync.sync_to_obsidian()
             # sync_agents.run_sync() # Optional: heavy sync, maybe keep it manual or for releases
         except Exception as e:

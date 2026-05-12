@@ -22,7 +22,8 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from experience_distiller import parse_entries, extract_date, extract_skill_tag, filter_by_skill
+import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']
+from knowledge.experience_distiller import parse_entries, extract_date, extract_skill_tag, filter_by_skill
 
 
 SAMPLE_CONTENT = """# Lessons Learned
@@ -98,7 +99,7 @@ class TestExtractSkillTag(unittest.TestCase):
 class TestFilterBySkill(unittest.TestCase):
     def setUp(self):
         """Create a temporary LESSONS_LEARNED.md for testing."""
-        import experience_distiller
+        import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
         self.tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False,
                                                encoding="utf-8")
         self.tmp.write(SAMPLE_CONTENT)
@@ -112,7 +113,7 @@ class TestFilterBySkill(unittest.TestCase):
         experience_distiller.ARCHIVE_DIR = Path("/tmp/nonexistent_archive")
 
     def tearDown(self):
-        import experience_distiller
+        import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
         experience_distiller.LESSONS_PATH = self.original_path
         experience_distiller.GLOBAL_LESSONS_PATH = self.original_global
         experience_distiller.ARCHIVE_DIR = self.original_archive

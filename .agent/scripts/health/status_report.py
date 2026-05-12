@@ -1,55 +1,63 @@
-
 # Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
 import sys
-from typing import List, Dict, Any, Optional, Tuple
 import os
 import subprocess
 import json
 import re
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import List, Dict, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# 1. Standardize Path Resolution
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.append(str(SCRIPTS_DIR))
+
+# Add all domain directories to path for static analysis and runtime
+for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    d_path = str(SCRIPTS_DIR / domain)
+    if d_path not in sys.path:
+        sys.path.append(d_path)
+
+import importlib
 
 try:
     from lib.paths import REPO_ROOT
-    from mcp_provisioner import check_mcp_health
     from lib.common import load_json_safe, discover_ollama_url
-    BUS_DIR = REPO_ROOT / ".agent" / "bus"
-    MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "health" / "blue_team_monitor.py"
-    BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "health" / "budget_monitor.py"
-    SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "delivery" / "sync_agents.py"
-    WSL_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "health" / "wsl_health_collector.py"
-    MCP_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "health" / "mcp_health_collector.py"
 except ImportError:
-    parent = Path(__file__).resolve().parent
-    sys.path.append(str(parent))
-    sys.path.append(str(parent.parent))
-    # Add domain subfolders for direct imports
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge"]:
-        sys.path.append(str(parent.parent / domain))
-    from lib.paths import REPO_ROOT
-    BUS_DIR = REPO_ROOT / ".agent" / "bus"
-    from mcp_provisioner import check_mcp_health
-    from lib.common import load_json_safe, discover_ollama_url
-    MONITOR_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "health" / "blue_team_monitor.py"
-    BUDGET_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "health" / "budget_monitor.py"
-    SYNC_SCRIPT = REPO_ROOT / ".agent" / "scripts" / "delivery" / "sync_agents.py"
-    WSL_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "health" / "wsl_health_collector.py"
-    MCP_COLLECTOR = REPO_ROOT / ".agent" / "scripts" / "health" / "mcp_health_collector.py"
+    from pathlib import Path
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+    def load_json_safe(p): 
+        try: return json.loads(Path(p).read_text())
+        except: return {}
+    def discover_ollama_url(): return "http://localhost:11434"
+
+# Dynamic imports to satisfy both runtime and static analysis tools
+def _safe_import(module_name, attr_name=None, default=None):
+    try:
+        # Try package-style first
+        for prefix in ["", "health.", "delivery.", "models."]:
+            try:
+                mod = importlib.import_module(prefix + module_name)
+                return getattr(mod, attr_name) if attr_name else mod
+            except ImportError:
+                continue
+        return default
+    except:
+        return default
+
+check_mcp_health = _safe_import("mcp_provisioner", "check_mcp_health", lambda: {"status": "Unknown"})
+TARGETS = _safe_import("sync_agents", "TARGETS", [])
+analyze_telemetry = _safe_import("prompt_optimizer", "analyze_telemetry", lambda: "Unknown")
+
+BUS_DIR = REPO_ROOT / ".agent" / "bus"
+MONITOR_SCRIPT = SCRIPTS_DIR / "health" / "blue_team_monitor.py"
+BUDGET_SCRIPT = SCRIPTS_DIR / "health" / "budget_monitor.py"
+SYNC_SCRIPT = SCRIPTS_DIR / "delivery" / "sync_agents.py"
+WSL_COLLECTOR = SCRIPTS_DIR / "health" / "wsl_health_collector.py"
+MCP_COLLECTOR = SCRIPTS_DIR / "health" / "mcp_health_collector.py"
 
 def run_external_check(cmd: List[str]) -> Optional[Dict[str, Any]]:
     """Run an external check script and return its parsed JSON output."""
@@ -269,8 +277,6 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
 
     # 6a. Sync Status (Universal)
     try:
-        sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / "delivery"))
-        from sync_agents import TARGETS
         sync_results = ["✅ antigravity (source)"]
         for target in TARGETS:
             # Check detailed parity data first
@@ -336,7 +342,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
         # Check staleness
         try:
             last_run = datetime.fromisoformat(chaos_ts.replace("Z", ""))
-            days_since = (datetime.utcnow() - last_run).days
+            days_since = (datetime.now(timezone.utc).replace(tzinfo=None) - last_run).days
             if days_since > 7:
                 resilience_status += f" (⚠️ Stale: {days_since}d ago)"
                 score -= 5
@@ -377,7 +383,6 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
 
     # 11. Cost & Prompt Optimization
     try:
-        from prompt_optimizer import analyze_telemetry
         report = analyze_telemetry()
         if "HIGH USAGE" in report:
             metrics["Cost Logic"] = "WARN (High usage)"
@@ -420,8 +425,24 @@ def export_to_html(score: int, metrics: dict):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Antigravity Workspace Health Dashboard - Real-time metrics and system integrity report.">
-    <title>Workspace Health | Antigravity Hive</title>
+    <meta name="description" content="Antigravity Workspace Health Dashboard - Real-time metrics and system integrity report for autonomous orchestration.">
+    <title>Workspace Health | Antigravity Hive | Autonomous Orchestration</title>
+    <!-- OpenGraph Tags -->
+    <meta property="og:title" content="Workspace Health Dashboard | Antigravity Hive">
+    <meta property="og:description" content="Real-time system integrity and health metrics for the Antigravity autonomous agent ecosystem.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://antigravity.hive/assets/dashboard-preview.png">
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Antigravity Health Dashboard",
+      "description": "Real-time health and integrity monitoring for agentic workflows.",
+      "applicationCategory": "DevOpsTool",
+      "operatingSystem": "All"
+    }}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -631,6 +652,11 @@ def export_to_html(score: int, metrics: dict):
         
         <section class="metrics-grid">
             {rows}
+        </section>
+
+        <section class="about-section">
+            <h2>Architectural Intuition</h2>
+            <p>Our core design philosophy balances absolute system transparency with proactive risk mitigation. By utilizing a multi-layered agent participant protocol, we ensure that every decision is vetted for architectural alignment and security before execution.</p>
         </section>
 
         <section class="about-section">

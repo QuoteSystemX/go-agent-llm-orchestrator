@@ -21,7 +21,8 @@ import sys
 
 # Add parent directory to path to import grafana_manager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from grafana_manager import GrafanaManager
+import health.grafana_manager; import sys; sys.modules['grafana_manager'] = sys.modules['health.grafana_manager']
+from health.grafana_manager import GrafanaManager
 
 class TestGrafanaManager(unittest.TestCase):
     def setUp(self):
@@ -45,7 +46,8 @@ class TestGrafanaManager(unittest.TestCase):
             headers=self.manager.headers,
             json=None,
             auth=None,
-            timeout=10
+            timeout=10,
+            verify=True
         )
         self.assertEqual(result["dashboard"]["title"], "Test DB")
 
@@ -77,7 +79,8 @@ class TestGrafanaManager(unittest.TestCase):
             headers=self.manager.headers,
             json=None,
             auth=None,
-            timeout=10
+            timeout=10,
+            verify=True
         )
         self.assertIn("metric_1", result["data"])
 

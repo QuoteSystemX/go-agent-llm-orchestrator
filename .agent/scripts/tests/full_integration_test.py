@@ -13,13 +13,13 @@ for domain in ["health", "context", "delivery", "orchestration", "analysis", "mo
 
 from lib.paths import REPO_ROOT, WATCHDOG_RULES_PATH, TELEMETRY_PATH, LESSONS_PATH
 from lib.common import load_json_safe, save_json_atomic
-import guardrail_monitor
-import experience_distiller
-import bus_manager
-import checklist
-import status_report
-import adr_generator
-import generate_adr
+import health.guardrail_monitor; import sys; sys.modules['guardrail_monitor'] = sys.modules['health.guardrail_monitor']; import health.guardrail_monitor as guardrail_monitor
+import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
+import context.bus_manager; import sys; sys.modules['bus_manager'] = sys.modules['context.bus_manager']; import context.bus_manager as bus_manager
+import dev.checklist; import sys; sys.modules['checklist'] = sys.modules['dev.checklist']; import dev.checklist as checklist
+import health.status_report; import sys; sys.modules['status_report'] = sys.modules['health.status_report']; import health.status_report as status_report
+import knowledge.adr_generator; import sys; sys.modules['adr_generator'] = sys.modules['knowledge.adr_generator']; import knowledge.adr_generator as adr_generator
+import knowledge.generate_adr; import sys; sys.modules['generate_adr'] = sys.modules['knowledge.generate_adr']; import knowledge.generate_adr as generate_adr
 
 class FullIntegrationTest(unittest.TestCase):
     def setUp(self):

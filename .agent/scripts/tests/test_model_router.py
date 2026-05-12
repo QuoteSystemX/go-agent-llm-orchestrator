@@ -23,7 +23,8 @@ from unittest.mock import patch
 from io import StringIO
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from model_router import route, resolve_env_var, RoutingResult
+import models.model_router; import sys; sys.modules['model_router'] = sys.modules['models.model_router']
+from models.model_router import route, resolve_env_var, RoutingResult
 
 
 class TestResolveEnvVar(unittest.TestCase):

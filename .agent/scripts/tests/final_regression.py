@@ -28,15 +28,15 @@ sys.path.append(str(SCRIPTS_DIR))
 
 from lib.paths import REPO_ROOT, WATCHDOG_RULES_PATH, TELEMETRY_PATH, LESSONS_PATH, BUS_DIR
 from lib.common import load_json_safe, save_json_atomic
-import guardrail_monitor
-import experience_distiller
-import bus_manager
-import checklist
-import drift_detector
-import status_report
-import generate_adr
-import post_mortem_runner
-import visualize_deps
+import health.guardrail_monitor; import sys; sys.modules['guardrail_monitor'] = sys.modules['health.guardrail_monitor']; import health.guardrail_monitor as guardrail_monitor
+import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
+import context.bus_manager; import sys; sys.modules['bus_manager'] = sys.modules['context.bus_manager']; import context.bus_manager as bus_manager
+import dev.checklist; import sys; sys.modules['checklist'] = sys.modules['dev.checklist']; import dev.checklist as checklist
+import health.drift_detector; import sys; sys.modules['drift_detector'] = sys.modules['health.drift_detector']; import health.drift_detector as drift_detector
+import health.status_report; import sys; sys.modules['status_report'] = sys.modules['health.status_report']; import health.status_report as status_report
+import knowledge.generate_adr; import sys; sys.modules['generate_adr'] = sys.modules['knowledge.generate_adr']; import knowledge.generate_adr as generate_adr
+import analysis.post_mortem_runner; import sys; sys.modules['post_mortem_runner'] = sys.modules['analysis.post_mortem_runner']; import analysis.post_mortem_runner as post_mortem_runner
+import dev.visualize_deps; import sys; sys.modules['visualize_deps'] = sys.modules['dev.visualize_deps']; import dev.visualize_deps as visualize_deps
 
 class FinalRegressionTest(unittest.TestCase):
     @classmethod
@@ -151,7 +151,7 @@ class FinalRegressionTest(unittest.TestCase):
 
     def test_09_post_mortem(self):
         print("\n[REGRESSION] 09: Post-Mortem Runner")
-        import post_mortem_runner
+        import analysis.post_mortem_runner; import sys; sys.modules['post_mortem_runner'] = sys.modules['analysis.post_mortem_runner']; import analysis.post_mortem_runner as post_mortem_runner
         res = post_mortem_runner.run_post_mortem()
         self.assertIn("Post-Mortem Report", res)
         self.assertIn("Sequence of Events", res)
@@ -171,7 +171,8 @@ class FinalRegressionTest(unittest.TestCase):
         # Push dummy object
         bus_manager.push("roll_1", "requirement", "tester", '{"task": "undo me"}')
         # Rollback (simulate without git reset for safety in test, or just check bus cleanup)
-        from rollback_task import clean_bus
+        import delivery.rollback_task; import sys; sys.modules['rollback_task'] = sys.modules['delivery.rollback_task']
+        from delivery.rollback_task import clean_bus
         clean_bus(author_filter="tester")
         data = load_json_safe(BUS_DIR / "context.json")
         self.assertFalse(any(obj["id"] == "roll_1" for obj in data.get("objects", [])))
@@ -197,7 +198,7 @@ class FinalRegressionTest(unittest.TestCase):
 
     def test_14_task_tracer(self):
         print("\n[REGRESSION] 14: Task Tracer")
-        import task_tracer
+        import delivery.task_tracer; import sys; sys.modules['task_tracer'] = sys.modules['delivery.task_tracer']; import delivery.task_tracer as task_tracer
         tasks_dir = REPO_ROOT / "tasks"
         tasks_dir.mkdir(exist_ok=True)
         test_task = tasks_dir / "reg-task.md"
@@ -211,8 +212,8 @@ class FinalRegressionTest(unittest.TestCase):
 
     def test_15_prompt_optimizer(self):
         print("\n[REGRESSION] 15: Prompt Optimizer")
-        import prompt_optimizer
-        import bus_manager
+        import models.prompt_optimizer; import sys; sys.modules['prompt_optimizer'] = sys.modules['models.prompt_optimizer']; import models.prompt_optimizer as prompt_optimizer
+        import context.bus_manager; import sys; sys.modules['bus_manager'] = sys.modules['context.bus_manager']; import context.bus_manager as bus_manager
         import json
         # Push fresh telemetry since test_11 might have cleaned the bus
         bus_manager.push("opt_1", "telemetry", "tester", json.dumps({"total_tokens": 1000}))
@@ -221,8 +222,8 @@ class FinalRegressionTest(unittest.TestCase):
 
     def test_16_conflict_resolver(self):
         print("\n[REGRESSION] 16: Conflict Resolver")
-        import bus_manager
-        import conflict_resolver
+        import context.bus_manager; import sys; sys.modules['bus_manager'] = sys.modules['context.bus_manager']; import context.bus_manager as bus_manager
+        import context.conflict_resolver; import sys; sys.modules['conflict_resolver'] = sys.modules['context.conflict_resolver']; import context.conflict_resolver as conflict_resolver
         import json
         # Force conflicting IDs by manually updating the bus file
         bus_manager.push("conf_1", "telemetry", "tester_a", json.dumps({"val": 1}))
@@ -242,7 +243,7 @@ class FinalRegressionTest(unittest.TestCase):
         test_file = REPO_ROOT / ".agent" / "scripts" / "healer_victim.py"
         test_file.write_text('"""Victim for healing."""\nprint("hi")', encoding="utf-8")
         try:
-            import doc_healer
+            import dev.doc_healer; import sys; sys.modules['doc_healer'] = sys.modules['dev.doc_healer']; import dev.doc_healer as doc_healer
             res = doc_healer.heal_docs()
             self.assertTrue("Documentation healing complete" in res or "No file drift detected" in res)
             arch_content = (REPO_ROOT / ".agent" / "ARCHITECTURE.md").read_text(encoding="utf-8")
@@ -254,8 +255,8 @@ class FinalRegressionTest(unittest.TestCase):
         """Phase 14.1: Autonomous War Room Test."""
         print("\n[REGRESSION] 18: War Room")
         try:
-            import incident_watcher
-            import war_room_manager
+            import health.incident_watcher; import sys; sys.modules['incident_watcher'] = sys.modules['health.incident_watcher']; import health.incident_watcher as incident_watcher
+            import orchestration.war_room_manager; import sys; sys.modules['war_room_manager'] = sys.modules['orchestration.war_room_manager']; import orchestration.war_room_manager as war_room_manager
             
             # 1. Trigger incident (simulated failure)
             incident_watcher.watch_command(["python3", "-c", "import sys; sys.exit(1)"])
@@ -282,7 +283,7 @@ class FinalRegressionTest(unittest.TestCase):
         """Phase 14.2: Council of Sages Consensus Test."""
         print("\n[REGRESSION] 19: Council of Sages")
         try:
-            import arbitrator
+            import orchestration.arbitrator; import sys; sys.modules['arbitrator'] = sys.modules['orchestration.arbitrator']; import orchestration.arbitrator as arbitrator
             
             # 1. Create a plan on the bus
             plan_id = "plan_test_01"

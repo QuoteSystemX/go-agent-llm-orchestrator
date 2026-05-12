@@ -20,9 +20,7 @@ import json
 import argparse
 from typing import Dict, Any, Optional
 
-# Add lib directory to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
-from resilience import ResilientSession
+from lib.resilience import ResilientSession
 
 class GrafanaManager:
     def __init__(self, host: str = None, token: str = None, user: str = None, password: str = None, use_browser: bool = False):
