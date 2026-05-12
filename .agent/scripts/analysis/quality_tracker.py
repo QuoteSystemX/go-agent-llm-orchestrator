@@ -57,7 +57,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT  = Path(__file__).parent.parent.parent.parent
-LOG_FILE   = REPO_ROOT / ".agent" / "pr-quality.jsonl"
+DATA_DIR = REPO_ROOT / ".agent" / "data"
 
 QUALITY_LABELS = ["agent:excellent", "agent:ok", "agent:revised", "agent:rejected"]
 SCORE_MAP      = {"agent:excellent": 5, "agent:ok": 4, "agent:revised": 2, "agent:rejected": 0}
@@ -100,6 +100,9 @@ def fetch_agent_prs(repo: str, token: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def record_event(args: argparse.Namespace) -> None:
+    repo_slug = (args.repo or "default").replace("/", "_")
+    log_file = DATA_DIR / repo_slug / "pr-quality.jsonl"
+
     try:
         labels = json.loads(args.labels) if args.labels else []
     except json.JSONDecodeError:
@@ -120,11 +123,11 @@ def record_event(args: argparse.Namespace) -> None:
         "labels":   labels,
     }
 
-    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with LOG_FILE.open("a", encoding="utf-8") as f:
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    with log_file.open("a", encoding="utf-8") as f:
         f.write(json.dumps(event) + "\n")
 
-    print(f"Recorded: PR #{args.pr} action={args.action} agent={agent_name} quality={quality or '(none)'}")
+    print(f"Recorded: PR #{args.pr} action={args.action} repo={args.repo} agent={agent_name}")
 
 
 # ---------------------------------------------------------------------------
@@ -132,16 +135,19 @@ def record_event(args: argparse.Namespace) -> None:
 # ---------------------------------------------------------------------------
 
 def load_log() -> list[dict]:
-    if not LOG_FILE.exists():
-        return []
     events = []
-    for line in LOG_FILE.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            try:
-                events.append(json.loads(line))
-            except json.JSONDecodeError:
-                pass
+    if not DATA_DIR.exists():
+        return []
+    
+    # Aggregate from all repo subfolders in data/
+    for log_file in DATA_DIR.glob("**/pr-quality.jsonl"):
+        for line in log_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    events.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
     return events
 
 
@@ -172,7 +178,7 @@ def build_report(events: list[dict], repo: str) -> str:
     lines = [
         "# Agent Quality Scores",
         "",
-        f"> Auto-generated on {today} · source: `{LOG_FILE.relative_to(REPO_ROOT)}`",
+        f"> Auto-generated on {today} · source: `.agent/data/`",
         "",
         "## How to read",
         "",

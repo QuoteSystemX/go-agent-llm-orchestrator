@@ -20,7 +20,7 @@ import unittest
 import shutil
 import subprocess
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add scripts to path
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
@@ -41,13 +41,16 @@ import visualize_deps
 class FinalRegressionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Create a sandbox directory for testing to avoid messing with the main repo
+        # Create a sandbox directory for testing
         cls.test_dir = REPO_ROOT / "tmp_regression_sandbox"
         cls.test_dir.mkdir(parents=True, exist_ok=True)
         
         # Backup main config
         cls.rules_backup = load_json_safe(WATCHDOG_RULES_PATH)
         cls.telemetry_backup = load_json_safe(TELEMETRY_PATH)
+        
+        # Clear bus to avoid leftovers from previous runs
+        bus_manager.clear()
 
     @classmethod
     def tearDownClass(cls):
@@ -114,9 +117,9 @@ class FinalRegressionTest(unittest.TestCase):
         
         # Capture stdout for alert
         import io
-        from contextlib import redirect_stdout
+        from contextlib import redirect_stdout, redirect_stderr
         buf = io.StringIO()
-        with redirect_stdout(buf):
+        with redirect_stdout(buf), redirect_stderr(buf):
             bus_manager.push("reg_1", "telemetry", "tester", '{"total_tokens": 100}')
         self.assertIn("BUS ALERT", buf.getvalue())
         
@@ -221,9 +224,16 @@ class FinalRegressionTest(unittest.TestCase):
         import bus_manager
         import conflict_resolver
         import json
-        # Push conflicting IDs
+        # Force conflicting IDs by manually updating the bus file
         bus_manager.push("conf_1", "telemetry", "tester_a", json.dumps({"val": 1}))
-        bus_manager.push("conf_1", "telemetry", "tester_b", json.dumps({"val": 2}))
+        data = load_json_safe(BUS_DIR / "context.json")
+        data["objects"].append({
+            "id": "conf_1", "type": "telemetry", "author": "tester_b", 
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "content": {"val": 2}
+        })
+        save_json_atomic(BUS_DIR / "context.json", data)
+        
         report = conflict_resolver.resolve_conflicts()
         self.assertIn("BUS CONFLICTS DETECTED", report)
 

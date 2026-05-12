@@ -163,6 +163,24 @@ def wait_for_object(obj_id: str, timeout: int = 30) -> Optional[dict]:
     print(f"❌ Timeout: Object '{obj_id}' not found after {timeout}s.")
     return None
 
+def get_objects_by_type(obj_type: str) -> list[dict]:
+    """Return all objects of a specific type."""
+    data = load_json_safe(BUS_FILE)
+    if not data: return []
+    return [obj for obj in data.get("objects", []) if obj["type"] == obj_type]
+
+def clean_author(author: str) -> None:
+    """Remove all objects pushed by a specific author."""
+    data = load_json_safe(BUS_FILE)
+    if not data: return
+    
+    original_count = len(data.get("objects", []))
+    data["objects"] = [obj for obj in data.get("objects", []) if obj["author"] != author]
+    
+    if len(data["objects"]) < original_count:
+        save_json_atomic(BUS_FILE, data)
+        print(f"🧹 Cleaned {original_count - len(data['objects'])} objects by '{author}'.")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Context Bus Manager")
     sub = parser.add_subparsers(dest="command", help="Command")

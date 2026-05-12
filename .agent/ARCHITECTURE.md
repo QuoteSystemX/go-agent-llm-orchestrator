@@ -24,28 +24,14 @@ Unified Agent Kit is a modular system consisting of:
 .agent/
 ├── ARCHITECTURE.md          # This file
 ├── KNOWLEDGE.md             # Global Rules, Context, and Orchestration Standards
-├── agents/                  # Specialist Agents profiles (.md) — with profile: frontmatter
+├── agents/                  # Specialist Agents profiles (.md)
 ├── skills/                  # Skills (Domain-specific knowledge modules)
-├── workflows/               # Slash Commands for Unified Agent (+ Local triggers)
-├── rules/                   # Global Rules (Modular source in gemini/)
-│   ├── gemini/              # Modular rule source files (.md)
-│   └── GEMINI.md            # Compiled rule artifact (auto-generated)
+├── workflows/               # Slash Commands for Unified Agent
+├── rules/                   # Global Rules (Modular source)
 ├── scripts/                 # Master Validation Scripts
-│   ├── lib/                 # Core Infrastructure Libraries
-│   │   ├── paths.py         # Dynamic path resolution
-│   │   ├── common.py        # Atomic JSON, logging, and shared utilities
-│   │   └── resilience.py    # Self-healing and error handling logic
-│   ├── status_report.py     # Workspace Health Dashboard
-│   ├── drift_detector.py    # Documentation vs Code sync
-│   ├── guardrail_monitor.py # Safety and budget enforcement
-│   ├── bus_manager.py       # Context Bus (DTO) management
-│   └── visualize_deps.py    # Automated Mermaid dependency visualization
-└── local-skill-server/      # Go MCP binary source (agents_load, agents_list, skills_*, workflows)
-    ├── main.go
-    ├── go.mod
-    ├── Makefile
-    ├── local-skill-server.sh  # Platform launcher (auto-detects OS/ARCH)
-    └── bin/                 # Pre-built binaries (linux-amd64, linux-arm64)
+├── data/                    # Namespaced Persistent Data (Scoring, Metrics)
+├── bus/                     # Context Bus (Ephemeral DTOs)
+└── local-skill-server/      # Go MCP binary source
 ```
 
 ### 📊 Dependency Map
@@ -662,6 +648,8 @@ Master validation scripts that orchestrate skill-level scripts.
 | `model_validator.py`  | Mental Model Architecture Validator   | Every final response     |
 | `governance_gate.py`  | Wiki-First Enforcement Sentinel       | Every final response     |
 | `knowledge_miner.py`  | Retroactive Knowledge Archeologist    | Maintenance              |
+| `promote_proposals.py` | Finalizes documentation proposals    | Maintenance              |
+| `generate_inventory.py` | Full codebase documentation generator | Maintenance              |
 | `walkthrough_assembler.py` | Auto-documentation assembler   | Maintenance              |
 | `task_sync.py`        | Task status synchronizer        | Maintenance              |
 
@@ -1162,3 +1150,4 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/health/dependency_analyzer.py` | Dependency Analyzer — Checks for outdated or insecure dependencies. |
 | `.agent/scripts/analysis/dead_code_detector.py` | Dead Code Detector — Finds unreferenced scripts in the workspace. |
 | `.agent/scripts/health/alignment_oracle.py` | Alignment Oracle — Predicts long-term impact of decisions on project health. |
+| `.agent/scripts/healer_victim.py` | Victim for healing. |
