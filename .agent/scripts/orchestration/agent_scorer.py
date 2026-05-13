@@ -66,7 +66,7 @@ def get_stats(agent_name=None):
     return stats
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 2:
         print("Usage: python agent_scorer.py log <agent> <task_id> <score> [comments]")
         print("       python agent_scorer.py stats [agent]")
         sys.exit(1)

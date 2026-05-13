@@ -50,6 +50,7 @@ def _safe_import(module_name, attr_name=None, default=None):
 
 check_mcp_health = _safe_import("mcp_provisioner", "check_mcp_health", lambda: {"status": "Unknown"})
 TARGETS = _safe_import("sync_agents", "TARGETS", [])
+get_agent_stats = _safe_import("agent_scorer", "get_stats", lambda: {})
 analyze_telemetry = _safe_import("prompt_optimizer", "analyze_telemetry", lambda: "Unknown")
 
 BUS_DIR = REPO_ROOT / ".agent" / "bus"
@@ -394,6 +395,18 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
 
     # 12. Tests (Stub)
     metrics["Tests"] = "PASS"
+
+    # 13. Top Agents (Heatmap)
+    try:
+        stats = get_agent_stats()
+        if stats:
+            # Sort by count
+            top_agents = sorted(stats.items(), key=lambda x: x[1]['count'], reverse=True)[:5]
+            metrics["Top Agents"] = ", ".join([f"@{k}({v['count']})" for k, v in top_agents])
+        else:
+            metrics["Top Agents"] = "No activity recorded"
+    except:
+        metrics["Top Agents"] = "Unknown"
 
     return max(0, score), metrics
 
