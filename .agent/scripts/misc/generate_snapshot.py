@@ -23,39 +23,49 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-BUS_DIR = Path('.agent/bus')
-SNAPSHOT_DIR = Path('docs/snapshots')
-SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+def run_snapshot():
+    BUS_DIR = Path('.agent/bus')
+    SNAPSHOT_DIR = Path('docs/snapshots')
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
-snapshot = {
-    'timestamp': datetime.utcnow().isoformat() + 'Z',
-    'events': []
-}
+    snapshot = {
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'events': []
+    }
 
-for file in BUS_DIR.glob('*.json'):
-    try:
-        with open(file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        # Consider only high‑signal events
-        if data.get('priority', 0) >= 5:
-            snapshot['events'].append({
-                'id': file.name,
-                'type': data.get('type'),
-                'summary': data.get('summary') or data.get('payload')[:200] if isinstance(data.get('payload'), str) else None,
-                'created_at': data.get('created_at')
-            })
-    except Exception:
-        continue
+    if BUS_DIR.exists():
+        for file in BUS_DIR.glob('*.json'):
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                # Consider only high‑signal events
+                if data.get('priority', 0) >= 5:
+                    summary = data.get('summary')
+                    if not summary and isinstance(data.get('payload'), str):
+                        summary = data.get('payload')[:200]
+                    
+                    snapshot['events'].append({
+                        'id': file.name,
+                        'type': data.get('type'),
+                        'summary': summary,
+                        'created_at': data.get('created_at')
+                    })
+            except Exception:
+                continue
 
-# Write markdown snapshot
-filename = SNAPSHOT_DIR / f"snapshot-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.md"
-with open(filename, 'w', encoding='utf-8') as f:
-    f.write(f"# State Snapshot – {snapshot['timestamp']}\n\n")
-    for ev in snapshot['events']:
-        f.write(f"- **{ev['id']}** – {ev['type']} – {ev.get('summary','')[:120]}\n")
+    # Write markdown snapshot
+    filename = SNAPSHOT_DIR / f"snapshot-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.md"
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(f"# State Snapshot – {snapshot['timestamp']}\n\n")
+        for ev in snapshot['events']:
+            summary = ev.get('summary') or ""
+            f.write(f"- **{ev['id']}** – {ev['type']} – {summary[:120]}\n")
 
-print(json.dumps({
-    'status': 'completed',
-    'snapshot_file': str(filename),
-    'event_count': len(snapshot['events'])
-}, indent=2))
+    return {
+        'status': 'completed',
+        'snapshot_file': str(filename),
+        'event_count': len(snapshot['events'])
+    }
+
+if __name__ == "__main__":
+    print(json.dumps(run_snapshot(), indent=2))

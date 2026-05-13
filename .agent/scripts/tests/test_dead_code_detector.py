@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import unittest
-from unittest.mock import patch, MagicMock
-import os
 import shutil
-import json
-from pathlib import Path
 import sys
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -16,7 +14,7 @@ except ImportError:
     for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
         sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / domain))
 
-import analysis.dead_code_detector; import sys; sys.modules['dead_code_detector'] = sys.modules['analysis.dead_code_detector']; import analysis.dead_code_detector as dead_code_detector
+import analysis.dead_code_detector as dead_code_detector
 
 class TestDeadCodeDetector(unittest.TestCase):
     def setUp(self):
@@ -25,46 +23,47 @@ class TestDeadCodeDetector(unittest.TestCase):
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
         
-        self.old_cwd = os.getcwd()
-        os.chdir(self.test_root)
-        
         # Create dummy structure
-        os.makedirs(".agent/scripts", exist_ok=True)
-        os.makedirs(".agent/agents", exist_ok=True)
-        
-        self.script_a = Path(".agent/scripts/used_script.py")
-        self.script_a.write_text("print('used')")
-        
-        self.script_b = Path(".agent/scripts/unused_script.py")
-        self.script_b.write_text("print('unused')")
-        
-        self.agent_file = Path(".agent/agents/my_agent.md")
-        self.agent_file.write_text("I use used_script.py")
+        (self.test_root / ".agent" / "scripts").mkdir(parents=True)
+        (self.test_root / ".agent" / "agents").mkdir(parents=True)
+        (self.test_root / ".agent" / "bus").mkdir(parents=True)
 
     def tearDown(self):
-        os.chdir(self.old_cwd)
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
-    @patch("subprocess.run")
-    def test_find_unused_scripts(self, mock_grep):
-        def side_effect(args, **kwargs):
-            query = args[2]
-            target_dir = args[3]
-            mock_res = MagicMock()
-            if query == "used_script.py" and target_dir == ".agent/agents":
-                mock_res.stdout = ".agent/agents/my_agent.md: I use used_script.py"
-            else:
-                mock_res.stdout = ""
-            return mock_res
+    @patch('analysis.dead_code_detector.subprocess.run')
+    @patch('analysis.dead_code_detector.Path.rglob')
+    def test_find_unused_scripts(self, mock_rglob, mock_run):
+        # Setup scripts
+        script1 = MagicMock(spec=Path)
+        script1.name = "used_script.py"
+        script1.resolve.return_value = self.test_root / ".agent/scripts/used_script.py"
+        
+        script2 = MagicMock(spec=Path)
+        script2.name = "dead_script.py"
+        script2.resolve.return_value = self.test_root / ".agent/scripts/dead_script.py"
+        
+        mock_rglob.side_effect = [
+            [script1, script2], # scripts_dir.rglob("*.py")
+            []                  # skills_dir.rglob("*.py")
+        ]
+        
+        # Setup grep results
+        def mock_grep(cmd, capture_output, text):
+            # cmd is ["grep", "-r", name, sdir]
+            name = cmd[2]
+            if name == "used_script.py":
+                return MagicMock(stdout=".agent/agents/coder.md: reference to used_script.py\n")
+            return MagicMock(stdout="")
             
-        mock_grep.side_effect = side_effect
+        mock_run.side_effect = mock_grep
         
-        unused = dead_code_detector.find_unused_scripts()
-        
-        unused_names = [s.name for s in unused]
-        self.assertIn("unused_script.py", unused_names)
-        self.assertNotIn("used_script.py", unused_names)
+        with patch('analysis.dead_code_detector.Path.exists', return_value=True):
+            unused = dead_code_detector.find_unused_scripts()
+            
+            self.assertEqual(len(unused), 1)
+            self.assertEqual(unused[0].name, "dead_script.py")
 
 if __name__ == "__main__":
     unittest.main()

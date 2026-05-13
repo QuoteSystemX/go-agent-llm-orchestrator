@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import unittest
-import os
 import shutil
-import json
-from pathlib import Path
 import sys
+import json
+import os
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -15,61 +16,84 @@ except ImportError:
     for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
         sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / domain))
 
-import lib.paths
-import lib.metrics_base
-import analysis.intelligence_roi_collector; import sys; sys.modules['intelligence_roi_collector'] = sys.modules['analysis.intelligence_roi_collector']; import analysis.intelligence_roi_collector as intelligence_roi_collector
+import analysis.intelligence_roi_collector as roi
 
 class TestROICollector(unittest.TestCase):
     def setUp(self):
-        self.test_root = REPO_ROOT / "scratch" / "test_roi"
+        self.test_root = (REPO_ROOT / "scratch" / "test_roi").resolve()
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
         
-        # Override paths in the libraries
-        self.original_root = lib.paths.REPO_ROOT
-        self.original_telemetry = lib.paths.TELEMETRY_PATH
-        self.original_bus = lib.metrics_base.BUS_DIR
+        self.telemetry_path = self.test_root / "telemetry.json"
+        self.config_path = self.test_root / ".agent" / "config" / "router_rules.json"
+        self.config_path.parent.mkdir(parents=True)
         
-        lib.paths.REPO_ROOT = self.test_root
-        lib.paths.TELEMETRY_PATH = self.test_root / ".agent" / "data" / "telemetry.json"
-        lib.metrics_base.REPO_ROOT = self.test_root
-        lib.metrics_base.BUS_DIR = self.test_root / ".agent" / "bus"
-        intelligence_roi_collector.REPO_ROOT = self.test_root
-        intelligence_roi_collector.TELEMETRY_PATH = lib.paths.TELEMETRY_PATH
+        self.old_cwd = os.getcwd()
+        os.chdir(self.test_root)
         
-        # Mock telemetry
-        os.makedirs(intelligence_roi_collector.TELEMETRY_PATH.parent, exist_ok=True)
-        telemetry = {
-            "events": [
-                {"model_id": "qwen2.5-coder:32b", "score": 15},
-                {"model_id": "claude-3-opus", "score": 18},
-                {"model_id": "deepseek-r1", "score": 12}
-            ]
-        }
-        with open(intelligence_roi_collector.TELEMETRY_PATH, "w") as f:
-            json.dump(telemetry, f)
+        # Patch paths directly in the target module and lib.paths
+        self.patch_telemetry = patch('analysis.intelligence_roi_collector.TELEMETRY_PATH', self.telemetry_path)
+        self.patch_root_target = patch('analysis.intelligence_roi_collector.REPO_ROOT', self.test_root)
+        self.patch_root_lib = patch('lib.paths.REPO_ROOT', self.test_root)
+        
+        self.patch_telemetry.start()
+        self.patch_root_target.start()
+        self.patch_root_lib.start()
 
     def tearDown(self):
-        lib.paths.REPO_ROOT = self.original_root
-        lib.paths.TELEMETRY_PATH = self.original_telemetry
-        lib.metrics_base.BUS_DIR = self.original_bus
+        self.patch_telemetry.stop()
+        self.patch_root_target.stop()
+        self.patch_root_lib.stop()
+        os.chdir(self.old_cwd)
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
-    def test_run(self):
-        collector = intelligence_roi_collector.IntelligenceROICollector()
+    def test_roi_calculation_local_dominant(self):
+        # Local models
+        self.config_path.write_text(json.dumps({
+            "models": {"ollama": {"L1": "qwen2.5"}}
+        }))
+        
+        self.telemetry_path.write_text(json.dumps({
+            "events": [
+                {"model_id": "qwen2.5", "score": 10},
+                {"model_id": "gpt-4", "score": 15},
+                {"model_id": "qwen2.5", "score": 10}
+            ]
+        }))
+        
+        collector = roi.IntelligenceROICollector()
         collector.run()
         
-        metrics_file = self.test_root / ".agent" / "bus" / "intelligence_roi_metrics.json"
-        self.assertTrue(metrics_file.exists())
+        metrics = collector.data["metrics"]
+        # Metrics: total_calls, local_calls, cloud_calls, local_ratio, avg_complexity, efficiency_score
+        self.assertEqual(metrics["total_calls"]["value"], 3)
+        self.assertEqual(metrics["local_calls"]["value"], 2) # qwen is local
+        self.assertEqual(metrics["cloud_calls"]["value"], 1) # gpt-4 is cloud
+        self.assertIn("66.7%", metrics["local_ratio"]["value"])
+        self.assertEqual(metrics["efficiency_score"]["status"], "PASS")
+
+    def test_roi_calculation_cloud_dominant(self):
+        self.telemetry_path.write_text(json.dumps({
+            "events": [
+                {"model_id": "claude-3", "score": 10},
+                {"model_id": "gpt-4", "score": 15}
+            ]
+        }))
         
-        with open(metrics_file) as f:
-            data = json.load(f)
-            # 2 local (qwen, deepseek), 1 cloud (claude)
-            self.assertEqual(data["metrics"]["local_calls"]["value"], 2)
-            self.assertEqual(data["metrics"]["cloud_calls"]["value"], 1)
-            self.assertEqual(data["metrics"]["local_ratio"]["value"], "66.7%")
+        collector = roi.IntelligenceROICollector()
+        collector.run()
+        
+        metrics = collector.data["metrics"]
+        self.assertEqual(metrics["cloud_calls"]["value"], 2)
+        self.assertIn("0.0%", metrics["local_ratio"]["value"])
+        self.assertEqual(metrics["efficiency_score"]["status"], "WARN")
+
+    def test_no_data(self):
+        collector = roi.IntelligenceROICollector()
+        collector.run()
+        self.assertEqual(collector.data["metrics"]["roi"]["value"], "No Data")
 
 if __name__ == "__main__":
     unittest.main()

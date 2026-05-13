@@ -61,7 +61,7 @@ def validate_change(goal, impacted_files):
     print("✅ Change aligns with current Mental Models.")
     return True
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2:
         print("Usage: python3 model_validator.py <goal> <files_json>")
         sys.exit(1)
@@ -71,3 +71,6 @@ if __name__ == "__main__":
     
     success = validate_change(goal, files)
     sys.exit(0 if success else 1)
+
+if __name__ == "__main__":
+    main()

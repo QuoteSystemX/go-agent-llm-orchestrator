@@ -136,7 +136,8 @@ def create_script(name, description):
     
     if name.endswith(".go"):
         # Go tests live next to the file
-        test_name = f"{name.replace('.go', '')}_test.go"
+        base_name = os.path.basename(name).replace(".go", "")
+        test_name = f"{base_name}_test.go"
         test_path = target_path.parent / test_name
         # Simple package name detection
         package_name = target_path.parent.name

@@ -69,15 +69,15 @@ def main() -> None:
     
     status = "OK"
     # Warden Logic:
-    if percent > 50 and priority == "LOW":
-        status = "THROTTLED"
-        print("👮 Warden: Throttling LOW priority task (Budget > 50%)")
+    if percent > 100:
+        status = "BLOCKED"
+        print("❌ ERROR: Budget limit EXCEEDED. Blocking execution.")
     elif percent > 90:
         status = "CRITICAL"
         print("⚠️  WARNING: Budget limit reached 90%!")
-    elif percent > 100:
-        status = "BLOCKED"
-        print("❌ ERROR: Budget limit EXCEEDED. Blocking execution.")
+    elif percent > 50 and priority == "LOW":
+        status = "THROTTLED"
+        print("👮 Warden: Throttling LOW priority task (Budget > 50%)")
     
     # Export for status_report
     BUS_DIR.mkdir(parents=True, exist_ok=True)

@@ -52,14 +52,18 @@ def run_with_healing(command):
         
         # Pattern Recognition
         if "ModuleNotFoundError" in error_msg:
-            missing_module = error_msg.split("'")[-2]
-            print(f"💡 Detected missing module: {missing_module}")
-            # Try to find it in the repo (common Antigravity issue)
-            found = list(Path(".agent/scripts").rglob(f"{missing_module}.py"))
-            if found:
-                print(f"✅ Found module in repo: {found[0]}. Suggesting PYTHONPATH update.")
+            parts = error_msg.split("'")
+            if len(parts) >= 2:
+                missing_module = parts[-2]
+                print(f"💡 Detected missing module: {missing_module}")
+                # Try to find it in the repo (common Antigravity issue)
+                found = list(Path(".agent/scripts").rglob(f"{missing_module}.py"))
+                if found:
+                    print(f"✅ Found module in repo: {found[0]}. Suggesting PYTHONPATH update.")
+                else:
+                    print(f"🛠  Suggesting installation: pip install {missing_module}")
             else:
-                print(f"🛠  Suggesting installation: pip install {missing_module}")
+                print("💡 Could not identify missing module name.")
 
         if "Permission denied" in error_msg:
             print("🛡️ Attempting auto-fix: Setting +x permissions...")

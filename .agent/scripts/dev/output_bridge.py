@@ -230,7 +230,7 @@ def main():
     # 3. Red-Team Gate: Security & Impact Audit
     critical_keywords = ["auth", "security", "infra", "secret", "bus", "permission", "access", "root"]
     is_critical = any(k in goal.lower() for k in critical_keywords) or \
-                  any("infra" in f or "bus" in f for f in git_files)
+                  any("infra" in f or "bus" in f for f in get_git_changed_files())
     
     if is_critical:
         print("🛡️  CRITICAL CHANGE DETECTED: Triggering Red-Team Gate...")

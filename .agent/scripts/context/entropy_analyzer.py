@@ -47,9 +47,16 @@ def get_churn_metrics():
     except:
         return {}
 
-def run_foresight_analysis():
+def run_foresight_analysis(repo_root=None):
     print("🔭 Starting AOS Foresight Analysis...")
-    repo_root = Path(__file__).resolve().parents[3]
+    if not repo_root:
+        try:
+            from lib.paths import REPO_ROOT
+            repo_root = REPO_ROOT
+        except ImportError:
+            repo_root = Path(__file__).resolve().parents[3]
+    
+    repo_root = Path(repo_root)
     monitored_exts = [".py", ".ts", ".tsx", ".go", ".js"]
     
     churn = get_churn_metrics()

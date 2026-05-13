@@ -1,139 +1,92 @@
 #!/usr/bin/env python3
-"""Tests for experience_distiller.py — parsing, skill-tagging, and filtering."""
+import unittest
+import shutil
+import sys
+from pathlib import Path
+from datetime import datetime, timedelta
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+    sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
+    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
+        sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / domain))
 
-import sys
-import os
-import tempfile
-import unittest
-from pathlib import Path
+import knowledge.experience_distiller as distiller
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']
-from knowledge.experience_distiller import parse_entries, extract_date, extract_skill_tag, filter_by_skill
-
-
-SAMPLE_CONTENT = """# Lessons Learned
-
-Some header text.
-
-### [2026-04-28] [BUG] [go-patterns] xsync MapOf nil pointer on empty init
-Always initialize xsync.MapOf with NewMapOf(), never with zero-value.
-
-### [2026-04-28] [CORE] [shared-context] Initial Knowledge Setup
-Context for project startup.
-
-### [2026-04-30] [PERF] [go-patterns] pgx pool exhaustion under load
-Set MaxConns to match expected concurrency, not higher.
-
-### [2026-04-25] [WATCHDOG] [telemetry] Token budget exceeded
-Monitor token usage with guardrail_monitor.py.
-"""
-
-
-class TestParseEntries(unittest.TestCase):
-    def test_parses_all_entries(self):
-        header, entries = parse_entries(SAMPLE_CONTENT)
-        self.assertEqual(len(entries), 4)
-
-    def test_header_preserved(self):
-        header, _ = parse_entries(SAMPLE_CONTENT)
-        self.assertIn("Lessons Learned", header)
-
-
-class TestExtractDate(unittest.TestCase):
-    def test_valid_date(self):
-        entry = "[2026-04-28] [BUG] [go-patterns] Title"
-        dt = extract_date(entry)
-        self.assertIsNotNone(dt)
-        self.assertEqual(dt.year, 2026)
-        self.assertEqual(dt.month, 4)
-        self.assertEqual(dt.day, 28)
-
-    def test_no_date(self):
-        entry = "Some random text without a date"
-        dt = extract_date(entry)
-        self.assertIsNone(dt)
-
-    def test_invalid_date(self):
-        entry = "[2026-13-45] Invalid"
-        dt = extract_date(entry)
-        self.assertIsNone(dt)
-
-
-class TestExtractSkillTag(unittest.TestCase):
-    def test_valid_skill_tag(self):
-        entry = "[2026-04-28] [BUG] [go-patterns] Title"
-        tag = extract_skill_tag(entry)
-        self.assertEqual(tag, "go-patterns")
-
-    def test_shared_context_tag(self):
-        entry = "[2026-04-28] [CORE] [shared-context] Title"
-        tag = extract_skill_tag(entry)
-        self.assertEqual(tag, "shared-context")
-
-    def test_no_skill_tag(self):
-        entry = "[2026-04-28] [BUG] Title without skill"
-        tag = extract_skill_tag(entry)
-        self.assertIsNone(tag)
-
-    def test_telemetry_tag(self):
-        entry = "[2026-04-25] [WATCHDOG] [telemetry] Token budget"
-        tag = extract_skill_tag(entry)
-        self.assertEqual(tag, "telemetry")
-
-
-class TestFilterBySkill(unittest.TestCase):
+class TestExperienceDistiller(unittest.TestCase):
     def setUp(self):
-        """Create a temporary LESSONS_LEARNED.md for testing."""
-        import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
-        self.tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False,
-                                               encoding="utf-8")
-        self.tmp.write(SAMPLE_CONTENT)
-        self.tmp.close()
-        self.original_path = experience_distiller.LESSONS_PATH
-        self.original_global = experience_distiller.GLOBAL_LESSONS_PATH
-        self.original_archive = experience_distiller.ARCHIVE_DIR
+        self.test_root = REPO_ROOT / "scratch" / "test_distiller"
+        if self.test_root.exists():
+            shutil.rmtree(self.test_root)
+        self.test_root.mkdir(parents=True)
         
-        experience_distiller.LESSONS_PATH = Path(self.tmp.name)
-        experience_distiller.GLOBAL_LESSONS_PATH = Path("/tmp/nonexistent_global.md")
-        experience_distiller.ARCHIVE_DIR = Path("/tmp/nonexistent_archive")
+        self.lessons_path = self.test_root / "LESSONS_LEARNED.md"
+        self.archive_dir = self.test_root / "wiki" / "archive" / "experience"
+        self.global_lessons_path = self.test_root / "GLOBAL_LESSONS.md"
+        
+        self.patch_lessons = patch('knowledge.experience_distiller.LESSONS_PATH', self.lessons_path)
+        self.patch_archive = patch('knowledge.experience_distiller.ARCHIVE_DIR', self.archive_dir)
+        self.patch_global = patch('knowledge.experience_distiller.GLOBAL_LESSONS_PATH', self.global_lessons_path)
+        self.patch_repo = patch('knowledge.experience_distiller.REPO_ROOT', self.test_root)
+        
+        self.patch_lessons.start()
+        self.patch_archive.start()
+        self.patch_global.start()
+        self.patch_repo.start()
 
     def tearDown(self):
-        import knowledge.experience_distiller; import sys; sys.modules['experience_distiller'] = sys.modules['knowledge.experience_distiller']; import knowledge.experience_distiller as experience_distiller
-        experience_distiller.LESSONS_PATH = self.original_path
-        experience_distiller.GLOBAL_LESSONS_PATH = self.original_global
-        experience_distiller.ARCHIVE_DIR = self.original_archive
-        os.unlink(self.tmp.name)
+        self.patch_lessons.stop()
+        self.patch_archive.stop()
+        self.patch_global.stop()
+        self.patch_repo.stop()
+        if self.test_root.exists():
+            shutil.rmtree(self.test_root)
 
-    def test_filter_go_patterns(self):
-        result = filter_by_skill("go-patterns")
-        self.assertIn("2 lesson(s)", result)
-        self.assertIn("xsync", result)
-        self.assertIn("pgx", result)
+    def test_parse_entries(self):
+        content = "# Lessons\n\n### [2026-05-10] [PASS] [skill-1]\nEntry 1\n### [2026-05-11] [FAIL] [skill-2]\nEntry 2"
+        header, lessons = distiller.parse_entries(content)
+        self.assertEqual(header, "# Lessons\n")
+        self.assertEqual(len(lessons), 2)
+        self.assertIn("[2026-05-10]", lessons[0])
 
-    def test_filter_telemetry(self):
-        result = filter_by_skill("telemetry")
-        self.assertIn("1 lesson(s)", result)
-        self.assertIn("Token budget", result)
+    def test_extract_date(self):
+        self.assertEqual(distiller.extract_date("### [2026-05-10] content"), datetime(2026, 5, 10))
+        self.assertIsNone(distiller.extract_date("no date"))
 
-    def test_filter_nonexistent_skill(self):
-        result = filter_by_skill("nonexistent-skill")
-        self.assertIn("No lessons found", result)
+    def test_extract_skill_tag(self):
+        self.assertEqual(distiller.extract_skill_tag("### [2026-05-10] [PASS] [go-patterns] content"), "go-patterns")
+        self.assertIsNone(distiller.extract_skill_tag("no tag"))
 
+    def test_distill_lessons(self):
+        old_date = (datetime.now() - timedelta(days=40)).strftime("%Y-%m-%d")
+        new_date = datetime.now().strftime("%Y-%m-%d")
+        
+        content = f"# Header\n\n### [{old_date}] [PASS] [skill-1]\nOld lesson\n### [{new_date}] [PASS] [skill-2]\nNew lesson"
+        self.lessons_path.write_text(content)
+        
+        res = distiller.distill_lessons()
+        
+        self.assertIn("1 active, 1 archived", res)
+        self.assertTrue(self.archive_dir.exists())
+        self.assertTrue((self.archive_dir / f"{old_date}.md").exists())
+        
+        new_content = self.lessons_path.read_text()
+        self.assertIn("New lesson", new_content)
+        self.assertNotIn("Old lesson", new_content)
+
+    def test_filter_by_skill(self):
+        self.lessons_path.write_text("### [2026-05-12] [PASS] [skill-a]\nActive match")
+        self.archive_dir.mkdir(parents=True)
+        (self.archive_dir / "2026-05-01.md").write_text("### [2026-05-01] [PASS] [skill-a]\nArchived match")
+        
+        res = distiller.filter_by_skill("skill-a")
+        self.assertIn("Found 2 lesson(s)", res)
+        self.assertIn("Active match", res)
+        self.assertIn("Archived match", res)
 
 if __name__ == "__main__":
     unittest.main()

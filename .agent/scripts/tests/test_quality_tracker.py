@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import unittest
-import os
 import shutil
 import json
-from pathlib import Path
 import sys
-import argparse
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -16,7 +15,7 @@ except ImportError:
     for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
         sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / domain))
 
-import analysis.quality_tracker; import sys; sys.modules['quality_tracker'] = sys.modules['analysis.quality_tracker']; import analysis.quality_tracker as quality_tracker
+import analysis.quality_tracker as quality_tracker
 
 class TestQualityTracker(unittest.TestCase):
     def setUp(self):
@@ -25,54 +24,63 @@ class TestQualityTracker(unittest.TestCase):
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
         
-        # Override paths
-        self.original_root = quality_tracker.REPO_ROOT
-        self.original_data = quality_tracker.DATA_DIR
-        quality_tracker.REPO_ROOT = self.test_root
-        quality_tracker.DATA_DIR = self.test_root / ".agent" / "data"
+        self.data_dir = self.test_root / ".agent" / "data"
+        self.data_dir.mkdir(parents=True)
+        
+        self.patcher_repo = patch('analysis.quality_tracker.REPO_ROOT', self.test_root)
+        self.patcher_data = patch('analysis.quality_tracker.DATA_DIR', self.data_dir)
+        self.patcher_repo.start()
+        self.patcher_data.start()
 
     def tearDown(self):
-        quality_tracker.REPO_ROOT = self.original_root
-        quality_tracker.DATA_DIR = self.original_data
+        self.patcher_repo.stop()
+        self.patcher_data.stop()
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
     def test_record_event(self):
-        args = argparse.Namespace(
-            record_event=True,
-            pr="42",
-            action="closed",
-            merged="true",
-            labels='["agent-generated","agent:ok","agent:debugger"]',
-            repo="owner/repo",
-            output=None
-        )
+        args = MagicMock()
+        args.repo = "owner/repo"
+        args.pr = "1"
+        args.action = "closed"
+        args.merged = "true"
+        args.labels = json.dumps(["agent-generated", "agent:excellent", "agent:coder"])
+        
         quality_tracker.record_event(args)
         
-        log_file = quality_tracker.DATA_DIR / "owner_repo" / "pr-quality.jsonl"
+        log_file = self.data_dir / "owner_repo" / "pr-quality.jsonl"
         self.assertTrue(log_file.exists())
         
-        with open(log_file) as f:
-            event = json.loads(f.readline())
-            self.assertEqual(event["pr"], "42")
-            self.assertEqual(event["agent"], "debugger")
-            self.assertEqual(event["quality"], "agent:ok")
-            self.assertTrue(event["merged"])
+        event = json.loads(log_file.read_text().strip())
+        self.assertEqual(event["agent"], "coder")
+        self.assertEqual(event["quality"], "agent:excellent")
+        self.assertTrue(event["merged"])
+
+    def test_load_log(self):
+        repo_dir = self.data_dir / "repo1"
+        repo_dir.mkdir()
+        log_file = repo_dir / "pr-quality.jsonl"
+        log_file.write_text(json.dumps({"agent": "a1", "quality": "agent:ok"}) + "\n")
+        
+        events = quality_tracker.load_log()
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["agent"], "a1")
 
     def test_build_report(self):
         events = [
-            {"action": "closed", "agent": "debugger", "quality": "agent:excellent", "merged": True},
-            {"action": "closed", "agent": "debugger", "quality": "agent:ok", "merged": True},
-            {"action": "closed", "agent": "backend", "quality": "agent:rejected", "merged": False}
+            {"action": "closed", "agent": "coder", "quality": "agent:excellent", "merged": True},
+            {"action": "closed", "agent": "coder", "quality": "agent:ok", "merged": True},
+            {"action": "closed", "agent": "debugger", "quality": "agent:rejected", "merged": False}
         ]
+        
         report = quality_tracker.build_report(events, "owner/repo")
         
         self.assertIn("# Agent Quality Scores", report)
+        self.assertIn("`coder`", report)
         self.assertIn("`debugger`", report)
-        self.assertIn("`backend`", report)
-        # Excellent (5) + Ok (4) = 9 / 2 = 4.5
+        # Average for coder: (5 + 4) / 2 = 4.5
         self.assertIn("**4.5**", report)
-        # Rejected (0)
+        # Average for debugger: 0 / 1 = 0
         self.assertIn("**0.0**", report)
 
 if __name__ == "__main__":

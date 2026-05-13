@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 import json
-import shutil
-from pathlib import Path
 import sys
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -14,61 +14,49 @@ except ImportError:
     for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
         sys.path.append(str(REPO_ROOT / ".agent" / "scripts" / domain))
 
-import lib.paths
-import models.prompt_optimizer; import sys; sys.modules['prompt_optimizer'] = sys.modules['models.prompt_optimizer']; import models.prompt_optimizer as prompt_optimizer
+import models.prompt_optimizer as prompt_optimizer
 
 class TestPromptOptimizer(unittest.TestCase):
-    def setUp(self):
-        self.test_root = REPO_ROOT / "scratch" / "test_optimizer"
-        if self.test_root.exists():
-            shutil.rmtree(self.test_root)
-        self.test_root.mkdir(parents=True)
-        
-        # Override paths
-        self.original_bus = lib.paths.BUS_DIR
-        lib.paths.BUS_DIR = self.test_root / ".agent" / "bus"
-        prompt_optimizer.BUS_DIR = lib.paths.BUS_DIR
-        
-        # Mock bus context
-        lib.paths.BUS_DIR.mkdir(parents=True, exist_ok=True)
-        context = {
+    @patch('models.prompt_optimizer.BUS_DIR', Path('/tmp/fake_bus'))
+    @patch('models.prompt_optimizer.Path.exists')
+    @patch('models.prompt_optimizer.load_json_safe')
+    def test_analyze_telemetry(self, mock_load, mock_exists):
+        mock_exists.return_value = True
+        mock_load.return_value = {
             "objects": [
                 {
                     "type": "telemetry",
-                    "author": "agent_a",
-                    "content": {"total_tokens": 10000}
-                },
-                {
-                    "type": "telemetry",
-                    "author": "agent_a",
+                    "author": "coder",
                     "content": {"total_tokens": 60000}
                 },
                 {
                     "type": "telemetry",
-                    "author": "agent_b",
+                    "author": "coder",
+                    "content": {"total_tokens": 40001}
+                },
+                {
+                    "type": "telemetry",
+                    "author": "analyst",
                     "content": {"total_tokens": 1000}
                 }
             ]
         }
-        with open(lib.paths.BUS_DIR / "context.json", "w") as f:
-            json.dump(context, f)
-
-    def tearDown(self):
-        lib.paths.BUS_DIR = self.original_bus
-        if self.test_root.exists():
-            shutil.rmtree(self.test_root)
-
-    def test_analyze(self):
+        
         report = prompt_optimizer.analyze_telemetry()
         
-        self.assertIn("🤖 Agent: agent_a", report)
-        # (10000 + 60000) / 2 = 35000 -> TIP
-        self.assertIn("💡 TIP", report)
-        self.assertIn("Average per call: 35000.0", report)
+        self.assertIn("Agent: coder", report)
+        self.assertIn("Total Tokens: 100001", report)
+        self.assertIn("Average per call: 50000.5", report)
+        self.assertIn("HIGH USAGE", report) # Average is 50k, should be >= 50k for warning
         
-        self.assertIn("🤖 Agent: agent_b", report)
-        # 1000 -> EFFICIENT
-        self.assertIn("✅ EFFICIENT", report)
+        self.assertIn("Agent: analyst", report)
+        self.assertIn("EFFICIENT", report)
+
+    @patch('models.prompt_optimizer.BUS_DIR', Path('/tmp/fake_bus'))
+    @patch('models.prompt_optimizer.Path.exists', return_value=False)
+    def test_analyze_telemetry_no_data(self, mock_exists):
+        report = prompt_optimizer.analyze_telemetry()
+        self.assertEqual(report, "No telemetry data found on the bus.")
 
 if __name__ == "__main__":
     unittest.main()
