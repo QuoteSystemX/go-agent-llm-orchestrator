@@ -160,3 +160,7 @@ api-development (router)
     ├── typed-service-contracts (contracts)
     └── documentation-templates (docs)
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

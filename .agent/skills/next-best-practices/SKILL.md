@@ -43,3 +43,6 @@ See `examples/server-component-pattern.tsx` for a production-ready data fetching
 ---
 > **Note**: This skill ensures that Paperclip's web interface is fast, SEO-friendly, and maintainable.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

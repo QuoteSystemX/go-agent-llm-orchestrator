@@ -1,6 +1,7 @@
 ---
 name: nextflow-development
 description: Run nf-core bioinformatics pipelines (rnaseq, sarek, atacseq) on sequencing data. Use when analyzing RNA-seq, WGS/WES, or ATAC-seq data—either local FASTQs or public datasets from GEO/SRA. Triggers on nf-core, Nextflow, FASTQ analysis, variant calling, gene expression, differential expression, GEO reanalysis, GSE/GSM/SRR accessions, or samplesheet creation.
+version: 1.0.0
 ---
 
 # nf-core Pipeline Deployment
@@ -288,3 +289,7 @@ When publishing results, cite the appropriate pipeline. Citations are available 
 - **nf-core pipelines:** MIT License (https://nf-co.re/about)
 - **Nextflow:** Apache License, Version 2.0 (https://www.nextflow.io/about-us.html)
 - **NCBI SRA Toolkit:** Public Domain (https://github.com/ncbi/sra-tools/blob/master/LICENSE)
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

@@ -1,6 +1,7 @@
 ---
 name: scientific-problem-selection
 description: This skill should be used when scientists need help with research problem selection, project ideation, troubleshooting stuck projects, or strategic scientific decisions. Use this skill when users ask to pitch a new research idea, work through a project problem, evaluate project risks, plan research strategy, navigate decision trees, or get help choosing what scientific problem to work on. Typical requests include "I have an idea for a project", "I'm stuck on my research", "help me evaluate this project", "what should I work on", or "I need strategic advice about my research".
+version: 1.0.0
 ---
 
 # Scientific Problem Selection Skills
@@ -267,3 +268,7 @@ Detailed skill documentation is available in the `references/` folder:
 **Fischbach, M.A., & Walsh, C.T. (2024).** "Problem choice and decision trees in science and engineering." *Cell*, 187, 1828-1833.
 
 Based on course BIOE 395 taught at Stanford University.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

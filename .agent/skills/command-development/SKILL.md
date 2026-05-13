@@ -832,3 +832,7 @@ If build failed:
 For detailed frontmatter field specifications, see `references/frontmatter-reference.md`.
 For plugin-specific features and patterns, see `references/plugin-features-reference.md`.
 For command pattern examples, see `examples/` directory.
+
+## Changelog
+
+- **0.2.0** (2026-05-13): Initial version

@@ -48,3 +48,6 @@ npx @better-auth/cli@latest migrate
 ---
 > **Note**: This skill ensures that Paperclip's authentication layer is resilient and follows modern security standards.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

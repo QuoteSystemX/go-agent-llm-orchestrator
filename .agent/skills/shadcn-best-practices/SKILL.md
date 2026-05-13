@@ -42,3 +42,6 @@ Refer to `examples/custom-component.tsx` for a "Golden Path" implementation of a
 ---
 > **Note**: This skill ensures that the Paperclip interface remains premium, accessible, and easy to theme.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

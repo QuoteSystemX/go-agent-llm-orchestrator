@@ -27,3 +27,7 @@ If `go test` or `go mod download` fails:
 1. Verify SSH key is active: `ssh -T git@github.com`.
 2. Run the hardening script again.
 3. Check `go env GOPRIVATE` — it must contain `github.com/QuoteSystemX/*`.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

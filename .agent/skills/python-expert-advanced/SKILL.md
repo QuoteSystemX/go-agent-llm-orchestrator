@@ -115,3 +115,7 @@ Integrate with `Ollama` or `vLLM` using specialized async clients.
 - **Scenario**: 1M+ RPS -> Use **Cython/Rust** for parsers.
 - **Scenario**: 10GB+ RAM Usage -> Use **Shared Memory / Slots**.
 - **Scenario**: Complex Plugin System -> Use **Metaprogramming**.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

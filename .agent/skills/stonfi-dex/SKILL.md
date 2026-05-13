@@ -66,3 +66,7 @@ Refer to `examples/swap-execution.ts` for a "Golden Path" implementation using t
 
 ---
 > **Note**: This skill ensures that Paperclip's DeFi integrations on TON are efficient and secure.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

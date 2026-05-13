@@ -9,7 +9,7 @@
   Warm terracotta/sage palette — distinctly different from the teal (mermaid)
   and rose (data-table) templates so agents absorb variety, not a single palette.
   Key patterns demonstrated:
-  - Warm non-default palette (terracotta + sage, NOT indigo/violet)
+  - Warm non-default palette (Teal + Sage)
   - Depth tiers: hero (input sources), default (mid sections), recessed (callout)
   - Asymmetric background atmosphere (off-center gradient mesh)
   - Large heading (38px) for typographic contrast
@@ -39,8 +39,8 @@
     --border-bright: rgba(0, 0, 0, 0.14);
     --text: #292017;
     --text-dim: #8a7e72;
-    --accent: #c2410c;
-    --accent-dim: rgba(194, 65, 12, 0.07);
+    --accent: #0f766e;
+    --accent-dim: rgba(15, 118, 110, 0.07);
     --green: #4d7c0f;
     --green-dim: rgba(77, 124, 15, 0.07);
     --orange: #b45309;
@@ -49,8 +49,8 @@
     --sage-dim: rgba(101, 163, 13, 0.07);
     --teal: #0f766e;
     --teal-dim: rgba(15, 118, 110, 0.07);
-    --plum: #9f1239;
-    --plum-dim: rgba(159, 18, 57, 0.07);
+    --accent2: #4d7c0f;
+    --accent2-dim: rgba(77, 124, 15, 0.07);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -63,8 +63,8 @@
       --border-bright: rgba(255, 255, 255, 0.12);
       --text: #ede5dd;
       --text-dim: #a69889;
-      --accent: #fb923c;
-      --accent-dim: rgba(251, 146, 60, 0.12);
+      --accent: #5eead4;
+      --accent-dim: rgba(94, 234, 212, 0.1);
       --green: #a3e635;
       --green-dim: rgba(163, 230, 53, 0.1);
       --orange: #fbbf24;
@@ -73,8 +73,8 @@
       --sage-dim: rgba(190, 242, 100, 0.1);
       --teal: #5eead4;
       --teal-dim: rgba(94, 234, 212, 0.1);
-      --plum: #fda4af;
-      --plum-dim: rgba(253, 164, 175, 0.1);
+      --accent2: #a3e635;
+      --accent2-dim: rgba(163, 230, 53, 0.1);
     }
   }
 
@@ -196,9 +196,9 @@
   .section--teal .section-label { color: var(--teal); }
   .section--teal .section-label .dot { background: var(--teal); }
 
-  .section--plum { border-color: var(--plum-dim); }
-  .section--plum .section-label { color: var(--plum); }
-  .section--plum .section-label .dot { background: var(--plum); }
+  .section--accent2 { border-color: var(--accent2-dim); }
+  .section--accent2 .section-label { color: var(--accent2); }
+  .section--accent2 .section-label .dot { background: var(--accent2); }
 
   /* ============ INNER GRID ============ */
   .inner-grid {
@@ -565,7 +565,7 @@
         <li><code>stats</code> aggregate metrics</li>
       </ul>
     </div>
-    <div class="section section--plum" style="--i:9">
+    <div class="section section--accent2" style="--i:9">
       <div class="section-label"><span class="dot"></span> Actions</div>
       <ul class="node-list">
         <li>Create tickets from clusters</li>

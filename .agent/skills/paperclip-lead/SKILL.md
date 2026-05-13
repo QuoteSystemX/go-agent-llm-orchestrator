@@ -33,3 +33,7 @@ Apply these filters to every decision:
 
 ## ✅ Output Bar
 - A deliverable is NOT done if it lacks a technical breakdown or acceptance criteria for subtasks.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

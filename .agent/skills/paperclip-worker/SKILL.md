@@ -22,3 +22,7 @@ This skill extends the core `paperclip` heartbeat with execution-focused respons
 
 ## ✅ Output Bar
 - A task is NOT done without passing tests and a clear verification summary.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

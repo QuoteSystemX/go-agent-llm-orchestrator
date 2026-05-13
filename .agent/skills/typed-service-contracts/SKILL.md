@@ -1,6 +1,7 @@
 ---
 name: typed-service-contracts
 description: Architecture standard for building robust, type-safe TypeScript services using the "Spec and Handler" pattern. Use when building CLIs, libraries, or complex business logic.
+version: 1.0.0
 ---
 
 # Typed Service Contracts (Spec & Handler Pattern)
@@ -188,3 +189,7 @@ test('returns FILE_NOT_FOUND if path missing', async () => {
 });
 
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

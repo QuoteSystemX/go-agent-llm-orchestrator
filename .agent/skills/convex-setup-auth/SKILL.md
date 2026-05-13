@@ -3,6 +3,7 @@ name: convex-setup-auth
 description:
   Sets up Convex auth, identity mapping, and access control. Use for login, auth
   providers, users tables, protected functions, or roles in a Convex app.
+version: 1.0.0
 ---
 
 # Convex Authentication Setup
@@ -185,3 +186,7 @@ instead.
 - [ ] Clear error messages ("Not authenticated", "Unauthorized")
 - [ ] Client auth provider configured for the chosen provider
 - [ ] If requested, production auth setup is covered too
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

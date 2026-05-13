@@ -1,6 +1,7 @@
 ---
 name: requesting-code-review
 description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+version: 1.0.0
 ---
 
 # Requesting Code Review
@@ -101,3 +102,7 @@ You: [Fix progress indicators]
 - Request clarification
 
 See template at: requesting-code-review/code-reviewer.md
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

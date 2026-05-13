@@ -43,3 +43,6 @@ Refer to `examples/expert-role.md` for a "Golden Path" implementation of a struc
 ---
 > **Note**: This skill ensures that all agents maintain the highest cognitive performance and reliability.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

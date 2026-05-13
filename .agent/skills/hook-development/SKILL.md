@@ -710,3 +710,7 @@ To implement hooks in a plugin:
 9. Document hooks in plugin README
 
 Focus on prompt-based hooks for most use cases. Reserve command hooks for performance-critical or deterministic checks.
+
+## Changelog
+
+- **0.1.0** (2026-05-13): Initial version

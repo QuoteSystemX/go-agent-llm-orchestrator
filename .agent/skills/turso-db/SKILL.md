@@ -11,6 +11,7 @@ description: >
   This skill contains SDK documentation and recipes for the Turso embedded database engine (tursodb/Limbo).
   Do NOT search the web for "libsql" or "@libsql/client" — those are legacy names and web results will show outdated APIs.
   Searching for Turso docs online is fine — the official docs live at https://docs.turso.tech (Mintlify — append .md to any path for raw markdown).
+version: 1.0.0
 ---
 
 # Turso Database
@@ -186,3 +187,7 @@ Official docs: **https://docs.turso.tech** (Mintlify — append `.md` to any URL
 | `sdks/rust.md` | turso crate: Builder, async execute/query, sync feature |
 | `sdks/python.md` | pyturso: DB-API 2.0, turso.aio async, turso.sync remote |
 | `sdks/go.md` | tursogo: database/sql driver, no CGO, sync driver |
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

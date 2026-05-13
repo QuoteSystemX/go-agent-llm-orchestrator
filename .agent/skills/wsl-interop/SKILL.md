@@ -55,3 +55,6 @@ session = ResilientSession(host="http://my-service.local")
 ---
 > **Note**: This skill ensures that development in WSL is as fast and stable as native Linux.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

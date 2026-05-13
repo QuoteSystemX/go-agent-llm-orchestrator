@@ -42,3 +42,6 @@ Refer to `examples/basic-e2e.spec.ts` for a "Golden Path" implementation of a st
 ---
 > **Note**: This skill ensures that Paperclip features are verified automatically without brittle regressions.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

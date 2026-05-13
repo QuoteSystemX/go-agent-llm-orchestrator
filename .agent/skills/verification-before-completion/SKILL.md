@@ -1,6 +1,7 @@
 ---
 name: verification-before-completion
 description: Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always
+version: 1.0.0
 ---
 
 # Verification Before Completion
@@ -137,3 +138,7 @@ From 24 failure memories:
 Run the command. Read the output. THEN claim the result.
 
 This is non-negotiable.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

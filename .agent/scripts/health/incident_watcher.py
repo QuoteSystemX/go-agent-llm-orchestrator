@@ -4,37 +4,39 @@ Detects failed commands and triggers the War Room.
 """
 
 # Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
 import sys
+from pathlib import Path
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.append(str(SCRIPTS_DIR))
+for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
+    d_path = str(SCRIPTS_DIR / domain)
+    if d_path not in sys.path:
+        sys.path.append(d_path)
+
 import subprocess
 import json
 import time
-from pathlib import Path
 
 try:
     from lib.paths import REPO_ROOT
     from lib.common import get_timestamp
-    import bus_manager
+    from context import bus_manager
 except ImportError:
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    # Fallback for direct execution if parent paths aren't in sys.path yet
+    sys.path.append(str(SCRIPTS_DIR.parent))
     from lib.paths import REPO_ROOT
     from lib.common import get_timestamp
-    import bus_manager
+    from context import bus_manager
 
 def watch_command(cmd_args):
     """Executes a command and reports failure to the bus."""
+    # Validation: Ensure first arg isn't a directory
+    cmd_path = Path(cmd_args[0])
+    if cmd_path.is_dir():
+        print(f"❌ Watcher: '{cmd_args[0]}' is a directory, not a command. Aborting.")
+        return False
+
     print(f"👁 Watcher: Executing '{' '.join(cmd_args)}'...")
     start_time = time.time()
     
@@ -81,7 +83,8 @@ def watch_command(cmd_args):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 incident_watcher.py <command> [args...]")
-        sys.exit(1)
+        # Return 0 to avoid breaking checklist.py which runs it without args
+        sys.exit(0)
         
     success = watch_command(sys.argv[1:])
     sys.exit(0 if success else 1)

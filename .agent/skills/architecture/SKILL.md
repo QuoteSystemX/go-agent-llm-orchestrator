@@ -51,3 +51,6 @@ Refer to `examples/adr-001-template.md` for a "Golden Path" of ADR documentation
 ---
 > **Note**: This skill ensures that Paperclip's evolution is deliberate, documented, and durable.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

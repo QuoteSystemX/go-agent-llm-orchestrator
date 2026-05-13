@@ -6,6 +6,7 @@ compatibility: Requires a browser to view generated HTML files. Optional surf-cl
 metadata:
   author: nicobailon
   version: "0.6.3"
+version: 1.0.0
 ---
 
 # Visual Explainer
@@ -476,3 +477,7 @@ Before delivering, apply this test: **Would a developer looking at this page imm
 7. Three-dot code block chrome
 
 If two or more of these are present, the page is slop. Regenerate with a different aesthetic direction — Editorial, Blueprint, Paper/ink, or a specific IDE theme. These constrained aesthetics are harder to mess up because they have specific visual requirements that prevent defaulting to generic patterns.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

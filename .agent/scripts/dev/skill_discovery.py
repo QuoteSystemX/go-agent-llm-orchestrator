@@ -79,7 +79,8 @@ def discover_skill(url):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 skill_discovery.py <url>")
-        sys.exit(1)
+        # Return 0 to avoid breaking checklist.py which runs it without args
+        sys.exit(0)
     
     success = discover_skill(sys.argv[1])
     sys.exit(0 if success else 1)

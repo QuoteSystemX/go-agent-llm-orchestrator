@@ -26,3 +26,7 @@ Expert guidelines for monitoring application health and managing releases using 
 
 ---
 > **Note**: This skill was imported from `skills.sh` to ensure Auth Hub has robust error tracking.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

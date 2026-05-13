@@ -59,3 +59,7 @@ ignore = ["D100"] # Missing docstring in public module
 | `uv_migrate.py` | Converts `requirements.txt` or `poetry.lock` to `uv.lock`. |
 | `dependency_audit.py` | Runs `safety` and `pip-audit` against the current environment. |
 | `ruff_fix_all.py` | Runs `ruff --fix` and `ruff format` on the entire project. |
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

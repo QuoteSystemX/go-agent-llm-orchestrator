@@ -42,3 +42,6 @@ Refer to `examples/schema-migration.sql` for a "Golden Path" implementation of a
 ---
 > **Note**: This skill ensures that Paperclip's data layer is robust, fast, and ready for scale.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

@@ -99,3 +99,7 @@ Before building UI, verify your token map:
 ---
 
 > **Rule:** Never hardcode a hex/rgb value in a component. If it's used more than once, it's a token.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

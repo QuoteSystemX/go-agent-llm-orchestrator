@@ -198,3 +198,7 @@ const body = beginCell()
 | **Burn** | `0x595f07bc` | Destroy Jettons |
 | **NFT Transfer** | `0x5fcc3d14` | Send NFT |
 | **Excesses** | `0xd53276db` | Gas return |
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

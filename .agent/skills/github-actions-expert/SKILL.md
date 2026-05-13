@@ -42,3 +42,6 @@ Refer to `examples/ci-standard.yml` for the "Golden Path" of a Paperclip CI pipe
 ---
 > **Note**: This skill ensures that CI/CD pipelines are not just functional, but resilient and secure.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

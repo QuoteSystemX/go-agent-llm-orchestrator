@@ -413,3 +413,7 @@ To create an agent for a plugin:
 9. Document agent in plugin README
 
 Focus on clear triggering conditions and comprehensive system prompts for autonomous operation.
+
+## Changelog
+
+- **0.1.0** (2026-05-13): Initial version

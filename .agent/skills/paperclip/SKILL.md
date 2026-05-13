@@ -63,3 +63,7 @@ Before exiting, you MUST leave a summary comment with this exact structure:
 ## 📝 Rules
 - Never exit a heartbeat without a progress report.
 - Mark blocked work explicitly with owner and action.
+
+## Changelog
+
+- **1.1.0** (2026-05-13): Initial version

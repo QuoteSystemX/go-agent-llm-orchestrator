@@ -41,3 +41,7 @@ Advanced design intelligence for creating high-fidelity, user-centric interfaces
 
 ---
 > **Note**: This skill was imported and consolidated from `.agent/.shared/` to unify design intelligence.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

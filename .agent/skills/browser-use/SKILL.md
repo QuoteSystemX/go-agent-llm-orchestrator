@@ -2,6 +2,7 @@
 name: browser-use
 description: Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, or extract information from web pages.
 allowed-tools: Bash(browser-use:*)
+version: 1.0.0
 ---
 
 # Browser Automation with browser-use CLI
@@ -232,3 +233,7 @@ Config stored in `~/.browser-use/config.json`.
 browser-use close                         # Close browser session
 browser-use tunnel stop --all             # Stop tunnels (if any)
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

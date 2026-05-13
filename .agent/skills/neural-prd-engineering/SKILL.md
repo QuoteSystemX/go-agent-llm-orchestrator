@@ -71,3 +71,7 @@ Every PRD must answer:
 ---
 
 > **Principle:** If a requirement is not specific enough for an LLM to code it, it's not specific enough for a PRD.
+
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

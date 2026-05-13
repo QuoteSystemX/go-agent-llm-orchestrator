@@ -552,3 +552,7 @@ To add MCP integration to a plugin:
 9. Document MCP integration in plugin README
 
 Focus on stdio for custom/local servers, SSE for hosted services with OAuth.
+
+## Changelog
+
+- **0.1.0** (2026-05-13): Initial version

@@ -43,3 +43,6 @@ Refer to `examples/normalized-schema.md` for a "Golden Path" ER diagram of a cor
 ---
 > **Note**: This skill ensures that Paperclip's foundation is built on solid data architectural principles.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version

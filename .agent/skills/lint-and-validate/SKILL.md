@@ -45,3 +45,6 @@ python3 .agent/scripts/self_heal.py .
 ---
 > **Note**: This skill ensures that Paperclip's codebase remains professional, predictable, and performant.
 
+## Changelog
+
+- **1.0.0** (2026-05-13): Initial version
