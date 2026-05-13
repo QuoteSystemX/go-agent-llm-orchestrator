@@ -73,6 +73,10 @@ CORE_CHECKS = [
     ("Test Runner", ".agent/skills/testing-patterns/scripts/test_runner.py", False),
     ("UX Audit", ".agent/skills/frontend-design/scripts/ux_audit.py", False),
     ("SEO Check", ".agent/skills/seo-fundamentals/scripts/seo_checker.py", False),
+    ("Dead Code Detector", ".agent/scripts/analysis/dead_code_detector.py", False),
+    ("Resource Forecast", ".agent/scripts/analysis/resource_forecaster.py", False),
+    ("Skill Discovery", ".agent/scripts/dev/skill_discovery.py", False),
+    ("Incident Watcher", ".agent/scripts/health/incident_watcher.py", False),
 ]
 
 def check_watchdog_schema() -> tuple[bool, str]:
