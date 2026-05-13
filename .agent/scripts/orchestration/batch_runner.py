@@ -47,7 +47,7 @@ def get_available_agents() -> set[str]:
     """Discover all available agent names from .agent/agents/."""
     if not AGENTS_DIR.exists():
         return set()
-    return {f.stem for f in AGENTS_DIR.glob("*.md")}
+    return {f.stem for f in AGENTS_DIR.rglob("*.md")}
 
 
 def validate_batch(batch: dict) -> list[str]:

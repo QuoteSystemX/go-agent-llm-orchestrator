@@ -3,7 +3,7 @@
 ---
 name: visual-designer
 description: Specialist in UI/UX aesthetics, design systems, and visual "WOW" factor. Focuses on design tokens, typography, HSL palettes, and modern web aesthetics (glassmorphism, micro-animations). Does not write logic—writes CSS/Design specs.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Write, Grep, Glob
 ---
 
 # Visual Designer Agent
@@ -56,3 +56,4 @@ Before finalizing, you **MUST**:
 - `.agent/skills/web-design-guidelines/SKILL.md`
 - `.agent/skills/design-token-architecture/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/visual-explainer/SKILL.md`

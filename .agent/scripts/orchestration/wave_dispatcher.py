@@ -92,19 +92,19 @@ def execute_node(session_id, node, description=""):
     if "[RECURSIVE]" in description:
         print(f"  📂 Detected Recursive Task. Spawning sub-session...")
         sub_sid_proc = subprocess.run(
-            ["python3", ".agent/scripts/orchestration_session.py", "init"],
+            ["python3", ".agent/scripts/orchestration/orchestration_session.py", "init"],
             capture_output=True, text=True
         )
         sub_sid = sub_sid_proc.stdout.strip()
         subprocess.run([
-            "python3", ".agent/scripts/orchestration_session.py", 
+            "python3", ".agent/scripts/orchestration/orchestration_session.py", 
             "set-state", session_id, f"subsession_{node}", sub_sid
         ])
         print(f"  ✅ Sub-session created: {sub_sid}")
 
     # Обновляем статус
     subprocess.run([
-        "python3", ".agent/scripts/orchestration_session.py", 
+        "python3", ".agent/scripts/orchestration/orchestration_session.py", 
         "set-state", session_id, f"task_{node}", "completed"
     ])
     print(f"  🏁 Node {node} completed.")
@@ -118,14 +118,14 @@ def run_jit_dispatcher(session_id, nodes, edges, descriptions):
     # Инициализируем все узлы как pending
     for node in nodes:
         subprocess.run([
-            "python3", ".agent/scripts/orchestration_session.py", 
+            "python3", ".agent/scripts/orchestration/orchestration_session.py", 
             "set-state", session_id, f"task_{node}", "pending"
         ])
 
     while True:
         # Читаем текущее состояние
         state_proc = subprocess.run(
-            ["python3", ".agent/scripts/orchestration_session.py", "get-state", session_id],
+            ["python3", ".agent/scripts/orchestration/orchestration_session.py", "get-state", session_id],
             capture_output=True, text=True
         )
         try:

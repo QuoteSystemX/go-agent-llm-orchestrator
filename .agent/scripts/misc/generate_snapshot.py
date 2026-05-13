@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime
 
 def run_snapshot():
-    BUS_DIR = Path('.agent/bus')
+    BUS_DIR = REPO_ROOT / ".agent" / "bus"
     SNAPSHOT_DIR = Path('docs/snapshots')
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
 

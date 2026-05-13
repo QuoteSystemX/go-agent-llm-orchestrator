@@ -16,8 +16,11 @@ except ImportError:
 import sys
 from pathlib import Path
 
-# Add scripts dir to path
-sys.path.append(str(Path(".agent/scripts").absolute()))
+# Add scripts dir and orchestration subdir to path (agent_auctioneer lives there)
+_SCRIPTS = Path(__file__).resolve().parents[1]
+for _p in [str(_SCRIPTS), str(_SCRIPTS / "orchestration")]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from agent_auctioneer import find_candidates
 

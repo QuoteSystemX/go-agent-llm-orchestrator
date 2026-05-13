@@ -76,3 +76,5 @@ When asked to "improve a prompt" or "fix an agent":
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/prompts-best-practices/SKILL.md`
+- `.agent/skills/skill-creator/SKILL.md`

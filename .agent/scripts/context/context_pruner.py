@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Configuration
-BUS_PATH = Path(".agent/bus")
+BUS_PATH = REPO_ROOT / ".agent" / "bus"
 MAX_EVENT_AGE_DAYS = 7
 PRUNE_PRIORITY_LOW = 1  # Transient/Debug
 PRUNE_PRIORITY_HIGH = 10 # Decision/ADR

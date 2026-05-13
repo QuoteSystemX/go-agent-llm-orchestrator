@@ -89,6 +89,20 @@ AGENT_DEFAULT_TOOLS: dict[str, str] = {
     "product-manager":        "Read, Write, Grep, Glob",
     "product-owner":          "Read, Write, Grep, Glob",
     "python-specialist":      "Read, Write, Edit, Bash, Grep, Glob",
+    # Previously using workflow defaults — now explicit.
+    # Note: agents with 'tools:' in their source frontmatter use that value;
+    # entries here apply only when frontmatter has no tools field.
+    "archivist":              "Read, Write, Edit, Grep, Glob, Bash",
+    "chaos-monkey":           "Read, Bash, Grep, Glob",
+    "cto":                    "Read, Write, Edit, Grep, Glob, Agent",
+    "ethics-auditor":         "Read, Grep, Glob",
+    "maintainer":             "Read, Write, Edit, Bash, Grep, Glob",
+    "red-team":               "Read, Bash, Grep, Glob",
+    "release-manager":        "Read, Write, Edit, Bash, Grep, Glob",
+    "risk-manager":           "Read, Write, Edit, Grep, Glob",
+    "visual-designer":        "Read, Write, Grep, Glob",
+    # cloud-engineer, crypto-specialist, go-specialist, grafana-master,
+    # paperclip, prompt-specialist, sre-engineer — tools defined in frontmatter
 }
 
 COMMAND_META: dict[str, dict] = {
@@ -121,6 +135,87 @@ COMMAND_META: dict[str, dict] = {
         "allowed-tools": "Read, Grep, Bash",
     },
 }
+
+# Skills injected by the sync script into agent files (in addition to frontmatter skills).
+# Covers the 31 skills that exist in .agent/skills/ but are not referenced in any agent .md.
+AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
+    "orchestrator":           ["dispatching-parallel-agents"],
+    "ai-engineer":            ["mcp-integration", "hook-development", "skill-creator"],
+    "backend-specialist":     ["api-development", "postgres-best-practices", "typed-service-contracts"],
+    "frontend-specialist":    ["shadcn-best-practices", "next-best-practices", "ui-ux-pro-max",
+                               "browser-use", "playwright-best-practices"],
+    "test-engineer":          ["test-driven-development", "verification-before-completion"],
+    "qa-automation-engineer": ["playwright-best-practices", "browser-use"],
+    "devops-engineer":        ["github-actions-expert"],
+    "database-architect":     ["postgres-best-practices", "turso-db", "supabase-postgres-best-practices"],
+    "archivist":              ["semantic-search"],
+    "reviewer":               ["verification-before-completion", "requesting-code-review"],
+    "prompt-specialist":      ["prompts-best-practices", "skill-creator"],
+    "visual-designer":        ["visual-explainer"],
+}
+
+# Read-only Bash and MCP operations that should not prompt the user each time.
+CLAUDE_PERMISSIONS_ALLOW = [
+    "Bash(git status)",
+    "Bash(git log*)",
+    "Bash(git diff*)",
+    "Bash(git branch*)",
+    "Bash(ls*)",
+    "Bash(find . *)",
+    "Bash(python3 .agent/scripts/health/status_report.py)",
+    "Bash(python3 .agent/scripts/delivery/sync_agents.py --check*)",
+    "Bash(python3 .agent/scripts/dev/checklist.py*)",
+    "mcp__local-skill-server__*",
+    "mcp__github__get_*",
+    "mcp__github__list_*",
+    "mcp__github__search_*",
+    "mcp__filesystem__read_*",
+    "mcp__filesystem__list_*",
+    "mcp__wikipedia__*",
+]
+
+# Inline guardrail command — kept here so settings.json can be fully generated.
+_GUARDRAIL_CMD = (
+    "python3 -c \"\n"
+    "import json, sys, subprocess, os\n"
+    "data = json.load(sys.stdin)\n"
+    "cmd = data.get('tool_input', {}).get('command', '')\n"
+    "if not cmd:\n"
+    "    sys.exit(0)\n"
+    "# Walk up to find the project root (contains .agent/scripts/guardrail_monitor.py)\n"
+    "root = os.getcwd()\n"
+    "for _ in range(6):\n"
+    "    script = os.path.join(root, '.agent/scripts/health/guardrail_monitor.py')\n"
+    "    if os.path.isfile(script):\n"
+    "        break\n"
+    "    parent = os.path.dirname(root)\n"
+    "    if parent == root:\n"
+    "        script = None\n"
+    "        break\n"
+    "    root = parent\n"
+    "else:\n"
+    "    script = None\n"
+    "if not script:\n"
+    "    sys.exit(0)\n"
+    "result = subprocess.run(\n"
+    "    ['python3', script, '--check-cmd', cmd],\n"
+    "    capture_output=True, text=True\n"
+    ")\n"
+    "if result.returncode == 2:\n"
+    "    print(result.stdout.strip())\n"
+    "    sys.exit(2)\n"
+    "sys.exit(0)\n"
+    "\""
+)
+
+CLAUDE_KEYBINDINGS = [
+    {"key": "ctrl+shift+o", "command": "/orchestrate"},
+    {"key": "ctrl+shift+d", "command": "/debug"},
+    {"key": "ctrl+shift+s", "command": "/status"},
+    {"key": "ctrl+shift+r", "command": "/reviewer"},
+    {"key": "ctrl+shift+t", "command": "/test"},
+    {"key": "ctrl+shift+c", "command": "/create"},
+]
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -180,8 +275,10 @@ def build_agent_file(src_path: Path, target: str, is_workflow: bool = False) -> 
     
     parts.append(body)
 
-    if skills and target == "claude" and not is_workflow:
-        skill_lines = "\n".join(f"- `.agent/skills/{s}/SKILL.md`" for s in skills if skill_exists(s))
+    if target == "claude" and not is_workflow:
+        extras = AGENT_SKILL_EXTRAS.get(agent_name, [])
+        all_skills = list(dict.fromkeys(skills + extras))  # merge, dedup, preserve order
+        skill_lines = "\n".join(f"- `.agent/skills/{s}/SKILL.md`" for s in all_skills if skill_exists(s))
         if skill_lines:
             parts.append("\n---\n\n> **Skills** — read these files with the `Read` tool before starting:\n" + skill_lines + "\n")
 
@@ -402,6 +499,9 @@ def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: st
     # 4. Config Sync
     if not only_agent:
         sync_mcp_config(target, dry_run, check)
+        if target == "claude":
+            sync_claude_settings(dry_run, check)
+            sync_claude_keybindings(dry_run, check)
 
     # 5. Cleanup
     if not only_agent and not profile:
@@ -426,6 +526,75 @@ def _write(path: Path, content: str, dry_run: bool, check: bool):
         return
     path.write_text(content)
     print(f"  ✓ {rel}")
+
+def _write_json(path: Path, content: str, dry_run: bool, check: bool):
+    """Like _write but compares parsed JSON objects to avoid false positives from formatting."""
+    import json as _json
+    try:
+        rel = path.relative_to(TARGET_ROOT)
+    except ValueError:
+        rel = path
+    if dry_run:
+        print(f"  [DRY] {rel}")
+        return
+    if check:
+        if not path.exists():
+            print(f"  [MISSING] {rel}")
+            sys.exit(1)
+        try:
+            existing_obj = _json.loads(path.read_text())
+            new_obj = _json.loads(content)
+            if existing_obj != new_obj:
+                print(f"  [DRIFT] {rel}")
+                sys.exit(1)
+        except _json.JSONDecodeError:
+            print(f"  [DRIFT] {rel} (JSON parse error)")
+            sys.exit(1)
+        return
+    path.write_text(content)
+    print(f"  ✓ {rel}")
+
+def build_claude_settings() -> str:
+    """Generate canonical .claude/settings.json content from this script's constants."""
+    import json as _json
+    settings = {
+        "agent": "orchestrator",
+        "enabledMcpjsonServers": [
+            "skills-local", "github", "wikipedia", "browser", "filesystem", "shadcn"
+        ],
+        "enableAllProjectMcpServers": True,
+        "permissions": {
+            "allow": CLAUDE_PERMISSIONS_ALLOW
+        },
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": _GUARDRAIL_CMD}]
+                }
+            ],
+            "Stop": [
+                {
+                    "hooks": [{
+                        "type": "command",
+                        "command": "python3 .agent/scripts/context/context_autofill.py 2>/dev/null || true"
+                    }]
+                }
+            ]
+        }
+    }
+    return _json.dumps(settings, indent=2) + "\n"
+
+def sync_claude_settings(dry_run: bool, check: bool):
+    path = TARGET_ROOT / ".claude" / "settings.json"
+    content = build_claude_settings()
+    _write_json(path, content, dry_run, check)
+
+def sync_claude_keybindings(dry_run: bool, check: bool):
+    import json as _json
+    path = TARGET_ROOT / ".claude" / "keybindings.json"
+    content = _json.dumps(CLAUDE_KEYBINDINGS, indent=2) + "\n"
+    _write_json(path, content, dry_run, check)
 
 def main():
     parser = argparse.ArgumentParser()

@@ -133,3 +133,5 @@ Developers test the happy path. **You test the chaos.**
 - `.agent/skills/lint-and-validate/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/playwright-best-practices/SKILL.md`
+- `.agent/skills/browser-use/SKILL.md`

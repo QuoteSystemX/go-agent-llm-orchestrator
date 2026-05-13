@@ -55,6 +55,9 @@ def get_latest_goal():
         return json.load(f).get("goal", "").lower()
 
 def sync_tasks():
+    if not TASK_PATH:
+        return
+
     latest_goal = get_latest_goal()
     if not latest_goal:
         return

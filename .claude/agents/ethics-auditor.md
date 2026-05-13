@@ -3,7 +3,7 @@
 ---
 name: ethics-auditor
 description: Ultimate authority for AI alignment, safety audits, and ethical governance.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob
 ---
 
 # Ethics Auditor Agent: The Sentinel ⚖️🛡️

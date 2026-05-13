@@ -620,3 +620,8 @@ After editing any file:
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/paperclip-plugin-dev/SKILL.md`
 - `.agent/skills/paperclip-create-plugin/SKILL.md`
+- `.agent/skills/shadcn-best-practices/SKILL.md`
+- `.agent/skills/next-best-practices/SKILL.md`
+- `.agent/skills/ui-ux-pro-max/SKILL.md`
+- `.agent/skills/browser-use/SKILL.md`
+- `.agent/skills/playwright-best-practices/SKILL.md`

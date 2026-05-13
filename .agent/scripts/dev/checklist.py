@@ -88,6 +88,12 @@ def check_watchdog_schema() -> tuple[bool, str]:
     rules = load_json_safe(WATCHDOG_RULES_PATH)
     return validate_json(rules, schema_path)
 
+_SCRIPTS_ROOT = Path(REPO_ROOT) / ".agent" / "scripts"
+
+def script_exists(name: str) -> bool:
+    """Return True if a script with this name exists anywhere under .agent/scripts/."""
+    return any(_SCRIPTS_ROOT.rglob(name))
+
 def check_script_coverage(domain: str, critical_only: Optional[List[str]] = None) -> tuple[bool, str]:
     """Check if scripts in a domain directory have corresponding tests."""
     script_dir = REPO_ROOT / ".agent" / "scripts" / domain
@@ -294,7 +300,10 @@ def main() -> None:
     # Search in multiple domains
     resilience_found = True
     for s in critical_resilience:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["chaos", "misc", "health", "dev", "."])
+        if not script_exists(s):
+            resilience_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             resilience_found = False
@@ -315,7 +324,10 @@ def main() -> None:
     ]
     ki_found = True
     for s in critical_knowledge:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["knowledge", "dev", "."])
+        if not script_exists(s):
+            ki_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             ki_found = False
@@ -336,7 +348,10 @@ def main() -> None:
     ]
     foresight_found = True
     for s in critical_foresight:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["analysis", "health", "."])
+        if not script_exists(s):
+            foresight_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('intelligence_', '').replace('.py', '')}.py"
         if not test_file.exists():
             foresight_found = False
@@ -357,7 +372,10 @@ def main() -> None:
     ]
     memory_found = True
     for s in critical_memory:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["context", "."])
+        if not script_exists(s):
+            memory_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             memory_found = False
@@ -374,11 +392,14 @@ def main() -> None:
     print_step("Checking Knowledge Brain Coverage")
     critical_brain = [
         "vector_store.py", "knowledge_miner.py",
-        "discovery_brain_sync.py", "ki_coverage_collector.py"
+        "ki_coverage_collector.py"
     ]
     brain_found = True
     for s in critical_brain:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["knowledge", "."])
+        if not script_exists(s):
+            brain_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             brain_found = False
@@ -399,7 +420,10 @@ def main() -> None:
     ]
     devex_found = True
     for s in critical_devex:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["dev", "."])
+        if not script_exists(s):
+            devex_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             devex_found = False
@@ -420,7 +444,10 @@ def main() -> None:
     ]
     biz_found = True
     for s in critical_biz:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["analysis", "health", "."])
+        if not script_exists(s):
+            biz_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             biz_found = False
@@ -441,7 +468,10 @@ def main() -> None:
     ]
     sec_found = True
     for s in critical_sec:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["health", "dev", "chaos", "analysis", "."])
+        if not script_exists(s):
+            sec_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             sec_found = False
@@ -462,7 +492,10 @@ def main() -> None:
     ]
     task_sync_found = True
     for s in critical_task:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["delivery", "."])
+        if not script_exists(s):
+            task_sync_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             task_sync_found = False
@@ -483,7 +516,10 @@ def main() -> None:
     ]
     integrity_found = True
     for s in critical_integrity:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["chaos", "context", "dev", "."])
+        if not script_exists(s):
+            integrity_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             integrity_found = False
@@ -505,7 +541,10 @@ def main() -> None:
     ]
     docs_found = True
     for s in critical_docs:
-        found_in_any = any((Path(REPO_ROOT) / ".agent" / "scripts" / d / s).exists() for d in ["knowledge", "misc", "dev", "."])
+        if not script_exists(s):
+            docs_found = False
+            print_error(f"Script missing: {s}")
+            continue
         test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s.replace('.py', '')}.py"
         if not test_file.exists():
             docs_found = False

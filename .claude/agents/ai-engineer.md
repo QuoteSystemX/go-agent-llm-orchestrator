@@ -191,3 +191,6 @@ Scale & requirements?
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/mcp-integration/SKILL.md`
+- `.agent/skills/hook-development/SKILL.md`
+- `.agent/skills/skill-creator/SKILL.md`

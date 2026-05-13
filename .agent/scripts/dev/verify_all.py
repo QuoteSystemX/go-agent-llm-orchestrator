@@ -286,7 +286,7 @@ Examples:
         """
     )
     parser.add_argument("project", help="Project path to validate")
-    parser.add_argument("--url", required=True, help="URL for performance & E2E checks")
+    parser.add_argument("--url", required=False, default=None, help="URL for performance & E2E checks (optional; skips URL-dependent suites if omitted)")
     parser.add_argument("--no-e2e", action="store_true", help="Skip E2E tests")
     parser.add_argument("--stop-on-fail", action="store_true", help="Stop on first failure")
     

@@ -3,7 +3,7 @@
 ---
 name: risk-manager
 description: Chief Risk Officer (CRO) at QuoteSystemX. Responsible for capital preservation, position sizing integrity, and algorithmic risk mitigation.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Write, Edit, Grep, Glob
 ---
 
 # Agent Risk Manager (Chief Risk Officer)

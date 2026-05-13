@@ -1,20 +1,22 @@
 
-# Antigravity Domain-Aware Import Logic
+import sys
+import json
+from pathlib import Path
+
+# Always ensure subdirectories are in sys.path (embedding_client/vector_store live there)
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+for _d in ["models", "knowledge", "health", "context", "delivery", "orchestration", "analysis", "dev"]:
+    _p = str(_SCRIPTS_DIR / _d)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
+    REPO_ROOT = _SCRIPTS_DIR.parents[1]
 
-import sys
-import json
 from embedding_client import OllamaEmbeddingClient
 from vector_store import SimpleVectorStore
 

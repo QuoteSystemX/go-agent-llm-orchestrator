@@ -7,31 +7,25 @@ Usage:
     python3 ollama_agent.py "analyze codebase"  # Auto-select best model
 """
 
-# Antigravity Domain-Aware Import Logic
+import sys
+from pathlib import Path
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
+    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import json
 import subprocess
-import sys
 import time
 import urllib.request
-from pathlib import Path
 from datetime import datetime
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-OLLAMA_URL = "http://172.31.0.1:11434/api/generate"
+from lib.common import discover_ollama_url
+OLLAMA_URL = discover_ollama_url()
 
 # Benchmark-optimized model assignments
 MODEL_MAP = {

@@ -25,14 +25,13 @@ except ImportError:
         d_path = str(SCRIPTS_DIR / domain)
         if d_path not in sys.path:
             sys.path.append(d_path)
+    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import json
 import sys
 import argparse
 from datetime import datetime, timezone
 from pathlib import Path
-
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
 BUS_FILE = REPO_ROOT / ".agent" / "bus" / "context.json"
 SNAPSHOT_DIR = REPO_ROOT / ".agent" / "bus" / "snapshots"
 

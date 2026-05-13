@@ -13,13 +13,12 @@ except ImportError:
         d_path = str(SCRIPTS_DIR / domain)
         if d_path not in sys.path:
             sys.path.append(d_path)
+    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import json
 import sys
 from pathlib import Path
 from collections import defaultdict
-
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
 METRICS_FILE = REPO_ROOT / ".agent" / "logs" / "metrics.jsonl"
 
 def analyze():

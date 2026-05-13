@@ -113,6 +113,7 @@ Workflows in `.agent/workflows/` define procedures. Claude MUST read them before
 
 @.agent/ARCHITECTURE.md
 @.agent/KNOWLEDGE.md
+@.agent/SESSION_CONTEXT.md
 
 ## Commit Convention
 

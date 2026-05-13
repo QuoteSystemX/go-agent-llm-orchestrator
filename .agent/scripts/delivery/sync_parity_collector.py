@@ -13,16 +13,22 @@ except ImportError:
         if d_path not in sys.path:
             sys.path.append(d_path)
 
+import sys
 import subprocess
 import json
 import re
+from pathlib import Path
 from lib.metrics_base import MetricCollector
 from lib.paths import REPO_ROOT
+
+_DELIVERY_DIR = str(Path(__file__).resolve().parent)
+if _DELIVERY_DIR not in sys.path:
+    sys.path.insert(0, _DELIVERY_DIR)
 
 class SyncParityCollector(MetricCollector):
     def __init__(self):
         super().__init__("Sync_Parity")
-        self.sync_script = REPO_ROOT / ".agent" / "scripts" / "sync_agents.py"
+        self.sync_script = REPO_ROOT / ".agent" / "scripts" / "delivery" / "sync_agents.py"
 
     def run(self):
         from sync_agents import TARGETS

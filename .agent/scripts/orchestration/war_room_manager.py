@@ -105,7 +105,7 @@ if __name__ == "__main__":
         print("🎖 War Room: Daemon active. Listening for incidents...")
         seen = set()
         while True:
-            objects = bus.get_objects_by_type("incident")
+            objects = bus_manager.get_objects_by_type("incident")
             for obj in objects:
                 if obj['id'] not in seen:
                     manage_war_room(obj['id'])

@@ -7,32 +7,27 @@ Usage:
     python3 model_benchmark.py --model qwen3.6:27b
 """
 
-# Antigravity Domain-Aware Import Logic
+import sys
+from pathlib import Path
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
+    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import json
 import time
 import urllib.request
 from datetime import datetime
-from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-OLLAMA_URL = "http://172.31.0.1:11434/api/generate"
+from lib.common import discover_ollama_url
+OLLAMA_URL = discover_ollama_url()
 
 @dataclass
 class BenchmarkResult:
@@ -289,7 +284,7 @@ def run_full_benchmark(quick: bool = False):
     # Save results
     output = {
         "timestamp": datetime.now().isoformat(),
-        "wsI_detected": is_wsl(),
+        "wsl_detected": is_wsl(),
         "quick_mode": quick,
         "results": [
             {

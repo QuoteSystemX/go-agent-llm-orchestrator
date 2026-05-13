@@ -1,68 +1,147 @@
 #!/usr/bin/env python3
+"""
+context_autofill.py — Session Memory Writer
+Called by the Claude Code Stop hook (no arguments) at the end of every session.
+Writes .agent/SESSION_CONTEXT.md which is loaded at the start of the next session
+via the @.agent/SESSION_CONTEXT.md reference in CLAUDE.md.
+"""
 
-# Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
-import os
-import sys
+import json
 import subprocess
-import re
+from datetime import datetime, timezone
 from pathlib import Path
 
-# Antigravity Standard: Path Resolution
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from lib.paths import REPO_ROOT
+REPO_ROOT = Path(__file__).resolve().parents[3]
+BUS_DIR = REPO_ROOT / ".agent" / "bus"
+RULES_DIR = REPO_ROOT / ".agent" / "rules"
+OUTPUT_PATH = REPO_ROOT / ".agent" / "SESSION_CONTEXT.md"
+MAX_DIFF_LINES = 30
 
-def search_codebase(intent: str):
-    print(f"🔍 Autonomously investigating context for: '{intent}'...")
-    
-    # Extract potential keywords
-    keywords = re.findall(r'\b\w{4,}\b', intent)
-    results = {}
-    
-    for kw in keywords:
-        # Search for files with these names
+
+def _run(cmd: list[str], timeout: int = 5) -> str:
+    try:
+        return subprocess.check_output(
+            cmd, cwd=str(REPO_ROOT), text=True, timeout=timeout,
+            stderr=subprocess.DEVNULL
+        ).strip()
+    except Exception:
+        return ""
+
+
+def collect_git_state() -> str:
+    branch = _run(["git", "branch", "--show-current"])
+    commits = _run(["git", "log", "-3", "--pretty=format:- %s (%h)"])
+    status = _run(["git", "status", "--short"])
+
+    parts = []
+    if branch:
+        parts.append(f"**Branch:** `{branch}`")
+    if commits:
+        parts.append(f"**Recent commits:**\n{commits}")
+    if status:
+        lines = status.splitlines()
+        preview = "\n".join(lines[:15])
+        suffix = f"\n… (+{len(lines) - 15} more)" if len(lines) > 15 else ""
+        parts.append(f"**Uncommitted changes:**\n```\n{preview}{suffix}\n```")
+    return "\n".join(parts)
+
+
+def collect_last_diff_summary() -> str:
+    diff = _run(["git", "diff", "HEAD", "--stat"])
+    if not diff:
+        return ""
+    lines = diff.splitlines()[:MAX_DIFF_LINES]
+    return "```\n" + "\n".join(lines) + "\n```"
+
+
+def collect_bus_context() -> str:
+    context_file = BUS_DIR / "context.json"
+    if not context_file.exists():
+        return ""
+    try:
+        data = json.loads(context_file.read_text(encoding="utf-8"))
+        objects = data.get("objects", [])[-5:]
+        if not objects:
+            return ""
+        lines = []
+        for obj in objects:
+            t = obj.get("type", "event")
+            author = obj.get("author", "?")
+            content = obj.get("content", {})
+            summary = json.dumps(content, ensure_ascii=False)[:120]
+            lines.append(f"- `{t}` by **{author}**: {summary}")
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
+def collect_active_tasks() -> str:
+    tasks_dir = REPO_ROOT / "tasks"
+    if not tasks_dir.exists():
+        return ""
+    task_files = sorted(tasks_dir.glob("*.md"))[:5]
+    if not task_files:
+        return ""
+    lines = []
+    for f in task_files:
+        first_line = ""
         try:
-            find_out = subprocess.check_output(['find', '.', '-name', f'*{kw}*'], cwd=REPO_ROOT).decode()
-            if find_out:
-                results[kw] = find_out.splitlines()[:3] # Top 3 matches
-        except:
+            for line in f.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("<!--"):
+                    first_line = line.lstrip("#").strip()
+                    break
+        except Exception:
             pass
-            
-    return results
+        lines.append(f"- `{f.name}` — {first_line}")
+    return "\n".join(lines)
+
+
+def collect_recent_lessons() -> str:
+    lessons_file = RULES_DIR / "LESSONS_LEARNED.md"
+    if not lessons_file.exists():
+        return ""
+    try:
+        content = lessons_file.read_text(encoding="utf-8")
+        entries = [l for l in content.splitlines() if l.startswith("### [")]
+        last = entries[-3:] if entries else []
+        return "\n".join(last)
+    except Exception:
+        return ""
+
 
 def main() -> None:
-    if len(sys.argv) < 2:
-        sys.exit(1)
-        
-    intent = " ".join(sys.argv[1:])
-    # Using simple regex instead of re import for now to keep it lean
-    import re
-    
-    context = search_codebase(intent)
-    
-    if not context:
-        print("ℹ️  No immediate code matches found. Proceeding with standard discovery.")
-        return
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    print("\n💡 I've proactively found these relevant files/structures:")
-    for kw, files in context.items():
-        print(f"  - Relevant to '{kw}':")
-        for f in files:
-            print(f"    - {f}")
-    
-    print("\n[CONTEXT AUTOFILL COMPLETE — Analyst will use this data to refine the interview]")
+    sections = [
+        f"<!-- AUTO-GENERATED by context_autofill.py — {ts} — do not edit manually -->\n",
+        "# Last Session Context\n",
+        "> Loaded automatically at the start of each new Claude Code session.\n",
+    ]
+
+    git_state = collect_git_state()
+    if git_state:
+        sections.append(f"## Git State\n\n{git_state}\n")
+
+    diff_summary = collect_last_diff_summary()
+    if diff_summary:
+        sections.append(f"## Last Diff (HEAD)\n\n{diff_summary}\n")
+
+    tasks = collect_active_tasks()
+    if tasks:
+        sections.append(f"## Active Tasks\n\n{tasks}\n")
+
+    bus_ctx = collect_bus_context()
+    if bus_ctx:
+        sections.append(f"## Recent Bus Events\n\n{bus_ctx}\n")
+
+    lessons = collect_recent_lessons()
+    if lessons:
+        sections.append(f"## Latest Lessons Learned\n\n{lessons}\n")
+
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_PATH.write_text("\n".join(sections), encoding="utf-8")
+
 
 if __name__ == "__main__":
     main()

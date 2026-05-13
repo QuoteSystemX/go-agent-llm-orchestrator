@@ -3,7 +3,7 @@
 ---
 name: maintainer
 description: Senior Maintainer and Quality Guardian. Responsible for code review, PR audits, and ensuring adherence to ARCHITECTURE.md and KNOWLEDGE.md. Use for blocking poor-quality PRs, security audits, and performance verification.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Maintainer — Senior Quality Guardian

@@ -271,9 +271,13 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
     if not ux_data.get("passed", True):
         score -= 5
 
-    # 6. SEO Check
-    metrics["SEO Check"] = "PASS" if seo_data.get("passed", True) else "WARN"
-    if not seo_data.get("passed", True):
+    # 6. SEO Check (skipped for non-web projects)
+    if seo_data.get("skipped"):
+        metrics["SEO Check"] = "N/A"
+    elif seo_data.get("passed", True):
+        metrics["SEO Check"] = "PASS"
+    else:
+        metrics["SEO Check"] = "WARN"
         score -= 5
 
     # 6a. Sync Status (Universal)

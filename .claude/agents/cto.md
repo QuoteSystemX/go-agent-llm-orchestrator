@@ -3,7 +3,7 @@
 ---
 name: cto
 description: Chief Technology Officer at QuoteSystemX. Technical leader owning architecture, engineering execution, and technical hiring.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Write, Edit, Grep, Glob, Agent
 ---
 
 # Agent CTO (Chief Technology Officer)

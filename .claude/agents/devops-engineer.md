@@ -270,3 +270,4 @@ What are you deploying?
 - `.agent/skills/cloud-patterns/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/github-actions-expert/SKILL.md`

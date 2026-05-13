@@ -28,8 +28,32 @@ except:
 
 SKIP_DIRS = {
     'node_modules', '.next', 'dist', 'build', '.git', '.github',
-    '__pycache__', '.vscode', '.idea', 'coverage'
+    '__pycache__', '.vscode', '.idea', 'coverage',
+    '.agent',  # always skip internal agent tooling
 }
+
+WEB_FRAMEWORK_DEPS = {'next', 'react', 'vue', 'angular', 'svelte', 'nuxt', 'gatsby', 'remix'}
+
+def is_web_project(project_path: Path) -> bool:
+    """Return True if the project has a frontend/web component."""
+    pkg = project_path / "package.json"
+    if pkg.exists():
+        try:
+            data = json.loads(pkg.read_text())
+            all_deps = {*data.get("dependencies", {}), *data.get("devDependencies", {})}
+            if all_deps & WEB_FRAMEWORK_DEPS:
+                return True
+        except Exception:
+            pass
+    # Check for page directories with JSX/TSX
+    for pages_dir in ("src/pages", "src/app", "pages", "app"):
+        d = project_path / pages_dir
+        if d.exists() and any(d.glob("**/*.tsx")) or any(d.glob("**/*.jsx") if d.exists() else []):
+            return True
+    # Root-level index.html (not from .agent)
+    if (project_path / "index.html").exists():
+        return True
+    return False
 
 class SEOAuditor:
     def __init__(self, project_path):
@@ -176,10 +200,24 @@ class SEOAuditor:
 
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else "."
+    project_path = Path(path).resolve()
+
+    if not is_web_project(project_path):
+        print("ℹ️  Not a web project — SEO check skipped.")
+        with open(".agent/bus/seo_metrics.json", "w") as f:
+            json.dump({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "results": [],
+                "passed": True,
+                "skipped": True,
+                "reason": "No web framework detected",
+            }, f, indent=2)
+        return
+
     auditor = SEOAuditor(path)
     auditor.run()
     auditor.print_report()
-    
+
     # Export for status_report.py
     with open(".agent/bus/seo_metrics.json", "w") as f:
         json.dump({

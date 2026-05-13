@@ -30,7 +30,7 @@ from datetime import datetime
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS_DIR = REPO_ROOT / ".agent" / "bus"
 METRICS_FILE = BUS_DIR / "metrics_log.json"
-PROVISIONER = REPO_ROOT / ".agent" / "scripts" / "mcp_provisioner.py"
+PROVISIONER = REPO_ROOT / ".agent" / "scripts" / "health" / "mcp_provisioner.py"
 
 def get_system_metrics():
     """Collect CPU, RAM, and Disk usage."""
@@ -79,32 +79,50 @@ def log_metrics(metrics, status):
     with open(METRICS_FILE, 'w') as f:
         json.dump(history, f, indent=2)
 
+def read_previous_status() -> str:
+    """Read the last written stability status, default to HEALTHY."""
+    status_file = BUS_DIR / "blue_team_status.json"
+    if status_file.exists():
+        try:
+            return json.loads(status_file.read_text()).get("status", "HEALTHY")
+        except Exception:
+            pass
+    return "HEALTHY"
+
 def main() -> None:
     print(f"\n{'='*60}")
     print(f"🔵 BLUE TEAM MONITOR - Stability Check")
     print(f"{'='*60}")
-    
+
     # 1. System Check
     metrics = get_system_metrics()
     print(f"🖥  System: CPU {metrics['cpu_percent']}% | RAM {metrics['ram_percent']}% | Disk {metrics['disk_free_gb']:.1f}GB free")
-    
+
     # 2. MCP Check
     is_healthy, msg = check_mcp_server()
-    status = "HEALTHY" if is_healthy else "DOWN"
-    
+
+    # 3. State machine: prev_status → new_status
+    prev_status = read_previous_status()
     if is_healthy:
+        status = "HEALTHY"  # always recover to HEALTHY when MCP is up
         print(f"✅ MCP Server: {msg}")
+        if prev_status in ("DOWN", "RECOVERING"):
+            print(f"✅ Recovered from {prev_status}")
     else:
         print(f"⚠️  MCP Server: {msg}")
-        print("🛠  Triggering Self-Healing...")
-        # Self-healing is already part of mcp_provisioner's main() if it fails health check
-        # But we log it as a recovery event
-        status = "RECOVERING"
-        
-    # 3. Log results
+        if prev_status == "HEALTHY":
+            # First failure — enter RECOVERING
+            status = "RECOVERING"
+            print("🛠  Triggering Self-Healing (HEALTHY → RECOVERING)")
+        else:
+            # Still down — stay RECOVERING until resolved
+            status = "RECOVERING"
+            print(f"🔄 Still recovering (prev: {prev_status})")
+
+    # 4. Log results
     log_metrics(metrics, status)
-    
-    # 4. Final Status for status_report
+
+    # 5. Write status for status_report
     with open(BUS_DIR / "blue_team_status.json", "w") as f:
         json.dump({
             "status": status,

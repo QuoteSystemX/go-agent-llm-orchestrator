@@ -6,14 +6,18 @@ import os
 import re
 from pathlib import Path
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+for _d in ["health", "dev", "context", "delivery", "orchestration", "analysis", "models", "knowledge"]:
+    _p = str(_SCRIPTS_DIR / _d)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        sys.path.append(str(SCRIPTS_DIR / domain))
-    from lib.paths import REPO_ROOT
+    REPO_ROOT = _SCRIPTS_DIR.parents[1]
 
 def heal_docs():
     import drift_detector

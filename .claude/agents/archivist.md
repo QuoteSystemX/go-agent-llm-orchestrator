@@ -3,7 +3,7 @@
 ---
 name: archivist
 description: Governs the high-fidelity knowledge lifecycle. Maximizes Signal-to-Noise ratio in the organization's brain.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
 # 📚 @archivist (Strategic Memory Governor)
@@ -53,3 +53,4 @@ A well-documented "Why" is a force multiplier for the next agent. A "How" withou
 
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/wiki-writing/SKILL.md`
+- `.agent/skills/semantic-search/SKILL.md`

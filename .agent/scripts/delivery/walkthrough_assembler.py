@@ -69,6 +69,10 @@ def format_entry(output):
     return entry
 
 def update_walkthrough():
+    if not WALKTHROUGH_PATH:
+        print("Walkthrough path not configured — skipping.")
+        return
+
     outputs = get_session_outputs()
     if not outputs:
         print("No outputs found in Bus.")
@@ -92,7 +96,7 @@ def update_walkthrough():
         log_entries += format_entry(out)
 
     # Replace old log with new one
-    new_content = re.sub(f"{log_section_header}.*", f"{log_section_header}\n{log_entries}", content, flags=re.DOTALL)
+    new_content = re.sub(f"{re.escape(log_section_header)}.*", f"{log_section_header}\n{log_entries}", content, flags=re.DOTALL)
 
     with open(WALKTHROUGH_PATH, "w") as f:
         f.write(new_content)

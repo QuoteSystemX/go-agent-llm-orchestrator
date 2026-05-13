@@ -20,6 +20,9 @@ import subprocess
 import json
 from datetime import datetime
 
+from pathlib import Path as _Path
+SCRIPTS_ROOT = _Path(__file__).resolve().parents[1]
+
 REQUIRED_SECTIONS = [
     r"🤖 \*\*Agent Header\*\*",
     r"🎯 \*\*Context/Goal\*\*",
@@ -131,21 +134,20 @@ def synthesize_outputs():
     
     # Run automation scripts before clearing
     print("🔄 Running automation scripts (Unified Hub Sync)...")
-    scripts_dir = ".agent/scripts"
     automation_chain = [
-        "walkthrough_assembler.py",
-        "task_sync.py",
-        "doc_healer.py",
-        "visualize_deps.py",
-        "obsidian_validator.py"
+        SCRIPTS_ROOT / "delivery" / "walkthrough_assembler.py",
+        SCRIPTS_ROOT / "delivery" / "task_sync.py",
+        SCRIPTS_ROOT / "dev"      / "doc_healer.py",
+        SCRIPTS_ROOT / "dev"      / "visualize_deps.py",
+        SCRIPTS_ROOT / "knowledge" / "obsidian_validator.py",
     ]
-    
+
     for script in automation_chain:
-        print(f"  - Executing {script}...")
+        print(f"  - Executing {script.name}...")
         try:
-            subprocess.run([sys.executable, os.path.join(scripts_dir, script)], check=True)
+            subprocess.run([sys.executable, str(script)], check=True)
         except Exception as e:
-            print(f"  ⚠️  {script} failed: {e}")
+            print(f"  ⚠️  {script.name} failed: {e}")
 
     print("\n" + "="*50)
     print("🤖 **Agent Header**: orchestrator (Synthesis)")
@@ -194,9 +196,8 @@ def main():
     
     # 0. Sync Wiki Knowledge (Karpathy 2.0)
     print("🔗 Syncing Obsidian Knowledge Graph...")
-    scripts_dir = ".agent/scripts"
     try:
-        subprocess.run([sys.executable, os.path.join(scripts_dir, "obsidian_sync.py")], check=True)
+        subprocess.run([sys.executable, str(SCRIPTS_ROOT / "knowledge" / "obsidian_sync.py")], check=True)
     except Exception as e:
         print(f"⚠️  Obsidian sync failed: {e}")
 
@@ -215,14 +216,14 @@ def main():
 
     # 2. Mental Model Validation (Karpathy 2.0)
     try:
-        subprocess.run([sys.executable, os.path.join(scripts_dir, "model_validator.py"), goal, json.dumps(impacted_files)], check=True)
+        subprocess.run([sys.executable, str(SCRIPTS_ROOT / "models" / "model_validator.py"), goal, json.dumps(impacted_files)], check=True)
     except subprocess.CalledProcessError:
         print("❌ FAILED: Change violates established Mental Models in wiki/mental-models/")
         # sys.exit(1)
 
     # 2.5 Governance Gate: Wiki-First Enforcement (Hybrid Protocol)
     try:
-        subprocess.run([sys.executable, os.path.join(scripts_dir, "governance_gate.py"), json.dumps(impacted_files)], check=True)
+        subprocess.run([sys.executable, str(SCRIPTS_ROOT / "orchestration" / "governance_gate.py"), json.dumps(impacted_files)], check=True)
     except subprocess.CalledProcessError:
         print("❌ FAILED: New files must be defined in the Wiki (Stories/ADR) first.")
         # sys.exit(1)
@@ -234,21 +235,19 @@ def main():
     
     if is_critical:
         print("🛡️  CRITICAL CHANGE DETECTED: Triggering Red-Team Gate...")
-        scripts_dir = ".agent/scripts"
-        
         # Run Security Scan
         try:
             print("   - Running security_scan.py...")
-            subprocess.run([sys.executable, os.path.join(scripts_dir, "security_scan.py"), "."], check=True)
+            subprocess.run([sys.executable, str(SCRIPTS_ROOT / "health" / "security_scan.py"), "."], check=True)
         except subprocess.CalledProcessError:
             print("❌ RED-TEAM VETO: Security scan failed or found vulnerabilities.")
             # In a real CI/CD we would exit 1 here. For now we warn.
             # sys.exit(1)
-        
+
         # Run Threat Modeler
         try:
             print("   - Running threat_modeler.py...")
-            subprocess.run([sys.executable, os.path.join(scripts_dir, "threat_modeler.py")], check=True)
+            subprocess.run([sys.executable, str(SCRIPTS_ROOT / "health" / "threat_modeler.py")], check=True)
         except Exception as e:
             print(f"   ⚠️  Threat modeling failed: {e}")
 
