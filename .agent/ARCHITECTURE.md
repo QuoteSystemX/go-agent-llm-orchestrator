@@ -38,320 +38,57 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
-  db -->  Migrations
-	mainQueries := []string{
-		`CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, name TEXT, status TEXT, progress INTEGER, message TEXT, started_at DATETIME, completed_at DATETIME, command TEXT, task_data TEXT);`,
-		`CREATE TABLE IF NOT EXISTS proposals (id TEXT PRIMARY KEY, title TEXT, proposer TEXT, votes INTEGER, required INTEGER, status TEXT, created_at DATETIME, command_type TEXT, command_data TEXT);`,
-		`CREATE TABLE IF NOT EXISTS permissions (agent_name TEXT, tool_name TEXT, allowed INTEGER, PRIMARY KEY (agent_name, tool_name));`,
-		`CREATE TABLE IF NOT EXISTS secrets (key TEXT PRIMARY KEY, value TEXT, updated_at DATETIME);`,
-		`CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT, path TEXT, created_at DATETIME);`,
-		`CREATE TABLE IF NOT EXISTS webhooks (id TEXT PRIMARY KEY, url TEXT, events TEXT, created_at DATETIME);`,
-		`CREATE TABLE IF NOT EXISTS resource_hooks (resource_uri TEXT, event_type TEXT, script_path TEXT, PRIMARY KEY (resource_uri, event_type));`,
-		`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`,
-	}
-
-	for _, q := range mainQueries {
-		if _, err := h.conn.Exec(q); err != nil {
-			return nil, fmt.Errorf(
   db --> filepath
   db --> sql
   db --> sqlite
   db --> url
   db_security --> sql
-  handlers_bmad -->  2. Add Documentation Nodes
-	sb.WriteString(
-  handlers_bmad -->  nosec
-		}
-	}
-	return mcp.NewToolResultText(strings.Join(status, 
-  handlers_bmad -->  nosec
-		} else {
-			status = append(status, fmt.Sprintf(
   handlers_bmad --> exec
   handlers_bmad --> filepath
   handlers_bmad --> mcp
-  handlers_discovery -->  Recursive search through category subfolders
-	agentsRoot := filepath.Join(h.projectRoot, 
-  handlers_discovery -->  Then scan the first 512 bytes of SKILL.md for the keyword.
-		skillPath := filepath.Join(skillsDir, name, 
   handlers_discovery --> filepath
   handlers_discovery --> fs
   handlers_discovery --> json
   handlers_discovery --> mcp
-  handlers_gov -->  Actually execute based on command type
-	switch target.CommandType {
-	case 
-  handlers_gov -->  Security fixes require fewer votes for agility
-		Status:      
-  handlers_gov -->  nosec
-			Status:    
-  handlers_gov -->  nosec
-		Proposer:    
-  handlers_gov -->  nosec
-		}
-		h.db.SaveJob(job)
-
-		scriptPath := filepath.Join(h.projectRoot, 
-  handlers_gov -->  nosec
-	}
-	
-	h.db.SaveProposal(p)
-	return mcp.NewToolResultText(fmt.Sprintf(
-  handlers_gov -->  nosec
-
-	default:
-		return mcp.NewToolResultError(
-  handlers_gov -->  nosec
-}
-
-func (h *handler) setPermission(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	agent, _ := req.RequireString(
-  handlers_gov --> %d
-  handlers_gov --> %d votes - %s | %s | %s | %s
   handlers_gov --> filepath
   handlers_gov --> mcp
   handlers_hooks --> mcp
-  handlers_infra --> 
-  handlers_infra -->  --- Workspace Tools ---
-
-func (h *handler) syncWorkspace(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cmd := exec.Command(
-  handlers_infra -->  nosec
-	}
-	if len(lines) == 0 {
-		return mcp.NewToolResultText(
   handlers_infra --> exec
   handlers_infra --> filepath
   handlers_infra --> mcp
-  handlers_infra --> mcp_server_
-  handlers_jobs --> 
-  handlers_jobs -->  nosec
-		JobID:   jobID,
-		Command: 
-  handlers_jobs -->  nosec
-		return mcp.NewToolResultError(
-  handlers_jobs -->  nosec
-		}
-	}
-	return mcp.NewToolResultError(
-  handlers_jobs -->  nosec
-	content := fmt.Sprintf(
-  handlers_jobs -->  nosec
-	}
-	return mcp.NewToolResultText(strings.Join(lines, 
-  handlers_jobs -->  nosec
-
-	tasksDir := filepath.Join(h.projectRoot, 
-  handlers_jobs --> : 
   handlers_jobs --> filepath
   handlers_jobs --> json
   handlers_jobs --> mcp
-  handlers_knowledge --> 
-  handlers_knowledge -->  nosec
-		filepath.Base(latestPath), n, strings.Join(all, 
   handlers_knowledge --> exec
   handlers_knowledge --> filepath
   handlers_knowledge --> mcp
-  handlers_v3_test -->  1. Initially allowed by default (default policy: allow if no record)
-	req := mcp.CallToolRequest{}
-	req.Params.Arguments = map[string]any{
-  handlers_v3_test -->  1. Missing secret
-	req := mcp.CallToolRequest{}
-	req.Params.Arguments = map[string]any{
-  handlers_v3_test -->  2. Explicitly deny
-	h.db.SetPermission(agentName, toolName, false)
-	res, _ = rbacHandler(ctx, req)
-	if !res.IsError {
-		t.Error(
-  handlers_v3_test -->  2. Overwrite secret
-	h.db.SetSecret(
-  handlers_v3_test -->  Add a dummy metric
-	err := h.db.RecordMetric(
-  handlers_v3_test -->  Create a proposal that is NOT approved
-	pID := 
-  handlers_v3_test -->  In main.go, this is done in main(), so we'll test the helper logic
-	withRBAC := func(tool string, hdlr func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			allowed, _ := h.db.CheckPermission(agentName, tool)
-			if !allowed {
-				return mcp.NewToolResultError(
   handlers_v3_test --> filepath
   handlers_v3_test --> mcp
-  helpers -->  Match YAML-style frontmatter or simple markdown headers
-	re := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---`)
-	match := re.FindStringSubmatch(content)
-	if len(match) > 1 {
-		lines := strings.Split(match[1], 
-  helpers -->  Strip quotes if present
-				val = strings.Trim(val, `
   helpers --> aws
   helpers --> config
   helpers --> filepath
   helpers --> mcp
   helpers --> s3
-  hooks_test -->  Call loadItem which triggers on_read
-	_, err = h.loadItem(fullPath)
-	if err != nil {
-		t.Fatalf(
-  hooks_test -->  Create docs dir first so Watch can add it
-	docsDir := filepath.Join(tempDir, 
-  hooks_test -->  Create file
-	fullPath := filepath.Join(tempDir, relPath)
-	os.MkdirAll(filepath.Dir(fullPath), 0755)
-	os.WriteFile(fullPath, []byte(
-  hooks_test -->  Register hook
-	relPath := 
-  hooks_test -->  Verify job created
-	var count int
-	err = db.conn.QueryRow(
-  hooks_test -->  Wait for hook to trigger and job to be created
-	success := false
-	timeout := time.After(10 * time.Second)
-	tick := time.Tick(500 * time.Millisecond)
-	for {
-		select {
-		case <-timeout:
-			t.Fatal(
-  hooks_test --> Modify file
-	fullPath := filepath.Join(tempDir, relPath)
-	t.Logf(
   hooks_test --> filepath
   indexer --> filepath
   indexer --> fsnotify
   indexer --> sql
-  indexer_test -->  Create a test file
-	docsDir := filepath.Join(tempDir, 
-  indexer_test -->  Search for 
-  indexer_test -->  Setup structure
-	dirs := []string{
-  indexer_test -->  Test porter stemming (security -> secur)
-		results, _ = idx.Search(
-  indexer_test -->  Verify all 3 files are indexed
-	var count int
-	err = db.conn.QueryRow(
   indexer_test --> filepath
-  lsp --> 
-  lsp --> definition
   lsp --> exec
   lsp --> filepath
-  lsp --> hover
   lsp --> json
   lsp --> mcp
-  main -->  --- Agents Tools ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Architecture & Status ---
-
-	s.AddTool(mcp.NewTool(
-  main -->  --- BMAD Automation ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Council of Sages ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Infrastructure & Ops ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Jobs & Workflows ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Knowledge Tools ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Logging & Observability ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Resource Hooks ---
-	s.AddTool(mcp.NewTool(
-  main -->  --- Skills Tools ---
-	s.AddTool(mcp.NewTool(
-  main -->  Data Retention initialization
-	if *retentionDays > 0 {
-		h.db.SetSetting(
-  main -->  Ensure essential tables are populated
-	_ = h.db.SaveProposal(&CouncilProposal{
-		ID:        
-  main -->  Graceful shutdown
-		srv := &http.Server{Addr: addr}
-		go func() {
-			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				fmt.Fprintf(os.Stderr, 
-  main -->  Helper to wrap handlers with RBAC and Telemetry
-	withRBAC := func(toolName string, hdlr func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			start := time.Now()
-			agent := 
-  main -->  Indexer initialization
-	if *indexDirs != 
-  main -->  RBAC Check
-			allowed, err := h.db.CheckPermission(agent, toolName)
-			if err != nil || !allowed {
-				if toolName == 
-  main -->  SSE log streaming — tail audit.log
-		auditLogPath := filepath.Join(h.projectRoot, 
-  main -->  Search recursively through category subfolders
-	agentsRoot := filepath.Join(h.projectRoot, 
-  main -->  Skills: list top-level directories only
-		entries, err := os.ReadDir(path)
-		if err != nil {
-			return mcp.NewToolResultError(
-  main -->  nosec
-	}
-	return h.loadItem(found)
-}
-
-func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	return h.listItemsHelper(filepath.Join(h.projectRoot, 
-  main -->  nosec
-	}
-	return mcp.NewToolResultText(string(data)), nil
-}
-
-func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, _ := req.RequireString(
   main --> filepath
   main --> fs
-  main --> hover info for a symbol.
   main --> http
   main --> mcp
-  main --> readiness probes.
-		http.HandleFunc(
   main --> server
   main --> signal
-  main --> workflows: walk recursively, collect all .md files
-		_ = filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() || strings.HasPrefix(d.Name(), 
   main_test --> filepath
   main_test --> mcp
-  maintenance -->  Check if CWD or any parent is a project root
-	curr := cwd
-	for {
-		agentPath := filepath.Join(curr, 
   maintenance --> filepath
   workers --> exec
   workers --> json
-  workers_test -->  1. Prepare a pending job in DB
-	jobID := 
-  workers_test -->  2. Start a NEW dispatcher and check if it picks up the job
-	d2 := NewDispatcher(db, 1)
-	d2.Start()
-	defer d2.Stop()
-
-	timeout := time.After(5 * time.Second)
-	tick := time.Tick(200 * time.Millisecond)
-	for {
-		select {
-		case <-timeout:
-			t.Fatal(
-  workers_test -->  Check that only 1 is running (at most)
-	success := false
-	for i := 0; i < 10; i++ {
-		time.Sleep(200 * time.Millisecond)
-		var runningCount int
-		db.conn.QueryRow(
-  workers_test -->  Submit 2 long jobs
-	for i := 1; i <= 2; i++ {
-		id := fmt.Sprintf(
-  workers_test -->  Wait for completion
-	timeout := time.After(5 * time.Second)
-	tick := time.Tick(100 * time.Millisecond)
-	for {
-		select {
-		case <-timeout:
-			t.Fatal(
   workers_test --> filepath
 ```
 <!-- DEPENDENCY_GRAPH_END -->

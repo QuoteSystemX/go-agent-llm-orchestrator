@@ -30,9 +30,19 @@ except ImportError:
 def scan_python_imports(file_path: Path) -> list[str]:
     try:
         with open(file_path, "r", encoding="utf-8", errors='ignore') as f:
-            content = f.read()
-        imports = re.findall(r'^\s*(?:from|import)\s+([\w\.]+)', content, re.MULTILINE)
-        return [imp.split('.')[0] for imp in imports if not imp.startswith('.')]
+            lines = f.readlines()
+        found = []
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            # Basic match for 'import x' or 'from x import y'
+            match = re.match(r'^(?:from|import)\s+([\w\.]+)', line)
+            if match:
+                imp = match.group(1).split('.')[0]
+                if imp not in ["os", "sys", "re", "json", "pathlib", "time", "subprocess", "datetime"]:
+                    found.append(imp)
+        return found
     except:
         return []
 
@@ -41,26 +51,48 @@ def scan_go_imports(file_path: Path) -> list[str]:
         with open(file_path, "r", encoding="utf-8", errors='ignore') as f:
             content = f.read()
         
-        # More robust Go import scanning:
-        # 1. Single line imports: import "..."
-        # 2. Block imports: import ( ... )
+        # Strip comments to avoid capturing commented-out imports
+        # Strip single-line comments
+        content = re.sub(r'//.*', '', content)
+        # Strip multi-line comments
+        content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
         
         found_imports = []
         
         # Single line: import "pkg" or import alias "pkg"
-        single_matches = re.findall(r'import\s+(?:[\w\.]+\s+)??"([^"]+)"', content)
+        single_matches = re.findall(r'import\s+(?:[\w\.]+\s+)?"([^"]+)"', content)
         found_imports.extend(single_matches)
         
         # Block: import ( ... )
         block_matches = re.findall(r'import\s*\((.*?)\)', content, re.DOTALL)
         for block in block_matches:
-            # Extract quoted strings from the block
             quoted_in_block = re.findall(r'"([^"]+)"', block)
             found_imports.extend(quoted_in_block)
             
-        # Filter for local project imports (usually contain /) or meaningful ones
-        # and extract the last part of the path
-        return [imp.split('/')[-1] for imp in found_imports if '/' in imp]
+        # Filter:
+        # 1. Only take imports with '/' (excludes stdlib like 'fmt')
+        # 2. Prioritize internal project imports if they match a known prefix
+        # 3. Limit the total number of imports per file to avoid swelling
+        
+        project_prefix = "github.com/QuoteSystemX/prompt-library"
+        results = []
+        for imp in found_imports:
+            if '/' not in imp:
+                continue
+            
+            # If it's an internal import, we definitely want it
+            if project_prefix in imp:
+                # Extract the meaningful part after the prefix
+                parts = imp.replace(project_prefix, "").strip("/").split("/")
+                if parts and parts[0]:
+                    results.append(parts[0])
+                else:
+                    results.append(imp.split('/')[-1])
+            else:
+                # For external, only take the last part
+                results.append(imp.split('/')[-1])
+                
+        return list(set(results))[:10] # Limit to 10 unique imports per file
     except Exception:
         return []
 
@@ -93,8 +125,14 @@ def generate_mermaid():
     if not edges:
         return "No local dependencies found."
 
+    # Limit total edges to prevent 'swelling' in massive repos
+    sorted_edges = sorted(list(edges))
+    if len(sorted_edges) > 300:
+        sorted_edges = sorted_edges[:300]
+        sorted_edges.append("  [...] --> [Limit Reached]")
+
     mermaid = ["```mermaid", "graph TD"]
-    mermaid.extend(sorted(list(edges)))
+    mermaid.extend(sorted_edges)
     mermaid.append("```")
     
     mermaid_str = "\n".join(mermaid)
