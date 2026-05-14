@@ -35,3 +35,12 @@ go.work.sum
 .agent/**/__pycache__/
 .agent/**/*.py[cod]
 .agent/**/*.pyo
+
+# Agent Context Bus & State
+.agent/bus/*.json
+
+# Logs
+*.log
+
+# Local Skill Server Binaries
+.agent/local-skill-server/bin/
