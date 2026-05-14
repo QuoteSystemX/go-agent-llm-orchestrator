@@ -440,6 +440,11 @@ func (db *DB) SaveChatMessage(ctx context.Context, role, content, provider, repo
 	return err
 }
 
+func (db *DB) AddAuditLog(ctx context.Context, sessionID, action, details string) error {
+	_, err := db.history.ExecContext(ctx, "INSERT INTO audit_logs (session_id, action, details) VALUES (?, ?, ?)", sessionID, action, details)
+	return err
+}
+
 func (db *DB) ClearChatHistory(ctx context.Context, repo string) error {
 	var err error
 	if repo != "" {

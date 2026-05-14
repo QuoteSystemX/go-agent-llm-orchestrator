@@ -519,7 +519,7 @@ func (e *Engine) runTask(taskID string) {
 				Mission:      mission,
 				CurrentRetry: currentRetry,
 			}
-			sid, err := e.executor.Execute(ctx, t, fullPrompt)
+			sid, err := e.executor.Execute(ctx, t, fullPrompt, logID)
 			if err != nil {
 				return err
 			}

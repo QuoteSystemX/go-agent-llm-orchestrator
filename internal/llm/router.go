@@ -19,6 +19,10 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+type PromptBuilder interface {
+	GetServicePrompt(name string, data any) (string, error)
+}
+
 type Router struct {
 	db             *db.DB
 	LocalEndpoint  string
@@ -34,6 +38,7 @@ type Router struct {
 	modelCtxCache map[string]int // model name → detected context window
 
 	tracer monitor.Tracer
+	pb     PromptBuilder
 }
 
 type Message struct {
@@ -68,6 +73,10 @@ func NewRouter(database *db.DB) *Router {
 
 func (r *Router) SetTracer(t monitor.Tracer) {
 	r.tracer = t
+}
+
+func (r *Router) SetPromptBuilder(pb PromptBuilder) {
+	r.pb = pb
 }
 
 // GetModelContextWindow returns the practical context window for the current local
@@ -443,13 +452,25 @@ func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (
 	}()
 	monitor.LLMCalls.WithLabelValues("local", "audit").Inc()
 
-	prompt := fmt.Sprintf(r.getAuditPrompt(), mission, ragContext)
+	promptStr := ""
+	if r.pb != nil {
+		p, err := r.pb.GetServicePrompt("audit", map[string]any{
+			"Mission":    mission,
+			"RagContext": ragContext,
+		})
+		if err == nil {
+			promptStr = p
+		}
+	}
+
+	if promptStr == "" {
+		promptStr = fmt.Sprintf(r.getAuditPrompt(), mission, ragContext)
+	}
 
 	// Use GenerateChat directly with local provider to ensure speed and privacy
-	// We provide a specific system role to avoid the default generic coding assistant prompt
 	responseMsg, err := r.GenerateChat(ctx, Simple, []Message{
 		{Role: "system", Content: "You are a mission auditor. Analyze the provided task and return a JSON object with clarity (0.0-1.0), ambiguity (0.0-1.0), and impact (LOW|MEDIUM|HIGH)."},
-		{Role: "user", Content: prompt},
+		{Role: "user", Content: promptStr},
 	}, nil, "local")
 	if err != nil {
 		return nil, err
@@ -486,6 +507,40 @@ func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (
 	}
 
 	return &result, nil
+}
+
+// RedTeamAudit performs a security audit of a proposed action.
+func (r *Router) RedTeamAudit(ctx context.Context, proposal, contextStr string) (string, error) {
+	start := time.Now()
+	defer func() {
+		monitor.LLMLatency.WithLabelValues("local", "red-team").Observe(time.Since(start).Seconds())
+	}()
+	monitor.LLMCalls.WithLabelValues("local", "red-team").Inc()
+
+	promptStr := ""
+	if r.pb != nil {
+		p, err := r.pb.GetServicePrompt("red_team", map[string]any{
+			"Proposal": proposal,
+			"Context":  contextStr,
+		})
+		if err == nil {
+			promptStr = p
+		}
+	}
+
+	if promptStr == "" {
+		promptStr = fmt.Sprintf("Analyze proposal for security risks: %s\nContext: %s", proposal, contextStr)
+	}
+
+	resp, err := r.GenerateChat(ctx, Complex, []Message{
+		{Role: "system", Content: "You are a professional Red Team operator and security auditor. Your goal is to find vulnerabilities and risks in proposed actions. Be strict and objective."},
+		{Role: "user", Content: promptStr},
+	}, nil, "local")
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Content, nil
 }
 
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {

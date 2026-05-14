@@ -83,6 +83,7 @@ func main() {
 	}
 	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
 	promptBuilder := prompt.NewBuilder(database, cacheDir)
+	router.SetPromptBuilder(promptBuilder)
 
 	mcpPath := os.Getenv("MCP_SERVER_PATH")
 	if mcpPath == "" {
@@ -113,6 +114,7 @@ func main() {
 
 	analyzer := dto.NewAnalyzer(ctx, database, router, promptBuilder, gitSyncer)
 	analyzer.SetInferencePriority(router)
+	exec.SetIndexer(analyzer)
 	// Auto-discover existing RAG stores on startup in background
 	go analyzer.DiscoverExistingStores(ctx)
 	engine.SetContextSearcher(analyzer.SearchContextFiltered)

@@ -117,6 +117,28 @@ func (a *Analyzer) DiscoverExistingStores(ctx context.Context) {
 	}
 }
 
+// IndexSession vectorizes a completed session history for long-term memory.
+func (a *Analyzer) IndexSession(ctx context.Context, repoName, sessionID, content string) error {
+	store := a.GetRagStore(repoName)
+	if store == nil {
+		return fmt.Errorf("no RAG store for repo %s", repoName)
+	}
+
+	doc := rag.Document{
+		ID:      "session-" + sessionID,
+		Content: content,
+		Metadata: map[string]string{
+			"type":       "session_history",
+			"session_id": sessionID,
+			"repo":       repoName,
+			"ts":         time.Now().Format(time.RFC3339),
+		},
+	}
+
+	log.Printf("Analyzer: Indexing session %s for repo %s", sessionID, repoName)
+	return store.AddDocument(ctx, doc)
+}
+
 func (a *Analyzer) RecoverRepo(ctx context.Context, repoID string) error {
 	store := a.GetRagStore(repoID)
 	if store == nil {

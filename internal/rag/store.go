@@ -25,6 +25,7 @@ type Document struct {
 	Content  string
 	Source   string
 	Category string
+	Metadata map[string]string
 }
 
 // RAGStats provides insights into the vector database state.
@@ -207,10 +208,15 @@ func (s *MemoryStore) AddDocument(ctx context.Context, doc Document) error {
 		{
 			ID:      doc.ID,
 			Content: doc.Content,
-			Metadata: map[string]string{
-				"source":   doc.Source,
-				"category": doc.Category,
-			},
+			Metadata: func() map[string]string {
+				m := doc.Metadata
+				if m == nil {
+					m = make(map[string]string)
+				}
+				m["source"] = doc.Source
+				m["category"] = doc.Category
+				return m
+			}(),
 		},
 	}, 1) // 1 thread for local
 	if err != nil {
@@ -261,6 +267,7 @@ func (s *MemoryStore) SearchFiltered(ctx context.Context, query string, topK int
 			Content:  res.Content,
 			Source:   res.Metadata["source"],
 			Category: res.Metadata["category"],
+			Metadata: res.Metadata,
 		})
 	}
 	return docs

@@ -3,6 +3,7 @@ package prompt
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,9 +13,16 @@ import (
 )
 
 //go:embed session.md
-var sessionTemplate string
+var defaultSessionTemplate string
 
-// bmadPatterns is deprecated and removed as part of the architecture cleanup.
+//go:embed audit.md
+var defaultAuditTemplate string
+
+//go:embed red_team.md
+var defaultRedTeamTemplate string
+
+//go:embed system.md
+var defaultSystemTemplate string
 
 type Data struct {
 	Agent              string
@@ -25,38 +33,78 @@ type Data struct {
 	WorkflowProtocol   string
 	PatternMethodology string
 	RagContext         string
+	
+	// For service prompts
+	Context string
+	Proposal string
 }
 
 // Builder reads pattern and agent files from a local prompt-library clone.
 type Builder struct {
-	db                *db.DB
-	libraryDir        string
-	cachedPatternsPath string
-	cachedAgentsPath   string
+	db                  *db.DB
+	libraryDir          string
+	cachedPatternsPath  string
+	cachedAgentsPath    string
 	cachedWorkflowsPath string
+	cachedPromptsPath   string
 }
 
 func NewBuilder(database *db.DB, libraryDir string) *Builder {
 	return &Builder{db: database, libraryDir: libraryDir}
 }
 
-// IsReady reports whether the library directory looks like a valid clone.
 func (b *Builder) IsReady() bool {
 	_, err := os.Stat(filepath.Join(b.libraryDir, "prompt", "patterns"))
 	return err == nil
 }
 
-// HasPrompt reports whether a valid prompt can be assembled for the given task.
-// A prompt is considered ready if it has at least one of:
-// 1. A valid agent profile in .agent/agents/
-// 2. A valid methodology in prompt/patterns/
-// 3. A valid workflow protocol for a command in the mission
+// GetServicePrompt loads a service prompt from the library or returns the default.
+func (b *Builder) GetServicePrompt(name string, data any) (string, error) {
+	if b.cachedPromptsPath == "" {
+		b.cachedPromptsPath = b.db.GetSetting("prompt_library_service_prompts_path", ".agent/prompts")
+	}
+
+	path := filepath.Join(b.libraryDir, b.cachedPromptsPath, name+".md")
+	content := ""
+
+	if b.IsReady() {
+		if c, err := os.ReadFile(path); err == nil {
+			content = string(c)
+		}
+	}
+
+	if content == "" {
+		switch name {
+		case "audit":
+			content = defaultAuditTemplate
+		case "red_team":
+			content = defaultRedTeamTemplate
+		case "system":
+			content = defaultSystemTemplate
+		case "session":
+			content = defaultSessionTemplate
+		default:
+			return "", fmt.Errorf("unknown service prompt: %s", name)
+		}
+	}
+
+	tmpl, err := template.New(name).Parse(content)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
 func (b *Builder) HasPrompt(agent, pattern, mission string) bool {
 	if !b.IsReady() {
 		return false
 	}
 
-	// 1. Check agent profile
 	if b.cachedAgentsPath == "" {
 		b.cachedAgentsPath = b.db.GetSetting("prompt_library_agents_path", ".agent/agents")
 	}
@@ -64,7 +112,6 @@ func (b *Builder) HasPrompt(agent, pattern, mission string) bool {
 		return true
 	}
 
-	// 2. Check pattern methodology
 	if pattern != "" && pattern != "none" {
 		if b.cachedPatternsPath == "" {
 			b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
@@ -74,7 +121,6 @@ func (b *Builder) HasPrompt(agent, pattern, mission string) bool {
 		}
 	}
 
-	// 3. Check workflow command
 	if strings.HasPrefix(mission, "/") {
 		cmd := b.ExtractCommand(mission)
 		if cmd != "" {
@@ -98,7 +144,6 @@ func (b *Builder) ExtractCommand(mission string) string {
 	return strings.TrimPrefix(parts[0], "/")
 }
 
-// Build assembles the full Jules prompt for a task.
 func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, error) {
 	d := &Data{
 		Agent:      agent,
@@ -107,7 +152,6 @@ func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, err
 		RagContext: ragContext,
 	}
 
-	// Agent profile
 	if b.cachedAgentsPath == "" {
 		b.cachedAgentsPath = b.db.GetSetting("prompt_library_agents_path", ".agent/agents")
 	}
@@ -115,7 +159,6 @@ func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, err
 		d.AgentProfile = string(content)
 	}
 
-	// Workflow command (mission starts with "/command ...")
 	if strings.HasPrefix(mission, "/") {
 		parts := strings.SplitN(mission, " ", 2)
 		d.Command = strings.TrimPrefix(parts[0], "/")
@@ -128,7 +171,6 @@ func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, err
 		}
 	}
 
-	// Pattern methodology
 	if b.cachedPatternsPath == "" {
 		b.cachedPatternsPath = b.db.GetSetting("prompt_library_patterns_path", "prompt/patterns")
 	}
@@ -136,14 +178,5 @@ func (b *Builder) Build(agent, pattern, mission, ragContext string) (string, err
 		d.PatternMethodology = string(content)
 	}
 
-	tmpl, err := template.New("session").Parse(sessionTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, d); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	return b.GetServicePrompt("session", d)
 }

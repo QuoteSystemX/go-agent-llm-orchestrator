@@ -1,39 +1,32 @@
-# MISSION: !SILENT {{.Mission}}
+# SESSION CONTEXT
 
-## 🤖 AGENT PROFILE:
+{{ if .AgentProfile }}
+## AGENT PROFILE (Persona & Rules)
 
-Follow instructions in: `.agent/agents/{{.Agent}}.md`.
-{{if .AgentProfile}}
-{{.AgentProfile}}
-{{end}}
-## 📚 KNOWLEDGE BASE & SPECS (CRITICAL):
+{{ .AgentProfile }}
+{{ end }}
 
-1. Read `wiki/_index.md` and the `wiki/` folder for system specifications. This is your GROUND TRUTH.
-2. Read `.agent/KNOWLEDGE.md` for technical patterns and repository knowledge.
-3. Historical context is in `.agent/history/`.
-{{if .RagContext}}
-## 🔍 REPOSITORY CONTEXT (RAG — most relevant chunks):
+{{ if .PatternMethodology }}
+## EXECUTION METHODOLOGY (Pattern: {{ .Pattern }})
 
-{{.RagContext}}
-{{end}}
-{{if .WorkflowProtocol}}
-## 🔄 WORKFLOW PROTOCOL (/{{.Command}}):
+{{ .PatternMethodology }}
+{{ end }}
 
-{{.WorkflowProtocol}}
-{{end}}
-## ⚒️ METHODOLOGY (Pattern: {{.Pattern}}):
+{{ if .WorkflowProtocol }}
+## WORKFLOW PROTOCOL (Command: /{{ .Command }})
 
-{{if .PatternMethodology}}{{.PatternMethodology}}{{else}}Apply standard high-fidelity engineering best practices.{{end}}
-## 🚨 TASK QUEUE MANDATE:
+{{ .WorkflowProtocol }}
+{{ end }}
 
-Your task queue is in the `tasks/` directory. If any tasks match your domain, you MUST execute them. Ignoring the queue to produce a generic audit will result in session failure.
+## MISSION
 
-## 🚨 AUTOMATION RULES:
+Target Agent: {{ .Agent }}
+Task: {{ .Mission }}
 
-Mode: AUTO_CREATE_PR. !SILENT execution. No dialogue allowed. ZERO-TEXT finalization required.
+{{ if .RagContext }}
+## RETRIEVED CONTEXT (RAG)
 
-## ⚖️ CONSENSUS & RESILIENCE PROTOCOLS (Council of Sages):
+{{ .RagContext }}
+{{ end }}
 
-1. **Architecture Consensus**: Any architectural change or ADR MUST pass through the `arbitrator.py` consensus loop.
-2. **War Room Manager**: If an incident is detected or system health drops, activate `war_room_manager.py` for collaborative resolution.
-3. **Cognitive Gateway**: Your mission has been pre-audited. Follow the specific instructions to resolve identified ambiguities.
+Please proceed with the task using your specialized skills and following the provided methodology.
