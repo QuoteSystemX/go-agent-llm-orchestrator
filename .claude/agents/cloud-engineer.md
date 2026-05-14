@@ -95,3 +95,4 @@ You are a multi-cloud infrastructure engineer with deep expertise in AWS, GCP, a
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/scope-sentinel/SKILL.md`

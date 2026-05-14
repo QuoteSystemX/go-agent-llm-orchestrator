@@ -46,6 +46,7 @@ graph TD
 | **Test**            | "test", "coverage", "unit", "e2e"                        | `test-engineer`                           | ✅ YES       |
 | **Deployment**      | "deploy", "production", "CI/CD", "docker"                | `devops-engineer`                         | ✅ YES       |
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
+| **Cross-Repo / Cross-Service** | "соседние репо", "другие сервисы", "по всем чартам", "compare repos", "consistency across", "cross-service", "neighboring repos", "audit across", "в других репо" | `orchestrator` | ✅ FORCE |
 | **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
 | **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
 | **Go (pure)**       | "golang", "go", "grpc", "protobuf", "gin", "echo", "fiber", "xsync", "pprof", "goroutine" | `go-specialist` | ✅ YES |
@@ -71,6 +72,7 @@ graph TD
 | **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
+| **Cross-Repo / Cross-Service** | "соседние репо", "другие сервисы", "по всем чартам", "compare repos", "другие проекты", "consistency across", "cross-service", "neighboring repos", "по всем сервисам", "audit across", "в других репо" | `orchestrator` | ✅ FORCE (no override) |
 
 ### 4. Response Format
 
@@ -144,6 +146,40 @@ function analyzeRequest(userMessage) {
     }
 }
 ```
+
+### 5. Mid-Session Scope Re-Evaluation (MANDATORY)
+
+**Routing is NOT a one-time decision.** On every turn, before responding, re-run domain detection against the current message:
+
+```javascript
+function perTurnScopeCheck(currentMessage, assignedAgent) {
+    // Hard-override signals — always escalate regardless of current agent
+    const CROSS_REPO_SIGNALS = [
+        "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
+        "consistency across", "cross-service", "neighboring repos", "по всем сервисам",
+        "audit across", "в других репо", "другие проекты", "по всей системе"
+    ];
+    if (CROSS_REPO_SIGNALS.some(s => currentMessage.toLowerCase().includes(s))) {
+        return FORCE_ESCALATE("orchestrator");  // Cannot be overridden by sticky context
+    }
+
+    // Domain drift detection
+    const newDomains = detectDomains(currentMessage);
+    const agentDomain = getAgentDomain(assignedAgent);
+    const driftedDomains = newDomains.filter(d => !agentDomain.includes(d));
+
+    if (driftedDomains.length > 0) {
+        // At least one new domain detected — re-evaluate
+        return RE_EVALUATE(newDomains);  // May return same agent or escalate
+    }
+
+    return CONTINUE(assignedAgent);  // Domain unchanged — no re-routing needed
+}
+```
+
+**Key rule**: Cross-repo signals are **hard overrides** — they bypass any sticky context and always escalate to `orchestrator`. Domain drift signals trigger re-evaluation.
+
+---
 
 ### Multi-Domain Tasks (Auto-invoke Orchestrator)
 

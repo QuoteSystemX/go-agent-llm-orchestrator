@@ -4,7 +4,7 @@ description: Site Reliability Engineer — SLO/SLI/SLA definition, error budget 
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack
-skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry
+skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel
 domains: sre, engineer
 ---
 

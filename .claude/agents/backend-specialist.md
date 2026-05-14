@@ -314,6 +314,7 @@ After editing any file:
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/paperclip-plugin-dev/SKILL.md`
 - `.agent/skills/paperclip-create-plugin/SKILL.md`
+- `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/api-development/SKILL.md`
 - `.agent/skills/postgres-best-practices/SKILL.md`
 - `.agent/skills/typed-service-contracts/SKILL.md`

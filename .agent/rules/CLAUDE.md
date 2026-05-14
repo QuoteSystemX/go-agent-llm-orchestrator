@@ -37,10 +37,15 @@
 **Every session with ANY agent MUST follow the Paperclip Heartbeat cycle:**
 
 1. Awareness: Sync with current task and read `.agent/bus/` for context.
-2. Lenses: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
-3. Action: Do not stop at planning; perform actionable work in the same heartbeat.
-4. Reporting: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
-5. Durable State: Update task metadata and create child issues for delegated work.
+2. **Scope Recheck** *(per-turn, before every response)*: Check the current message for cross-repo / cross-service signals. If any of the following are detected — **immediately escalate to `orchestrator`**, do not attempt to answer as a specialist:
+   - `"соседние репо"`, `"другие сервисы"`, `"compare repos"`, `"по всем чартам"`, `"consistency across"`, `"cross-service"`, `"neighboring repos"`, `"audit across"`, `"в других репо"`, `"по всей системе"`
+   - Question spans 2+ domains outside current agent's declared `domains:` frontmatter field
+3. Lenses: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
+4. Action: Do not stop at planning; perform actionable work in the same heartbeat.
+5. Reporting: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
+6. Durable State: Update task metadata and create child issues for delegated work. If any `.agent/agents/`, `.agent/skills/`, or `.agent/workflows/` files were modified — run `python3 .agent/scripts/delivery/sync_agents.py --target claude` before closing the session.
+
+> **Why step 2 exists**: Routing is decided once at session start (auctioneer auction). Without a per-turn scope check, specialists exhibit "Sticky Context Bias" — they keep answering questions that have drifted outside their domain. Step 2 is the only mechanism that catches mid-session scope expansion.
 
 ---
 
@@ -107,7 +112,23 @@ Workflows in `.agent/workflows/` define procedures. Claude MUST read them before
 - `python3 .agent/scripts/health/status_report.py` - Check workspace health.
 - `python3 .agent/scripts/dev/checklist.py .` - Priority-based validation.
 - `python3 .agent/scripts/dev/compile_rules.py` - After editing Gemini rules.
-- `python .agent/scripts/delivery/sync_agents.py --target claude` - **MANDATORY** after editing agents or skills.
+- `python3 .agent/scripts/delivery/sync_agents.py --target claude` - **MANDATORY** after editing agents or skills.
+
+## 🔄 Agent & Skill Sync (MANDATORY POST-OP)
+
+> **Rule**: Any operation touching `.agent/agents/`, `.agent/skills/`, or `.agent/workflows/`
+> **MUST** be followed immediately by a sync run before the task is considered complete.
+
+| Trigger                                               | Required Action                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------- |
+| Edit any `.agent/agents/**/*.md`                      | `python3 .agent/scripts/delivery/sync_agents.py --target claude`    |
+| Add/edit any `.agent/skills/**/*.md`                  | `python3 .agent/scripts/delivery/sync_agents.py --target claude`    |
+| Add/edit any `.agent/workflows/**/*.md`               | `python3 .agent/scripts/delivery/sync_agents.py --target claude`    |
+| Add new skill to agent frontmatter                    | `python3 .agent/scripts/delivery/sync_agents.py --target claude`    |
+
+**Never leave `.agent/` and `.claude/agents/` out of sync.** `.claude/agents/` is auto-generated — the source of truth is always `.agent/`. Forgetting the sync means Claude Code runs stale agent definitions silently.
+
+---
 
 ## Architecture Reference
 

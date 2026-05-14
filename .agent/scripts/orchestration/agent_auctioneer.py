@@ -67,10 +67,29 @@ def load_matrix():
             
     return matrix
 
+CROSS_REPO_SIGNALS = [
+    "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
+    "consistency across", "cross-service", "neighboring repos", "audit across",
+    "в других репо", "по всей системе", "другие проекты", "по всем сервисам",
+    "compare other", "cross-repo", "other services", "other repos",
+]
+
+def is_cross_repo_request(task_description: str) -> bool:
+    """Hard-override detector: returns True if task requires cross-repo/cross-service scope.
+    These tasks always route to orchestrator, bypassing the auction entirely."""
+    task_lower = task_description.lower()
+    return any(signal in task_lower for signal in CROSS_REPO_SIGNALS)
+
+
 def find_candidates(task_description):
     """
     Поиск кандидатов на основе динамической матрицы.
     """
+    # Hard-override: cross-repo signals always go to orchestrator
+    if is_cross_repo_request(task_description):
+        print("🌐 Cross-repo/cross-service signal detected → hard-routing to orchestrator (no auction)")
+        return [{"id": "orchestrator", "score": 99, "indicators": ["cross-repo-override"], "description": "Cross-repo scope requires orchestrator"}]
+
     matrix = load_matrix()
     candidates = []
     task_lower = task_description.lower()

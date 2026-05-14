@@ -3,7 +3,7 @@ name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
-domains: orchestration, coordination, planning, logic, system-design
+domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos
 skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, paperclip-plugin-dev, paperclip-create-plugin
 ---
 
@@ -250,6 +250,40 @@ WHEN agent is about to write a file:
     → INVOKE correct agent for that file
     → DO NOT write it yourself
 ```
+
+### Question-Scope Enforcement (Mid-Session Re-Routing)
+
+Boundary violations are not limited to file writes. **Questions can also violate domain boundaries.**
+
+```
+WHEN any specialist agent receives a question:
+  CHECK for cross-repo / cross-service signals:
+    "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
+    "consistency across", "cross-service", "neighboring repos", "audit across",
+    "в других репо", "по всей системе", "другие проекты"
+
+  IF signal detected:
+    → STOP answering as specialist
+    → ESCALATE: invoke orchestrator with full context transfer
+    → Orchestrator dispatches correct agent(s) for cross-scope work
+
+  IF question spans 2+ domains outside current agent's domain list:
+    → STOP answering
+    → ESCALATE to orchestrator
+```
+
+> 🔴 **Sticky Context Bias**: A specialist assigned at session start MUST NOT continue answering
+> questions that have drifted outside their domain. The routing decision is re-evaluated per-turn,
+> not locked at session init.
+
+### Escalation from Specialist (Handoff Protocol)
+
+When a specialist detects scope drift and escalates, the orchestrator MUST:
+
+1. Accept the full context summary from the specialist
+2. Re-run auctioneer logic for the new question: `agent_auctioneer.py <session_id> <role> "<question>"`
+3. Dispatch the correct agent(s)
+4. Log the escalation event to the Context Bus: `type: scope_escalation`
 
 ### Example Violation
 
