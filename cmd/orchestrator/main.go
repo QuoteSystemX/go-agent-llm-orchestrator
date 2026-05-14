@@ -23,13 +23,14 @@ import (
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/scheduler"
 	"go-agent-llm-orchestrator/internal/traffic"
+	"go-agent-llm-orchestrator/internal/worker"
 )
 
 func main() {
 	// Set up in-memory log buffer before anything else so all startup logs are captured.
 	logBuf := api.NewLogBuffer(500)
 
-	log.Println("Starting Jules Orchestrator...")
+	log.Println("Starting Agentic Orchestrator (Autonomous Mode)...")
 
 	// 1. Configuration
 	dbPath := os.Getenv("DB_PATH")
@@ -40,8 +41,6 @@ func main() {
 	// Log active environment variables (secrets are masked).
 	log.Println("=== Environment configuration ===")
 	logEnvVar("DB_PATH", dbPath, false)
-	logEnvVar("JULES_API_KEY", os.Getenv("JULES_API_KEY"), true)
-	logEnvVar("JULES_API_URL", os.Getenv("JULES_API_URL"), false)
 	logEnvVar("LLM_LOCAL_ENDPOINT", os.Getenv("LLM_LOCAL_ENDPOINT"), false)
 	logEnvVar("LLM_LOCAL_MODEL", os.Getenv("LLM_LOCAL_MODEL"), false)
 	logEnvVar("LLM_REMOTE_ENDPOINT", os.Getenv("LLM_REMOTE_ENDPOINT"), false)
@@ -67,15 +66,13 @@ func main() {
 
 	tm := traffic.NewTrafficManager(1.0, 5, workerLimit, database)
 
+	hub := api.NewHub()
+	go hub.Run()
+	logBuf.SetHub(hub)
+
 	// 3. Initialize Logic
-	julesClient := api.NewJulesClient(database)
-	if url := julesClient.EffectiveBaseURL(); url != "" {
-		log.Printf("  %-30s = %s", "JULES effective URL", url)
-	} else {
-		log.Printf("  %-30s (not set — Jules API disabled)", "JULES effective URL")
-	}
 	router := llm.NewRouter(database)
-	supervisor := llm.NewSupervisor(database, tm, router, julesClient)
+	supervisor := llm.NewSupervisor(database, tm, router) // Jules client removed
 	telegramNotifier := notifier.NewTelegramNotifier(database)
 	telegramNotifier.StartPolling()
 
@@ -87,7 +84,19 @@ func main() {
 	gitSyncer := gitpkg.NewSyncer(database, cacheDir)
 	promptBuilder := prompt.NewBuilder(database, cacheDir)
 
-	engine := scheduler.NewEngine(database, tm, julesClient, telegramNotifier, promptBuilder, router)
+	mcpPath := os.Getenv("MCP_SERVER_PATH")
+	if mcpPath == "" {
+		mcpPath = "/home/amudrykh/go/project/prompt-library/.agent/mcp-server-agent-kit"
+	}
+
+	// Local Executor is now mandatory
+	exec := worker.NewLocalExecutor(database, router, mcpPath)
+	exec.SetTracer(hub)
+	log.Println("Execution Mode: LOCAL (Ollama + MCP)")
+
+	engine := scheduler.NewEngine(database, tm, exec, telegramNotifier, promptBuilder, router)
+	router.SetTracer(hub)
+	engine.SetTracer(hub)
 	dtoMgr := dto.NewTemplateManager(database)
 	// Initial template sync from cache if it exists
 	tplDir := filepath.Join(cacheDir, "templates")
@@ -111,7 +120,7 @@ func main() {
 	
 	budgetMgr := budget.NewManager(database)
 	engine.SetBudgetManager(budgetMgr)
-	statMonitor := monitor.NewMonitor(database, tm, julesClient, supervisor)
+	statMonitor := monitor.NewMonitor(database, tm, supervisor) // Jules client removed
 	healthMonitor := monitor.NewHealthMonitor(database)
 	healthMonitor.Start()
 
@@ -120,13 +129,6 @@ func main() {
 
 	statsAggregator := monitor.NewStatsAggregator(60)
 	statsAggregator.Start()
-
-	hub := api.NewHub()
-	go hub.Run()
-	logBuf.SetHub(hub)
-
-	router.SetTracer(hub)
-	engine.SetTracer(hub)
 
 	adminServer := api.NewAdminServer(database, engine, dtoMgr, analyzer, statsAggregator)
 	adminServer.SetHealthMonitor(healthMonitor)
@@ -141,7 +143,6 @@ func main() {
 	adminServer.SetBudgetManager(budgetMgr)
 	adminServer.SetDriftDetector(driftDetector)
 	adminServer.SetTrafficManager(tm)
-	adminServer.SetJulesDeleter(julesClient)
 	
 	backupMgr := backup.NewManager(database, filepath.Dir(dbPath))
 	adminServer.SetBackupManager(backupMgr)
@@ -221,8 +222,6 @@ func main() {
 
 				for _, repoName := range repos {
 					log.Printf("Background DTO Sync: Auto-syncing RAG for %s...", repoName)
-					// AnalyzeRepo(..., true) handles git pull and incremental RAG indexing.
-					// It returns early if the commit hash hasn't changed.
 					if _, err := analyzer.AnalyzeRepo(ctx, repoName, true); err != nil {
 						log.Printf("Background DTO Sync: Failed for %s: %v", repoName, err)
 					} else {
@@ -323,11 +322,10 @@ func main() {
 	// Start RAG background scrubbing (once per day by default)
 	go scheduler.StartRAGScrubbingJob(ctx, analyzer, 24*time.Hour)
 
-	// Proactively pause all PENDING tasks if PAT is not yet configured —
-	// they would fail anyway when the cron fires and buildPrompt() returns an error.
+	// Proactively pause all PENDING tasks if PAT is not yet configured
 	if !gitSyncer.IsPATConfigured() {
 		n := engine.PauseAllPending(ctx)
-		log.Printf("WARNING: prompt-library GitHub PAT not set — %d PENDING task(s) paused. Set PAT via Settings → Prompt Library, they will resume automatically after first successful sync.", n)
+		log.Printf("WARNING: prompt-library GitHub PAT not set — %d PENDING task(s) paused.", n)
 	}
 
 	// Import distribution config if available
@@ -345,8 +343,7 @@ func main() {
 	engine.NotifyAllTasksChange()
 
 
-	// Start Autopilot Engine after DB is fully initialised (ImportDistribution +
-	// SyncTasks complete), so the initial Run() doesn't race with open transactions.
+	// Start Autopilot Engine
 	go autopilotEngine.Start(ctx)
 
 	go statMonitor.Start(ctx)
@@ -394,7 +391,7 @@ func main() {
 		}
 	}()
 
-	log.Println("Orchestrator is running and monitoring tasks")
+	log.Println("Orchestrator is running in autonomous mode")
 
 	// 5. Graceful Shutdown
 	stop := make(chan os.Signal, 1)
@@ -410,8 +407,6 @@ func main() {
 	log.Println("Orchestrator stopped")
 }
 
-// logEnvVar logs the name and value of an environment variable.
-// If secret is true, the value is masked.
 func logEnvVar(name, value string, secret bool) {
 	if value == "" {
 		log.Printf("  %-30s (not set)", name)

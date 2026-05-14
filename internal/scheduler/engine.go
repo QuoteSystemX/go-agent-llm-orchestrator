@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"go-agent-llm-orchestrator/internal/api"
 	"go-agent-llm-orchestrator/internal/budget"
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/llm"
@@ -18,6 +16,7 @@ import (
 	"go-agent-llm-orchestrator/internal/notifier"
 	"go-agent-llm-orchestrator/internal/prompt"
 	"go-agent-llm-orchestrator/internal/traffic"
+	"go-agent-llm-orchestrator/internal/worker"
 	"github.com/robfig/cron/v3"
 )
 
@@ -28,7 +27,7 @@ type Engine struct {
 	cron          *cron.Cron
 	db            *db.DB
 	tm            *traffic.TrafficManager
-	client        *api.JulesClient
+	executor      worker.Executor
 	notifier      *notifier.TelegramNotifier
 	promptBuilder *prompt.Builder
 	contextSearch ContextSearchFunc
@@ -43,12 +42,12 @@ type Engine struct {
 	onActivityUpdate func()
 }
 
-func NewEngine(database *db.DB, tm *traffic.TrafficManager, client *api.JulesClient, nt *notifier.TelegramNotifier, pb *prompt.Builder, router *llm.Router) *Engine {
+func NewEngine(database *db.DB, tm *traffic.TrafficManager, executor worker.Executor, nt *notifier.TelegramNotifier, pb *prompt.Builder, router *llm.Router) *Engine {
 	return &Engine{
 		cron:          cron.New(),
 		db:            database,
 		tm:            tm,
-		client:        client,
+		executor:      executor,
 		notifier:      nt,
 		promptBuilder: pb,
 		router:        router,
@@ -224,7 +223,7 @@ func (e *Engine) Cleanup(ctx context.Context) {
 	log.Printf("cleanup: removing data older than %d days", days)
 
 	// 1. Clean up sessions (completed or failed): cancel in Jules first, then DB.
-	if e.client != nil {
+	if e.executor != nil {
 		rows, err := e.db.QueryContext(ctx,
 			"SELECT jules_session_id FROM sessions WHERE status IN ('COMPLETED', 'FAILED') AND jules_session_id != '' AND updated_at < datetime('now', '-' || ? || ' days')",
 			days)
@@ -238,8 +237,8 @@ func (e *Engine) Cleanup(ctx context.Context) {
 			}
 			rows.Close()
 			for _, sid := range ids {
-				if err := e.client.DeleteSession(ctx, sid); err != nil {
-					log.Printf("cleanup: Jules session %s delete failed (ignoring): %v", sid, err)
+				if err := e.executor.Cancel(ctx, sid); err != nil {
+					log.Printf("cleanup: session %s cancel failed (ignoring): %v", sid, err)
 				}
 			}
 		}
@@ -512,47 +511,29 @@ func (e *Engine) runTask(taskID string) {
 				return dbErr
 			}
 
-			req := api.SessionRequest{
-				Prompt: fullPrompt,
-				SourceContext: api.SourceContext{
-					Source: "sources/github/" + repoName,
-					GithubRepoContext: api.GithubRepoContext{
-						StartingBranch: "main",
-					},
-				},
-				AutomationMode: "AUTO_CREATE_PR",
-				Title:          fmt.Sprintf("[%s] %s for %s (Attempt %d)", effectiveAgent, mission, repoName, currentRetry+1),
+			log.Printf("Task %s: Executing via worker...", taskID)
+			t := &db.Task{
+				ID:           taskID,
+				Name:         repoName,
+				Agent:        effectiveAgent,
+				Mission:      mission,
+				CurrentRetry: currentRetry,
 			}
-
-			reqJSON, jsonErr := json.Marshal(req)
-			if jsonErr != nil {
-				log.Printf("Task %s: failed to marshal request for logging: %v", taskID, jsonErr)
-			}
-			if logID > 0 {
-				if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET input_data = ? WHERE id = ?", string(reqJSON), logID); dbErr != nil {
-					log.Printf("task_log %d: failed to write input_data: %v", logID, dbErr)
-				}
-			}
-
-			log.Printf("Task %s: Sending request to Jules API...", taskID)
-			resp, rawOut, err := e.client.StartSession(ctx, req)
+			sid, err := e.executor.Execute(ctx, t, fullPrompt)
 			if err != nil {
 				return err
 			}
 
-			sessionID = taskID
-			if resp != nil && resp.ID != "" {
-				sessionID = resp.ID
-			}
+			sessionID = sid
 
 			if e.budgetMgr != nil {
-				e.budgetMgr.TrackUsage(ctx, taskID, sessionID, 0, 0, "jules")
+				e.budgetMgr.TrackUsage(ctx, taskID, sessionID, 0, 0, "local")
 			}
 
 			log.Printf("Task %s: Session STARTED successfully (ID: %s)", taskID, sessionID)
 			if logID > 0 {
-				if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET session_id = ?, output_data = ? WHERE id = ?", sessionID, string(rawOut), logID); dbErr != nil {
-					log.Printf("task_log %d: failed to write session_id/output: %v", logID, dbErr)
+				if _, dbErr := e.db.History().ExecContext(ctx, "UPDATE task_logs SET session_id = ? WHERE id = ?", sessionID, logID); dbErr != nil {
+					log.Printf("task_log %d: failed to write session_id: %v", logID, dbErr)
 				}
 			}
 

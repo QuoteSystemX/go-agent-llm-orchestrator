@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
@@ -48,6 +49,14 @@ type Hub struct {
 	mu         sync.RWMutex
 }
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for local dev
+	},
+}
+
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
@@ -55,6 +64,20 @@ func NewHub() *Hub {
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 	}
+}
+
+func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("WS Hub: upgrade error: %v", err)
+		return
+	}
+	client := &Client{hub: h, conn: conn, send: make(chan []byte, 256)}
+	h.register <- client
+
+	// Start pumps
+	go client.writePump()
+	go client.readPump()
 }
 
 func (h *Hub) Run() {

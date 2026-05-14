@@ -251,7 +251,7 @@ func (a *Analyzer) GetSessionManager() *SessionManager {
 func (a *Analyzer) GenerateDialogueResponse(ctx context.Context, classification llm.Classification, messages []map[string]string) (string, error) {
 	// If it's a DTO classification, it will default to local. 
 	// If it's Complex, it might go to remote depending on configuration.
-	return a.router.GenerateChat(ctx, classification, messages, "")
+	return a.router.GenerateChatSimple(ctx, classification, messages, "")
 }
 
 // GetStagePrompt returns the system prompt for a specific BMAD stage.

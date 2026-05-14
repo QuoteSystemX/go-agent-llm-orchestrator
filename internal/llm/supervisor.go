@@ -4,34 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/traffic"
 )
 
 const defaultSupervisorPrompt = `Analyze this blocked session: %s. Task: %s. Provide a decision to unblock.`
 
-// JulesClientIface is the subset of JulesClient the Supervisor needs.
-// api.JulesClient satisfies this interface via duck typing.
-type JulesClientIface interface {
-	GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error)
-	SendMessage(ctx context.Context, sessionID, prompt string) error
-	ApprovePlan(ctx context.Context, sessionID string) error
-}
-
 type Supervisor struct {
 	db          *db.DB
 	tm          *traffic.TrafficManager
 	router      *Router
-	julesClient JulesClientIface
 }
 
-func NewSupervisor(database *db.DB, tm *traffic.TrafficManager, router *Router, client JulesClientIface) *Supervisor {
+func NewSupervisor(database *db.DB, tm *traffic.TrafficManager, router *Router) *Supervisor {
 	return &Supervisor{
 		db:          database,
 		tm:          tm,
 		router:      router,
-		julesClient: client,
 	}
 }
 
@@ -46,7 +35,7 @@ func (s *Supervisor) getSupervisorPrompt() string {
 func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error {
 	log.Printf("Supervising blocked session %s", sessionID)
 
-	// 1. Look up task context from local DB — no Jules API call needed.
+	// 1. Look up task context from local DB
 	taskDesc := "unknown task"
 	sessionStatus := ""
 	var mission string
@@ -54,7 +43,7 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 		SELECT s.status, COALESCE(t.mission, '')
 		FROM sessions s
 		LEFT JOIN tasks t ON t.id = s.task_id
-		WHERE s.jules_session_id = ?`, sessionID).Scan(&sessionStatus, &mission)
+		WHERE s.id = ?`, sessionID).Scan(&sessionStatus, &mission)
 	if err != nil {
 		log.Printf("Supervisor: could not find session %s in local DB: %v", sessionID, err)
 	} else if mission != "" {
@@ -75,23 +64,15 @@ func (s *Supervisor) RespondToBlock(ctx context.Context, sessionID string) error
 		return fmt.Errorf("response generation failed: %v", err)
 	}
 
-	// 4. Post response to Jules API
-	err = s.tm.Execute(ctx, sessionID, traffic.PriorityHigh, 5, "service", func() error {
-		if sessionStatus == "AWAITING_PLAN_APPROVAL" {
-			log.Printf("Approving plan for session %s", sessionID)
-			return s.julesClient.ApprovePlan(ctx, sessionID)
-		}
-		log.Printf("Sending message to session %s: %s", sessionID, response)
-		return s.julesClient.SendMessage(ctx, sessionID, response)
-	})
-	if err != nil {
-		return fmt.Errorf("posting to Jules API failed: %v", err)
-	}
+	// 4. In autonomous mode, the supervisor should probably interact with the LocalExecutor
+	// or update task status/metadata to unblock the loop.
+	// For now, we just log it and record in audit history.
+	log.Printf("Supervisor (Autonomous): Suggested action for %s: %s", sessionID, response)
 
 	// 5. Audit log
-	details := fmt.Sprintf("Class: %s | Status: %s | Response: %s", class, sessionStatus, response)
-	_, err = s.db.History().ExecContext(ctx,
+	details := fmt.Sprintf("Class: %s | Status: %s | Suggestion: %s", class, sessionStatus, response)
+	_, err = s.db.ExecContext(ctx,
 		"INSERT INTO audit_logs (session_id, action, details) VALUES (?, ?, ?)",
-		sessionID, "AUTO_RESPONDED", details)
+		sessionID, "AUTO_SUPERVISED", details)
 	return err
 }

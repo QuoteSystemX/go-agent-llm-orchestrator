@@ -32,10 +32,15 @@ var DefaultPricing = map[string]Pricing{
 		InputPer1M:  1.25,
 		OutputPer1M: 5.00,
 	},
-	"jules": {
-		Model:          "jules",
-		IsSessionBased: true,
-	},
+}
+
+type Budget struct {
+	ID                  int     `json:"id"`
+	TargetType          string  `json:"target_type"`
+	TargetID            string  `json:"target_id"`
+	DailySessionLimit   int     `json:"daily_session_limit"`
+	MonthlyCostLimit    float64 `json:"monthly_cost_limit"`
+	AlertThreshold      float64 `json:"alert_threshold"`
 }
 
 type Manager struct {
@@ -49,11 +54,10 @@ func NewManager(database *db.DB) *Manager {
 func (m *Manager) CalculateCost(model string, inputTokens, outputTokens int) float64 {
 	p, ok := DefaultPricing[model]
 	if !ok {
-		// Fallback to a default or return 0
 		return 0
 	}
 	if p.IsSessionBased {
-		return 0 // Handled by session limits
+		return 0
 	}
 	inputCost := (float64(inputTokens) / 1_000_000.0) * p.InputPer1M
 	outputCost := (float64(outputTokens) / 1_000_000.0) * p.OutputPer1M
@@ -64,7 +68,6 @@ func (m *Manager) TrackUsage(ctx context.Context, taskID, julesSessionID string,
 	cost := m.CalculateCost(model, promptTokens, completionTokens)
 	totalTokens := promptTokens + completionTokens
 
-	// Update the latest log entry for this task
 	_, err := m.db.History().ExecContext(ctx, `
 		UPDATE task_logs 
 		SET jules_session_id = ?, 
@@ -82,7 +85,6 @@ func (m *Manager) TrackUsage(ctx context.Context, taskID, julesSessionID string,
 }
 
 func (m *Manager) CheckBudget(ctx context.Context, targetID string) (bool, error) {
-	// 1. Get budget settings
 	var dailyLimit int
 	var monthlyLimit float64
 	err := m.db.Main().QueryRowContext(ctx, `
@@ -93,14 +95,12 @@ func (m *Manager) CheckBudget(ctx context.Context, targetID string) (bool, error
 	`, targetID).Scan(&dailyLimit, &monthlyLimit)
 	
 	if err == sql.ErrNoRows {
-		// Use defaults
 		dailyLimit = 100
 		monthlyLimit = 50.0
 	} else if err != nil {
 		return false, err
 	}
 
-	// 2. Check daily sessions
 	var sessionsToday int
 	m.db.History().QueryRowContext(ctx, `
 		SELECT COUNT(DISTINCT jules_session_id) 
@@ -112,7 +112,6 @@ func (m *Manager) CheckBudget(ctx context.Context, targetID string) (bool, error
 		return false, fmt.Errorf("daily session limit reached (%d/%d)", sessionsToday, dailyLimit)
 	}
 
-	// 3. Check monthly cost
 	var costThisMonth float64
 	m.db.History().QueryRowContext(ctx, `
 		SELECT SUM(cost_usd) 
@@ -163,4 +162,34 @@ func (m *Manager) GetSummary(ctx context.Context) (map[string]any, error) {
 		"monthly_cost_usd":     costThisMonth,
 		"monthly_cost_limit":   monthlyLimit,
 	}, nil
+}
+
+func (m *Manager) ListBudgets(ctx context.Context) ([]Budget, error) {
+	rows, err := m.db.Main().QueryContext(ctx, "SELECT id, target_type, COALESCE(target_id, ''), daily_session_limit, monthly_cost_limit, alert_threshold FROM budgets")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []Budget
+	for rows.Next() {
+		var b Budget
+		if err := rows.Scan(&b.ID, &b.TargetType, &b.TargetID, &b.DailySessionLimit, &b.MonthlyCostLimit, &b.AlertThreshold); err != nil {
+			return nil, err
+		}
+		res = append(res, b)
+	}
+	return res, nil
+}
+
+func (m *Manager) UpsertBudget(ctx context.Context, b Budget) error {
+	_, err := m.db.Main().ExecContext(ctx, `
+		INSERT INTO budgets (target_type, target_id, daily_session_limit, monthly_cost_limit, alert_threshold)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(target_type, target_id) DO UPDATE SET
+			daily_session_limit = excluded.daily_session_limit,
+			monthly_cost_limit = excluded.monthly_cost_limit,
+			alert_threshold = excluded.alert_threshold
+	`, b.TargetType, b.TargetID, b.DailySessionLimit, b.MonthlyCostLimit, b.AlertThreshold)
+	return err
 }

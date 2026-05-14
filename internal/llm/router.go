@@ -16,6 +16,7 @@ import (
 
 	"go-agent-llm-orchestrator/internal/db"
 	"go-agent-llm-orchestrator/internal/monitor"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type Router struct {
@@ -33,6 +34,22 @@ type Router struct {
 	modelCtxCache map[string]int // model name → detected context window
 
 	tracer monitor.Tracer
+}
+
+type Message struct {
+	Role      string     `json:"role"`
+	Content   string     `json:"content,omitempty"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
+	ToolID    string     `json:"tool_call_id,omitempty"`
+}
+
+type ToolCall struct {
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	Function  struct {
+		Name      string `json:"name"`
+		Arguments string `json:"arguments"`
+	} `json:"function"`
 }
 
 // InferenceMutex returns the Ollama priority gate so the embedding pipeline
@@ -430,16 +447,16 @@ func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (
 
 	// Use GenerateChat directly with local provider to ensure speed and privacy
 	// We provide a specific system role to avoid the default generic coding assistant prompt
-	response, err := r.GenerateChat(ctx, Simple, []map[string]string{
-		{"role": "system", "content": "You are a mission auditor. Analyze the provided task and return a JSON object with clarity (0.0-1.0), ambiguity (0.0-1.0), and impact (LOW|MEDIUM|HIGH)."},
-		{"role": "user", "content": prompt},
-	}, "local")
+	responseMsg, err := r.GenerateChat(ctx, Simple, []Message{
+		{Role: "system", Content: "You are a mission auditor. Analyze the provided task and return a JSON object with clarity (0.0-1.0), ambiguity (0.0-1.0), and impact (LOW|MEDIUM|HIGH)."},
+		{Role: "user", Content: prompt},
+	}, nil, "local")
 	if err != nil {
 		return nil, err
 	}
 
 	// Extract JSON from response (LLMs sometimes wrap it in code blocks)
-	jsonStr := response
+	jsonStr := responseMsg.Content
 	if idx := strings.Index(jsonStr, "{"); idx != -1 {
 		jsonStr = jsonStr[idx:]
 	}
@@ -449,7 +466,7 @@ func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (
 
 	var result AuditResult
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
-		log.Printf("LLM Router: failed to parse audit JSON: %v. Raw: %s", err, response)
+		log.Printf("LLM Router: failed to parse audit JSON: %v. Raw: %s", err, jsonStr)
 		return nil, fmt.Errorf("audit parsing failed: %w", err)
 	}
 
@@ -472,12 +489,29 @@ func (r *Router) AuditContext(ctx context.Context, mission, ragContext string) (
 }
 
 func (r *Router) GenerateResponse(ctx context.Context, classification Classification, prompt string) (string, error) {
-	return r.GenerateChat(ctx, classification, []map[string]string{
-		{"role": "user", "content": prompt},
-	}, "")
+	msg, err := r.GenerateChat(ctx, classification, []Message{
+		{Role: "user", Content: prompt},
+	}, nil, "")
+	if err != nil {
+		return "", err
+	}
+	return msg.Content, nil
 }
 
-func (r *Router) GenerateChat(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (string, error) {
+// GenerateChatSimple is a compatibility wrapper for old map[string]string calls
+func (r *Router) GenerateChatSimple(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (string, error) {
+	newMsgs := make([]Message, len(messages))
+	for i, m := range messages {
+		newMsgs[i] = Message{Role: m["role"], Content: m["content"]}
+	}
+	msg, err := r.GenerateChat(ctx, classification, newMsgs, nil, preferredProvider)
+	if err != nil {
+		return "", err
+	}
+	return msg.Content, nil
+}
+
+func (r *Router) GenerateChat(ctx context.Context, classification Classification, messages []Message, tools []mcp.Tool, preferredProvider string) (*Message, error) {
 	var endpoint, model, apiKey, provider string
 
 	target := r.getRoutingTarget(classification)
@@ -513,20 +547,22 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 	// Prepend system prompt if not present
 	hasSystem := false
 	for _, m := range messages {
-		if m["role"] == "system" {
+		if m.Role == "system" {
 			hasSystem = true
 			break
 		}
 	}
 	if !hasSystem {
-		messages = append([]map[string]string{{"role": "system", "content": r.getSystemPrompt()}}, messages...)
+		messages = append([]Message{{Role: "system", Content: r.getSystemPrompt()}}, messages...)
 	}
 
-	tryEndpoint := func(ep, mdl, key, prov string) (string, error) {
-		msgs := messages
+	tryEndpoint := func(ep, mdl, key, prov string) (*Message, error) {
 		pl := map[string]interface{}{
 			"model":    mdl,
-			"messages": msgs,
+			"messages": messages,
+		}
+		if len(tools) > 0 {
+			pl["tools"] = tools
 		}
 		if prov == "local" {
 			temp := r.getLocalTemperature()
@@ -575,7 +611,7 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 				lastErr = fmt.Errorf("llm api error: status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 				// 401/403 are auth errors — no point retrying
 				if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-					return "", lastErr
+					return nil, lastErr
 				}
 				time.Sleep(time.Duration(i+1) * time.Second)
 				continue
@@ -583,20 +619,18 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 
 			var result struct {
 				Choices []struct {
-					Message struct {
-						Content string `json:"content"`
-					} `json:"message"`
+					Message Message `json:"message"`
 				} `json:"choices"`
 			}
 			if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-				return "", err
+				return nil, err
 			}
 			if len(result.Choices) == 0 {
-				return "", fmt.Errorf("no response from LLM")
+				return nil, fmt.Errorf("no response from LLM")
 			}
-			return result.Choices[0].Message.Content, nil
+			return &result.Choices[0].Message, nil
 		}
-		return "", fmt.Errorf("failed after %d attempts: %v", maxRetries, lastErr)
+		return nil, fmt.Errorf("failed after %d attempts: %v", maxRetries, lastErr)
 	}
 
 	// For local Ollama calls: pause the embedding pipeline so inference is not
@@ -623,12 +657,12 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 		acquireLocalLock()
 	}
 
-	content, err := tryEndpoint(endpoint, model, apiKey, provider)
+	msg, err := tryEndpoint(endpoint, model, apiKey, provider)
 	if err != nil && provider == "remote" && r.LocalEndpoint != "" {
 		log.Printf("LLM Router: remote failed (%v), falling back to LOCAL", err)
 		acquireLocalLock()
 		monitor.LLMCalls.WithLabelValues("local", string(classification)).Inc()
-		content, err = tryEndpoint(r.LocalEndpoint, r.getLocalModel(), "", "local")
+		msg, err = tryEndpoint(r.LocalEndpoint, r.getLocalModel(), "", "local")
 	}
 
 	if err == nil && r.tracer != nil {
@@ -648,9 +682,9 @@ func (r *Router) GenerateChat(ctx context.Context, classification Classification
 	}
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return content, nil
+	return msg, nil
 }
 
 func (r *Router) GenerateChatStream(ctx context.Context, classification Classification, messages []map[string]string, preferredProvider string) (<-chan string, error) {

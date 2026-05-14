@@ -16,12 +16,6 @@ type SessionInfo struct {
 	Result  string
 }
 
-// JulesClientIface is the subset of api.JulesClient the Monitor needs.
-type JulesClientIface interface {
-	GetStatus(ctx context.Context, sessionID string) (string, error)
-	GetSession(ctx context.Context, sessionID string) (*db.SessionInfo, error)
-}
-
 // SupervisorIface is the subset of llm.Supervisor the Monitor needs.
 type SupervisorIface interface {
 	RespondToBlock(ctx context.Context, sessionID string) error
@@ -38,17 +32,15 @@ type WebhookEvent struct {
 type Monitor struct {
 	db          *db.DB
 	tm          *traffic.TrafficManager
-	julesClient JulesClientIface
 	supervisor  SupervisorIface
 	EventBus    chan WebhookEvent
 	notifyFunc  func(taskID, status string)
 }
 
-func NewMonitor(database *db.DB, tm *traffic.TrafficManager, client JulesClientIface, sup SupervisorIface) *Monitor {
+func NewMonitor(database *db.DB, tm *traffic.TrafficManager, sup SupervisorIface) *Monitor {
 	return &Monitor{
 		db:          database,
 		tm:          tm,
-		julesClient: client,
 		supervisor:  sup,
 		EventBus:    make(chan WebhookEvent, 100),
 	}
@@ -60,7 +52,7 @@ func (m *Monitor) SetNotifyFunc(fn func(taskID, status string)) {
 
 
 func (m *Monitor) Start(ctx context.Context) {
-	log.Println("Status monitor started (event-driven)")
+	log.Println("Status monitor started (Autonomous Mode)")
 
 	for {
 		select {
@@ -68,7 +60,7 @@ func (m *Monitor) Start(ctx context.Context) {
 			return
 		case event := <-m.EventBus:
 			if err := m.processEvent(ctx, event); err != nil {
-				log.Printf("Error processing webhook event for session %s: %v", event.SessionID, err)
+				log.Printf("Error processing event for session %s: %v", event.SessionID, err)
 			}
 		}
 	}
@@ -77,7 +69,8 @@ func (m *Monitor) Start(ctx context.Context) {
 func (m *Monitor) getTriggerStatuses() []string {
 	var val string
 	if err := m.db.QueryRow("SELECT value FROM settings WHERE key = 'trigger_statuses'").Scan(&val); err != nil || val == "" {
-		return []string{"AWAITING_USER_FEEDBACK", "AWAITING_PLAN_APPROVAL"}
+		// In autonomous mode, we might trigger on failures or human intervention requests
+		return []string{"FAILED", "AWAITING_INPUT"}
 	}
 	parts := strings.Split(val, ",")
 	result := make([]string, 0, len(parts))
@@ -97,9 +90,8 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 	// Fetch current status from DB to compare
 	var currentStatus string
 	var id string
-	err := m.db.QueryRowContext(ctx, "SELECT id, status FROM sessions WHERE jules_session_id = ?", event.SessionID).Scan(&id, &currentStatus)
+	err := m.db.QueryRowContext(ctx, "SELECT id, status FROM sessions WHERE id = ?", event.SessionID).Scan(&id, &currentStatus)
 	if err != nil {
-		// Session might not exist or we haven't tracked it yet
 		return fmt.Errorf("session not found in db: %w", err)
 	}
 
@@ -111,18 +103,8 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 
 	// Always sync session status to the parent task
 	var taskID string
-	var lastError string
 	if err := m.db.QueryRowContext(ctx, "SELECT task_id FROM sessions WHERE id = ?", id).Scan(&taskID); err == nil {
-		// If session failed, try to get detailed error from Jules
-		if event.Status == "FAILED" {
-			if sess, err := m.julesClient.GetSession(ctx, event.SessionID); err == nil && sess.Message != "" {
-				lastError = sess.Message
-			}
-		}
-
-		// Update parent task status. last_session_id is a computed field (subquery
-		// from sessions table in the API layer) and must not be written here.
-		if _, err := m.db.ExecContext(ctx, "UPDATE tasks SET status = ?, last_error = ? WHERE id = ?", event.Status, lastError, taskID); err != nil {
+		if _, err := m.db.ExecContext(ctx, "UPDATE tasks SET status = ? WHERE id = ?", event.Status, taskID); err != nil {
 			log.Printf("Monitor: failed to update task %s status to %s: %v", taskID, event.Status, err)
 		}
 		
@@ -138,8 +120,7 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 
 	if event.Status != currentStatus && triggerSet[event.Status] {
 		log.Printf("Session %s entered trigger status %s, invoking supervisor", event.SessionID, event.Status)
-		// Execute supervisor logic via traffic manager
-		m.tm.Execute(ctx, "monitor:drift", traffic.PriorityLow, 0, "", func() error {
+		m.tm.Execute(ctx, "monitor:block", traffic.PriorityLow, 0, "", func() error {
 			if err := m.supervisor.RespondToBlock(ctx, event.SessionID); err != nil {
 				log.Printf("Supervisor failed for session %s: %v", event.SessionID, err)
 			}
@@ -148,4 +129,3 @@ func (m *Monitor) processEvent(ctx context.Context, event WebhookEvent) error {
 	}
 	return nil
 }
-
