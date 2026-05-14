@@ -139,19 +139,28 @@ COMMAND_META: dict[str, dict] = {
 # Skills injected by the sync script into agent files (in addition to frontmatter skills).
 # Covers the 31 skills that exist in .agent/skills/ but are not referenced in any agent .md.
 AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
-    "orchestrator":           ["dispatching-parallel-agents"],
-    "ai-engineer":            ["mcp-integration", "hook-development", "skill-creator"],
-    "backend-specialist":     ["api-development", "postgres-best-practices", "typed-service-contracts"],
+    "orchestrator":           ["dispatching-parallel-agents", "agent-routing-pro"],
+    "ai-engineer":            ["mcp-integration", "hook-development", "skill-creator",
+                               "agent-development", "command-development"],
+    "backend-specialist":     ["api-development", "postgres-best-practices", "typed-service-contracts",
+                               "better-auth-best-practices", "convex-setup-auth", "paperclip-worker"],
     "frontend-specialist":    ["shadcn-best-practices", "next-best-practices", "ui-ux-pro-max",
-                               "browser-use", "playwright-best-practices"],
+                               "browser-use", "playwright-best-practices",
+                               "better-auth-best-practices", "paperclip-worker"],
+    "mobile-developer":       ["paperclip-worker"],
+    "go-specialist":          ["paperclip-worker"],
     "test-engineer":          ["test-driven-development", "verification-before-completion"],
-    "qa-automation-engineer": ["playwright-best-practices", "browser-use"],
-    "devops-engineer":        ["github-actions-expert"],
+    "qa-automation-engineer": ["playwright-best-practices", "browser-use", "agent-browser"],
+    "devops-engineer":        ["github-actions-expert", "sentry-cli-expert"],
+    "sre-engineer":           ["sentry-cli-expert"],
     "database-architect":     ["postgres-best-practices", "turso-db", "supabase-postgres-best-practices"],
+    "data-engineer":          ["nextflow-development"],
     "archivist":              ["semantic-search"],
     "reviewer":               ["verification-before-completion", "requesting-code-review"],
-    "prompt-specialist":      ["prompts-best-practices", "skill-creator"],
+    "prompt-specialist":      ["prompts-best-practices", "skill-creator",
+                               "agent-development", "command-development"],
     "visual-designer":        ["visual-explainer"],
+    "analyst":                ["scientific-problem-selection"],
 }
 
 # Read-only Bash and MCP operations that should not prompt the user each time.

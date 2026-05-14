@@ -625,3 +625,5 @@ After editing any file:
 - `.agent/skills/ui-ux-pro-max/SKILL.md`
 - `.agent/skills/browser-use/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
+- `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/paperclip-worker/SKILL.md`

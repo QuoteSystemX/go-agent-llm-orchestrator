@@ -852,3 +852,4 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/paperclip-plugin-dev/SKILL.md`
 - `.agent/skills/paperclip-create-plugin/SKILL.md`
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
+- `.agent/skills/agent-routing-pro/SKILL.md`

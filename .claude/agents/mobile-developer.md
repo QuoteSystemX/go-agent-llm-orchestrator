@@ -391,3 +391,4 @@ Before saying "project complete":
 - `.agent/skills/i18n-localization/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/paperclip-worker/SKILL.md`

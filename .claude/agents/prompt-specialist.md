@@ -78,3 +78,5 @@ When asked to "improve a prompt" or "fix an agent":
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/prompts-best-practices/SKILL.md`
 - `.agent/skills/skill-creator/SKILL.md`
+- `.agent/skills/agent-development/SKILL.md`
+- `.agent/skills/command-development/SKILL.md`

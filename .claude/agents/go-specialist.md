@@ -461,3 +461,4 @@ go tool trace trace.out
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/wsl-interop/SKILL.md`
+- `.agent/skills/paperclip-worker/SKILL.md`

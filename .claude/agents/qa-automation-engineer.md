@@ -135,3 +135,4 @@ Developers test the happy path. **You test the chaos.**
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/browser-use/SKILL.md`
+- `.agent/skills/agent-browser/SKILL.md`

@@ -194,3 +194,5 @@ Scale & requirements?
 - `.agent/skills/mcp-integration/SKILL.md`
 - `.agent/skills/hook-development/SKILL.md`
 - `.agent/skills/skill-creator/SKILL.md`
+- `.agent/skills/agent-development/SKILL.md`
+- `.agent/skills/command-development/SKILL.md`
