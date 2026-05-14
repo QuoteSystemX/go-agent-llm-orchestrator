@@ -384,6 +384,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | `obsidian_sync.py`    | Obsidian Wiki-to-Code Bridge          | Every final response     |
 | `model_validator.py`  | Mental Model Architecture Validator   | Every final response     |
 | `governance_gate.py`  | Wiki-First Enforcement Sentinel       | Every final response     |
+| `agent_squeeze.py`    | High-integrity knowledge distillation from session context | End of session |
 | `knowledge_miner.py`  | Retroactive Knowledge Archeologist    | Maintenance              |
 | `promote_proposals.py` | Finalizes documentation proposals    | Maintenance              |
 | `generate_inventory.py` | Full codebase documentation generator | Maintenance              |

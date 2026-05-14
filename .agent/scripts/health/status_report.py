@@ -59,6 +59,7 @@ BUDGET_SCRIPT = SCRIPTS_DIR / "health" / "budget_monitor.py"
 SYNC_SCRIPT = SCRIPTS_DIR / "delivery" / "sync_agents.py"
 WSL_COLLECTOR = SCRIPTS_DIR / "health" / "wsl_health_collector.py"
 MCP_COLLECTOR = SCRIPTS_DIR / "health" / "mcp_health_collector.py"
+KI_COLLECTOR = SCRIPTS_DIR / "knowledge" / "ki_coverage_collector.py"
 
 def run_external_check(cmd: List[str]) -> Optional[Dict[str, Any]]:
     """Run an external check script and return its parsed JSON output."""
@@ -179,7 +180,8 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
         with open(pol_file, 'r') as f:
             policy_data = json.load(f)
 
-    # 0c. Load New Modular Metrics
+    # 0c. Load New Modular Metrics — run collector fresh to avoid stale cache
+    subprocess.run(["python3", str(KI_COLLECTOR)], capture_output=True, text=True)
     ki_data = {}
     ki_file = BUS_DIR / "ki_coverage_metrics.json"
     if ki_file.exists():

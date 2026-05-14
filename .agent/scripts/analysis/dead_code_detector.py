@@ -26,8 +26,13 @@ def find_unused_scripts():
     scripts_dir = Path(".agent/scripts")
     skills_dir = Path(".agent/skills")
     
+    EXCLUDE_DIRS = {"tests", "__pycache__"}
+
     all_scripts = list(scripts_dir.rglob("*.py")) + list(skills_dir.rglob("*.py"))
-    all_scripts = [s for s in all_scripts if s.name != "__init__.py"]
+    all_scripts = [
+        s for s in all_scripts
+        if s.name != "__init__.py" and not EXCLUDE_DIRS.intersection(s.parts)
+    ]
     
     search_dirs = [
         ".agent/workflows", 
