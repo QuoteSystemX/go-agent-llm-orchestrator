@@ -274,6 +274,12 @@ func main() {
 		mcp.WithString("agent", mcp.Required(), mcp.Description("Target specialist agent")),
 	), withRBAC("tasks_submit", h.submitTask))
 
+	s.AddTool(mcp.NewTool("transfer_task",
+		mcp.WithDescription("Hand over the task to another specialist agent."),
+		mcp.WithString("agent", mcp.Required(), mcp.Description("Target agent (e.g. analyst, ai-engineer, project-planner)")),
+		mcp.WithString("reason", mcp.Required(), mcp.Description("Reason for transfer")),
+	), withRBAC("transfer_task", h.transferTask))
+
 	// --- Logging & Observability ---
 	s.AddTool(mcp.NewTool("logs_tail",
 		mcp.WithDescription("Get recent agent execution logs."),

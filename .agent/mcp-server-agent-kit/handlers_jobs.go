@@ -204,3 +204,10 @@ func (h *handler) submitTask(_ context.Context, req mcp.CallToolRequest) (*mcp.C
 
 	return mcp.NewToolResultText("Task submitted: " + filename), nil
 }
+
+func (h *handler) transferTask(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	agent, _ := req.RequireString("agent")
+	reason, _ := req.RequireString("reason")
+
+	return mcp.NewToolResultText(fmt.Sprintf("TRANSFERRED: Agent changed to %s. Reason: %s", agent, reason)), nil
+}
