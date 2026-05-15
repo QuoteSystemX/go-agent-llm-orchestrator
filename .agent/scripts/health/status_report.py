@@ -60,6 +60,7 @@ SYNC_SCRIPT = SCRIPTS_DIR / "delivery" / "sync_agents.py"
 WSL_COLLECTOR = SCRIPTS_DIR / "health" / "wsl_health_collector.py"
 MCP_COLLECTOR = SCRIPTS_DIR / "health" / "mcp_health_collector.py"
 KI_COLLECTOR = SCRIPTS_DIR / "knowledge" / "ki_coverage_collector.py"
+WIKI_SYNC = SCRIPTS_DIR / "knowledge" / "wiki_sync.py"
 
 def run_external_check(cmd: List[str]) -> Optional[Dict[str, Any]]:
     """Run an external check script and return its parsed JSON output."""
@@ -181,7 +182,9 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
             policy_data = json.load(f)
 
     # 0c. Load New Modular Metrics — run collector fresh to avoid stale cache
-    subprocess.run(["python3", str(KI_COLLECTOR)], capture_output=True, text=True)
+    if KI_COLLECTOR.exists():
+        subprocess.run(["python3", str(KI_COLLECTOR)], capture_output=True, text=True)
+    
     ki_data = {}
     ki_file = BUS_DIR / "ki_coverage_metrics.json"
     if ki_file.exists():
@@ -304,6 +307,34 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
         metrics["Sync Status"] = " | ".join(sync_results)
     except Exception as e:
         metrics["Sync Status"] = f"Unknown ({e})"
+
+    # 6ab. Fresh Provisioning Check & Scaffolding
+    knowledge_dir = REPO_ROOT / ".agent" / "knowledge"
+    init_marker = knowledge_dir / ".initialized"
+    if not init_marker.exists():
+        # RUNTIME BOOTSTRAPPING
+        try:
+            knowledge_dir.mkdir(parents=True, exist_ok=True)
+            init_marker.write_text(f"Auto-initialized by status_report.py on {datetime.now().isoformat()}\n")
+            
+            manifest = knowledge_dir / "MANIFEST.md"
+            if not manifest.exists():
+                manifest.write_text("""# 📚 Knowledge Manifest
+This repository uses the Karpathy Wiki-First methodology.
+
+## 🧠 State: FRESH_PROVISIONING
+This project-specific knowledge base has been provisioned but not yet discovered.
+
+## 🚀 Recommended Action
+The repository is newly provisioned. To build the local intelligence base, run:
+1. `/discovery` - to map the codebase.
+2. `/wiki audit` - to generate initial knowledge fragments.
+""")
+            metrics["Knowledge State"] = "🌱 FRESH_PROVISIONING (Self-Healed)"
+        except Exception as e:
+            metrics["Knowledge State"] = f"🌱 FRESH_PROVISIONING (Boot error: {e})"
+    else:
+        metrics["Knowledge State"] = "🧠 INITIALIZED"
 
     # 6b. KI Coverage
     ki_metrics = ki_data.get("metrics", {}).get("coverage_pct", {})

@@ -599,6 +599,7 @@ def sync_claude_settings(dry_run: bool, check: bool):
     content = build_claude_settings()
     _write_json(path, content, dry_run, check)
 
+
 def sync_claude_keybindings(dry_run: bool, check: bool):
     import json as _json
     path = TARGET_ROOT / ".claude" / "keybindings.json"
