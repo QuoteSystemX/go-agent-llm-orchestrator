@@ -22,14 +22,14 @@ from pathlib import Path
 
 def parse_mermaid_dag(plan_content):
     """
-    Упрощенный парсер Mermaid DAG для извлечения узлов и зависимостей.
-    Ищет паттерны типа A --> B или A[Label] --> B[Label].
+    Simplified Mermaid DAG parser for extracting nodes and dependencies.
+    Looks for patterns like A --> B or A[Label] --> B[Label].
     """
     edges = []
     nodes = {}
     
-    # Регулярное выражение для ребер: ID1[Label] --> ID2[Label]
-    # Или просто ID1 --> ID2
+    # Regex for edges: ID1[Label] --> ID2[Label]
+    # Or simply ID1 --> ID2
     pattern = r"(\w+)(?:\[.*?\])?\s*-->\s*(\w+)(?:\[.*?\])?"
     
     matches = re.findall(pattern, plan_content)
@@ -42,7 +42,7 @@ def parse_mermaid_dag(plan_content):
 
 def get_execution_waves(nodes, edges):
     """
-    Алгоритм топологической сортировки для разделения на волны.
+    Topological sort algorithm to divide into waves.
     """
     in_degree = {node: 0 for node in nodes}
     for src, dst in edges:
@@ -56,7 +56,7 @@ def get_execution_waves(nodes, edges):
         
         waves.append(current_wave)
         for node in current_wave:
-            # "Удаляем" узел и уменьшаем степень вхождения зависимых узлов
+            # "Remove" node and decrease in-degree of dependent nodes
             for src, dst in edges:
                 if src == node:
                     in_degree[dst] -= 1
@@ -66,16 +66,16 @@ def get_execution_waves(nodes, edges):
 
 def check_ready_nodes(nodes, edges, session_state):
     """
-    Находит узлы, чьи зависимости полностью выполнены (completed).
+    Finds nodes whose dependencies are fully completed.
     """
     ready_nodes = []
     completed_tasks = [k.replace("task_", "") for k, v in session_state.items() if v == "completed"]
     
-    # Узлы, которые еще не запускались
+    # Nodes that haven't started yet
     pending_nodes = [node for node in nodes if f"task_{node}" not in session_state or session_state[f"task_{node}"] == "pending"]
     
     for node in pending_nodes:
-        # Ищем все входящие ребра для этого узла
+        # Look for all incoming edges for this node
         dependencies = [src for src, dst in edges if dst == node]
         if all(dep in completed_tasks for dep in dependencies):
             ready_nodes.append(node)
@@ -84,11 +84,11 @@ def check_ready_nodes(nodes, edges, session_state):
 
 def execute_node(session_id, node, description=""):
     """
-    Запуск узла. Поддерживает рекурсивный вызов.
+    Node execution. Supports recursive calls.
     """
     print(f"🚀 Executing Node: {node}")
     
-    # Проверка на рекурсию
+    # Recursion check
     if "[RECURSIVE]" in description:
         print(f"  📂 Detected Recursive Task. Spawning sub-session...")
         sub_sid_proc = subprocess.run(
@@ -102,7 +102,7 @@ def execute_node(session_id, node, description=""):
         ])
         print(f"  ✅ Sub-session created: {sub_sid}")
 
-    # Обновляем статус
+    # Update status
     subprocess.run([
         "python3", ".agent/scripts/orchestration/orchestration_session.py", 
         "set-state", session_id, f"task_{node}", "completed"
@@ -111,11 +111,11 @@ def execute_node(session_id, node, description=""):
 
 def run_jit_dispatcher(session_id, nodes, edges, descriptions):
     """
-    Основной цикл JIT-диспетчера.
+    Main JIT dispatcher loop.
     """
     print("🌊 Starting JIT Dispatcher...")
     
-    # Инициализируем все узлы как pending
+    # Initialize all nodes as pending
     for node in nodes:
         subprocess.run([
             "python3", ".agent/scripts/orchestration/orchestration_session.py", 
@@ -123,7 +123,7 @@ def run_jit_dispatcher(session_id, nodes, edges, descriptions):
         ])
 
     while True:
-        # Читаем текущее состояние
+        # Read current state
         state_proc = subprocess.run(
             ["python3", ".agent/scripts/orchestration/orchestration_session.py", "get-state", session_id],
             capture_output=True, text=True
@@ -136,14 +136,14 @@ def run_jit_dispatcher(session_id, nodes, edges, descriptions):
         ready_nodes = check_ready_nodes(nodes, edges, session_state)
         
         if not ready_nodes:
-            # Проверяем, есть ли задачи, которые сейчас выполняются
+            # Check if there are tasks currently running
             running = [k for k, v in session_state.items() if v == "running"]
             pending = [k for k, v in session_state.items() if v == "pending"]
             
             if not running and not pending:
                 break
                 
-            # Если есть запущенные или ожидающие — ждем сигнала (имитация)
+            # If running or pending tasks exist — wait for signal (simulation)
             import time
             time.sleep(2) 
             continue
@@ -164,9 +164,9 @@ if __name__ == "__main__":
         
     nodes, edges = parse_mermaid_dag(content)
     
-    # Извлечение описаний из Mermaid (более надежное регулярное выражение)
+    # Extract descriptions from Mermaid (more robust regex)
     descriptions = {}
-    # Ищем ID[Label] или ID(Label) или ID((Label))
+    # Search for ID[Label] or ID(Label) or ID((Label))
     desc_patterns = [
         r"(\w+)\[(.*?)\]",
         r"(\w+)\((.*?)\)",

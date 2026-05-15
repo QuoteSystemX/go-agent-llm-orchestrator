@@ -19,8 +19,8 @@ from pathlib import Path
 
 def conduct_debate(session_id, role, candidates, subtask):
     """
-    Генерирует 'Сценарий поединка' для LLM. 
-    Поскольку мы работаем в среде агентов, этот скрипт подготавливает контекст для дебатов.
+    Generates a 'Duel Scenario' for the LLM.
+    Since we are operating in an agent environment, this script prepares the context for the debate.
     """
     arena_report = {
         "session_id": session_id,
@@ -46,7 +46,7 @@ def conduct_debate(session_id, role, candidates, subtask):
 
 def format_verdict(winner, risks_from_loser):
     """
-    Форматирует финальное решение Арены.
+    Formats the final decision from The Arena.
     """
     verdict = {
         "winner": winner,

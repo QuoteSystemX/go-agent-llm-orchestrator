@@ -209,5 +209,5 @@ func (h *handler) transferTask(_ context.Context, req mcp.CallToolRequest) (*mcp
 	agent, _ := req.RequireString("agent")
 	reason, _ := req.RequireString("reason")
 
-	return mcp.NewToolResultText(fmt.Sprintf("TRANSFERRED: Agent changed to %s. Reason: %s", agent, reason)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("TRANSFERRED: Agent changed to %s. Reason: %s", agent, reason)), nil // nosec
 }

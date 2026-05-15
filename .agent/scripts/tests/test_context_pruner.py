@@ -64,18 +64,16 @@ class TestContextPruner(unittest.TestCase):
         self.assertTrue(p3.exists())
 
     def test_summarize_logs(self):
-        # Create a large log stream
-        large_logs = ["Log line"] * 200
+        # Create a large log stream (> 50,000 bytes)
+        # 100 lines of 600 chars each = 60,000 bytes
+        large_logs = ["A" * 600] * 150 
         p_logs = self.bus_dir / "large_logs.json"
         p_logs.write_text(json.dumps({
             "type": "log_stream",
             "payload": large_logs
         }))
         
-        # Mock file size check (stat().st_size)
-        with patch('pathlib.Path.stat') as mock_stat:
-            mock_stat.return_value.st_size = 60000
-            res = pruner.prune_bus()
+        res = pruner.prune_bus()
             
         self.assertEqual(res["summarized"], 1)
         data = json.loads(p_logs.read_text())

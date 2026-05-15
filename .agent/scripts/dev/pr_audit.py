@@ -42,6 +42,7 @@ def main():
     checks = [
         ("Security", "python3 .agent/scripts/health/security_scan.py --target ."),
         ("Documentation Drift", "python3 .agent/scripts/health/drift_detector.py"),
+        ("Linguistic Compliance", "python3 .agent/scripts/dev/linguistic_guardian.py"),
         # ("Full Verification", "python3 .agent/scripts/dev/verify_all.py ."), # Requires URL
         # ("Linting", "python3 .agent/scripts/lint_runner.py ."),
         # ("Tests", "python3 .agent/scripts/test_runner.py .")

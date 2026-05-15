@@ -173,6 +173,7 @@ def synthesize_outputs():
     clear_bus()
 
 def main():
+    content = ""
     if "--synthesize" in sys.argv:
         synthesize_outputs()
         sys.exit(0)
@@ -194,12 +195,12 @@ def main():
 
     print("🔍 Validating agent output via Output Gateway...")
     
-    # 0. Sync Wiki Knowledge (Karpathy 2.0)
-    print("🔗 Syncing Obsidian Knowledge Graph...")
+    # 0. Validate vault health
+    print("🏛️ Running vault health check...")
     try:
-        subprocess.run([sys.executable, str(SCRIPTS_ROOT / "knowledge" / "obsidian_sync.py")], check=True)
+        subprocess.run([sys.executable, str(SCRIPTS_ROOT / "knowledge" / "obsidian_validator.py"), "check"], check=False)
     except Exception as e:
-        print(f"⚠️  Obsidian sync failed: {e}")
+        print(f"⚠️  Vault validation failed: {e}")
 
     # 1. Check sections
     missing_sections = validate_sections(content)

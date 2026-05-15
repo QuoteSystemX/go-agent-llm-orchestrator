@@ -46,7 +46,7 @@ graph TD
 | **Test**            | "test", "coverage", "unit", "e2e"                        | `test-engineer`                           | ✅ YES       |
 | **Deployment**      | "deploy", "production", "CI/CD", "docker"                | `devops-engineer`                         | ✅ YES       |
 | **Kubernetes**      | "kubernetes", "k8s", "helm", "kubectl", "ingress", "rbac", "operator", "hpa", "vpa", "namespace", "pod", "deployment yaml" | `k8s-engineer` | ✅ YES |
-| **Cross-Repo / Cross-Service** | "соседние репо", "другие сервисы", "по всем чартам", "compare repos", "consistency across", "cross-service", "neighboring repos", "audit across", "в других репо" | `orchestrator` | ✅ FORCE |
+| **Cross-Repo / Cross-Service** | "neighboring repos", "other services", "across all charts", "compare repos", "consistency across", "cross-service", "neighboring repos", "audit across", "in other repos" | `orchestrator` | ✅ FORCE |
 | **AI / LLM**        | "llm", "rag", "embedding", "vector db", "prompt", "langchain", "openai", "anthropic sdk", "chatbot", "ai feature", "fine-tune" | `ai-engineer` | ✅ YES |
 | **Wiki / Docs**     | "mental model", "wiki", "intuition", "prose-first", "adr", "architecture decision", "documentation drift", "explain why" | `wiki-architect` | ✅ YES |
 | **Go (pure)**       | "golang", "go", "grpc", "protobuf", "gin", "echo", "fiber", "xsync", "pprof", "goroutine" | `go-specialist` | ✅ YES |
@@ -72,7 +72,7 @@ graph TD
 | **Git & Merge**     | "git", "conflict", "merge", "rebase", "branch"           | `git-master`                              | ✅ YES       |
 | **New Feature**     | "build", "create", "implement", "new app"                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                                | `orchestrator` → multi-agent              | ⚠️ ASK FIRST |
-| **Cross-Repo / Cross-Service** | "соседние репо", "другие сервисы", "по всем чартам", "compare repos", "другие проекты", "consistency across", "cross-service", "neighboring repos", "по всем сервисам", "audit across", "в других репо" | `orchestrator` | ✅ FORCE (no override) |
+| **Cross-Repo / Cross-Service** | "neighboring repos", "other services", "across all charts", "compare repos", "other projects", "consistency across", "cross-service", "neighboring repos", "across all services", "audit across", "in other repos" | `orchestrator` | ✅ FORCE (no override) |
 
 ### 4. Response Format
 
@@ -155,9 +155,9 @@ function analyzeRequest(userMessage) {
 function perTurnScopeCheck(currentMessage, assignedAgent) {
     // Hard-override signals — always escalate regardless of current agent
     const CROSS_REPO_SIGNALS = [
-        "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
-        "consistency across", "cross-service", "neighboring repos", "по всем сервисам",
-        "audit across", "в других репо", "другие проекты", "по всей системе"
+        "neighboring repos", "other services", "compare repos", "across all charts",
+        "consistency across", "cross-service", "neighboring repos", "across all services",
+        "audit across", "in other repos", "other projects", "across the entire system"
     ];
     if (CROSS_REPO_SIGNALS.some(s => currentMessage.toLowerCase().includes(s))) {
         return FORCE_ESCALATE("orchestrator");  // Cannot be overridden by sticky context

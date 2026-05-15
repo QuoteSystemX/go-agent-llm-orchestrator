@@ -882,10 +882,11 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/analysis/impact_to_roles.py` | System module for impact_to_roles.py. |
 | `.agent/scripts/orchestration_session.py` | System module for orchestration_session.py. |
 | `.agent/scripts/models/profile_routing.py` | Profiling script for L1 and L2 routing performance. |
-| `.agent/scripts/orchestration/wave_dispatcher.py` | Упрощенный парсер Mermaid DAG для извлечения узлов и зависимостей. |
-| `.agent/scripts/orchestration/agent_auctioneer.py` | Динамически собирает матрицу агентов, сканируя папку .agent/agents/ |
-| `.agent/scripts/orchestration/agent_arena.py` | Генерирует 'Сценарий поединка' для LLM.  |
+| `.agent/scripts/orchestration/wave_dispatcher.py` | Simplified Mermaid DAG parser for extracting nodes and dependencies. |
+| `.agent/scripts/orchestration/agent_auctioneer.py` | Dynamically builds agent matrix by scanning the .agent/agents/ folder |
+| `.agent/scripts/orchestration/agent_arena.py` | Generates 'Duel Scenario' for LLMs.  |
 | `.agent/scripts/health/dependency_analyzer.py` | Dependency Analyzer — Checks for outdated or insecure dependencies. |
 | `.agent/scripts/analysis/dead_code_detector.py` | Dead Code Detector — Finds unreferenced scripts in the workspace. |
 | `.agent/scripts/health/alignment_oracle.py` | Alignment Oracle — Predicts long-term impact of decisions on project health. |
 | `.agent/scripts/healer_victim.py` | Victim for healing. |
+| `.agent/scripts/dev/linguistic_guardian.py` | Search for Cyrillic characters in critical directories. |

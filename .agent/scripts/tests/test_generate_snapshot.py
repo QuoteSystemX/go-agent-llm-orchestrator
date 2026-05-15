@@ -30,8 +30,13 @@ class TestGenerateSnapshot(unittest.TestCase):
         
         self.old_cwd = os.getcwd()
         os.chdir(self.test_root)
+        
+        # Patch REPO_ROOT in snap
+        self.patch_root = patch('misc.generate_snapshot.REPO_ROOT', self.test_root)
+        self.patch_root.start()
 
     def tearDown(self):
+        self.patch_root.stop()
         os.chdir(self.old_cwd)
         if self.test_root.exists():
             shutil.rmtree(self.test_root)

@@ -257,9 +257,9 @@ Boundary violations are not limited to file writes. **Questions can also violate
 ```
 WHEN any specialist agent receives a question:
   CHECK for cross-repo / cross-service signals:
-    "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
+    "neighboring repos", "other services", "compare repos", "across all charts",
     "consistency across", "cross-service", "neighboring repos", "audit across",
-    "в других репо", "по всей системе", "другие проекты"
+    "in other repos", "across the entire system", "other projects"
 
   IF signal detected:
     → STOP answering as specialist

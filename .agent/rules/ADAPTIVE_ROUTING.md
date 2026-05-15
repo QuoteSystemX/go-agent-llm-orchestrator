@@ -12,24 +12,24 @@ This document defines the 4 levels of depth for request processing and the logic
 
 | Level | Name | Description | Active Units |
 | :--- | :--- | :--- | :--- |
-| **L1** | **Sprint (Спринт)** | Direct response from a single domain expert. | 1 Specialist Agent |
-| **L2** | **Pro (Профи)** | Implementation with mandatory self-reflection/critique pass. | 1 Specialist + Self-Critic |
-| **L3** | **Council (Совет Мудрецов)** | Synthetic consensus of multiple perspectives before action. | Architect + Specialist + SRE |
-| **L4** | **Control (Красная Группа)** | Mission-critical audit with shadow review and security testing. | Red Team + Security + QA |
+| **L1** | **Sprint** | Direct response from a single domain expert. | 1 Specialist Agent |
+| **L2** | **Pro** | Implementation with mandatory self-reflection/critique pass. | 1 Specialist + Self-Critic |
+| **L3** | **Council of Sages** | Synthetic consensus of multiple perspectives before action. | Architect + Specialist + SRE |
+| **L4** | **Red Team** | Mission-critical audit with shadow review and security testing. | Red Team + Security + QA |
 
-> 💡 **Default Agent**: `orchestrator` является основным агентом системы и используется как "Fallback" (запасной вариант), если специалист не определен или задача требует кросс-доменного управления.
-> 🔍 **Dynamic Discovery**: Система автоматически находит агентов, сканируя папку `.agent/agents/` и анализируя поле `domains` в их frontmatter. Никаких статических списков (agent_matrix.json) больше не требуется.
+> 💡 **Default Agent**: `orchestrator` is the primary system agent and is used as a "Fallback" if no specialist is defined or the task requires cross-domain management.
+> 🔍 **Dynamic Discovery**: The system automatically finds agents by scanning the `.agent/agents/` folder and analyzing the `domains` field in their frontmatter. No static lists (agent_matrix.json) are required anymore.
 
 ---
 
 ## 🧭 DYNAMIC DISCOVERY PROTOCOL
 
-Аукционист (`agent_auctioneer.py`) работает по следующему алгоритму:
+The Auctioneer (`agent_auctioneer.py`) works according to the following algorithm:
 
-1. **Scan**: Обход всех `.md` файлов в `.agent/agents/`.
-2. **Extract**: Парсинг Frontmatter для извлечения `domains` и `skills`.
-3. **Match**: Подсчет Score на основе вхождения ключевых слов домена в описание задачи.
-4. **Identity Match**: Если ID агента (имя файла) упомянуто в задаче, он получает приоритет (+2 к Score).
+1. **Scan**: Traverse all `.md` files in `.agent/agents/`.
+2. **Extract**: Parse Frontmatter to extract `domains` and `skills`.
+3. **Match**: Calculate Score based on domain keywords present in the task description.
+4. **Identity Match**: If the agent ID (filename) is mentioned in the task, it receives priority (+2 to Score).
 
 ---
 
@@ -57,14 +57,14 @@ If any of these conditions are met, upgrade to **L4 (Control)**:
 
 ## 👥 SPECIALIZED GROUPS
 
-### 🦉 Council of Sages (Совет Мудрецов)
+### 🦉 Council of Sages
 
 Triggered for architectural decisions, complex migrations, or unclear requirements.
 
 - **Goal**: Multidimensional planning.
 - **Output**: Implementation Strategy or ADR.
 
-### 🟥 Red Team (Красная Группа)
+### 🟥 Red Team
 
 Triggered for high-risk operations or final security audits.
 

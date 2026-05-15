@@ -36,7 +36,7 @@ def parse_frontmatter(content):
 
 def load_matrix():
     """
-    Динамически собирает матрицу агентов, сканируя папку .agent/agents/
+    Dynamically builds agent matrix by scanning the .agent/agents/ folder.
     """
     agents_dir = Path(".agent/agents")
     matrix = {"agents": []}
@@ -52,10 +52,10 @@ def load_matrix():
             if not fm:
                 continue
                 
-            # Извлекаем домены из frontmatter (строка через запятую)
+            # Extract domains from frontmatter (comma-separated string)
             domains = [d.strip() for d in fm.get("domains", "").split(",") if d.strip()]
             
-            # Добавляем агента в матрицу
+            # Add agent to the matrix
             matrix["agents"].append({
                 "id": agent_file.stem,
                 "domains": domains,
@@ -68,9 +68,9 @@ def load_matrix():
     return matrix
 
 CROSS_REPO_SIGNALS = [
-    "соседние репо", "другие сервисы", "compare repos", "по всем чартам",
+    "neighboring repos", "other services", "compare repos", "all charts",
     "consistency across", "cross-service", "neighboring repos", "audit across",
-    "в других репо", "по всей системе", "другие проекты", "по всем сервисам",
+    "other repos", "system-wide", "other projects", "all services",
     "compare other", "cross-repo", "other services", "other repos",
 ]
 
@@ -83,7 +83,7 @@ def is_cross_repo_request(task_description: str) -> bool:
 
 def find_candidates(task_description):
     """
-    Поиск кандидатов на основе динамической матрицы.
+    Search for candidates based on the dynamic matrix.
     """
     # Hard-override: cross-repo signals always go to orchestrator
     if is_cross_repo_request(task_description):
@@ -98,21 +98,21 @@ def find_candidates(task_description):
         match_score = 0
         matched_indicators = []
         
-        # 1. Прямое совпадение доменов (+1 за каждый)
+        # 1. Direct domain match (+1 for each)
         for domain in agent["domains"]:
             if domain.lower() in task_lower:
                 match_score += 1
                 matched_indicators.append(f"domain:{domain}")
         
-        # 2. Совпадение по навыкам (SKILLS) (+2 за каждый, т.к. это точнее)
+        # 2. Skill match (SKILLS) (+2 each as it is more precise)
         for skill in agent.get("skills", []):
-            # Проверяем как полное имя скилла, так и его части (например, 'go' в 'go-patterns')
+            # Check both full skill name and its parts (e.g., 'go' in 'go-patterns')
             skill_clean = skill.lower().replace("-", " ")
             if skill.lower() in task_lower or skill_clean in task_lower:
                 match_score += 2
                 matched_indicators.append(f"skill:{skill}")
         
-        # 3. Совпадение по ID агента (если задача явно для него) (+3)
+        # 3. Agent ID match (if task is explicitly for them) (+3)
         if agent["id"].lower() in task_lower:
             match_score += 3
             matched_indicators.append(f"identity:{agent['id']}")
@@ -125,14 +125,14 @@ def find_candidates(task_description):
                 "description": agent["description"]
             })
             
-    # Сортируем по релевантности
+    # Sort by relevance
     candidates.sort(key=lambda x: x["score"], reverse=True)
     return candidates
 
 def run_auction(session_id, role, subtask_desc):
     """
-    Имитация процесса торгов. 
-    Принимает роль и описание подзадачи, возвращает лучшего кандидата.
+    Simulates the bidding process.
+    Takes a role and subtask description, returns the best candidate.
     """
     print(f"📢 Auction started for role: [{role}]")
     print(f"📝 Subtask: {subtask_desc}")
@@ -140,13 +140,13 @@ def run_auction(session_id, role, subtask_desc):
     candidates = find_candidates(subtask_desc)
     
     if not candidates:
-        # Fallback на orchestrator, если никто не подходит
+        # Fallback to orchestrator if no one fits
         print("⚠️ No direct domain matches. Assigning default agent: orchestrator.")
         return {"id": "orchestrator", "status": "assigned_fallback"}
 
     print(f"👥 Candidates found: {[c['id'] for c in candidates]}")
     
-    # Если кандидатов несколько, помечаем для Арены (Phase 3)
+    # If multiple candidates, mark for The Arena (Phase 3)
     if len(candidates) > 1:
         print(f"⚔️ Conflict detected! Candidates {candidates[0]['id']} and {candidates[1]['id']} will enter The Arena.")
         return {

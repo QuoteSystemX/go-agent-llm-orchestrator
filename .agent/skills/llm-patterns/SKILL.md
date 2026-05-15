@@ -55,8 +55,8 @@ Narrowing: "Do NOT include... Only focus on..."
 
 ```python
 EXAMPLES = [
-    {"input": "Translate: Hello", "output": "Привет"},
-    {"input": "Translate: Goodbye", "output": "До свидания"},
+    {"input": "Translate: Hello", "output": "Hola"},
+    {"input": "Translate: Goodbye", "output": "Au revoir"},
 ]
 
 system = "You are a translator. Follow the pattern exactly.\n\n" + \

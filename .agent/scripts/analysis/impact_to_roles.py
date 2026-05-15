@@ -17,7 +17,7 @@ import sys
 import json
 from pathlib import Path
 
-# Карта: расширение файла/путь -> роль
+# Mapping: file extension/path -> role
 FILE_TO_ROLE_MAP = {
     ".go": "backend-specialist",
     ".py": "backend-specialist",
@@ -34,12 +34,12 @@ FILE_TO_ROLE_MAP = {
 def suggest_roles(affected_files):
     roles = set()
     for file_path in affected_files:
-        # Проверка по расширению
+        # Check by extension
         ext = Path(file_path).suffix
         if ext in FILE_TO_ROLE_MAP:
             roles.add(FILE_TO_ROLE_MAP[ext])
         
-        # Проверка по ключевым словам в пути
+        # Check by keywords in the path
         for key, role in FILE_TO_ROLE_MAP.items():
             if key in file_path.lower():
                 roles.add(role)
@@ -47,7 +47,7 @@ def suggest_roles(affected_files):
     return list(roles)
 
 if __name__ == "__main__":
-    # Ожидаем список файлов через stdin или аргумент
+    # Expects a list of files via stdin or argument
     if len(sys.argv) < 2:
         print("Usage: impact_to_roles.py <file1,file2...>")
         sys.exit(1)

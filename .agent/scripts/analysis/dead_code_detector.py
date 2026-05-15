@@ -39,7 +39,7 @@ def find_unused_scripts():
         ".github/workflows", 
         ".agent/scripts", 
         ".agent/skills", 
-        ".agent/knowledge",
+        "wiki/knowledge",
         ".agent/agents",
         ".agent/rules",
         "CODEBASE.md",

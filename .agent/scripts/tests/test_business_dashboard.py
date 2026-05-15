@@ -3,6 +3,7 @@ import unittest
 import shutil
 import sys
 import os
+import io
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -60,14 +61,14 @@ class TestBusinessDashboard(unittest.TestCase):
         features, sprints = dashboard.parse_tasks()
         self.assertIsNone(features)
 
-    @patch('sys.stdout', new_callable=MagicMock)
+    @patch('sys.stdout', new_callable=io.StringIO)
     def test_show_dashboard_no_rich(self, mock_stdout):
         # Force non-rich mode for simpler output testing
         with patch('health.business_dashboard.HAS_RICH', False):
             (self.tasks_dir / "task.md").write_text("Epic: Core\n[x] Done")
             dashboard.show_dashboard()
             
-            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            output = mock_stdout.getvalue()
             self.assertIn("Business Progress Dashboard", output)
             self.assertIn("Core: 100.0%", output)
 

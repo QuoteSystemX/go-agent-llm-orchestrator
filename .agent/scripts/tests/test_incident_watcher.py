@@ -21,7 +21,7 @@ import health.incident_watcher as watcher
 
 class TestIncidentWatcher(unittest.TestCase):
     @patch('subprocess.Popen')
-    @patch('bus_manager.push')
+    @patch('health.incident_watcher.bus_manager.push')
     @patch('subprocess.getoutput', return_value="M test.py")
     def test_watch_command_success(self, mock_git, mock_push, mock_popen):
         # Mock successful process
@@ -35,7 +35,7 @@ class TestIncidentWatcher(unittest.TestCase):
         mock_push.assert_not_called()
 
     @patch('subprocess.Popen')
-    @patch('bus_manager.push')
+    @patch('health.incident_watcher.bus_manager.push')
     @patch('subprocess.getoutput', return_value="M test.py")
     def test_watch_command_failure(self, mock_git, mock_push, mock_popen):
         # Mock failed process

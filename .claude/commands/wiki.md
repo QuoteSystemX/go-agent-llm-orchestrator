@@ -24,7 +24,10 @@ Maintain the codebase knowledge base (Mental Models, ADRs, Intuition) in sync wi
 | `/wiki audit` | Runs drift detector and identifies undocumented changes. | `wiki-architect` |
 | `/wiki design <name>` | Creates a Mental Model/ADR for a specific component. | `wiki-architect` |
 | `/wiki sync` | Updates existing wiki pages based on recent code changes. | `wiki-architect` |
-| `/wiki status` | Reports on the completeness and health of the project wiki. | `wiki-architect` |
+| `/wiki status` | Reports vault health, OFM compliance, and detected doc dirs. | `wiki-architect` |
+| `/wiki init` | Creates a new Obsidian vault from scratch (`validator.py init`). | `wiki-architect` |
+| `/wiki migrate` | Converts existing wiki files to OFM compliance. | `wiki-architect` |
+| `/wiki merge --from=docs` | Merges docs/ content into the vault. | `wiki-architect` |
 
 ---
 
@@ -41,6 +44,18 @@ Maintain the codebase knowledge base (Mental Models, ADRs, Intuition) in sync wi
      - Check git history for files changed in `wiki/` vs `src/` and propose updates.
      - Run `python3 .agent/scripts/dev/doc_healer.py` as a pre-sync check.
      - Run `python3 .agent/scripts/knowledge/wiki_assembler.py` after updates to finalize the global ARCHITECTURE.md.
+   - If `status`:
+     - Run `python3 .agent/scripts/knowledge/obsidian_validator.py status`.
+     - Report vault health, OFM compliance, and recommendations.
+   - If `init`:
+     - Run `python3 .agent/scripts/knowledge/obsidian_validator.py init`.
+     - Creates vault directory, `.obsidian/` config, and `_index.md`.
+   - If `migrate`:
+     - Run `python3 .agent/scripts/knowledge/obsidian_validator.py migrate --backup`.
+     - Converts existing files to OFM with git backup.
+   - If `merge`:
+     - Extract `--from` argument from user request.
+     - Run `python3 .agent/scripts/knowledge/obsidian_validator.py merge --from=<dir>`.
 
 2. **Wiki Architect Context**:
    - Use `wiki-writing` skill.

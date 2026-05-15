@@ -343,8 +343,38 @@ If the page doesn't answer that, it's incomplete.
 
 ---
 
+## 📖 Obsidian Vault Integration
+
+The `wiki/` directory is an **Obsidian vault**. All files use **Obsidian Flavored Markdown (OFM)**.
+
+### What this means
+
+- ✅ All `.md` files in `wiki/` use `[[wikilinks]]` for internal references
+- ✅ All files have required frontmatter: `title`, `tags`, `status`
+- ✅ Callouts use `> [!type]` syntax
+- ✅ The vault opens directly in Obsidian — no sync needed
+
+### Related Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `obsidian-markdown` | OFM syntax reference (wikilinks, embeds, callouts, properties) |
+| `obsidian-validator` | Check and repair vault integrity |
+| `wiki-obsidian-bridge` | Karpathy + OFM bridge rules |
+
+### Validation
+
+After writing any wiki file, verify it:
+
+```bash
+python3 .agent/scripts/knowledge/obsidian_validator.py check
+```
+
+---
+
 ## Changelog
 
+- **1.0.1** (2026-05-15): Added Obsidian vault integration rules
 - **1.0.0** (2026-04-26): Initial version — Karpathy Wiki-First methodology, Mental Model templates, Intuition writing rules, drift detection, evergreen protocol
 
 <!-- EMBED_END -->

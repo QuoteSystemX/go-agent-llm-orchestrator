@@ -43,7 +43,7 @@ def find_active_task() -> Path:
     if not tasks_dir.exists():
         return None
     
-    tasks = list(tasks_dir.glob("*.md"))
+    tasks = [t for t in tasks_dir.glob("*.md") if t.name.lower() != "readme.md"]
     if not tasks:
         return None
     

@@ -36,8 +36,6 @@ if [ $STATUS -ne 0 ]; then
     echo "❌ pre-commit review failed. Fix issues or use --no-verify to skip."
     exit $STATUS
 fi
-# Link staged files to the active task card
-python3 "$REPO_ROOT/.agent/scripts/delivery/task_tracer.py" 2>/dev/null || true
 exit 0
 """
 

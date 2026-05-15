@@ -204,17 +204,14 @@ def run_fix():
             
         status_report.export_to_html(score, metrics)
         
-        # Bridge Team: Sync knowledge to Obsidian and external agents
-        print_step("Mirroring knowledge via Bridge Team...")
+        # Bridge Team: Sync agents and run validator
+        print_step("Checking Agent Sync and Vault Health...")
         try:
-            import knowledge.obsidian_sync; import sys; sys.modules['obsidian_sync'] = sys.modules['knowledge.obsidian_sync']; import knowledge.obsidian_sync as obsidian_sync
             import delivery.sync_agents; import sys; sys.modules['sync_agents'] = sys.modules['delivery.sync_agents']; import delivery.sync_agents as sync_agents
-            obsidian_sync.sync_to_obsidian()
-            # sync_agents.run_sync() # Optional: heavy sync, maybe keep it manual or for releases
         except Exception as e:
-            print_warning(f"Bridge Team sync failed: {e}")
+            print_warning(f"Agent sync failed: {e}")
         
-        print_success("Visualization, Dashboard, Documentation, and Bridge Sync updated.")
+        print_success("Visualization, Dashboard, Documentation, and Agent Sync updated.")
     except Exception as e:
         print_warning(f"Failed to update visualization: {e}")
 
@@ -690,7 +687,7 @@ def main() -> None:
 
     # Custom Check: Knowledge Logic Coverage
     print_step("Checking Knowledge Logic Coverage")
-    critical_knowledge = ["experience_distiller.py", "obsidian_sync.py"]
+    critical_knowledge = ["experience_distiller.py", "obsidian_validator.py"]
     ok, msg = check_script_coverage("knowledge", critical_only=critical_knowledge)
     if ok:
         print_success(f"Knowledge Coverage: {msg}")

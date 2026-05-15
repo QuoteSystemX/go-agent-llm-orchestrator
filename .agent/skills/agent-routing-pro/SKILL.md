@@ -66,12 +66,12 @@ Every response MUST start with the Flow plaque:
 
 ## 👥 Group Definitions
 
-### 🦉 Council of Sages (Совет Мудрецов)
+### 🦉 Council of Sages
 - **Activation**: L3 Tasks.
 - **Composition**: `architect` + `domain-specialist` + `sre-engineer`.
 - **Mode**: Synthetic Consensus (All 3 perspectives in one response).
 
-### 🟥 Red Team (Красная Группа)
+### 🟥 Red Team
 - **Activation**: L4 Tasks.
 - **Composition**: `red-team` + `security-auditor`.
 - **Mode**: Shadow Review (Critical audit after implementation).

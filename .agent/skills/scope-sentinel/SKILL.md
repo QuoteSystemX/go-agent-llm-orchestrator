@@ -18,8 +18,8 @@ version: 1.0.0
 SCOPE_CHECK(current_question, my_domain):
 
   1. Does the question mention other repos/services?
-     → SIGNALS: "соседние репо", "другие сервисы", "compare repos",
-                "по всем чартам", "в других проектах", "cross-service",
+     → SIGNALS: "neighboring repos", "other services", "compare repos",
+                "across all charts", "in other projects", "cross-service",
                 "consistency across", "other services", "neighboring repos"
      → ACTION: ESCALATE to orchestrator
 
@@ -28,13 +28,13 @@ SCOPE_CHECK(current_question, my_domain):
      → ACTION: ESCALATE to orchestrator
 
   3. Does the question ask for cross-repo consistency audit?
-     → SIGNALS: "проверь как настроено в других", "сравни с соседними",
-                "одинаково ли по всем", "consistency check", "audit across"
+     → SIGNALS: "check how it is configured in others", "compare with neighbors",
+                "is it the same everywhere", "consistency check", "audit across"
      → ACTION: ESCALATE to orchestrator
 
   4. Does the question involve architectural decisions spanning multiple services?
-     → SIGNALS: "архитектурное решение", "architectural decision", "ADR",
-                "system-wide", "по всей системе", "global policy"
+     → SIGNALS: "architectural decision", "architectural decision", "ADR",
+                "system-wide", "across the entire system", "global policy"
      → ACTION: ESCALATE to orchestrator (Council of Sages may be needed)
 
   5. None of the above? → PROCEED with answering as normal
@@ -85,7 +85,7 @@ The routing system makes a single decision at session start (auctioneer auction)
 **Anti-pattern this prevents:**
 - Session starts: `fix PGDATA path in Helm chart` → `backend-specialist` assigned ✅
 - Conversation evolves: `check how Ingress is configured in neighboring repos` → `backend-specialist` keeps answering ❌
-- With this skill: `backend-specialist` detects "соседних репо" → escalates to orchestrator ✅
+- With this skill: `backend-specialist` detects "neighboring repos" → escalates to orchestrator ✅
 
 ---
 

@@ -38,7 +38,7 @@
 
 1. Awareness: Sync with current task and read `.agent/bus/` for context.
 2. **Scope Recheck** *(per-turn, before every response)*: Check the current message for cross-repo / cross-service signals. If any of the following are detected — **immediately escalate to `orchestrator`**, do not attempt to answer as a specialist:
-   - `"соседние репо"`, `"другие сервисы"`, `"compare repos"`, `"по всем чартам"`, `"consistency across"`, `"cross-service"`, `"neighboring repos"`, `"audit across"`, `"в других репо"`, `"по всей системе"`
+   - `"neighboring repos"`, `"other services"`, `"compare repos"`, `"all charts"`, `"consistency across"`, `"cross-service"`, `"neighboring repos"`, `"audit across"`, `"other repos"`, `"system-wide"`
    - Question spans 2+ domains outside current agent's declared `domains:` frontmatter field
 3. Lenses: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
 4. Action: Do not stop at planning; perform actionable work in the same heartbeat.

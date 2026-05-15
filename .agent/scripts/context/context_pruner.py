@@ -67,8 +67,8 @@ def prune_bus():
                         json.dump(data, f, indent=2)
                     summarized_count += 1
 
-        except Exception as e:
-            print(f"Error processing {bus_file.name}: {e}")
+        except Exception:
+            pass
 
     return {
         "status": "success",

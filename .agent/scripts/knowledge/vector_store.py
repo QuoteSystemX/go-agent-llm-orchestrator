@@ -20,7 +20,7 @@ from pathlib import Path
 class SimpleVectorStore:
     """A pure-Python vector store for semantic memory."""
     
-    def __init__(self, storage_path=".agent/brain/memory.json"):
+    def __init__(self, storage_path=".agent/data/vector_store.json"):
         self.storage_path = Path(storage_path)
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.index = self._load()
