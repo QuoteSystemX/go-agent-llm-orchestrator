@@ -6,31 +6,36 @@ import (
 )
 
 func (d *DB) CheckPermission(agent, tool string) (bool, error) {
-	var allowed int
-	err := d.conn.QueryRow("SELECT allowed FROM permissions WHERE agent_name = ? AND tool_name = ?", agent, tool).Scan(&allowed)
+	var allowed bool
+	err := d.conn.QueryRow("SELECT allowed FROM permissions WHERE agent_name = $1 AND tool_name = $2", agent, tool).Scan(&allowed)
 	if err == sql.ErrNoRows {
-		// Default: allow if not explicitly restricted (for now)
 		return true, nil
 	}
-	return allowed == 1, err
+	return allowed, err
 }
 
 func (d *DB) SetPermission(agent, tool string, allowed bool) error {
-	val := 0
-	if allowed {
-		val = 1
-	}
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO permissions (agent_name, tool_name, allowed) VALUES (?, ?, ?)", agent, tool, val)
+	_, err := d.conn.Exec(
+		`INSERT INTO permissions (agent_name, tool_name, allowed)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (agent_name, tool_name) DO UPDATE SET allowed=EXCLUDED.allowed`,
+		agent, tool, allowed,
+	)
 	return err
 }
 
 func (d *DB) GetSecret(key string) (string, error) {
 	var val string
-	err := d.conn.QueryRow("SELECT value FROM secrets WHERE key = ?", key).Scan(&val)
+	err := d.conn.QueryRow("SELECT value FROM secrets WHERE key = $1", key).Scan(&val)
 	return val, err
 }
 
 func (d *DB) SetSecret(key, value string) error {
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO secrets (key, value, updated_at) VALUES (?, ?, ?)", key, value, time.Now())
+	_, err := d.conn.Exec(
+		`INSERT INTO secrets (key, value, updated_at)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at`,
+		key, value, time.Now(),
+	)
 	return err
 }

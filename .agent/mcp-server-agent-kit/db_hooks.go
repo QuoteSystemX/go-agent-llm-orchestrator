@@ -7,13 +7,17 @@ type ResourceHook struct {
 }
 
 func (d *DB) AddHook(uri, event, script string) error {
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO resource_hooks (resource_uri, event_type, script_path) VALUES (?, ?, ?)",
-		uri, event, script)
+	_, err := d.conn.Exec(
+		`INSERT INTO resource_hooks (resource_uri, event_type, script_path)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (resource_uri, event_type) DO UPDATE SET script_path=EXCLUDED.script_path`,
+		uri, event, script,
+	)
 	return err
 }
 
 func (d *DB) RemoveHook(uri, event string) error {
-	_, err := d.conn.Exec("DELETE FROM resource_hooks WHERE resource_uri = ? AND event_type = ?", uri, event)
+	_, err := d.conn.Exec("DELETE FROM resource_hooks WHERE resource_uri = $1 AND event_type = $2", uri, event)
 	return err
 }
 
@@ -36,7 +40,10 @@ func (d *DB) GetHooks() ([]ResourceHook, error) {
 }
 
 func (d *DB) GetHooksForResource(uri, event string) ([]ResourceHook, error) {
-	rows, err := d.conn.Query("SELECT resource_uri, event_type, script_path FROM resource_hooks WHERE (resource_uri = ? OR resource_uri = '*') AND event_type = ?", uri, event)
+	rows, err := d.conn.Query(
+		"SELECT resource_uri, event_type, script_path FROM resource_hooks WHERE (resource_uri = $1 OR resource_uri = '*') AND event_type = $2",
+		uri, event,
+	)
 	if err != nil {
 		return nil, err
 	}

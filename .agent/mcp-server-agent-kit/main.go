@@ -53,9 +53,9 @@ func main() {
 	mode := flag.String("mode", "stdio", "transport mode: stdio|http")
 	port := flag.String("port", "3200", "http listen port (mode=http only)")
 	retentionDays := flag.Int("retention", 30, "Data retention in days (0 to use DB setting, default 30)")
-	indexDirs := flag.String("index-dirs", ".agent,wiki,tasks", "Comma-separated directories to index for FTS5")
+	indexDirs := flag.String("index-dirs", ".agent,wiki,tasks", "Comma-separated directories to index")
 	root := flag.String("root", "", "project root path (overrides auto-detection)")
-	dbFile := flag.String("db", "", "main database file path (optional override)")
+	pgURL := flag.String("pg-url", "", "PostgreSQL connection URL (overrides DATABASE_URL env var)")
 	flag.Parse()
 
 	projectRoot := *root
@@ -68,7 +68,11 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "agent-kit: version %s, projectRoot: %q\n", serverVersion, projectRoot)
 
-	db, err := InitDB(projectRoot, *dbFile)
+	dsn := *pgURL
+	if dsn == "" {
+		dsn = os.Getenv("DATABASE_URL")
+	}
+	db, err := InitDB(dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to init db: %v\n", err)
 		os.Exit(1)

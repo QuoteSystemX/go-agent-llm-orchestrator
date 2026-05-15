@@ -9,13 +9,15 @@ func (d *DB) RecordMetric(tool, agent, project string, duration time.Duration, s
 	if !success {
 		status = "failure"
 	}
-	_, err := d.connMetrics.Exec("INSERT INTO metrics (agent_name, tool_name, status, duration_ms, project_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-		agent, tool, status, duration.Milliseconds(), project, time.Now())
+	_, err := d.conn.Exec(
+		"INSERT INTO metrics (agent_name, tool_name, status, duration_ms, project_id, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
+		agent, tool, status, duration.Milliseconds(), project, time.Now(),
+	)
 	return err
 }
 
 func (d *DB) GetMetrics() ([]map[string]any, error) {
-	rows, err := d.connMetrics.Query("SELECT tool_name, agent_name, status, duration_ms, created_at FROM metrics ORDER BY created_at DESC LIMIT 100")
+	rows, err := d.conn.Query("SELECT tool_name, agent_name, status, duration_ms, created_at FROM metrics ORDER BY created_at DESC LIMIT 100")
 	if err != nil {
 		return nil, err
 	}
@@ -23,16 +25,16 @@ func (d *DB) GetMetrics() ([]map[string]any, error) {
 	var res []map[string]any
 	for rows.Next() {
 		var tool, agent, status string
-		var duration int64
+		var durationMs int64
 		var created time.Time
-		if err := rows.Scan(&tool, &agent, &status, &duration, &created); err != nil {
+		if err := rows.Scan(&tool, &agent, &status, &durationMs, &created); err != nil {
 			return nil, err
 		}
 		res = append(res, map[string]any{
 			"tool":     tool,
 			"agent":    agent,
 			"status":   status,
-			"duration": duration,
+			"duration": durationMs,
 			"created":  created,
 		})
 	}
@@ -40,8 +42,12 @@ func (d *DB) GetMetrics() ([]map[string]any, error) {
 }
 
 func (d *DB) AddWebhook(id, url, events string) error {
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO webhooks (id, url, events, created_at) VALUES (?, ?, ?, ?)",
-		id, url, events, time.Now())
+	_, err := d.conn.Exec(
+		`INSERT INTO webhooks (id, url, events, created_at)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (id) DO UPDATE SET url=EXCLUDED.url, events=EXCLUDED.events`,
+		id, url, events, time.Now(),
+	)
 	return err
 }
 
@@ -61,39 +67,42 @@ func (d *DB) GetWebhooks() ([]map[string]string, error) {
 	}
 	return res, nil
 }
+
 func (d *DB) CleanupOldData(days int) error {
-	cutoff := time.Now().AddDate(0, 0, -days).Format("2006-01-02 15:04:05")
-	expiryCutoff := time.Now().AddDate(0, 0, -7).Format("2006-01-02 15:04:05") // 7 days for proposals
-	
-	// Delete old metrics from metrics DB
-	if _, err := d.connMetrics.Exec("DELETE FROM metrics WHERE created_at < ?", cutoff); err != nil {
-		return err
-	}
-	
-	// Delete old completed/failed jobs from main DB
-	if _, err := d.conn.Exec("DELETE FROM jobs WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled') AND completed_at < ?", cutoff); err != nil {
-		return err
-	}
+	cutoff := time.Now().AddDate(0, 0, -days)
+	expiryCutoff := time.Now().AddDate(0, 0, -7)
 
-	// 1. Mark stale open proposals as 'expired' (older than 7 days)
-	if _, err := d.conn.Exec("UPDATE proposals SET status = 'expired' WHERE status = 'open' AND created_at < ?", expiryCutoff); err != nil {
+	if _, err := d.conn.Exec("DELETE FROM metrics WHERE created_at < $1", cutoff); err != nil {
 		return err
 	}
-
-	// 2. Delete very old proposals (older than retention days)
-	_, err := d.conn.Exec("DELETE FROM proposals WHERE (status = 'executed' OR status = 'rejected' OR status = 'expired' OR status = 'approved') AND created_at < ?", cutoff)
+	if _, err := d.conn.Exec(
+		"DELETE FROM jobs WHERE (status = 'completed' OR status = 'failed' OR status = 'cancelled') AND completed_at < $1", cutoff,
+	); err != nil {
+		return err
+	}
+	if _, err := d.conn.Exec(
+		"UPDATE proposals SET status = 'expired' WHERE status = 'open' AND created_at < $1", expiryCutoff,
+	); err != nil {
+		return err
+	}
+	_, err := d.conn.Exec(
+		"DELETE FROM proposals WHERE status IN ('executed','rejected','expired','approved') AND created_at < $1", cutoff,
+	)
 	return err
 }
 
 func (d *DB) SetSetting(key, value string) error {
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	_, err := d.conn.Exec(
+		`INSERT INTO settings (key, value) VALUES ($1, $2)
+		 ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`,
+		key, value,
+	)
 	return err
 }
 
 func (d *DB) GetSetting(key string, defaultVal string) string {
 	var val string
-	err := d.conn.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&val)
-	if err != nil {
+	if err := d.conn.QueryRow("SELECT value FROM settings WHERE key = $1", key).Scan(&val); err != nil {
 		return defaultVal
 	}
 	return val

@@ -34,13 +34,10 @@ func NewIndexer(db *DB, projectRoot string, indexDirs []string, dispatcher *Disp
 }
 
 func (idx *Indexer) Start() {
-	// 1. Initial Full Scan
 	go idx.FullScan()
 
-	// 2. Watch for changes
 	go idx.Watch()
 
-	// 3. Periodic Scan (once per hour)
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
 		for range ticker.C {
@@ -51,17 +48,15 @@ func (idx *Indexer) Start() {
 
 func (idx *Indexer) FullScan() {
 	fmt.Fprintf(os.Stderr, "Indexer: Starting full project scan...\n")
-	
-	// Use a single transaction for the whole scan to avoid locking overhead
-	tx, err := idx.db.connSearch.Begin()
+
+	tx, err := idx.db.conn.Begin()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Indexer: Failed to start transaction: %v\n", err)
 		return
 	}
 	defer tx.Rollback()
 
-	dirs := idx.indexDirs
-	for _, d := range dirs {
+	for _, d := range idx.indexDirs {
 		path := filepath.Join(idx.projectRoot, d)
 		if _, err := os.Stat(path); err != nil {
 			continue
@@ -76,7 +71,7 @@ func (idx *Indexer) FullScan() {
 			return nil
 		})
 	}
-	
+
 	if err := tx.Commit(); err != nil {
 		fmt.Fprintf(os.Stderr, "Indexer: Failed to commit full scan: %v\n", err)
 	} else {
@@ -98,9 +93,12 @@ func (idx *Indexer) IndexFileTx(tx *sql.Tx, path string) {
 		docType = "task"
 	}
 
-	tx.Exec("DELETE FROM documents_fts WHERE path = ?", rel)
-	_, err = tx.Exec("INSERT INTO documents_fts (path, content, type) VALUES (?, ?, ?)", 
-		rel, string(content), docType)
+	_, err = tx.Exec(
+		`INSERT INTO documents (path, content, type)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (path) DO UPDATE SET content=EXCLUDED.content, type=EXCLUDED.type`,
+		rel, string(content), docType,
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Indexer error indexing %s: %v\n", rel, err)
 	}
@@ -120,9 +118,12 @@ func (idx *Indexer) IndexFile(path string) {
 		docType = "task"
 	}
 
-	idx.db.connSearch.Exec("DELETE FROM documents_fts WHERE path = ?", rel)
-	_, err = idx.db.connSearch.Exec("INSERT INTO documents_fts (path, content, type) VALUES (?, ?, ?)", 
-		rel, string(content), docType)
+	_, err = idx.db.conn.Exec(
+		`INSERT INTO documents (path, content, type)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (path) DO UPDATE SET content=EXCLUDED.content, type=EXCLUDED.type`,
+		rel, string(content), docType,
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Indexer error indexing %s: %v\n", rel, err)
 	}
@@ -148,14 +149,10 @@ func (idx *Indexer) TriggerHooks(relPath, eventType string, fullPath string, pre
 }
 
 func (idx *Indexer) Watch() {
-	dirs := idx.indexDirs
-	for _, d := range dirs {
+	for _, d := range idx.indexDirs {
 		path := filepath.Join(idx.projectRoot, d)
 		if _, err := os.Stat(path); err == nil {
-			// fsnotify is not recursive by default, we need to add subdirs if needed.
-			// For simplicity, we watch the main dirs.
 			idx.watcher.Add(path)
-			// Add subdirs
 			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 				if err == nil && info.IsDir() {
 					idx.watcher.Add(p)
@@ -171,7 +168,7 @@ func (idx *Indexer) Watch() {
 			if !ok {
 				return
 			}
-			if event.Op&(fsnotify.Write|fsnotify.Create) !=0 {
+			if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				rel, _ := filepath.Rel(idx.projectRoot, event.Name)
 				if strings.HasSuffix(event.Name, ".md") || strings.HasSuffix(event.Name, ".log") {
 					idx.IndexFile(event.Name)
@@ -188,12 +185,13 @@ func (idx *Indexer) Watch() {
 }
 
 func (idx *Indexer) Search(query string) ([]map[string]string, error) {
-	// Using FTS5 highlight function for snippets
-	rows, err := idx.db.connSearch.Query(`
-		SELECT path, type, snippet(documents_fts, 1, '<b>', '</b>', '...', 64) as snippet
-		FROM documents_fts 
-		WHERE content MATCH ? 
-		ORDER BY rank 
+	rows, err := idx.db.conn.Query(`
+		SELECT path, type,
+		       ts_headline('english', content, plainto_tsquery('english', $1),
+		                   'MaxWords=64,MinWords=20,StartSel=<b>,StopSel=</b>,HighlightAll=false') AS snippet
+		FROM documents
+		WHERE to_tsvector('english', coalesce(content,'')) @@ plainto_tsquery('english', $1)
+		ORDER BY ts_rank(to_tsvector('english', coalesce(content,'')), plainto_tsquery('english', $1)) DESC
 		LIMIT 20`, query)
 	if err != nil {
 		return nil, err

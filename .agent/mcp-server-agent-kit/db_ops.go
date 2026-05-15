@@ -6,7 +6,12 @@ import (
 
 func (d *DB) SaveJob(j *JobStatus) error {
 	_, err := d.conn.Exec(
-		"INSERT OR REPLACE INTO jobs (id, name, status, progress, message, started_at) VALUES (?, ?, ?, ?, ?, ?)",
+		`INSERT INTO jobs (id, name, status, progress, message, started_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (id) DO UPDATE SET
+		   name=EXCLUDED.name, status=EXCLUDED.status,
+		   progress=EXCLUDED.progress, message=EXCLUDED.message,
+		   started_at=EXCLUDED.started_at`,
 		j.ID, j.Name, j.Status, j.Progress, j.Message, j.StartedAt,
 	)
 	return err
@@ -31,7 +36,12 @@ func (d *DB) GetJobs() ([]*JobStatus, error) {
 }
 
 func (d *DB) RegisterProject(id, name, path string) error {
-	_, err := d.conn.Exec("INSERT OR REPLACE INTO projects (id, name, path, created_at) VALUES (?, ?, ?, ?)", id, name, path, time.Now())
+	_, err := d.conn.Exec(
+		`INSERT INTO projects (id, name, path, created_at)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, path=EXCLUDED.path`,
+		id, name, path, time.Now(),
+	)
 	return err
 }
 
