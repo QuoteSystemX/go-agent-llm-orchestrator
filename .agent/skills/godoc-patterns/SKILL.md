@@ -104,33 +104,46 @@ package <name>
 
 ## ✍️ FUNCTION & METHOD DOCUMENTATION
 
-### The three-part formula
+### The mandatory structured formula
 
-```
-// <FuncName> <what it does, starting with the name>.
-// [Blank line]
-// [When to use it / what the caller needs to know]
-// [Errors / panics / special return values]
+GoDoc comments for functions must follow this exact three-section structure:
+
+1. **Description**: What the function does, starting with the name.
+2. **Parameters**: A list of all input parameters with their descriptions.
+3. **Returns**: A list of all return values with their descriptions and error cases.
+
+```go
+// <FuncName> <what it does>.
+//
+// Parameters:
+//   - <name>: <description and constraints>
+//
+// Returns:
+//   - <name>: <description and potential errors>
 ```
 
 ### Examples
 
 ```go
-// ParseToken validates a signed JWT and returns the embedded Claims.
-// The token must be signed with the same key passed to [New].
+// ParseToken validates a signed JWT raw string and extracts claims.
 //
-// It returns [ErrTokenExpired] if the token is past its expiry time,
-// or [ErrInvalidSignature] if the signature does not match.
+// Parameters:
+//   - raw: the encoded JWT string (must not be empty).
+//
+// Returns:
+//   - *Claims: the decoded claims if validation succeeds.
+//   - error: [ErrTokenExpired] if past expiry, or [ErrInvalidSignature].
 func (s *TokenStore) ParseToken(raw string) (*Claims, error) {
 
-// Shutdown gracefully drains in-flight requests and stops background workers.
-// It blocks until all work is done or ctx is cancelled.
-// After Shutdown returns, the server cannot be restarted.
-func (s *Server) Shutdown(ctx context.Context) error {
-
-// Set stores v under key, overwriting any existing value.
-// The entry expires after the store's configured TTL.
-func (c *Cache) Set(key string, v any) {
+// NewClient creates an HTTP client for the given base URL.
+//
+// Parameters:
+//   - baseURL: the target API endpoint (panics if empty).
+//   - opts: optional [ClientOptions] (uses defaults if nil).
+//
+// Returns:
+//   - *Client: a pointer to the initialized client.
+func NewClient(baseURL string, opts *ClientOptions) *Client {
 ```
 
 ### Short functions — one line is fine
@@ -321,6 +334,45 @@ func NewClient(addr string) *Client {
 //
 // [Links] to identifiers work automatically.
 ```
+
+---
+
+## 🚀 ADVANCED DOC PATTERNS
+
+### Grouping related items (ADR-style)
+
+For large APIs, group related functions/types under headers in `doc.go` or the main package file:
+
+```go
+// # Connection Management
+//
+// These functions handle lifecycle and pooling.
+//
+// # Querying
+//
+// These methods implement the CRUD operations.
+```
+
+### Internal vs. External
+
+- **Doc comments** (`// Identifier ...`) are for users. Focus on "What" and "How".
+- **Internal comments** (`// TODO:` or `// implementation detail:`) are for maintainers. Focus on "Why" and "Caveats".
+
+### Avoid Tautologies
+
+❌ Bad: `// NewClient returns a new client.`
+✅ Good: `// NewClient returns a client configured for the production API with default retry logic.`
+
+---
+
+## 🤖 AI-READY DOCUMENTATION
+
+Documentation is the primary data source for AI agents (Gemini, Claude, Antigravity).
+
+1. **Context injection**: Mention side-effects that aren't obvious from the signature (e.g., "This function starts a background goroutine").
+2. **Constraint declaration**: Explicitly state input constraints (e.g., "timeout must be positive").
+3. **Error mapping**: List specific sentinel errors so agents can generate proper error handling logic.
+4. **Dependency pointers**: Mention related types or packages to help agents build a better mental map of the architecture.
 
 ---
 

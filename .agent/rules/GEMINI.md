@@ -359,7 +359,7 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 4. IMPLEMENTATION → Code + tests (START HERE if !SILENT)
 5. REFLECTION (SQUEEZE) → Mandatory knowledge extraction. Delegate to `@archivist` to evaluate the session and run `agent_squeeze.py` only for high-value insights.
 
-> 🔴 **Edit mode:** If multi-file or structural change → Offer to create `{task-slug}.md`. For single-file fixes OR if `!SILENT` is present → Proceed directly.
+> 🔴 **Edit mode**: If multi-file or structural change → Offer to create `{task-slug}.md`. For single-file fixes OR if `!SILENT` is present → Proceed directly.
 
 ---
 

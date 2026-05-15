@@ -94,12 +94,14 @@ defer conn.Release()
 ```
 
 **Pool sizing rules:**
+
 - `MaxConns`: CPU cores × 2–4 as baseline; tune with pprof under load.
 - `MinConns`: keep warm connections for latency-sensitive paths.
 - `MaxConnLifetime` / `MaxConnIdleTime`: always set to avoid stale connections.
 - Never set `MaxConns` to 1 — that serializes all DB access.
 
 **Query patterns:**
+
 ```go
 // ✅ Simple query — use pool directly
 rows, err := pool.Query(ctx, "SELECT id, name FROM users WHERE active = $1", true)
@@ -139,6 +141,7 @@ Need to share data between goroutines?
 ```
 
 **xsync patterns:**
+
 ```go
 // ✅ Lock-free concurrent map
 m := xsync.NewMapOf[string, *Quote]()
@@ -154,6 +157,7 @@ m.Compute(key, func(old *Quote, loaded bool) (*Quote, bool) {
 ```
 
 **sync.Mutex rules when you must use it:**
+
 - Always lock for the shortest scope possible.
 - Never call external functions (I/O, RPCs) while holding a lock.
 - Never acquire a second lock while holding one — document the lock order if unavoidable.
@@ -261,7 +265,7 @@ case <-ctx.Done():
 
 **Deadlocks are always caused by acquiring locks in inconsistent order or blocking while holding a lock.**
 
-### Self-deadlock patterns to NEVER write:
+### Self-deadlock patterns to NEVER write
 
 ```go
 // ❌ Self-deadlock: RLock → Lock on same mutex
@@ -298,7 +302,8 @@ go func() {
 }()
 ```
 
-### Lock order discipline:
+### Lock order discipline
+
 - If you ever acquire two mutexes, document the order (e.g., `// lock order: cacheMu → indexMu`).
 - Detect potential deadlocks with `-race` + `go-deadlock` in tests.
 
@@ -322,12 +327,14 @@ logger.Info("user created", zap.String("user_id", id), zap.Int("attempt", n))
 ```
 
 **Rules:**
+
 - Always use `*Context` variants (`InfoContext`, `ErrorContext`) — they propagate trace IDs from ctx.
 - Log at `ERROR` only for actionable failures. `WARN` for degraded state. `INFO` for lifecycle events. `DEBUG` for diagnostics.
 - Never log secrets, tokens, or PII.
 - Always log the `error` value, not just its string: `slog.Any("error", err)`.
 
 **Migrating from logrus:**
+
 ```go
 // logrus (legacy)
 logrus.WithFields(logrus.Fields{"user_id": id}).Error("failed")
@@ -341,6 +348,7 @@ slog.ErrorContext(ctx, "failed", slog.String("user_id", id))
 ## ⚡ Performance Best Practices
 
 ### Allocations
+
 ```go
 // ✅ Pre-allocate slices when length is known
 results := make([]Item, 0, len(input))
@@ -364,6 +372,7 @@ defer bufPool.Put(buf)
 ```
 
 ### Profiling workflow
+
 ```bash
 # CPU profile
 go test -cpuprofile=cpu.prof -bench=. ./...
@@ -383,23 +392,27 @@ go tool trace trace.out
 ## Development Decision Process
 
 ### Phase 1: Requirements Analysis
+
 - High-throughput, low-latency? → **Fiber** + **ClickHouse** + **xsync** + **zap**
 - Relational, transactional? → **pgxpool** + **Squirrel** + **slog**
 - gRPC service? → **buf** + modern protobuf + **OpenTelemetry**
 
 ### Phase 2: Architecture
+
 1. Accept interfaces, return structs.
 2. Layered structure: `cmd/` → `internal/` → `pkg/`
 3. Dependency injection for all external resources (pool, logger, vault).
 4. Graceful shutdown: `signal.NotifyContext` + `errgroup` + timeouts on all Wait calls.
 
 ### Phase 3: Execute (Layer by Layer)
+
 1. Data models/schema → pgx migrations
 2. Business logic (services) — strict context passing, no context in structs
 3. API endpoints (handlers) — framework-specific
 4. Error handling — centralized, structured
 
 ### Phase 4: Verification
+
 - **Leaks**: `goleak.VerifyTestMain(m)` in `TestMain`
 - **Race**: `go test -race ./...`
 - **Deadlocks**: `-race` + review lock order
@@ -409,8 +422,15 @@ go tool trace trace.out
 
 ---
 
+## 🛡️ GoDoc Documentation Standards (MANDATORY)
+
+You MUST follow the structured documentation patterns defined in `@[skills/godoc-patterns]` for all Go functions and methods.
+
+---
+
 ## What You Do
 
+✅ **ALWAYS** document functions using the mandatory structured pattern from `@[skills/godoc-patterns]`
 ✅ **ALWAYS** wrap errors: `fmt.Errorf("operation: %w", err)`
 ✅ **ALWAYS** use `pgxpool.Pool`, never a single connection in services
 ✅ **ALWAYS** give every goroutine a documented exit condition (ctx or channel close)
@@ -419,6 +439,7 @@ go tool trace trace.out
 ✅ **ALWAYS** use `decimal.Decimal` for financial values
 ✅ **ALWAYS** run `golangci-lint run ./...` before completing
 
+❌ **NEVER** skip function documentation or use tags like @param
 ❌ **NEVER** use `sync.Map` when `xsync.MapOf` fits
 ❌ **NEVER** call I/O or RPCs while holding a mutex
 ❌ **NEVER** acquire two mutexes without documented lock order

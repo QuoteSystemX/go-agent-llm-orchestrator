@@ -11,6 +11,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+// Indexer handles periodic and real-time indexing of project documents.
+// It synchronizes file system changes with the database and triggers hooks.
 type Indexer struct {
 	db          *DB
 	projectRoot string
@@ -19,6 +21,17 @@ type Indexer struct {
 	watcher     *fsnotify.Watcher
 }
 
+// NewIndexer creates a new Indexer instance and initializes a file system watcher.
+//
+// Parameters:
+//   - db: database connection wrapper.
+//   - projectRoot: absolute path to the project root directory.
+//   - indexDirs: relative paths to directories that should be indexed.
+//   - dispatcher: task dispatcher for executing resource hooks.
+//
+// Returns:
+//   - *Indexer: a pointer to the initialized indexer.
+//   - error: an error if the fsnotify watcher fails to start.
 func NewIndexer(db *DB, projectRoot string, indexDirs []string, dispatcher *Dispatcher) (*Indexer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -33,6 +46,10 @@ func NewIndexer(db *DB, projectRoot string, indexDirs []string, dispatcher *Disp
 	}, nil
 }
 
+// Start kicks off the indexing lifecycle in separate goroutines.
+//
+// It initiates an immediate full scan, starts the real-time watcher, 
+// and schedules periodic full scans.
 func (idx *Indexer) Start() {
 	go idx.FullScan()
 
@@ -46,6 +63,9 @@ func (idx *Indexer) Start() {
 	}()
 }
 
+// FullScan performs a deep traversal of all configured index directories.
+//
+// It scans for Markdown and Log files and updates the database records.
 func (idx *Indexer) FullScan() {
 	fmt.Fprintf(os.Stderr, "Indexer: Starting full project scan...\n")
 
@@ -79,6 +99,11 @@ func (idx *Indexer) FullScan() {
 	}
 }
 
+// IndexFileTx indexes a single file using an active database transaction.
+//
+// Parameters:
+//   - tx: the active SQL transaction.
+//   - path: the absolute path to the file.
 func (idx *Indexer) IndexFileTx(tx *sql.Tx, path string) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -104,6 +129,10 @@ func (idx *Indexer) IndexFileTx(tx *sql.Tx, path string) {
 	}
 }
 
+// IndexFile indexes a single file using the default database connection.
+//
+// Parameters:
+//   - path: the absolute path to the file.
 func (idx *Indexer) IndexFile(path string) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -129,6 +158,13 @@ func (idx *Indexer) IndexFile(path string) {
 	}
 }
 
+// TriggerHooks executes scripts registered for a resource and event.
+//
+// Parameters:
+//   - relPath: relative path to the resource.
+//   - eventType: type of event (e.g., "on_change").
+//   - fullPath: absolute path to the resource (passed to the script).
+//   - prefix: job ID prefix.
 func (idx *Indexer) TriggerHooks(relPath, eventType string, fullPath string, prefix string) {
 	hooks, _ := idx.db.GetHooksForResource(relPath, eventType)
 	for _, h := range hooks {
@@ -148,6 +184,7 @@ func (idx *Indexer) TriggerHooks(relPath, eventType string, fullPath string, pre
 	}
 }
 
+// Watch starts a blocking loop that monitors the file system for events.
 func (idx *Indexer) Watch() {
 	for _, d := range idx.indexDirs {
 		path := filepath.Join(idx.projectRoot, d)
@@ -184,6 +221,14 @@ func (idx *Indexer) Watch() {
 	}
 }
 
+// Search performs a full-text search on indexed documents.
+//
+// Parameters:
+//   - query: the plain text search query.
+//
+// Returns:
+//   - []map[string]string: results with "path", "type", and "snippet".
+//   - error: database query error.
 func (idx *Indexer) Search(query string) ([]map[string]string, error) {
 	rows, err := idx.db.conn.Query(`
 		SELECT path, type,
@@ -212,3 +257,6 @@ func (idx *Indexer) Search(query string) ([]map[string]string, error) {
 	}
 	return results, nil
 }
+
+
+

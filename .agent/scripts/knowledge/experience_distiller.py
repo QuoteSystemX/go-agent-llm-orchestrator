@@ -235,8 +235,6 @@ def main():
             sys.exit(1)
     elif "--list-skills" in sys.argv:
         print(list_skill_tags())
-    elif "--auto-export" in sys.argv:
-        print(auto_export())
     else:
         print(distill_lessons())
 

@@ -7,10 +7,19 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// DB wraps the standard database/sql connection pool.
 type DB struct {
 	conn *sql.DB
 }
 
+// InitDB initializes a connection to the PostgreSQL database and runs migrations.
+//
+// Parameters:
+//   - pgURL: the PostgreSQL connection string (must not be empty).
+//
+// Returns:
+//   - *DB: a pointer to the initialized DB wrapper.
+//   - error: an error if the connection fails or migrations cannot be applied.
 func InitDB(pgURL string) (*DB, error) {
 	if pgURL == "" {
 		return nil, fmt.Errorf("database URL is required (--pg-url or DATABASE_URL)")
@@ -32,6 +41,10 @@ func InitDB(pgURL string) (*DB, error) {
 	return h, nil
 }
 
+// migrate creates the necessary database schema if it doesn't already exist.
+//
+// Returns:
+//   - error: an error if the table creation statements fail.
 func (d *DB) migrate() error {
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS jobs (

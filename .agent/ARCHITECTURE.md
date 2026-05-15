@@ -38,10 +38,8 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
-  db --> filepath
   db --> sql
-  db --> sqlite
-  db --> url
+  db --> stdlib
   db_security --> sql
   handlers_bmad --> exec
   handlers_bmad --> filepath
@@ -890,3 +888,4 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/health/alignment_oracle.py` | Alignment Oracle — Predicts long-term impact of decisions on project health. |
 | `.agent/scripts/healer_victim.py` | Victim for healing. |
 | `.agent/scripts/dev/linguistic_guardian.py` | Search for Cyrillic characters in critical directories. |
+| `.agent/scripts/knowledge/wiki_search.py` | Wiki Semantic Search — CLI for querying the vector index. |

@@ -18,22 +18,35 @@ import (
 
 const serverVersion = "1.7.0"
 
+// responseWriter is a wrapper around http.ResponseWriter that captures the status code.
 type responseWriter struct {
 	http.ResponseWriter
 	status int
 }
 
+// WriteHeader captures the status code and calls the underlying ResponseWriter.WriteHeader.
+//
+// Parameters:
+//   - code: the HTTP status code to write.
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
 }
 
+// Flush triggers the underlying Flusher if the ResponseWriter supports it.
 func (rw *responseWriter) Flush() {
 	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
 }
 
+// loggingMiddleware logs incoming HTTP requests with their method, path, and resulting status code.
+//
+// Parameters:
+//   - next: the next [http.Handler] in the chain.
+//
+// Returns:
+//   - http.Handler: the wrapped handler with logging capability.
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
