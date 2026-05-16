@@ -76,7 +76,7 @@ def query_ollama(prompt: str, model: str = "qwen3-coder:30b") -> tuple[str, floa
         "options": {"temperature": 0.3, "num_ctx": 8192}
     }
     req = urllib.request.Request(
-        OLLAMA_URL,
+        f"{OLLAMA_URL}/api/generate",
         data=json.dumps(req_data).encode(),
         headers={"Content-Type": "application/json"}
     )
@@ -227,10 +227,11 @@ Analyze this data and provide:
     
     print(f"⏱ Ollama time: {elapsed:.1f}s | {tps:.0f} tok/s")
     print()
-    print("="*60)
-    print("📥 OLLAMA ANALYSIS RESULT:")
-    print("="*60)
+    print("\n" + "═"*60)
+    print(f"🧠  DELEGATED ANALYSIS: @[ollama-agent] via {model}")
+    print("─"*60)
     print(result)
+    print("═"*60 + "\n")
     
     return result
 

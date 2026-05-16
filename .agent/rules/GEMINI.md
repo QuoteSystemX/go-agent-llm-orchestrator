@@ -146,7 +146,7 @@ python3 .agent/scripts/models/ollama_agent.py "analyze technical debt" --agent c
 Every response MUST start with the following header (replace placeholders with real values):
 
 ```text
-🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🔋 **Cost**: $<val> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
+🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🪙 **Tokens**: <input/output> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
 🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
 ```
 
