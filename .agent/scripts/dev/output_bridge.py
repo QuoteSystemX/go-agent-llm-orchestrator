@@ -24,7 +24,7 @@ from pathlib import Path as _Path
 SCRIPTS_ROOT = _Path(__file__).resolve().parents[1]
 
 REQUIRED_SECTIONS = [
-    r"🤖 \*\*Agent Header\*\*",
+    r"🤖 Flow: \*\*\[L[1-4]\]\*\*",
     r"🎯 \*\*Context/Goal\*\*",
     r"🛠 \*\*Technical Implementation\*\*",
     r"📂 \*\*Impacted Components\*\*",
@@ -37,6 +37,53 @@ def validate_sections(content):
         if not re.search(section, content, re.IGNORECASE):
             missing.append(section.replace("\\", ""))
     return missing
+
+def validate_identity_header(content):
+    """Deep validation of the Identity Header against system config."""
+    rules_path = SCRIPTS_ROOT.parent / "config" / "router_rules.json"
+    try:
+        with open(rules_path, 'r') as f:
+            rules = json.load(f)
+    except Exception as e:
+        print(f"  ⚠️  Warning: Could not load router_rules.json for deep validation: {e}")
+        return []
+
+    # Regex for Identity Header: 🤖 Flow: **[L<N>]** ... 🧠 **Model**: <model>
+    header_pattern = r"🤖 Flow: \*\*\[(L[1-4])\]\*\*(?:.*?)🧠 \*\*Model\*\*: (.*?)(?:[ \n\|]|$)"
+    match = re.search(header_pattern, content)
+    
+    if not match:
+        return ["Identity Header is missing or formatted incorrectly. Expected: 🤖 Flow: **[L<N>]** | ... | 🧠 **Model**: <model> | ..."]
+
+    tier = match.group(1)
+    model = match.group(2).strip().lower().replace("**", "")
+    
+    # Check Mappings
+    ollama_map = rules.get("models", {}).get("ollama", {})
+    cloud_map = rules.get("models", {}).get("antigravity", {})
+    
+    valid_models = []
+    
+    # Add primary mappings
+    if tier in ollama_map: valid_models.append(ollama_map[tier].lower())
+    if tier in cloud_map: valid_models.append(cloud_map[tier].lower())
+    
+    # Add alternatives
+    alt_key = f"{tier}_alt"
+    if alt_key in ollama_map and isinstance(ollama_map[alt_key], list):
+        valid_models.extend([m.lower() for m in ollama_map[alt_key]])
+    
+    # Add rankings-based tier check
+    rankings = rules.get("model_rankings", {})
+    for m_id, m_info in rankings.items():
+        if isinstance(m_info, dict) and m_info.get("tier") == tier:
+            valid_models.append(m_id.lower())
+
+    if model not in valid_models:
+        expected = f"{ollama_map.get(tier)} or {cloud_map.get(tier)}"
+        return [f"HALLUCINATION DETECTED: Model '{model}' does not belong to Tier {tier}. Expected: {expected}"]
+
+    return []
 
 def get_git_changed_files():
     try:
@@ -206,6 +253,14 @@ def main():
     missing_sections = validate_sections(content)
     if missing_sections:
         print(f"❌ FAILED: Missing mandatory sections: {', '.join(missing_sections)}")
+        sys.exit(1)
+    
+    # 1.5 Deep Identity Validation
+    print("🧠 Validating Identity Header integrity...")
+    identity_errors = validate_identity_header(content)
+    if identity_errors:
+        for err in identity_errors:
+            print(f"❌ {err}")
         sys.exit(1)
     
     # Extract goal and files for further validation
