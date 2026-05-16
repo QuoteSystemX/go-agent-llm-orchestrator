@@ -54,3 +54,8 @@ A task is done when:
 - All delegated subtasks are complete and confirmed.
 - Final comment states what was built, how verified, and limitations.
 - Any open risks are filed as separate issues with owners.
+
+---
+
+> **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/clean-code/SKILL.md`

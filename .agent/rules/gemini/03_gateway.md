@@ -63,18 +63,18 @@ python3 .agent/scripts/models/ollama_agent.py "analyze technical debt" --agent c
 
 Every response MUST start with the following header (replace placeholders with real values):
 
-
 ```text
-🤖 Flow: **[L<N>]**
-🧠 Team Consensus: **[Brief summary of consensus]**
-👤 Agent: **@agent-name** | 🛠 Skills: **[skill-1, skill-2]** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
+🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🪙 **Tokens**: <input/output> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
+🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
 ```
-**Mandatory Content Structure:**
 
-- 🎯 **Context/Goal**: Brief description
-- 🛠 **Technical Implementation**: Technical details
-- 📂 **Impacted Components**: Absolute file paths
-- 📈 **Outcome/Result**: Verification status
+**Mandatory Content Structure (Premium Standard):**
+
+- 🎯 **Context/Goal**: Brief description.
+- 🛠 **Technical Implementation**: Technical details.
+- 📂 **Impacted Components**: Clickable file links using `[basename](file:///path/to/file)`.
+- 📈 **Outcome/Result**: Verification status with checkboxes and metrics.
+- 🧠 **Lesson of the Turn**: (Optional but Recommended) A single sentence on what the agent learned or a key insight.
 
 **Rules:**
 

@@ -42,7 +42,6 @@ Follow the **Paperclip skill**. Your specific heartbeat includes:
 5. **Recovery Velocity**: Is the MTTR improving over time as the system evolves?
 6. **Alerting Latency**: How long between the injection and the first system alert?
 
-
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
@@ -50,3 +49,4 @@ Follow the **Paperclip skill**. Your specific heartbeat includes:
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

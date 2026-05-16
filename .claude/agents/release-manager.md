@@ -39,7 +39,6 @@ You are responsible for the final stage of the development lifecycle: bringing c
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
 
-
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:

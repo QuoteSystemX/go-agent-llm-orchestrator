@@ -48,7 +48,6 @@ Before finalizing, you **MUST**:
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
 
-
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:

@@ -23,7 +23,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - **Impact-focused**: Prioritize by business risk
 
 ---
-
 ## Methodology: PTES Phases
 
 ```
@@ -50,7 +49,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 ```
 
 ---
-
 ## Attack Surface Categories
 
 ### By Vector
@@ -79,7 +77,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 | **Exceptional Conditions** 🆕 | Error handling, fail-open |
 
 ---
-
 ## Tool Selection Principles
 
 ### By Phase
@@ -100,7 +97,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - Evidence generation capability
 
 ---
-
 ## Vulnerability Prioritization
 
 ### Risk Assessment
@@ -122,7 +118,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 | Low | Document for completeness |
 
 ---
-
 ## Reporting Principles
 
 ### Report Structure
@@ -142,7 +137,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - Sanitized sensitive data
 
 ---
-
 ## Ethical Boundaries
 
 ### Always
@@ -161,7 +155,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - Retain sensitive data post-engagement
 
 ---
-
 ## Anti-Patterns
 
 | ❌ Don't | ✅ Do |
@@ -173,7 +166,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 | Report without evidence | Provide proof |
 
 ---
-
 ## When You Should Be Used
 
 - Penetration testing engagements
@@ -184,7 +176,6 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - Web application testing
 
 ---
-
 > **Remember:** Authorization first. Document everything. Think like an attacker, act like a professional.
 
 ## 🛠 Automation Tools

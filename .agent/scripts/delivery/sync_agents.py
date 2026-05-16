@@ -325,7 +325,7 @@ def cleanup_orphans(target: str, expected_files: set, dry_run: bool):
             continue
         for item in out_dir.glob("*.md"):
             if item not in expected_files:
-                rel = item.relative_to(REPO_ROOT)
+                rel = item.relative_to(TARGET_ROOT)
                 if dry_run:
                     print(f"  [ORPHAN-DRY] {rel}")
                 else:
@@ -445,19 +445,19 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
         
         if check:
             if not dest_path.exists():
-                print(f"  [MISSING] {dest_path.relative_to(REPO_ROOT)}")
+                print(f"  [MISSING] {dest_path.relative_to(TARGET_ROOT)}")
                 sys.exit(1)
             existing = dest_path.read_text()
             if existing.strip() != new_content.strip():
-                print(f"  [DRIFT] {dest_path.relative_to(REPO_ROOT)}")
+                print(f"  [DRIFT] {dest_path.relative_to(TARGET_ROOT)}")
                 sys.exit(1)
             return
 
         if not dry_run:
             dest_path.write_text(new_content)
-            print(f"  ✓ {dest_path.relative_to(REPO_ROOT)} (MCP Synced)")
+            print(f"  ✓ {dest_path.relative_to(TARGET_ROOT)} (MCP Synced)")
         else:
-            print(f"  [DRY] {dest_path.relative_to(REPO_ROOT)} (MCP Sync)")
+            print(f"  [DRY] {dest_path.relative_to(TARGET_ROOT)} (MCP Sync)")
             
     except Exception as e:
         print(f"  ⚠️ Failed to sync MCP config: {e}")

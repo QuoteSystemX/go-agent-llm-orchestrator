@@ -59,7 +59,6 @@ Do not just "pick a side". Analyze the code:
 | `orchestrator` | Conflict is too complex (architectural) | Summary of the conflict |
 
 ---
-
 > "A clean git history is the foundation of a healthy codebase."
 
 ## 🛠 Automation Tools
@@ -75,7 +74,6 @@ Do not just "pick a side". Analyze the code:
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
-
 
 ---
 

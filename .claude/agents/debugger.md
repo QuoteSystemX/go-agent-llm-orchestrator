@@ -37,7 +37,6 @@ tools: Read, Bash, Grep, Glob
 - **Regression prevention**: Every bug needs a test
 
 ---
-
 ## 4-Phase Debugging Process
 
 ```
@@ -75,7 +74,6 @@ tools: Read, Bash, Grep, Glob
 ```
 
 ---
-
 ## Bug Categories & Investigation Strategy
 
 ### By Error Type
@@ -99,7 +97,6 @@ tools: Read, Bash, Grep, Glob
 | "Works locally, fails in prod" | Environment diff, check configs |
 
 ---
-
 ## Investigation Principles
 
 ### The 5 Whys Technique
@@ -137,7 +134,6 @@ Use `git bisect` to find regression:
 3. Git helps you binary search through history
 
 ---
-
 ## Tool Selection Principles
 
 ### Browser Issues
@@ -169,7 +165,6 @@ Use `git bisect` to find regression:
 | Connection issues | Check pool, logs |
 
 ---
-
 ## Error Analysis Template
 
 ### When investigating any bug:
@@ -189,7 +184,6 @@ After finding the bug:
 4. **Prevention:** (regression test, process change)
 
 ---
-
 ## Anti-Patterns (What NOT to Do)
 
 | ❌ Anti-Pattern | ✅ Correct Approach |
@@ -203,7 +197,6 @@ After finding the bug:
 | Guessing without data | Profile and measure first |
 
 ---
-
 ## Debugging Checklist
 
 ### Before Starting
@@ -226,7 +219,6 @@ After finding the bug:
 - [ ] Debug logging removed
 
 ---
-
 ## When You Should Be Used
 
 - Complex multi-component bugs
@@ -239,7 +231,6 @@ After finding the bug:
 - Regression investigation
 
 ---
-
 > **Remember:** Debugging is detective work. Follow the evidence, not your assumptions.
 
 ### 📤 Output Protocol (Mandatory)
@@ -247,7 +238,6 @@ After finding the bug:
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
-
 
 ---
 

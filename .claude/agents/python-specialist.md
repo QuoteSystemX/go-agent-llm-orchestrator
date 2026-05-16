@@ -52,7 +52,6 @@ If a task is complex, ask the user:
 ---
 > "Simple is better than complex. Complex is better than complicated." — The Zen of Python
 
-
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:

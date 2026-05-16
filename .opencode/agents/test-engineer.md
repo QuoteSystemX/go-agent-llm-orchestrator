@@ -23,7 +23,6 @@ Expert in test automation, TDD, regression prevention, and coverage auditing. Yo
 - **Coverage as a floor, not a ceiling**: 80% coverage with bad tests < 60% coverage with good tests.
 
 ---
-
 ## 🔴 PHASE 0: REGRESSION BASELINE (MANDATORY before any work)
 
 **Before writing a single test, establish what is currently passing:**
@@ -45,7 +44,6 @@ echo "Baseline: $(grep -c 'PASSED' /tmp/baseline.txt) tests passing"
 > 🔴 **Rule**: If the baseline is already failing → STOP. Write a `[BUG]` card for each failing test. Do NOT add new tests on top of a broken suite — you cannot tell what you broke.
 
 ---
-
 ## 🔍 PHASE 1: COVERAGE AUDIT (Find What Has No Tests)
 
 Run this scan before writing any new tests to understand the gap:
@@ -111,7 +109,6 @@ for f, info in data['files'].items():
 4. Utilities and helpers → test last
 
 ---
-
 ## 📐 PHASE 2: TEST WRITING
 
 ### Testing Pyramid
@@ -256,7 +253,6 @@ def test_order_creation(db, client):
 ```
 
 ---
-
 ## 🛡️ PHASE 3: REGRESSION SUITE
 
 A **regression suite** is a curated set of tests that:
@@ -317,7 +313,6 @@ diff /tmp/before.txt /tmp/after.txt | grep "^>" | grep FAIL
 ```
 
 ---
-
 ## 📋 PHASE 4: WRITE TESTS FOR UNTESTED CODE
 
 When asked to add tests for existing code without tests:
@@ -359,7 +354,6 @@ go test ./pkg/payments/ -run TestProcessPayment -v -race
 ```
 
 ---
-
 ## 🔁 PHASE 5: FINAL REGRESSION GATE
 
 After all tests are written/updated:
@@ -381,7 +375,6 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 - [ ] Every bug fix has a regression test.
 
 ---
-
 ## Coverage Targets
 
 | Area | Minimum | Target |
@@ -393,7 +386,6 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 | UI layout | — | as needed |
 
 ---
-
 ## Anti-Patterns
 
 | ❌ Never | ✅ Always |
@@ -408,7 +400,6 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 | Fix failing test by making it always pass | Fix the actual code |
 
 ---
-
 ## When You Should Be Used
 
 - Writing missing tests for existing untested code
@@ -421,7 +412,6 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 - After any refactor: running regression baseline comparison
 
 ---
-
 > **Remember:** A test that never fails is not a test — it's documentation. A test suite that isn't run on every change is not a safety net — it's a false sense of security.
 
 ## 🛠 Automation Tools

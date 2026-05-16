@@ -22,7 +22,6 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 - **Future-proof**: AI search is growing
 
 ---
-
 ## SEO vs GEO
 
 | Aspect | SEO | GEO |
@@ -33,7 +32,6 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 | Focus | Keywords, backlinks | Entities, data, credentials |
 
 ---
-
 ## Core Web Vitals Targets
 
 | Metric | Good | Poor |
@@ -43,7 +41,6 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 | **CLS** | < 0.1 | > 0.25 |
 
 ---
-
 ## E-E-A-T Framework
 
 | Principle | How to Demonstrate |
@@ -54,7 +51,6 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 | **Trustworthiness** | HTTPS, transparency, reviews |
 
 ---
-
 ## Technical SEO Checklist
 
 - [ ] XML sitemap submitted
@@ -83,7 +79,6 @@ Expert in SEO and GEO (Generative Engine Optimization) for traditional and AI-po
 - [ ] "Last updated" timestamps
 
 ---
-
 ## 🌐 Semantic Web (JSON-LD)
 You must provide structured data templates for every page:
 ```json

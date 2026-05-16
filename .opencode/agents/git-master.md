@@ -59,7 +59,6 @@ Do not just "pick a side". Analyze the code:
 | `orchestrator` | Conflict is too complex (architectural) | Summary of the conflict |
 
 ---
-
 > "A clean git history is the foundation of a healthy codebase."
 
 ## 🛠 Automation Tools

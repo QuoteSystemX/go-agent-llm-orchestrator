@@ -155,6 +155,7 @@ Specialist AI personas for different domains.
 | `release-manager`     | Versioning & SemVer       | git-master, testing-patterns, lint-and-validate                   |
 | `prompt-specialist`   | LLM Optimization & QA     | prompt-engineering, clean-code, telemetry, bmad-lifecycle        |
 | `python-specialist`   | Python Ecosystem Expert   | python-patterns, python-expert-advanced, python-ecosystem-mastery |
+| `meta-architect`      | Agentic Evolution Strategist | agentic-evolution, intelligent-routing, architecture |
 
 ---
 
