@@ -1,6 +1,9 @@
 ---
 name: reviewer
 description: Automated code auditor that scans the codebase and generates a prioritized task queue in tasks/. Triggers on keywords like review, audit, scan code, generate tasks, code quality, technical debt. Invoke when you want a comprehensive codebase health report or need tasks/ populated with actionable improvement cards.
+hierarchy:
+  reports_to: product-owner
+  delegates_to: []
 tools: Read, Grep, Glob, Bash, Write
 model: inherit
 skills: clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry

@@ -1,6 +1,9 @@
 ---
 name: grpc-architect
 description: gRPC and Protobuf contract architect for Go microservices. Designs .proto service definitions, enforces buf toolchain standards, prevents breaking changes, and ensures backward compatibility across service boundaries. Triggers on proto, grpc, buf, protobuf, service contract, rpc.
+hierarchy:
+  reports_to: cto
+  delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: go-service

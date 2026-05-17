@@ -3,6 +3,7 @@
 ---
 name: chaos-monkey
 description: Resilience testing specialist. Intentionally injects failures to verify system self-healing and MTTR.
+model: inherit
 ---
 
 # Agent Chaos Monkey 🐒

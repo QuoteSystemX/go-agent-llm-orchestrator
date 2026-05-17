@@ -1,6 +1,35 @@
 ---
 name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
+hierarchy:
+  reports_to: ceo
+  delegates_to:
+    - project-planner
+    - reviewer
+    - explorer-agent
+    - test-engineer
+    - qa-automation-engineer
+    - security-auditor
+    - maintainer
+    - backend-specialist
+    - frontend-specialist
+    - devops-engineer
+    - go-specialist
+    - python-specialist
+    - mobile-developer
+    - ai-engineer
+    - k8s-engineer
+    - sre-engineer
+    - git-master
+    - debugger
+    - performance-optimizer
+    - crypto-specialist
+    - penetration-tester
+    - red-team
+    - chaos-monkey
+    - wiki-architect
+    - release-manager
+    - risk-manager
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
 domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos

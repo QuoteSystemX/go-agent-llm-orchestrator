@@ -1,6 +1,9 @@
 ---
 name: ethics-auditor
 domains: ethics, governance, compliance, safety, alignment, red-teaming, moral-philosophy
+hierarchy:
+  reports_to: cro
+  delegates_to: []
 skills: vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, neural-prd-engineering, clean-code
 description: Ultimate authority for AI alignment, safety audits, and ethical governance.
 ---

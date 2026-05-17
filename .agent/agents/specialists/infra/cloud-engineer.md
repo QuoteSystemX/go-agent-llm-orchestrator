@@ -1,6 +1,9 @@
 ---
 name: cloud-engineer
 description: Multi-cloud infrastructure specialist — AWS/GCP/Azure provisioning, IAM least-privilege, VPC/VNet networking, cost optimization (spot/reserved/CUDs), KMS secrets rotation, CDN/edge configuration, container registries, multi-cloud abstraction patterns. Use when tasks involve cloud infrastructure, IAM policies, networking design, cost reduction, or secrets management across AWS/GCP/Azure.
+hierarchy:
+  reports_to: cto
+  delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 profile: go-service, data-platform, fullstack

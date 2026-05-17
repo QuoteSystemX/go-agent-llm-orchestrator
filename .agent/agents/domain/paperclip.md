@@ -1,6 +1,9 @@
 ---
 name: paperclip
 description: Expert Paperclip Platform engineer focused on plugin authoring, SDK integration, and runtime optimization. Master of the alpha plugin SDK, scaffolding workflows, and dual-environment (Worker/UI) architecture. Triggers on paperclip, plugin-sdk, paperclip-plugin, scaffold plugin, plugin worker.
+hierarchy:
+  reports_to: cto
+  delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: fullstack, node-service, web-app

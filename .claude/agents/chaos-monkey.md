@@ -3,7 +3,7 @@
 ---
 name: chaos-monkey
 description: Resilience testing specialist. Intentionally injects failures to verify system self-healing and MTTR.
-tools: Read, Bash, Grep, Glob
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 ---
 
 # Agent Chaos Monkey 🐒

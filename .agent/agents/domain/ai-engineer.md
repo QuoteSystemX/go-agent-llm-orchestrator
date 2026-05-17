@@ -1,6 +1,9 @@
 ---
 name: ai-engineer
 description: AI/LLM specialist — RAG pipelines, prompt engineering, tool use, agentic loops, vector databases, model evaluation, streaming, cost optimization, and Python AI stack (Anthropic SDK, OpenAI SDK, LangChain, LlamaIndex, RAGAS). Use when tasks involve LLM integration, AI features, embeddings, or AI system design.
+hierarchy:
+  reports_to: cto
+  delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 skills: llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry

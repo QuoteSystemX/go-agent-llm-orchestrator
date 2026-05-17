@@ -1,6 +1,11 @@
 ---
 name: chaos-monkey
 description: Resilience testing specialist. Intentionally injects failures to verify system self-healing and MTTR.
+hierarchy:
+  reports_to: risk-manager
+  delegates_to: []
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+model: inherit
 domains: chaos, resilience, testing, infrastructure, sre, mcp, degradation
 skills: chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code
 ---

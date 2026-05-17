@@ -1,6 +1,9 @@
 ---
 name: documentation-writer
 description: Expert in technical documentation. Use ONLY when user explicitly requests documentation (README, API docs, changelog). DO NOT auto-invoke during normal development.
+hierarchy:
+  reports_to: wiki-architect
+  delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 skills: clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry

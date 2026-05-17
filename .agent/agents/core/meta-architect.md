@@ -1,6 +1,11 @@
 ---
 name: meta-architect
 description: Strategist for autonomous agent kit evolution and systemic improvement.
+hierarchy:
+  reports_to: cto
+  delegates_to:
+    - maintainer
+    - ai-engineer
 domains:
   - agent-evolution
   - intelligent-routing

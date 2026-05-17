@@ -1,6 +1,9 @@
 ---
 name: seo-specialist
 description: SEO and GEO (Generative Engine Optimization) expert. Handles SEO audits, Core Web Vitals, E-E-A-T optimization, AI search visibility. Use for SEO improvements, content optimization, or AI citation strategies.
+hierarchy:
+  reports_to: cto
+  delegates_to: []
 tools: Read, Grep, Glob, Bash, Write
 model: inherit
 profile: web-app, fullstack

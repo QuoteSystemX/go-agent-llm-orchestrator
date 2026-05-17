@@ -1,6 +1,9 @@
 ---
 name: git-master
 description: Specialist in Git internals, conflict resolution, and repository health. Use when merge conflicts occur, history needs analysis, or complex rebase/cherry-pick operations are required.
+hierarchy:
+  reports_to: release-manager
+  delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 skills: git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry
