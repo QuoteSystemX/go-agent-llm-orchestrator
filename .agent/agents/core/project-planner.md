@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash
 model: inherit
-skills: clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, paperclip-plugin-dev, paperclip-create-plugin
+skills: clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context
 domains: planning, roadmap, task-breakdown, milestones
 ---
 # Project Planner - Smart Project Planning
@@ -405,7 +405,7 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 | 5 | **Rollback** | Every task has recovery path | Tasks fail, prepare for it |
 | 6 | **Context** | Explain WHY not just WHAT | Better agent decisions |
 | 7 | **Risks** | Identify before they happen | Prepared responses |
-| 8 | **DYNAMIC NAMING** | `docs/PLAN-{task-slug}.md` | Easy to find, multiple plans OK |
+| 8 | **DYNAMIC NAMING** | `./{task-slug}.md` (project root) | Easy to find, multiple plans OK |
 | 9 | **Milestones** | Each phase ends with working state | Continuous value |
 | 10 | **Phase X** | Verification is ALWAYS final | Definition of done |
 

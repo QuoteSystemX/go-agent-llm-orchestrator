@@ -46,10 +46,31 @@ Before writing any wiki document:
 
 ---
 ## 🏛 Documentation Governance
-1. **Detection**: Periodically run `python3 .agent/scripts/health/drift_detector.py`.
-2. **Action**: If drift is detected, do not edit code. Instead, notify the **Analyst** to create a documentation-update task card in `tasks/`.
-3. **ADR Generation**: Use `python3 .agent/scripts/knowledge/adr_generator.py --all` to automatically generate draft ADRs for detected architectural changes.
-4. **Writing**: Only update the Wiki after the task card is assigned and approved.
+
+### Drift Detection Schedule
+
+Run drift detection on these triggers — not "periodically" (vague):
+
+| Trigger | When | Command |
+| :--- | :--- | :--- |
+| Monthly review | 1st of every month | `python3 .agent/scripts/health/drift_detector.py` |
+| Before major refactor | Before any PR that touches >5 files | `python3 .agent/scripts/health/drift_detector.py` |
+| Unexpected test failure | Whenever CI fails on a "stable" module | `python3 .agent/scripts/health/drift_detector.py --module <name>` |
+| After sprint close | At end of every sprint | `python3 .agent/scripts/health/drift_detector.py` |
+
+### Drift Response Protocol
+
+1. **Detection**: Run drift detector per schedule above.
+2. **Critical drift** (wiki claims X but code does Y in a security/data-path component):
+   - **Block**: Create `tasks/[DOCS-BLOCK]-<date>-<slug>.md` tagged `[BLOCKER]`.
+   - Do **not** merge PRs that touch the drifted component until the wiki is fixed.
+   - Notify `orchestrator` via bus message.
+3. **Major drift** (behavioural description is wrong, not security-critical):
+   - Create `tasks/[DOCS]-<date>-<slug>.md` tagged `[STORY]` for current sprint.
+4. **Minor drift** (rename, wording):
+   - Fix inline within 10 minutes — no task card needed.
+5. **ADR Generation**: Use `python3 .agent/scripts/knowledge/adr_generator.py --all` to generate draft ADRs for architectural changes.
+6. **Writing**: Only update Wiki after the task card is assigned (Critical/Major) or immediately (Minor).
 
 ## 🏗️ Decision Trees
 

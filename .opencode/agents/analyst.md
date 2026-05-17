@@ -16,27 +16,15 @@ You are the BMAD lifecycle orchestrator. You advance the product from idea to sp
 
 ## 🛠 MANDATORY TOOLS
 
-**Before advancing any lifecycle phase, you MUST use these tools:**
+**Run these tools at the phase gates listed below:**
 
-| Tool | Action | Why? |
-| :--- | :--- | :--- |
-| `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect gaps between code and documentation |
-| `doc_healer.py` | `python3 .agent/scripts/dev/doc_healer.py` | Automatically heal documentation drift |
-| `task_tracer.py` | `python3 .agent/scripts/delivery/task_tracer.py` | Ensure story cards are linked to actual commits |
-| `intent_validator.py` | `python3 .agent/scripts/analysis/intent_validator.py` | (Phase 18) Detect architectural conflicts |
-| `discovery_brain_sync.py` | `python3 .agent/scripts/knowledge/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
-| `context_autofill.py` | `python3 .agent/scripts/context_autofill.py` | (Phase 19) Autonomous context investigation |
-| `resource_optimizer.py` | `python3 .agent/scripts/analysis/resource_optimizer.py` | (Phase 20) Economic & performance audit |
-| `ambiguity_detector.py` | `python3 .agent/scripts/analysis/ambiguity_detector.py` | (Phase 21) Prompt clarity audit |
-| `impact_analyzer.py` | `python3 .agent/scripts/analysis/impact_analyzer.py` | (Phase 21) Blast radius calculation |
-| `failure_correlator.py` | `python3 .agent/scripts/misc/failure_correlator.py` | (Phase 21) Historical failure mapping |
-| `ghost_prototyper.py` | `python3 .agent/scripts/analysis/ghost_prototyper.py` | (Phase 21) Technical feasibility proto |
-| `hidden_war_room.py` | `python3 .agent/scripts/orchestration/hidden_war_room.py` | (Phase 22) Background agent debate (4-participants) |
-| `truth_validator.py` | `python3 .agent/scripts/analysis/truth_validator.py` | (Phase 23) Mandatory Truth Validation |
-| `requirement_expander.py` | `python3 .agent/scripts/analysis/requirement_expander.py` | (Phase 22) Hybrid knowledge expansion |
-| `auto_adr_drafter.py` | `python3 .agent/scripts/knowledge/auto_adr_drafter.py` | (Phase 22) Autonomous ADR generation |
-| `resource_forecaster.py` | `python3 .agent/scripts/analysis/resource_forecaster.py` | (Phase 22) Token & time prediction |
-| `personality_adapter.py` | `python3 .agent/scripts/orchestration/personality_adapter.py` | (Phase 22) Style adaptation bridge |
+| Tool | Phase Gate | Command | Why? |
+| :--- | :--- | :--- | :--- |
+| `drift_detector.py` | Phase 6 (Sync) | `python3 .agent/scripts/health/drift_detector.py` | Detect gaps between code and docs |
+| `doc_healer.py` | Phase 6 (Sync) | `python3 .agent/scripts/dev/doc_healer.py` | Heal documentation drift automatically |
+| `task_tracer.py` | Phase 4 (Stories) | `python3 .agent/scripts/delivery/task_tracer.py` | Link story cards to commits |
+| `experience_distiller.py` | Phase 3 (Architecture) | `python3 .agent/scripts/knowledge/experience_distiller.py --query <concept>` | Search Global Brain before designing |
+| `arbitrator.py` | Phase 3 (Architecture) | `python3 .agent/scripts/orchestration/arbitrator.py <plan_id>` | Consensus on contested ADRs |
 
 > 🔴 **CRITICAL**: In Phase 6 (Sync), you MUST run `drift_detector.py` to identify exactly where the wiki has drifted from the code.
 

@@ -8,9 +8,9 @@
 
 Unified Agent Kit is a modular system consisting of:
 
-- **45 Specialist Agents** - Role-based AI personas
-- **95 Skills** - Domain-specific knowledge modules
-- **23 Workflows** - Slash command procedures
+- **49 Specialist Agents** - Role-based AI personas
+- **114 Skills** - Domain-specific knowledge modules
+- **24 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 - **Autonomous SRE** - Incident Watcher, War Room Manager
@@ -646,13 +646,13 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| **Total Agents**    | 41                                                              |
-| **Total Skills**    | 55                                                              |
-| **Total Workflows** | 20                                                              |
-| **Total Scripts**   | 24                                                              |
-| **Total Patterns**  | 10 (5 original + 5 BMAD)                                        |
+| **Total Agents**    | 49                                              |
+| **Total Skills**    | 114                                             |
+| **Total Workflows** | 24                                              |
+| **Total Scripts**   | 26                                              |
+| **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
 | **MCP Servers**     | 2 (`local-skill-server` + `mcp-server-agent-kit`, stdio)        |
-| **Coverage**        | ~95% web/mobile/backend/infra development                       |
+| **Coverage**        | ~95% web/mobile/backend/infra development       |
 
 ---
 
