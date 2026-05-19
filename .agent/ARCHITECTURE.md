@@ -38,6 +38,10 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
+  bus_watcher --> filepath
+  bus_watcher --> fsnotify
+  bus_watcher --> json
+  bus_watcher_test --> filepath
   db --> sql
   db --> stdlib
   db_security --> sql
@@ -78,7 +82,9 @@ graph TD
   lsp --> mcp
   main --> filepath
   main --> fs
+  main --> fsnotify
   main --> http
+  main --> json
   main --> mcp
   main --> server
   main --> signal

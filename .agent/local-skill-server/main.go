@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -20,6 +22,7 @@ const serverVersion = "1.1.0"
 type handler struct {
 	projectRoot string
 	lsp         *LSPManager
+	busWatcher  *BusWatcher
 }
 
 func main() {
@@ -28,9 +31,21 @@ func main() {
 	if f != nil { defer f.Close(); fmt.Fprintf(f, "BOOT: Process started PID=%d\n", os.Getpid()) }
 	root := resolveProjectRoot()
 	fmt.Fprintf(os.Stderr, "DEBUG: Initializing handler with root %s\n", root)
+	// Initialize bus watcher for refactoring state machine
+	bw, err := NewBusWatcher(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "WARNING: Failed to initialize bus watcher: %v\n", err)
+		bw = nil
+	} else {
+		bw.Start(func(path string, event fsnotify.Event) {
+			fmt.Fprintf(os.Stderr, "BUS EVENT: %s changed (op: %v)\n", path, event.Op)
+		})
+	}
+
 	h := &handler{
 		projectRoot: root,
 		lsp:         NewLSPManager(root),
+		busWatcher:  bw,
 	}
 	fmt.Fprintf(os.Stderr, "DEBUG: Handler initialized\n")
 
@@ -125,6 +140,22 @@ func main() {
 		mcp.WithNumber("char", mcp.Required(), mcp.Description("Character offset (0-indexed)")),
 	), h.semanticHover)
 
+	// --- Refactor State Machine Tools ---
+	s.AddTool(mcp.NewTool("refactor_init",
+		mcp.WithDescription("Initialize a refactoring session with target files."),
+		mcp.WithArray("files", mcp.Required(), mcp.Description("List of files to refactor")),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.refactorInit)
+	s.AddTool(mcp.NewTool("refactor_status",
+		mcp.WithDescription("Get current refactoring session status."),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.refactorStatus)
+	s.AddTool(mcp.NewTool("refactor_step",
+		mcp.WithDescription("Execute the next step in the refactoring state machine."),
+		mcp.WithDestructiveHintAnnotation(false),
+	), h.refactorStep)
+
 	// --- Stdout Protection & Panic Recovery ---
 	// Any stray output to stdout during init will break the MCP protocol.
 	originalStdout := os.Stdout
@@ -146,6 +177,9 @@ func main() {
 		<-sigChan
 		fmt.Fprintf(os.Stderr, "Shutting down agent-kit-server...\n")
 		h.lsp.Close()
+		if h.busWatcher != nil {
+			h.busWatcher.Stop()
+		}
 		os.Exit(0)
 	}()
 
@@ -348,4 +382,71 @@ func validatePath(path string) error {
 func sanitizeString(s string) string {
 	reg, _ := regexp.Compile("[^a-zA-Z0-9_-]+")
 	return reg.ReplaceAllString(s, "")
+}
+
+// --- Refactor Handlers ---
+
+func (h *handler) refactorInit(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if h.busWatcher == nil {
+		return mcp.NewToolResultError("bus watcher not initialized"), nil
+	}
+
+	filesIface, ok := req.Params.Arguments.(map[string]interface{})["files"]
+	if !ok {
+		return mcp.NewToolResultError("files parameter is required"), nil
+	}
+
+	var files []string
+	switch v := filesIface.(type) {
+	case []interface{}:
+		for _, f := range v {
+			if s, ok := f.(string); ok {
+				files = append(files, sanitizeString(s))
+			}
+		}
+	case []string:
+		files = v
+	}
+
+	if len(files) == 0 {
+		return mcp.NewToolResultError("at least one file is required"), nil
+	}
+
+	if err := h.busWatcher.InitSession(files); err != nil {
+		return mcp.NewToolResultError("failed to init session: " + err.Error()), nil
+	}
+
+	return mcp.NewToolResultText(fmt.Sprintf("Refactor session initialized with %d files", len(files))), nil
+}
+
+func (h *handler) refactorStatus(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if h.busWatcher == nil {
+		return mcp.NewToolResultError("bus watcher not initialized"), nil
+	}
+
+	session, err := h.busWatcher.GetSession()
+	if err != nil {
+		return mcp.NewToolResultText("No active refactor session"), nil
+	}
+
+	data, _ := json.MarshalIndent(session, "", "  ")
+	return mcp.NewToolResultText(string(data)), nil
+}
+
+func (h *handler) refactorStep(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if h.busWatcher == nil {
+		return mcp.NewToolResultError("bus watcher not initialized"), nil
+	}
+
+	if err := h.busWatcher.Step(); err != nil {
+		return mcp.NewToolResultError("step failed: " + err.Error()), nil
+	}
+
+	session, err := h.busWatcher.GetSession()
+	if err != nil {
+		return mcp.NewToolResultError("failed to get session: " + err.Error()), nil
+	}
+
+	return mcp.NewToolResultText(fmt.Sprintf("State: %s, Progress: %d/%d",
+		session.State, session.CurrentIdx, len(session.Files))), nil
 }
