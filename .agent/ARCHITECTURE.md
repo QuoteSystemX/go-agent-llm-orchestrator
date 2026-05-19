@@ -31,7 +31,7 @@ Unified Agent Kit is a modular system consisting of:
 ├── scripts/                 # Master Validation Scripts
 ├── data/                    # Namespaced Persistent Data (Scoring, Metrics)
 ├── bus/                     # Context Bus (Ephemeral DTOs)
-└── local-skill-server/      # Go MCP binary source
+└── local-skill-server/      # Go MCP binary source (contains main.go, bus_watcher.go, LSP manager)
 ```
 
 ### 📊 Dependency Map
