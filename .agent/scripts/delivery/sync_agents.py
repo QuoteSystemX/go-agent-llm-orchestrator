@@ -28,7 +28,9 @@ except ImportError:
 import argparse
 import sys
 import os
+import json
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
 SOURCE_ROOT = REPO_ROOT
@@ -441,6 +443,19 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
         
         dest_data["mcp"] = converted
         
+        # Ollama provider provisioning - auto-detect local models
+        if target == "opencode":
+            ollama_models = _query_ollama_models()
+            if ollama_models:
+                ollama_provider = _build_ollama_provider(ollama_models)
+                dest_data.setdefault("provider", {}).update(ollama_provider)
+                # Set default to best coding model using 'model' key (not default_model!)
+                coding = _get_coding_model(ollama_models)
+                if coding:
+                    model_name = coding.get("name", "qwen2.5-coder:32b").replace(":latest", "")
+                    dest_data["model"] = f"ollama-local/{model_name}"
+                print(f"  📝 Ollama: {len(ollama_models)} models added")
+        
         new_content = json.dumps(dest_data, indent=2) + "\n"
         
         if check:
@@ -461,6 +476,48 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
             
     except Exception as e:
         print(f"  ⚠️ Failed to sync MCP config: {e}")
+
+def _query_ollama_models() -> list:
+    """Query Ollama API for available models."""
+    import urllib.request
+    try:
+        url = "http://localhost:11434/api/tags"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            return data.get("models", [])
+    except Exception:
+        return []
+
+def _build_ollama_provider(models: list) -> dict:
+    """Build Ollama provider config from models list."""
+    # Filter out embeddings
+    chat_models = [m for m in models if "embed" not in m.get("name", "").lower()]
+    
+    models_config = {}
+    for model in chat_models:
+        name = model.get("name", "").replace(":latest", "")
+        models_config[name] = {"name": name}
+    
+    return {
+        "ollama-local": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Ollama Local",
+            "options": {"baseURL": "http://localhost:11434/v1"},
+            "models": models_config
+        }
+    }
+
+def _get_coding_model(models: list) -> Optional[dict]:
+    """Get best coding model from list."""
+    coding_keywords = ["coder", "code", "deepseek", "codellama", "devstral"]
+    coding_models = [
+        m for m in models 
+        if any(k in m.get("name", "").lower() for k in coding_keywords)
+    ]
+    if coding_models:
+        return max(coding_models, key=lambda m: m.get("size", 0))
+    return None
 
 def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: str = "", profile: str = "", no_commands: bool = False, no_workflows: bool = False):
     config = TARGETS[target]
