@@ -3,33 +3,33 @@
 """
 
 # Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
 import sys
-import subprocess
 from pathlib import Path
 
+# Setup unconditional domain-aware path resolution
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]  # .agent/scripts
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.append(str(SCRIPTS_DIR))
+
+# Always add domain subfolders to sys.path so direct imports work unconditionally
+for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev", "misc"]:
+    d_path = str(SCRIPTS_DIR / domain)
+    if d_path not in sys.path:
+        sys.path.append(d_path)
+
+# Ensure parent directory is also on path
+parent_dir = Path(__file__).resolve().parent
+if str(parent_dir) not in sys.path:
+    sys.path.append(str(parent_dir))
+
+import subprocess
+
 try:
     from lib.paths import REPO_ROOT, LESSONS_PATH
 except ImportError:
-    parent = Path(__file__).resolve().parent
-    sys.path.append(str(parent))
-    sys.path.append(str(parent.parent))
-    # Add domain subfolders to allow direct imports of integrated scripts
-    for domain in ["health", "context", "delivery", "orchestration", "analysis"]:
-        sys.path.append(str(parent.parent / domain))
-    from lib.paths import REPO_ROOT, LESSONS_PATH
+    # Fallback to absolute/relative resolution
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+    LESSONS_PATH = REPO_ROOT / "LESSONS_LEARNED.md"
 
 def get_staged_diff() -> str:
     try:
@@ -100,6 +100,5 @@ def review_diff():
 
 if __name__ == "__main__":
     ok, msg = review_diff()
-    # We don't block the commit by default, just warn.
-    # To block, exit with non-zero.
-    sys.exit(0)
+    # Block commit on low health score or active conflicts
+    sys.exit(0 if ok else 1)

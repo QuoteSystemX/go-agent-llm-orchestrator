@@ -92,3 +92,7 @@ The routing system makes a single decision at session start (auctioneer auction)
 ## Integration Notes
 
 This skill is intentionally lightweight — it adds one silent check per turn with no token overhead when scope is clean. The escalation path is explicit and hands full context to the orchestrator, preventing information loss during the handoff.
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

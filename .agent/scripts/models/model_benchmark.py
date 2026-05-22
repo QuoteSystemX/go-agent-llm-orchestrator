@@ -27,7 +27,7 @@ from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from lib.common import discover_ollama_url
-OLLAMA_URL = discover_ollama_url()
+OLLAMA_URL = f"{discover_ollama_url().rstrip('/')}/api/generate"
 
 @dataclass
 class BenchmarkResult:

@@ -308,8 +308,27 @@ def main():
             print(f"   ⚠️  Threat modeling failed: {e}")
 
     # 4. Save to Bus
-    agent_match = re.search(r"🤖 \*\*Agent Header\*\*:?\s*(\w+)", content, re.IGNORECASE)
-    agent_name = agent_match.group(1) if agent_match else "unknown"
+    agent_name = "unknown"
+    agent_match = re.search(r"👤 Agent: \*\*@?(\w+)\*\*", content, re.IGNORECASE)
+    if agent_match:
+        agent_name = agent_match.group(1)
+    else:
+        agent_match = re.search(r"🤖 \*\*Agent Header\*\*:?\s*(\w+)", content, re.IGNORECASE)
+        if agent_match:
+            agent_name = agent_match.group(1)
+    
+    # INTEGRATION: Run Tough Auditor for live agent evaluation
+    print("⚖️ Invoking Tough Auditor for live agent evaluation...")
+    try:
+        import orchestration.tough_auditor as tough_auditor
+        task_slug = re.sub(r'[^a-zA-Z0-9_]', '_', goal[:30]).lower()
+        if not task_slug:
+            task_slug = "session_task"
+        score = tough_auditor.audit_changes(agent_name, task_slug)
+        print(f"📈 Real-time Agent Score Logged: {score}/5.0")
+    except Exception as e:
+        print(f"⚠️ Live audit evaluation failed or skipped: {e}")
+        
     save_to_bus(content, agent_name)
     
     print("✅ SUCCESS: Output validated and mirrored to Bus.")

@@ -209,3 +209,7 @@ python3 .agent/scripts/knowledge/obsidian_validator.py check --path <file>
 - [Embed files](https://help.obsidian.md/embeds)
 - [Callouts](https://help.obsidian.md/callouts)
 - [Properties](https://help.obsidian.md/properties)
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

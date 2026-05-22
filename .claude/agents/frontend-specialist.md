@@ -606,8 +606,6 @@ After editing any file:
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/wsl-interop/SKILL.md`
-- `.agent/skills/paperclip-plugin-dev/SKILL.md`
-- `.agent/skills/paperclip-create-plugin/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/shadcn-best-practices/SKILL.md`
 - `.agent/skills/next-best-practices/SKILL.md`
@@ -615,4 +613,3 @@ After editing any file:
 - `.agent/skills/browser-use/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
-- `.agent/skills/paperclip-worker/SKILL.md`

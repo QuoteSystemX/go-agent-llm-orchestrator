@@ -83,3 +83,7 @@ python3 .agent/scripts/knowledge/memory_ingestor.py
 |--------|------|
 | **Lessons learned** | `.agent/rules/LESSONS_LEARNED.md` |
 | **Experience distiller** | `.agent/scripts/knowledge/experience_distiller.py --search "query"` |
+
+## Changelog
+
+- **2.0.0** (2026-05-22): Initial version

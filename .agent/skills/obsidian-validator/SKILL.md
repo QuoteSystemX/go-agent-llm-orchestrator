@@ -79,3 +79,7 @@ The validator runs automatically via:
 | Frontmatter | Missing required fields (title, tags, status) |
 | Callouts | Invalid `> [!type]` syntax |
 | Compliance | Overall OFM compatibility score |
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

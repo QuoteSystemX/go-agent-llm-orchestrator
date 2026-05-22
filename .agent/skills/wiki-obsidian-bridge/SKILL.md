@@ -63,3 +63,7 @@ This skill works alongside:
 - `obsidian-markdown` — OFM syntax reference
 - `obsidian-validator` — vault integrity checks
 - `wiki-writing` — Karpathy Wiki-First methodology
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

@@ -110,6 +110,7 @@ graph TD
 
 - `python3 .agent/scripts/health/status_report.py` - Unified Dashboard (Tech + Business)
 - `python3 .agent/scripts/dev/compile_rules.py` - Compile modular Gemini rules
+- `python3 .agent/scripts/delivery/sync_all.py` - Unified compiler, target synchronizer, and metrics collector
 - `python3 .agent/scripts/delivery/task_helper.py` - Task card generator for `tasks/`
 - `python3 .agent/scripts/health/drift_detector.py` - Wiki vs Code drift detection
 - `python3 .agent/scripts/misc/metrics_dashboard.py` - Real-time agent telemetry

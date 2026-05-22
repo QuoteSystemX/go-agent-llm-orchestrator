@@ -861,7 +861,5 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/grafana-dashboard-master/SKILL.md`
-- `.agent/skills/paperclip-plugin-dev/SKILL.md`
-- `.agent/skills/paperclip-create-plugin/SKILL.md`
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
 - `.agent/skills/agent-routing-pro/SKILL.md`

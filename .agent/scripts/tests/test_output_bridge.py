@@ -38,11 +38,11 @@ class TestOutputBridge(unittest.TestCase):
             shutil.rmtree(self.test_root)
 
     def test_validate_sections(self):
-        content = "🤖 **Agent Header**\n🎯 **Context/Goal**\n🛠 **Technical Implementation**\n📂 **Impacted Components**\n📈 **Outcome/Result**"
+        content = "🤖 Flow: **[L3]**\n🎯 **Context/Goal**\n🛠 **Technical Implementation**\n📂 **Impacted Components**\n📈 **Outcome/Result**"
         missing = bridge.validate_sections(content)
         self.assertEqual(len(missing), 0)
         
-        content_missing = "🤖 **Agent Header**"
+        content_missing = "🤖 Flow: **[L3]**"
         missing = bridge.validate_sections(content_missing)
         self.assertGreater(len(missing), 0)
 
@@ -84,7 +84,8 @@ class TestOutputBridge(unittest.TestCase):
 
     @patch('sys.stdin.read')
     @patch('sys.exit')
-    def test_main_validation_failure(self, mock_exit, mock_read):
+    @patch('orchestration.tough_auditor.audit_changes')
+    def test_main_validation_failure(self, mock_audit, mock_exit, mock_read):
         mock_read.return_value = "Invalid content"
         # Avoid subprocess calls during main
         with patch('subprocess.run'):

@@ -1,6 +1,7 @@
 ---
 name: agentic-evolution
 description: Protocols for autonomous agent kit improvement and self-specialization.
+version: 1.0.0
 ---
 
 # Agentic Evolution
@@ -24,3 +25,7 @@ This skill provides the logic and scripts for the autonomous evolution of the Ag
 - `.agent/scripts/orchestration/arena_engine.py`
 - `.agent/scripts/qa/intelligence_benchmark.py`
 - `.agent/scripts/lib/llm_client.py`
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

@@ -72,3 +72,7 @@ Commands target the most recently focused vault by default:
 ```bash
 obsidian vault="My Vault" search query="test"
 ```
+
+## Changelog
+
+- **1.0.0** (2026-05-22): Initial version

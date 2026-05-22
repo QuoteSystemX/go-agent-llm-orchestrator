@@ -182,9 +182,7 @@ def run_fix():
     print_step("Updating Visualization and Dashboard...")
     try:
         import dev.visualize_deps; import sys; sys.modules['visualize_deps'] = sys.modules['dev.visualize_deps']; import dev.visualize_deps as visualize_deps
-        import health.status_report; import sys; sys.modules['status_report'] = sys.modules['health.status_report']; import health.status_report as status_report
         import delivery.task_tracer; import sys; sys.modules['task_tracer'] = sys.modules['delivery.task_tracer']; import delivery.task_tracer as task_tracer
-        import models.prompt_optimizer; import sys; sys.modules['prompt_optimizer'] = sys.modules['models.prompt_optimizer']; import models.prompt_optimizer as prompt_optimizer
         
         # Trace check: warning if changes exist but no task is active
         staged = task_tracer.get_staged_files()
@@ -192,28 +190,91 @@ def run_fix():
             print_warning("Changes detected but no active task found in tasks/.")
             
         visualize_deps.generate_mermaid()
-        score, metrics = status_report.calculate_health()
-        
-        # Add cost metrics to dashboard (simplified for demo)
-        opt_report = prompt_optimizer.analyze_telemetry()
-        if "HIGH USAGE" in opt_report:
-            score -= 10
-            metrics["Cost Status"] = "⚠️ HIGH"
-        else:
-            metrics["Cost Status"] = "✅ OK"
-            
-        status_report.export_to_html(score, metrics)
-        
-        # Bridge Team: Sync agents and run validator
-        print_step("Checking Agent Sync and Vault Health...")
-        try:
-            import delivery.sync_agents; import sys; sys.modules['sync_agents'] = sys.modules['delivery.sync_agents']; import delivery.sync_agents as sync_agents
-        except Exception as e:
-            print_warning(f"Agent sync failed: {e}")
-        
-        print_success("Visualization, Dashboard, Documentation, and Agent Sync updated.")
+        print_success("Dependency visualization updated.")
     except Exception as e:
         print_warning(f"Failed to update visualization: {e}")
+
+    # 5. Run Consolidated Compilation, Sync, Parity and Linter Debt Pipeline
+    print_step("Executing Unified Sync and Compilation Pipeline...")
+    try:
+        sync_all_script = REPO_ROOT / ".agent" / "scripts" / "delivery" / "sync_all.py"
+        if sync_all_script.exists():
+            res = subprocess.run([sys.executable, str(sync_all_script)], capture_output=True, text=True)
+            if res.returncode == 0:
+                print_success("Unified Sync Pipeline completed successfully.")
+            else:
+                print_warning("Unified Sync Pipeline completed with warnings/errors.")
+                if res.stdout: print(res.stdout)
+                if res.stderr: print(res.stderr)
+        else:
+            print_warning(f"Unified Sync script not found at: {sync_all_script}")
+    except Exception as e:
+        print_warning(f"Failed to execute Unified Sync Pipeline: {e}")
+
+    # 6. Check and Heal Resilience MTTR Staleness
+    print_step("Checking Resilience MTTR Metrics...")
+    chaos_file = BUS_DIR / "chaos_report.json"
+    needs_drill = False
+    
+    if not chaos_file.exists():
+        needs_drill = True
+        print_warning("Resilience report (chaos_report.json) is missing. Triggering safe drill...")
+    else:
+        try:
+            import json
+            import os
+            from datetime import datetime, timezone
+            chaos_data = json.loads(chaos_file.read_text())
+            chaos_ts = chaos_data.get("timestamp")
+            if chaos_ts:
+                last_run = datetime.fromisoformat(chaos_ts.replace("Z", ""))
+                days_since = (datetime.now(timezone.utc).replace(tzinfo=None) - last_run).days
+                if days_since > 7:
+                    needs_drill = True
+                    print_warning(f"Resilience metrics are stale ({days_since} days old). Triggering safe drill...")
+        except Exception as e:
+            needs_drill = True
+            print_warning(f"Error checking resilience metrics age ({e}). Triggering safe drill...")
+
+    if needs_drill:
+        print_step("Executing safe chaos latency drill to refresh resilience metrics...")
+        try:
+            import os
+            # Ensure blue team status is set to HEALTHY first
+            blue_status_file = BUS_DIR / "blue_team_status.json"
+            if not blue_status_file.exists():
+                blue_monitor = REPO_ROOT / ".agent" / "scripts" / "health" / "blue_team_monitor.py"
+                if blue_monitor.exists():
+                    subprocess.run([sys.executable, str(blue_monitor)], capture_output=True, text=True)
+                
+            chaos_monkey = REPO_ROOT / ".agent" / "scripts" / "chaos" / "chaos_monkey.py"
+            if chaos_monkey.exists():
+                env = os.environ.copy()
+                env["CHAOS_ENABLED"] = "1"
+                # Run chaos monkey with safe latency fuzzer and automatic analysis
+                res = subprocess.run(
+                    [sys.executable, str(chaos_monkey), "--latency", "--analyze"],
+                    cwd=str(REPO_ROOT),
+                    env=env,
+                    capture_output=True,
+                    text=True
+                )
+                if res.returncode == 0:
+                    print_success("Resilience drill completed successfully and MTTR metrics are now fresh!")
+                    # Run status report dashboard output update once more to include fresh resilience metrics
+                    status_report_script = REPO_ROOT / ".agent" / "scripts" / "health" / "status_report.py"
+                    if status_report_script.exists():
+                        subprocess.run([sys.executable, str(status_report_script), "--html"], capture_output=True, text=True)
+                else:
+                    print_warning("Resilience drill failed!")
+                    if res.stdout: print(res.stdout)
+                    if res.stderr: print(res.stderr)
+            else:
+                print_warning(f"Chaos Monkey script not found at: {chaos_monkey}")
+        except Exception as e:
+            print_warning(f"Resilience drill raised exception: {e}")
+    else:
+        print_success("Resilience MTTR metrics are fresh.")
 
     print_success("Auto-fix complete.")
 
