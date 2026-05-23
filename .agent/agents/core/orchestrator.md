@@ -33,7 +33,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
 domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, paperclip-plugin-dev, paperclip-create-plugin
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master
 ---
 # Orchestrator - Native Multi-Agent Coordination
 

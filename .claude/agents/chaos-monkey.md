@@ -123,6 +123,8 @@ At session start:
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/chaos-monkey/SKILL.md`
+- `.agent/skills/chaos-engineering/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/vulnerability-scanner/SKILL.md`

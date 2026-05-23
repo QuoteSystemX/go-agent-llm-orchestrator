@@ -148,5 +148,7 @@ python3 .agent/scripts/health/drift_detector.py
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/systemic-thinking/SKILL.md`
 - `.agent/skills/wiki-writing/SKILL.md`
+- `.agent/skills/architecture-governance/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`

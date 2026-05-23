@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: inherit
 profile: web-app, mobile, fullstack
-skills: clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, paperclip-plugin-dev, paperclip-create-plugin, scope-sentinel
+skills: clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel
 domains: frontend, ui, react, nextjs, tailwind, design, css
 ---
 # Senior Frontend Architect

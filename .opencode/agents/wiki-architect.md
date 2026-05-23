@@ -2,7 +2,7 @@
 
 ---
 name: wiki-architect
-description: Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs, and system design docs. Detects wiki vs code drift. Enforces Prose-First workflow: wiki before code. Use when a component lacks documentation, when drift is suspected, or before any new feature implementation.
+description: "Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs, and system design docs. Detects wiki vs code drift. Enforces Prose-First workflow: wiki before code. Use when a component lacks documentation, when drift is suspected, or before any new feature implementation."
 model: inherit
 ---
 

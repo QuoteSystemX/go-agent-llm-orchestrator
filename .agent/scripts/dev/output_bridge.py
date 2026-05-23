@@ -321,8 +321,8 @@ def main():
     print("⚖️ Invoking Tough Auditor for live agent evaluation...")
     try:
         import orchestration.tough_auditor as tough_auditor
-        task_slug = re.sub(r'[^a-zA-Z0-9_]', '_', goal[:30]).lower()
-        if not task_slug:
+        task_slug = re.sub(r'[^\w]+', '_', goal[:30]).strip('_').lower()
+        if not task_slug or set(task_slug) == {'_'}:
             task_slug = "session_task"
         score = tough_auditor.audit_changes(agent_name, task_slug)
         print(f"📈 Real-time Agent Score Logged: {score}/5.0")

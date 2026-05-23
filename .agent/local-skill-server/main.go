@@ -447,6 +447,6 @@ func (h *handler) refactorStep(_ context.Context, _ mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError("failed to get session: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("State: %s, Progress: %d/%d",
-		session.State, session.CurrentIdx, len(session.Files))), nil
+	return mcp.NewToolResultText(string(session.State) + fmt.Sprintf(", Progress: %d/%d",
+		session.CurrentIdx, len(session.Files))), nil
 }

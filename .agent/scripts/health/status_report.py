@@ -231,6 +231,48 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
     except:
         metrics["Drift"] = "Unknown"
 
+    # 1a. Check for Agent Skills Integrity
+    try:
+        import yaml
+        agents_dir = REPO_ROOT / ".agent" / "agents"
+        skills_dir = REPO_ROOT / ".agent" / "skills"
+        
+        agent_files = []
+        for root, _, files in os.walk(str(agents_dir)):
+            for file in files:
+                if file.endswith(".md"):
+                    agent_files.append(os.path.join(root, file))
+                    
+        missing_skills = set()
+        for agent_file in agent_files:
+            try:
+                with open(agent_file, "r", encoding="utf-8") as f:
+                    content = f.read()
+                match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
+                if match:
+                    frontmatter_text = match.group(1)
+                    data = yaml.safe_load(frontmatter_text)
+                    if data and "skills" in data:
+                        skills_raw = data["skills"]
+                        skills = []
+                        if isinstance(skills_raw, str):
+                            skills = [s.strip() for s in skills_raw.split(",") if s.strip()]
+                        elif isinstance(skills_raw, list):
+                            skills = [str(s).strip() for s in skills_raw if s]
+                        for skill in skills:
+                            if not (skills_dir / skill).exists():
+                                missing_skills.add(skill)
+            except:
+                continue
+        
+        if missing_skills:
+            metrics["Agent Skills"] = f"❌ {len(missing_skills)} missing"
+            score -= min(40, len(missing_skills) * 10)
+        else:
+            metrics["Agent Skills"] = "✅ 100% Integrity"
+    except Exception as e:
+        metrics["Agent Skills"] = f"Unknown ({e})"
+
     # 2. Check for Recent Failures
     log_dir = REPO_ROOT / ".agent" / "logs"
     if log_dir.exists():

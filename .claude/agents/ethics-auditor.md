@@ -137,6 +137,7 @@ You have **Veto Power** in these domains:
 
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/vulnerability-scanner/SKILL.md`
+- `.agent/skills/documentation-writer/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/red-team-tactics/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`

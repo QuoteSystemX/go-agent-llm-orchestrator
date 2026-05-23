@@ -33,7 +33,10 @@ except ImportError:
 
 def get_staged_diff() -> str:
     try:
-        return subprocess.check_output(["git", "diff", "--cached"], cwd=REPO_ROOT).decode("utf-8")
+        return subprocess.check_output([
+            "git", "diff", "--cached", "--", 
+            ":(exclude)*.md", ":(exclude)*.json", ":(exclude)*.jsonl", ":(exclude)*.yml"
+        ], cwd=REPO_ROOT).decode("utf-8")
     except:
         return ""
 

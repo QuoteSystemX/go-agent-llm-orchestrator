@@ -157,9 +157,9 @@ func (bw *BusWatcher) Step() error {
 		if session.CurrentIdx >= len(session.Files) {
 			session.State = StateCompleted
 			session.Logs = append(session.Logs, fmt.Sprintf("All %d files processed", len(session.Files)))
-		} else {
-			session.Logs = append(session.Logs, fmt.Sprintf("Processed file %d/%d: %s",
-				session.CurrentIdx, len(session.Files), session.Files[session.CurrentIdx-1]))
+		} else if session.CurrentIdx > 0 && session.CurrentIdx-1 < len(session.Files) {
+			session.Logs = append(session.Logs, fmt.Sprintf("Processed file %d/%d: ",
+				session.CurrentIdx, len(session.Files)) + session.Files[session.CurrentIdx-1])
 		}
 
 	case StateCompleted:
