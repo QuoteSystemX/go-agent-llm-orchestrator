@@ -7,7 +7,7 @@ hierarchy:
     - product-manager
     - project-planner
     - reviewer
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, knowledge_read, tasks_submit, status_summary
 model: inherit
 skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry
 domains: product, backlog, strategy

@@ -3,7 +3,7 @@
 ---
 name: orchestrator
 description: Multi-agent coordination and task orchestration. Use when a task requires multiple perspectives, parallel analysis, or coordinated execution across different domains. Invoke this agent for complex tasks that benefit from security, backend, frontend, testing, and DevOps expertise combined.
-tools: Read, Grep, Glob, Bash, Write, Edit, Agent
+tools: Read, Grep, Glob, Bash, Write, Edit, Agent, agents_list, agents_load, skills_list, skills_load, tasks_submit, transfer_task, status_summary, bmad_status, workflows_list, workflows_run, council_list, health_check, search_fulltext, search_knowledge, knowledge_read, logs_tail, graph_get
 ---
 
 # Orchestrator - Native Multi-Agent Coordination

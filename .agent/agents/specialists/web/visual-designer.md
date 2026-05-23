@@ -4,7 +4,7 @@ description: Specialist in UI/UX aesthetics, design systems, and visual quality.
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, knowledge_read, search_knowledge, skills_load, status_summary
 skills: frontend-design, web-design-guidelines, design-token-architecture, clean-code
 domains: visual, designer
 ---

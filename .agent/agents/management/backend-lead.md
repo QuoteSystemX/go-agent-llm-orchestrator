@@ -9,7 +9,7 @@ hierarchy:
     - debugger
     - test-engineer
     - reviewer
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, system_info, tasks_submit, status_summary, skills_list, skills_load
 model: inherit
 skills: clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel
 domains: backend, lead, go, api, database

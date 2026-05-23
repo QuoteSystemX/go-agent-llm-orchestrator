@@ -4,7 +4,7 @@ description: Expert in React Native and Flutter mobile development. Use for cros
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge, skills_load
 model: inherit
 profile: mobile
 skills: clean-code, mobile-design, i18n-localization, shared-context, telemetry

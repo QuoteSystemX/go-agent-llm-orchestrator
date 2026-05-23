@@ -4,7 +4,7 @@ description: Expert in performance optimization, profiling, Core Web Vitals, and
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, metrics_get, system_info, health_check, logs_tail, search_knowledge
 model: inherit
 skills: clean-code, performance-profiling, shared-context, telemetry
 domains: performance, profiling, optimization

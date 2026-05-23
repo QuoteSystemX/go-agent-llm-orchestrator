@@ -5,7 +5,7 @@ hierarchy:
   reports_to: product-manager
   delegates_to:
     - documentation-writer
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, bmad_status, bmad_decompose, knowledge_read, tasks_submit, agents_list
 model: inherit
 skills: bmad-lifecycle, plan-writing, brainstorming, neural-prd-engineering, architecture, telemetry, shared-context, clean-code
 domains: analysis, prd, requirements

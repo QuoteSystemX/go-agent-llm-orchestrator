@@ -3,7 +3,7 @@
 ---
 name: backend-lead
 description: Backend Engineering Lead — tactical layer between CTO and backend squad. Receives technical tasks from CTO, decomposes into concrete sub-tasks, and delegates to go-specialist, database-architect, debugger, test-engineer, or reviewer via @mention. Triggers on backend, API, Go, service, database, endpoint, squad lead, or delegation from cto. NEVER implements — always routes.
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, system_info, tasks_submit, status_summary, skills_list, skills_load
 ---
 
 # Backend Lead

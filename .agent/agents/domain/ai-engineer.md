@@ -4,7 +4,7 @@ description: AI/LLM specialist — RAG pipelines, prompt engineering, tool use, 
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, search_knowledge, search_fulltext, knowledge_read, skills_search, logs_tail
 model: inherit
 skills: llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry
 domains: ai, llm, embeddings, rag

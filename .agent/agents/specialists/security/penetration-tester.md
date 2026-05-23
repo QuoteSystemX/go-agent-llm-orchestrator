@@ -4,7 +4,7 @@ description: Expert in offensive security, penetration testing, red team operati
 hierarchy:
   reports_to: cro
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, system_info, secrets_get, council_list, knowledge_read
 model: inherit
 skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry
 domains: penetration, tester

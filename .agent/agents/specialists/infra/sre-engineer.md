@@ -4,7 +4,7 @@ description: Site Reliability Engineer — SLO/SLI/SLA definition, error budget 
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, health_check, health_fix, system_info, metrics_get, logs_tail, workspace_status, secrets_get
 model: inherit
 profile: go-service, data-platform, fullstack
 skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel

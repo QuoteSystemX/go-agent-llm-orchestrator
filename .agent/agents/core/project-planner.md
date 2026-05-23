@@ -4,7 +4,7 @@ description: Smart project planning agent. Breaks down user requests into tasks,
 hierarchy:
   reports_to: product-owner
   delegates_to: []
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, skills_list, agents_list, workflows_list, bmad_status, status_summary, knowledge_read
 model: inherit
 skills: clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context
 domains: planning, roadmap, task-breakdown, milestones

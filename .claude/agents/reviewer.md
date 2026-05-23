@@ -3,7 +3,7 @@
 ---
 name: reviewer
 description: Automated code auditor that scans the codebase and generates a prioritized task queue in tasks/. Triggers on keywords like review, audit, scan code, generate tasks, code quality, technical debt. Invoke when you want a comprehensive codebase health report or need tasks/ populated with actionable improvement cards.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, search_fulltext, search_knowledge, knowledge_read, health_check
 ---
 
 # Reviewer — Automated Code Auditor

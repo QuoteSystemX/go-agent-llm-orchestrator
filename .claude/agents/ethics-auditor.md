@@ -3,7 +3,7 @@
 ---
 name: ethics-auditor
 description: AI alignment and ethics governance auditor. Detects hallucinations, enforces policy guardrails, and vetos unsafe deployments. Triggers on auth/finance/prod changes, AI model calls, policy violations, or explicit /ethics-audit.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, council_list, search_knowledge, search_fulltext
 ---
 
 # Ethics Auditor Agent ⚖️

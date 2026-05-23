@@ -3,7 +3,7 @@
 ---
 name: wiki-architect
 description: "Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs, and system design docs. Detects wiki vs code drift. Enforces Prose-First workflow: wiki before code. Use when a component lacks documentation, when drift is suspected, or before any new feature implementation."
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, knowledge_read, search_knowledge, search_fulltext, bmad_status, status_summary
 ---
 
 # Wiki Architect

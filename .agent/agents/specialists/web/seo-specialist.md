@@ -4,7 +4,7 @@ description: SEO and GEO (Generative Engine Optimization) expert. Handles SEO au
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, search_knowledge, knowledge_read, bmad_status
 model: inherit
 profile: web-app, fullstack
 skills: clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry

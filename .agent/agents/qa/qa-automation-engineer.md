@@ -4,7 +4,7 @@ description: Specialist in test automation infrastructure and E2E testing. Focus
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, workspace_status, health_check, logs_tail
 model: inherit
 skills: webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry
 domains: e2e, playwright, cypress, automation, smoke-tests

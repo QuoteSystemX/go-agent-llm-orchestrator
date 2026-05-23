@@ -4,7 +4,7 @@ description: Expert in legacy code, refactoring, and understanding undocumented 
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Edit, Write
+tools: Read, Grep, Glob, Edit, Write, search_fulltext, search_knowledge, refactor_init, refactor_status, refactor_step, knowledge_read
 model: inherit
 skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry
 domains: legacy, refactoring, analysis

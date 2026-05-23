@@ -7,7 +7,7 @@ hierarchy:
     - analyst
     - documentation-writer
     - wiki-architect
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, bmad_decompose, knowledge_read, tasks_submit
 model: inherit
 skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry
 domains: requirements, stories, personas, feature-scoping

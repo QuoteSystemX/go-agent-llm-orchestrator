@@ -4,7 +4,7 @@ description: Glue agent that bridges Go engineering and Crypto/TON domain expert
 hierarchy:
   reports_to: cto
   delegates_to: [go-specialist, crypto-specialist]
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, skills_load, system_info
 model: inherit
 profile: go-service
 skills: ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry

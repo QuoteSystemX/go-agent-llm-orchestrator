@@ -4,7 +4,7 @@ description: Expert in deployment, server management, CI/CD, and production oper
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, health_check, health_fix, system_info, workspace_sync, workspace_push, workspace_status, secrets_get, secrets_set, metrics_get
 model: inherit
 skills: clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel
 domains: devops, engineer

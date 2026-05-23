@@ -4,7 +4,7 @@ description: Specialist in Git internals, conflict resolution, and repository he
 hierarchy:
   reports_to: release-manager
   delegates_to: []
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge
 model: inherit
 skills: git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry
 domains: git, merge, rebase, conflicts, history

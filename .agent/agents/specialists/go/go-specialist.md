@@ -4,7 +4,7 @@ description: Expert Go engineer focused on language mastery, high-performance co
 hierarchy:
   reports_to: crypto-go-architect
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, semantic_definition, semantic_hover, search_knowledge, search_fulltext, skills_load
 model: inherit
 profile: go-service
 skills: clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel

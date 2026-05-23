@@ -4,7 +4,7 @@ description: Expert in systematic debugging, root cause analysis, and crash inve
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Bash, Grep, Glob
+tools: Read, Bash, Grep, Glob, semantic_definition, semantic_hover, logs_tail, health_check, system_info, search_fulltext
 skills: clean-code, systematic-debugging, shared-context, telemetry
 domains: debugging, bugfix, analysis
 ---

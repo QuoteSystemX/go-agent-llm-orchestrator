@@ -4,7 +4,7 @@ description: Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VP
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, health_check, health_fix, system_info, workspace_sync, workspace_status, secrets_get, logs_tail
 model: inherit
 profile: go-service, data-platform, fullstack
 skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel

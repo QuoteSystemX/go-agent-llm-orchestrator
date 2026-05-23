@@ -4,7 +4,7 @@ description: Multi-cloud infrastructure specialist — AWS/GCP/Azure provisionin
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, health_check, system_info, workspace_sync, workspace_status, project_list, secrets_get
 model: inherit
 profile: go-service, data-platform, fullstack
 skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel

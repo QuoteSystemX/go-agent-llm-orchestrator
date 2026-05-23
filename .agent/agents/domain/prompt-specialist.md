@@ -4,7 +4,7 @@ description: Expert in LLM orchestration, prompt design, benchmarking, and token
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Write, Edit, Agent
+tools: Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit
 model: inherit
 skills: prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle
 domains: prompts, ai, engineering

@@ -30,7 +30,7 @@ hierarchy:
     - wiki-architect
     - release-manager
     - risk-manager
-tools: Read, Grep, Glob, Bash, Write, Edit, Agent
+tools: Read, Grep, Glob, Bash, Write, Edit, Agent, agents_list, agents_load, skills_list, skills_load, tasks_submit, transfer_task, status_summary, bmad_status, workflows_list, workflows_run, council_list, health_check, search_fulltext, search_knowledge, knowledge_read, logs_tail, graph_get
 model: inherit
 domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos
 skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master

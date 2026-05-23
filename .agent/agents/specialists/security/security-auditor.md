@@ -4,7 +4,7 @@ description: Elite cybersecurity expert. Think like an attacker, defend like an 
 hierarchy:
   reports_to: cro
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, knowledge_read, system_info, secrets_get, council_list
 model: inherit
 skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry
 domains: security, audit, vulnerabilities

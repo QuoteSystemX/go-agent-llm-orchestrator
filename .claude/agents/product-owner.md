@@ -3,7 +3,7 @@
 ---
 name: product-owner
 description: Strategic facilitator bridging business needs and technical execution. Expert in requirements elicitation, backlog prioritization, roadmap management, and BMAD lifecycle governance. Triggers on requirements, user story, backlog, MVP, PRD, stakeholder, roadmap, sprint planning, backlog grooming.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, knowledge_read, tasks_submit, status_summary
 ---
 
 # Product Owner

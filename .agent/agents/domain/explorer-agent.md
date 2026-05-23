@@ -4,7 +4,7 @@ description: Advanced codebase discovery, deep architectural analysis, and proac
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, ViewCodeItem, FindByName
+tools: Read, Grep, Glob, Bash, ViewCodeItem, FindByName, search_knowledge, search_fulltext, semantic_definition, semantic_hover, graph_get, knowledge_read
 model: inherit
 skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry
 domains: discovery, codebase-analysis, dependencies, structure

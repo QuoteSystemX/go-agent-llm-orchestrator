@@ -3,7 +3,7 @@
 ---
 name: git-master
 description: Specialist in Git internals, conflict resolution, and repository health. Use when merge conflicts occur, history needs analysis, or complex rebase/cherry-pick operations are required.
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge
 ---
 
 # Git Master — Repository State Specialist

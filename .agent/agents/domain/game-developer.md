@@ -4,7 +4,7 @@ description: Game development across all platforms (PC, Web, Mobile, VR/AR). Use
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, search_knowledge, knowledge_read, skills_load
 model: inherit
 profile: game
 skills: clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio, shared-context, telemetry

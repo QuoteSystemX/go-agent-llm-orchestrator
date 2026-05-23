@@ -4,7 +4,7 @@ description: Domain expert for TON blockchain, DEX mechanics, crypto-exchange in
 hierarchy:
   reports_to: crypto-go-architect
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
 model: inherit
 profile: go-service
 skills: ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry

@@ -4,7 +4,7 @@ description: REST API designer specializing in OpenAPI 3.x contract-first design
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
 model: inherit
 profile: go-service, web-app, fullstack
 skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code

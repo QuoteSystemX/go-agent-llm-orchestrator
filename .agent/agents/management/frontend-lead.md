@@ -8,7 +8,7 @@ hierarchy:
     - visual-designer
     - qa-automation-engineer
     - reviewer
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary
 model: inherit
 skills: clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel
 domains: frontend, lead, react, nextjs, ui, ux, design

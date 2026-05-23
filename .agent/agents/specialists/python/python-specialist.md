@@ -4,7 +4,7 @@ description: Senior Python engineer specializing in async systems, FastAPI, data
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, semantic_definition, semantic_hover, search_knowledge, search_fulltext, skills_load
 skills: python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling
 domains: python, specialist
 ---

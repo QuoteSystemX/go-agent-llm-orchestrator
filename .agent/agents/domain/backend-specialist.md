@@ -4,7 +4,7 @@ description: Expert backend architect for Node.js, Python, and modern serverless
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, knowledge_read, system_info, skills_load
 model: inherit
 skills: clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel
 domains: backend, api, server, nodejs, python, database, auth

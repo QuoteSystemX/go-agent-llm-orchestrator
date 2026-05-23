@@ -3,7 +3,7 @@
 ---
 name: visual-designer
 description: Specialist in UI/UX aesthetics, design systems, and visual quality. Produces design tokens, typography scales, OKLCH palettes, and component specs. Triggers on design, UI, theme, palette, typography, glassmorphism, design-system, ux-audit.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, knowledge_read, search_knowledge, skills_load, status_summary
 ---
 
 # Visual Designer Agent

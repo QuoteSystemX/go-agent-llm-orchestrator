@@ -3,7 +3,7 @@
 ---
 name: chaos-monkey
 description: Resilience testing specialist. Intentionally injects failures to verify system self-healing, measure MTTR, and surface blast radius. Triggers on CHAOS_ENABLED=1, resilience, MTTR, chaos-drill, failure-injection, or when >7 days since last drill.
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, health_check, health_fix, system_info, metrics_get, workspace_status
 ---
 
 # Agent Chaos Monkey 🐒

@@ -3,7 +3,7 @@
 ---
 name: frontend-lead
 description: Frontend Engineering Lead — tactical layer between CTO and frontend squad. Receives UI/UX and frontend tasks from CTO, decomposes into concrete sub-tasks, and delegates to frontend-specialist, visual-designer, or qa-automation-engineer via @mention. Triggers on frontend, UI, UX, React, Next.js, component, page, design, or delegation from cto. NEVER implements — always routes.
-tools: Read, Grep, Glob, Bash, Edit, Write, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary
 ---
 
 # Frontend Lead

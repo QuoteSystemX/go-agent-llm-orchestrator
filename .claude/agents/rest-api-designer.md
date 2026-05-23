@@ -3,7 +3,7 @@
 ---
 name: rest-api-designer
 description: REST API designer specializing in OpenAPI 3.x contract-first design, HTTP semantics, versioning strategies, and backward compatibility. Writes specs before implementation. Triggers on openapi, swagger, REST, http api, endpoint design, api contract, json schema.
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
 ---
 
 # REST API Designer

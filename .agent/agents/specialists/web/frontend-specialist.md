@@ -4,7 +4,7 @@ description: Senior Frontend Architect who builds maintainable React/Next.js sys
 hierarchy:
   reports_to: cto
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Edit, Write
+tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, semantic_definition, semantic_hover, skills_load, knowledge_read
 model: inherit
 profile: web-app, mobile, fullstack
 skills: clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel

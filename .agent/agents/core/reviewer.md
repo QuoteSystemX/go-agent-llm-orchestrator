@@ -4,7 +4,7 @@ description: Automated code auditor that scans the codebase and generates a prio
 hierarchy:
   reports_to: product-owner
   delegates_to: []
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, search_fulltext, search_knowledge, knowledge_read, health_check
 model: inherit
 skills: clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry
 domains: audit, code-review, technical-debt, scan

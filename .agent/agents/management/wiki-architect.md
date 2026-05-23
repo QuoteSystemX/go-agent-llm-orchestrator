@@ -5,7 +5,7 @@ hierarchy:
   reports_to: product-manager
   delegates_to:
     - documentation-writer
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, knowledge_read, search_knowledge, search_fulltext, bmad_status, status_summary
 model: inherit
 skills: wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry
 domains: wiki, documentation, architecture
