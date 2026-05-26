@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
@@ -46,6 +47,23 @@ def validate_json(data: Any, schema_path: Path) -> tuple[bool, str]:
     except Exception as e:
         return False, str(e)
 
+def _is_wsl() -> bool:
+    """Detect if running inside WSL."""
+    try:
+        with open("/proc/version", "r") as f:
+            return "microsoft" in f.read().lower()
+    except Exception:
+        return False
+
+def _get_wsl_gateway() -> str:
+    """Get the IP of the Windows host from WSL."""
+    try:
+        cmd = "ip route | grep default | awk '{print $3}'"
+        gw = subprocess.check_output(cmd, shell=True).decode().strip()
+        return gw
+    except Exception:
+        return ""
+
 def discover_ollama_url() -> str:
     """
     Universally discover Ollama URL across environments (Local, WSL, Docker).
@@ -72,9 +90,7 @@ def discover_ollama_url() -> str:
         if os.path.exists("/proc/version"):
             with open("/proc/version", "r") as f:
                 if "microsoft" in f.read().lower():
-                    import subprocess
-                    cmd = "ip route | grep default | awk '{print $3}'"
-                    gw = subprocess.check_output(cmd, shell=True).decode().strip()
+                    gw = _get_wsl_gateway()
                     if gw:
                         test_url = f"http://{gw}:11434/api/tags"
                         try:
@@ -83,6 +99,9 @@ def discover_ollama_url() -> str:
                                     return f"http://{gw}:11434"
                         except:
                             pass
+
+                        # 3b. WSL + Ollama not running — just inform
+                        print("⚠️  Ollama not reachable on Windows host via WSL gateway")
     except:
         pass
 

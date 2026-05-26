@@ -12,6 +12,7 @@ domains:
   - intelligent-routing
   - architecture
 skills: clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering
+tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, knowledge_read, agents_list, agents_load, skills_list, skills_load
 ---
 
 # Meta-Architect (@meta-architect)

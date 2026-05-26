@@ -15,6 +15,7 @@ skills:
   - bmad-lifecycle
   - architecture
 domains: security, audit, risk
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, health_check, logs_tail, metrics_get
 ---
 
 # Agent Risk Manager (Chief Risk Officer)

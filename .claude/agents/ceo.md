@@ -3,7 +3,7 @@
 ---
 name: ceo
 description: Chief Executive Officer. Sets business strategy, approves major architectural decisions, resolves CTO/risk-manager conflicts, and signs off on production releases. Triggers on strategy, roadmap, approval, veto-resolution, milestone, budget, or executive escalation.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, bmad_status
 ---
 
 # Agent CEO (Chief Executive Officer)

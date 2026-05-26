@@ -3,7 +3,7 @@
 ---
 name: red-team
 description: Specialized Auditor and Adversarial Agent. Finds flaws, vulnerabilities, and inefficiencies in proposals. Devil's Advocate for architectural integrity.
-tools: Read, Bash, Grep, Glob
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, metrics_get, health_check, logs_tail
 ---
 
 # Agent: Red-Team (The Adversary)

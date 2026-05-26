@@ -478,19 +478,70 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
         print(f"  ⚠️ Failed to sync MCP config: {e}")
 
 def _query_ollama_models() -> list:
-    """Query Ollama API for available models."""
+    """Query Ollama API for available models.
+    
+    Tries localhost first, then WSL gateway if applicable.
+    """
     import urllib.request
+    import subprocess
+
+    def _try_url(url: str, timeout: int = 5) -> list:
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode())
+                return data.get("models", [])
+        except Exception:
+            return None
+
+    # 1. Try localhost first
+    models = _try_url("http://localhost:11434/api/tags")
+    if models is not None:
+        return models
+
+    # 2. WSL gateway if running in WSL
+    is_wsl = False
     try:
-        url = "http://localhost:11434/api/tags"
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode())
-            return data.get("models", [])
+        if os.path.exists("/proc/version"):
+            with open("/proc/version") as f:
+                is_wsl = "microsoft" in f.read().lower()
     except Exception:
-        return []
+        pass
+
+    if is_wsl:
+        try:
+            gw = subprocess.check_output(
+                "ip route | grep default | awk '{print $3}'", shell=True
+            ).decode().strip()
+            if gw:
+                wsl_url = f"http://{gw}:11434/api/tags"
+                models = _try_url(wsl_url, timeout=3)
+                if models is not None:
+                    return models
+
+                # 2b. WSL gateway failed — just inform
+                print("⚠️  Ollama not reachable on Windows host via WSL gateway")
+        except Exception:
+            pass
+
+    return []
 
 def _build_ollama_provider(models: list) -> dict:
-    """Build Ollama provider config from models list."""
+    """Build Ollama provider config from models list.
+    
+    Uses WSL-aware URL discovery to set the correct baseURL
+    (localhost for Linux/WSL2-with-forwarding, WSL gateway IP otherwise).
+    """
+    # Try to discover the correct Ollama URL dynamically
+    base_url = "http://localhost:11434"
+    try:
+        from lib.common import discover_ollama_url
+        discovered = discover_ollama_url()
+        if discovered:
+            base_url = discovered.rstrip("/")
+    except ImportError:
+        pass
+
     # Filter out embeddings
     chat_models = [m for m in models if "embed" not in m.get("name", "").lower()]
     
@@ -503,7 +554,7 @@ def _build_ollama_provider(models: list) -> dict:
         "ollama-local": {
             "npm": "@ai-sdk/openai-compatible",
             "name": "Ollama Local",
-            "options": {"baseURL": "http://localhost:11434/v1"},
+            "options": {"baseURL": f"{base_url}/v1"},
             "models": models_config
         }
     }

@@ -3,7 +3,7 @@
 ---
 name: archivist
 description: Governs the high-fidelity knowledge lifecycle. Captures architectural pivots, distills lessons, prunes stale context, and maintains SNR > 7.0 in the project brain. Triggers on session-end, breaking changes, post-incident, and explicit /distill calls.
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge, search_fulltext, status_summary
 ---
 
 # 📚 @archivist (Strategic Memory Governor)

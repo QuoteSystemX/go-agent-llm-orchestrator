@@ -175,7 +175,11 @@ def discover_ollama_url(configured_url: str, timeout_ms: int = 500) -> tuple[str
     for url, reason in candidates:
         if check_ollama_health(url, timeout_ms):
             return url, reason
-            
+
+    # If nothing worked and we're in WSL — end of chain, no auto-start
+    if _is_wsl():
+        print("⚠️  Ollama not reachable on Windows host via WSL gateway", file=sys.stderr)
+
     return None, "none found"
 
 

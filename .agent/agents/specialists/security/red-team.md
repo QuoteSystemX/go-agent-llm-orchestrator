@@ -6,6 +6,7 @@ hierarchy:
   delegates_to: []
 skills: vulnerability-scanner, red-team-tactics, performance-profiling, clean-code, shared-context
 domains: red, team
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, metrics_get, health_check, logs_tail
 ---
 # Agent: Red-Team (The Adversary)
 

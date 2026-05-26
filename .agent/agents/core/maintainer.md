@@ -9,6 +9,7 @@ hierarchy:
     - qa-automation-engineer
 skills: clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder
 domains: maintenance, infrastructure, scripts
+tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, health_check, workspace_status, logs_tail
 ---
 # Maintainer — Senior Quality Guardian
 

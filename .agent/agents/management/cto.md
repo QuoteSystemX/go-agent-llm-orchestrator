@@ -43,6 +43,7 @@ skills:
   - brainstorming
   - observability-patterns
 domains: strategy, architecture, technology
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, agents_load, skills_list, skills_load
 ---
 
 # Agent CTO (Chief Technology Officer)

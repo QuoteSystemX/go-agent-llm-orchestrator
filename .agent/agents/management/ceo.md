@@ -15,6 +15,7 @@ skills:
   - brainstorming
   - plan-writing
 domains: strategy, business, leadership
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, bmad_status
 ---
 
 # Agent CEO (Chief Executive Officer)

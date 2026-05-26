@@ -15,22 +15,98 @@ from lib.llm_client import query_llm
 ARENA_REPORTS_DIR = REPO_ROOT / ".agent" / "reports" / "arena"
 
 DEFAULT_MODELS = [
-    "qwen3-coder:30b",
+    "qwen2.5-coder:32b",
     "codestral:22b",
     "qwen2.5-coder:14b"
 ]
 
-JUDGE_MODEL = "qwen3-coder:30b"
+JUDGE_MODEL = "qwen2.5-coder:32b"
+
+def get_dynamic_duelists(prompt):
+    """Dynamically resolves three dueling models based on prompt complexity."""
+    try:
+        from models.model_router import route, discover_ollama_url, get_ollama_local_models
+        
+        # 1. Route the prompt to find target model and tier
+        result = route(prompt)
+        print(f"🎯 Router Verdict: Tier [{result.tier}] -> Recommended model: `{result.model_id}`")
+        
+        # 2. Discover local models
+        active_url, _ = discover_ollama_url("auto")
+        local_models = get_ollama_local_models(active_url) if active_url else set()
+        
+        # If no local models, we fall back to standard cloud or defaults
+        if not local_models:
+            print("⚠️ No local Ollama models found. Using cloud defaults.")
+            return [result.model_id], result.model_id
+            
+        # 3. Load rules to check alternatives
+        rules_file = REPO_ROOT / ".agent" / "config" / "router_rules.json"
+        rules = load_json_safe(rules_file)
+        ollama_rules = rules.get("models", {}).get("ollama", {})
+        
+        # We want to select one model from each tier (L1, L2, L3) to compare,
+        # fallback to alts if a tier's primary model is not pulled.
+        selected_models = []
+        
+        for tier in ["L1", "L2", "L3"]:
+            primary = ollama_rules.get(tier, "")
+            alts = ollama_rules.get(f"{tier}_alt", [])
+            candidates = [primary] + alts
+            
+            # Find first candidate actually pulled
+            picked = None
+            for c in candidates:
+                if c in local_models:
+                    picked = c
+                    break
+            
+            if picked:
+                selected_models.append(picked)
+                
+        # Ensure we always include the target model recommended by the router
+        if result.model_id not in selected_models and result.model_id in local_models:
+            selected_models.append(result.model_id)
+            
+        # Deduplicate while preserving order
+        final_models = []
+        for m in selected_models:
+            if m not in final_models:
+                final_models.append(m)
+                
+        # If we have less than 3 models, backfill with whatever is local
+        if len(final_models) < 3:
+            for m in local_models:
+                if m not in final_models and "embed" not in m.lower():
+                    final_models.append(m)
+                if len(final_models) >= 3:
+                    break
+                    
+        # The judge model should be the highest quality model among the duelists
+        # or the target model itself. Let's pick the highest tier model available.
+        judge = result.model_id
+        for m in ["qwen2.5-coder:32b", "qwen3:30b", "qwen2.5-coder:14b"]:
+            if m in final_models:
+                judge = m
+                break
+                
+        return final_models, judge
+        
+    except Exception as e:
+        print(f"⚠️ Error resolving dynamic models: {e}")
+        return DEFAULT_MODELS, JUDGE_MODEL
 
 def run_duel(prompt, models=None):
     """Runs a duel between models for a given prompt."""
+    judge_model = JUDGE_MODEL
     if models is None:
-        models = DEFAULT_MODELS
+        models, judge_model = get_dynamic_duelists(prompt)
         
     ARENA_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     
     print(f"🏟️ Starting True Arena Duel...")
     print(f"  Prompt: {prompt[:100]}...")
+    print(f"  Dueling Models: {', '.join(models)}")
     
     responses = []
     
@@ -44,7 +120,7 @@ def run_duel(prompt, models=None):
         })
         print(" DONE")
         
-    print(f"  ⚖️ Judging with {JUDGE_MODEL}...")
+    print(f"  ⚖️ Judging with {judge_model}...")
     
     judge_prompt = f"""You are the Multi-Agent Judge. 
 We have a prompt and multiple responses from different models.
@@ -62,8 +138,9 @@ RESPONSES:
     for i, r in enumerate(responses):
         judge_prompt += f"\n--- RESPONSE {i+1} (Model: {r['model']}) ---\n{r['response']}\n"
         
-    final_answer, judge_stats = query_llm(judge_prompt, JUDGE_MODEL)
+    final_answer, judge_stats = query_llm(judge_prompt, judge_model)
     
+    # Save report using correct judge model
     report_path = save_arena_report(prompt, models, responses, final_answer)
     
     print("\n" + "="*40)

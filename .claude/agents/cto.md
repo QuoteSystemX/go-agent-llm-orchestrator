@@ -3,7 +3,7 @@
 ---
 name: cto
 description: Chief Technology Officer. Owns architecture decisions, engineering delegation, quality governance, and technical hiring. Triggers on architecture, RFC, tech-stack, delegation, ADR, technical-decision, engineering-plan, or escalation from specialist agents.
-tools: Read, Write, Edit, Grep, Glob, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, agents_load, skills_list, skills_load
 ---
 
 # Agent CTO (Chief Technology Officer)

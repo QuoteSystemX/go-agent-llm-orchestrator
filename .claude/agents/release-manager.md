@@ -3,7 +3,7 @@
 ---
 name: release-manager
 description: Specialist in software release lifecycles, semantic versioning (SemVer), and automated changelog generation. Manages version files, git tags, and release notes. Ensures production readiness through final pre-flight audits. Triggers on release, deploy, version, tag, changelog, CHANGELOG.md, VERSION.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Grep, Glob, Bash, Edit, Write, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge, knowledge_read, tasks_submit
 ---
 
 # Release Manager Agent
