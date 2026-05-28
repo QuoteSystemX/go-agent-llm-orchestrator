@@ -91,13 +91,37 @@ def _merge_watchdog(rules: dict) -> dict:
     return rules
 
 
+def _baseline_rules() -> dict:
+    """Minimal safe rule set used when policy_rules.json is absent.
+
+    Always includes the watchdog block-list so critical commands are
+    never silently allowed even in degraded mode.
+    """
+    watchdog_patterns = _build_watchdog_patterns()
+    categories = []
+    if watchdog_patterns:
+        categories.append({
+            "name": "forbidden_commands",
+            "severity": "critical",
+            "patterns": watchdog_patterns,
+        })
+    return {"categories": categories, "_source": "baseline_fallback"}
+
+
 def _load_rules() -> dict:
     global _RULES_CACHE, _RULES_MTIME, _WATCHDOG_MTIME
     rp = _rules_path()
     try:
         policy_mtime = os.path.getmtime(rp)
     except OSError:
-        return {}
+        # policy_rules.json absent — emit observability signal and use baseline
+        print(
+            "[policy_guardrail] WARNING: policy_rules.json not found"
+            " — guardrail running on baseline rules only (DEGRADED MODE)",
+            file=sys.stderr,
+        )
+        _write_missing_config_signal()
+        return _baseline_rules()
     try:
         watchdog_mtime = os.path.getmtime(_WATCHDOG_PATH)
     except OSError:
@@ -115,12 +139,32 @@ def _load_rules() -> dict:
             _RULES_MTIME = policy_mtime
             _WATCHDOG_MTIME = watchdog_mtime
         except (json.JSONDecodeError, OSError):
-            _RULES_CACHE = {}
+            _RULES_CACHE = _baseline_rules()
     return _RULES_CACHE
 
 
+def _write_missing_config_signal() -> None:
+    """Write a bus signal so status_report and CI can surface the absent config."""
+    try:
+        signal_path = BUS_DIR / "policy_report.json"
+        BUS_DIR.mkdir(parents=True, exist_ok=True)
+        from datetime import datetime, timezone
+        data = {
+            "status": "MISSING_CONFIG",
+            "message": "policy_rules.json not found — guardrail in degraded mode",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        import json as _json
+        signal_path.write_text(_json.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
 def check_inline(text: str) -> list[dict]:
-    """Scan text against policy_rules.json. Returns list of violation dicts."""
+    """Scan text against policy_rules.json (or baseline rules when absent).
+
+    Returns list of violation dicts. Empty list means clean.
+    """
     rules = _load_rules()
     violations: list[dict] = []
     for category in rules.get("categories", []):

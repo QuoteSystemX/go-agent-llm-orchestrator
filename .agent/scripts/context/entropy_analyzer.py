@@ -113,5 +113,7 @@ def run_foresight_analysis(repo_root=None):
     if not report:
         print("✅ No high risks detected in current codebase.")
 
+    return report
+
 if __name__ == "__main__":
     run_foresight_analysis()

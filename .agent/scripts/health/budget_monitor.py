@@ -43,15 +43,51 @@ def load_guardrails():
             pass
     return DEFAULT_LIMITS
 
-def get_current_usage():
+def get_current_usage() -> int:
+    """Sum token usage from bus telemetry events.
+
+    Reads all telemetry*.json files from BUS_DIR via lib/data_sources.
+    Token proxy strategy (in priority order):
+      1. event["eval_count"] + event["prompt_eval_count"]  (Ollama native fields)
+      2. event["tokens_used"]                               (custom field)
+      3. Fallback: count routing events * AVG_TOKENS_PER_EVENT (heuristic)
+
+    Returns 0 when no telemetry is available — never raises.
     """
-    Sum up token usage from bus events.
-    In a real implementation, this would parse all telemetry logs.
-    """
-    total_tokens = 0
-    # Simulate extraction from bus for this task
-    # In practice: for f in BUS_DIR.glob("telemetry-*.json"): ...
-    return 15000 # Mocked current usage for demonstration
+    AVG_TOKENS_PER_EVENT = 500  # heuristic when no token fields present
+
+    try:
+        from lib.data_sources import read_bus_telemetry
+        events = read_bus_telemetry(BUS_DIR)
+    except Exception:
+        events = []
+
+    if not events:
+        return 0
+
+    total = 0
+    has_token_fields = False
+    routing_count = 0
+
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
+
+        eval_count = ev.get("eval_count", 0) or 0
+        prompt_eval = ev.get("prompt_eval_count", 0) or 0
+        tokens_used = ev.get("tokens_used", 0) or 0
+
+        if eval_count or prompt_eval or tokens_used:
+            total += eval_count + prompt_eval + tokens_used
+            has_token_fields = True
+        elif ev.get("type") == "routing":
+            routing_count += 1
+
+    if not has_token_fields:
+        # Heuristic fallback: routing events as token proxy
+        total = routing_count * AVG_TOKENS_PER_EVENT
+
+    return int(total)
 
 def main() -> None:
     print(f"\n{'='*60}")

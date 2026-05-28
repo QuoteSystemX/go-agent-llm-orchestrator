@@ -337,9 +337,10 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
     
     # 1. Check for Documentation Drift
     try:
-        from drift_detector import detect_drift
-        drifts = detect_drift()
-        drift_count = len(drifts)
+        from drift_detector import run_drift_detection
+        drift_result = run_drift_detection()
+        drifts = drift_result["drifts"]
+        drift_count = drift_result["count"]
         metrics["Drift"] = f"{drift_count} issues"
         score -= min(30, drift_count * 5)
     except:
@@ -680,8 +681,9 @@ def gather_diagnostics(metrics: dict) -> dict:
         # Drift — load drift_detector results
         if "Drift" in k:
             try:
-                from drift_detector import detect_drift
-                drifts = detect_drift()
+                from drift_detector import run_drift_detection
+                drift_res = run_drift_detection()
+                drifts = drift_res["drifts"]
                 items = []
                 for d in (drifts if isinstance(drifts, list) else []):
                     if isinstance(d, dict):

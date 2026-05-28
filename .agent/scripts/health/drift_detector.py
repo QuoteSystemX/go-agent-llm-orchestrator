@@ -20,6 +20,7 @@ from pathlib import Path
 import argparse
 import json
 import re
+from datetime import datetime, timezone
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
@@ -151,6 +152,21 @@ def detect_drift():
                 drifts.append(f"FILE DRIFT: {f} (modified but not in docs)")
                 
     return drifts
+
+def run_drift_detection() -> dict:
+    """Public API wrapper — returns structured drift report for programmatic callers.
+
+    Canonical import interface; status_report.py and other consumers should
+    call this instead of detect_drift() directly.
+    """
+    drifts = detect_drift()
+    return {
+        "drifts": drifts,
+        "passed": len(drifts) == 0,
+        "count": len(drifts),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
 
 def main():
     parser = argparse.ArgumentParser(description="Detect Documentation Drift")
