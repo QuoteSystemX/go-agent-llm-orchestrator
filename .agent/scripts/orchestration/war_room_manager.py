@@ -4,34 +4,29 @@ Listens for incidents and coordinates autonomous fixes.
 """
 
 # Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
 import sys
 import time
 import json
 import subprocess
 from pathlib import Path
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+for _domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    _d_path = str(_SCRIPTS_DIR / _domain)
+    if _d_path not in sys.path:
+        sys.path.append(_d_path)
+
 try:
     from lib.paths import REPO_ROOT
     from lib.common import get_timestamp
-    import bus_manager
+    from context import bus_manager
 except ImportError:
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    sys.path.append(str(_SCRIPTS_DIR.parent))
     from lib.paths import REPO_ROOT
     from lib.common import get_timestamp
-    import bus_manager
+    from context import bus_manager
 
 def manage_war_room(incident_id):
     """Orchestrates the resolution of an incident."""

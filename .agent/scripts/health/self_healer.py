@@ -6,24 +6,30 @@ Part of the Unified Cardinal Enhancements Phase 2.
 """
 
 # Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
 import sys
 import os
 import subprocess
 import traceback
+import json
+from datetime import datetime
 from pathlib import Path
+
+# Unconditional path setup — always add .agent/scripts/ and its subdirs to sys.path
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+for _domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    _d_path = str(_SCRIPTS_DIR / _domain)
+    if _d_path not in sys.path:
+        sys.path.append(_d_path)
+
+try:
+    from lib.paths import REPO_ROOT
+    from context import bus_manager
+except ImportError:
+    sys.path.append(str(_SCRIPTS_DIR.parent))
+    from lib.paths import REPO_ROOT
+    from context import bus_manager
 
 def run_with_healing(command):
     print(f"🔧 Running with Self-Healing: {' '.join(command)}")
@@ -100,10 +106,7 @@ def run_with_healing(command):
             # Save to bus
             bus_dir = Path(".agent/bus/outputs")
             bus_dir.mkdir(parents=True, exist_ok=True)
-            
-            import json
-            from datetime import datetime
-            
+
             repair_request = {
                 "timestamp": datetime.now().isoformat(),
                 "agent": "self-healer",
@@ -120,8 +123,23 @@ def run_with_healing(command):
                 json.dump(repair_request, f, indent=2)
             
             print(f"📝 Repair request saved to: .agent/bus/outputs/{filename}")
-            print("🤖 Agent @debugger or @orchestrator should pick this up.")
-            
+
+            # Push incident to context bus so war_room_manager picks it up
+            try:
+                bus_manager.push(
+                    f"incident_selfheal_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    "incident",
+                    "self_healer",
+                    json.dumps({
+                        "stderr": error_msg,
+                        "script_path": script_path,
+                        "repair_file": str(bus_dir / filename),
+                    })
+                )
+                print("🚨 Incident pushed to context bus — war_room_manager will pick it up.")
+            except Exception as bus_err:
+                print(f"⚠️  Could not push incident to bus: {bus_err}")
+
         return False
 
 if __name__ == "__main__":

@@ -52,15 +52,35 @@ def adapt_personality():
     for pref in prefs:
         print(f"  - Preference: {pref}")
     
-    # Save to context bus for other agents
-    bus_file = REPO_ROOT / ".agent" / "bus" / "personality_profile.json"
+    # Save to context bus — canonical user_dna.json (extended schema)
+    bus_file = REPO_ROOT / ".agent" / "bus" / "user_dna.json"
     bus_file.parent.mkdir(parents=True, exist_ok=True)
     
     import json
+    payload = {
+        "dna": dna,
+        "preferences": prefs,
+        "veto_config": {
+            "mode": "soft",
+            "threshold": 0.4,
+            "auto_reject": False,
+            "confidence_decay": 0.2,
+        },
+        "metadata": {
+            "generated_at": __import__("datetime").datetime.now().isoformat(),
+            "source": "PERSONA.md",
+        },
+    }
     with open(bus_file, "w", encoding="utf-8") as f:
-        json.dump({"dna": dna, "preferences": prefs}, f, indent=2)
+        json.dump(payload, f, indent=2)
     
-    print(f"\n✅ Personality Bridge established. Data saved to bus.")
+    # Legacy cleanup: remove old personality_profile.json if present
+    legacy = REPO_ROOT / ".agent" / "bus" / "personality_profile.json"
+    if legacy.exists():
+        legacy.unlink()
+        print("  🗑 Cleaned up legacy personality_profile.json")
+    
+    print(f"\n✅ Personality Bridge established. Data saved to bus (user_dna.json).")
 
 if __name__ == "__main__":
     adapt_personality()

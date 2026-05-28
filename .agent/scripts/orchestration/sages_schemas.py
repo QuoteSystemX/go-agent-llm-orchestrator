@@ -1,6 +1,85 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass, asdict
-from typing import List
+from typing import List, Optional
+
+# ── DNA / Veto Schemas ──
+
+@dataclass
+class VetoConfig:
+    """Configuration for Advocate veto behavior."""
+    mode: str = "soft"           # "soft" | "hard"
+    threshold: float = 0.4       # alignment_score below this = veto trigger
+    auto_reject: bool = False    # if True, hard veto → automatic reject
+    confidence_decay: float = 0.2  # how much confidence drops on veto
+
+    def validate(self):
+        assert self.mode in ("soft", "hard"), f"Invalid veto mode: {self.mode}"
+        assert 0.0 <= self.threshold <= 1.0
+        assert 0.0 <= self.confidence_decay <= 1.0
+
+@dataclass
+class DNAProfile:
+    """User DNA profile loaded from user_dna.json."""
+    dna: str = "BALANCED"
+    preferences: List[str] = None
+    veto_config: VetoConfig = None
+
+    def __post_init__(self):
+        if self.preferences is None:
+            self.preferences = []
+        if self.veto_config is None:
+            self.veto_config = VetoConfig()
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'DNAProfile':
+        vc_data = data.get("veto_config", {})
+        vc = VetoConfig(
+            mode=vc_data.get("mode", "soft"),
+            threshold=vc_data.get("threshold", 0.4),
+            auto_reject=vc_data.get("auto_reject", False),
+            confidence_decay=vc_data.get("confidence_decay", 0.2),
+        )
+        return cls(
+            dna=data.get("dna", "BALANCED"),
+            preferences=data.get("preferences", []),
+            veto_config=vc,
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "dna": self.dna,
+            "preferences": self.preferences,
+            "veto_config": asdict(self.veto_config),
+        }
+
+@dataclass
+class VetoItem:
+    """Structured veto outcome from User Advocate."""
+    veto: bool = False
+    severity: str = "soft"        # "soft" | "hard"
+    veto_reason: str = ""
+    alignment_score: float = 1.0   # 0.0-1.0
+    suggested_alternative: str = ""
+
+    def validate(self):
+        assert self.severity in ("soft", "hard"), f"Invalid severity: {self.severity}"
+        assert 0.0 <= self.alignment_score <= 1.0
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'VetoItem':
+        return cls(
+            veto=bool(data.get("veto", False)),
+            severity=data.get("severity", "soft"),
+            veto_reason=data.get("veto_reason", data.get("reason", "")),
+            alignment_score=float(data.get("alignment_score", 1.0)),
+            suggested_alternative=data.get("suggested_alternative", ""),
+        )
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+# ── Existing Critique / Verdict Schemas (unchanged below) ──
 
 @dataclass
 class CritiqueItem:

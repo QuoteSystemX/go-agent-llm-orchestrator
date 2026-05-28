@@ -14,6 +14,7 @@ SCRIPTS_DIR = REPO_ROOT / ".agent" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from lib.llm_client import query_llm_safe
+from orchestration.dna_utils import load_dna, build_dna_context, build_dna_block, apply_dna_to_confidence
 
 logger = logging.getLogger("arbitrator")
 
@@ -231,11 +232,16 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
                 validation_passed = False
                 blocker_failures.append(f"{c_id} ({c.category})")
 
-    # -- Round 3: Arbitrator/Judge (reviews both, runs validation checks, outputs structured JSON) --
+    # -- Load user DNA for DNA-aware judging --
+    dna = load_dna()
+    dna_context = build_dna_context(dna)
+
+    # -- Round 3: Arbitrator/Judge (DNA-aware, reviews both, outputs structured JSON) --
     print("[ARBITRATOR] issuing verdict...", end=" ", flush=True)
     judge_prompt = (
         "Review the structured debate and issue a final structured verdict.\n\n"
         f"Plan: {plan_text}\n\n"
+        f"User DNA:\n{dna_context}\n\n"
         f"CRITIQUES (Challenger):\n{json.dumps(crit_list.to_dict(), indent=2)}\n\n"
         f"RESOLUTIONS (Proposer):\n{json.dumps(verd_list.to_dict(), indent=2)}\n\n"
         "Output ONLY valid JSON with these exact keys:\n"
@@ -249,12 +255,21 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
     resp_judge, src_judge, _ = query_llm_safe(
         prompt=judge_prompt,
         model="qwen2.5-coder:32b",
-        system_prompt="You are ARBITRATOR, the neutral high-court judge. Weigh both sides carefully. Derive actual confidence. Output ONLY valid JSON.",
+        system_prompt=build_dna_block(dna, "ARBITRATOR"),
         format_json=True
     )
     print("(via %s)" % src_judge)
 
     verdict = _parse_verdict(resp_judge, plan_id)
+
+    # -- Adjust confidence based on DNA alignment --
+    raw_confidence = verdict.get("confidence", 0.5)
+    aligned_confidence = apply_dna_to_confidence(raw_confidence, 0.7, dna)
+    if abs(aligned_confidence - raw_confidence) > 0.01:
+        verdict["confidence_raw"] = raw_confidence
+        verdict["confidence"] = aligned_confidence
+        verdict["dna_adjusted"] = True
+        print(f"  🧬 DNA-adjusted confidence: {raw_confidence:.2f} -> {aligned_confidence:.2f}")
     
     # Overriding final status if automated validation of blockers failed
     if not validation_passed:

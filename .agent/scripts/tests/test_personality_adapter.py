@@ -54,13 +54,15 @@ class TestPersonalityAdapter(unittest.TestCase):
     def test_adapt(self):
         personality_adapter.adapt_personality()
         
-        bus_file = self.test_root / ".agent" / "bus" / "personality_profile.json"
-        self.assertTrue(bus_file.exists())
+        bus_file = self.test_root / ".agent" / "bus" / "user_dna.json"
+        self.assertTrue(bus_file.exists(), f"user_dna.json not found at {bus_file}")
         
         with open(bus_file) as f:
             data = json.load(f)
             self.assertEqual(data["dna"], "PRAGMATIC / MINIMALIST")
             self.assertIn("No verbose intro", data["preferences"])
+            self.assertIn("veto_config", data, "Extended schema should include veto_config")
+            self.assertIn("metadata", data, "Extended schema should include metadata")
 
 if __name__ == "__main__":
     unittest.main()

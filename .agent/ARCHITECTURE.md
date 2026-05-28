@@ -897,3 +897,6 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/healer_victim.py` | Victim for healing. |
 | `.agent/scripts/dev/linguistic_guardian.py` | Search for Cyrillic characters in critical directories. |
 | `.agent/scripts/knowledge/wiki_search.py` | Wiki Semantic Search — CLI for querying the vector index. |
+| `.agent/scripts/orchestration/dna_utils.py` | DNA Utils — User Profile Loader & Veto Engine for Council of Sages. |
+| `.agent/scripts/orchestration/sages_schemas.py` | Configuration for Advocate veto behavior. |
+| `.agent/scripts/knowledge/adr_observer.py` | ADR Observer - Reactive Wiki Auto-Publisher for Council of Sages. |
