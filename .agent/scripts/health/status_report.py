@@ -601,6 +601,71 @@ The repository is newly provisioned. To build the local intelligence base, run:
     except:
         metrics["Top Agents"] = "Unknown"
 
+    # 14. DNA Profile
+    try:
+        dna_file = BUS_DIR / "user_dna.json"
+        evo_file = BUS_DIR / "dna_evolution_log.json"
+        if dna_file.exists():
+            dna_data = json.loads(dna_file.read_text())
+            dna_tag = dna_data.get("dna", "BALANCED")
+            conf = None
+            if evo_file.exists():
+                evo = json.loads(evo_file.read_text())
+                events = evo.get("events", [])
+                if events:
+                    conf = events[-1].get("confidence")
+            conf_str = f"  conf={conf:.2f}" if conf is not None else ""
+            metrics["DNA Profile"] = f"{dna_tag}{conf_str}"
+        else:
+            metrics["DNA Profile"] = "Not initialized (run dna_orchestrator.py)"
+    except Exception:
+        metrics["DNA Profile"] = "Unknown"
+
+    # 15. Threat Model
+    try:
+        tm_file = REPO_ROOT / ".agent" / "foresight" / "threat_model.json"
+        if tm_file.exists():
+            tm_data = json.loads(tm_file.read_text())
+            meta = tm_data.get("metadata", {})
+            threats = tm_data.get("threats", [])
+            count = meta.get("threat_count", len(threats))
+            ts = meta.get("timestamp", "")[:10]
+            by_sev: dict = {"High": 0, "Medium": 0, "Low": 0}
+            for t in threats:
+                sev = t.get("severity", "Low")
+                by_sev[sev] = by_sev.get(sev, 0) + 1
+            parts = []
+            if by_sev["High"]:
+                parts.append(f"🔴 High:{by_sev['High']}")
+                score -= 5
+            if by_sev["Medium"]:
+                parts.append(f"🟠 Med:{by_sev['Medium']}")
+            if by_sev["Low"]:
+                parts.append(f"🟡 Low:{by_sev['Low']}")
+            sev_str = "  " + " ".join(parts) if parts else "  ✅ clean"
+            metrics["Threat Model"] = f"{count} threat(s){sev_str}  [{ts}]" if count else f"✅ clean  [{ts}]"
+        else:
+            metrics["Threat Model"] = "No report yet (run threat_modeler.py)"
+    except Exception:
+        metrics["Threat Model"] = "Unknown"
+
+    # 16. Guardrail
+    try:
+        policy_file = REPO_ROOT / ".agent" / "config" / "policy_rules.json"
+        guardrail_script = REPO_ROOT / ".agent" / "scripts" / "dev" / "guardrail_middleware.py"
+        if guardrail_script.exists() and policy_file.exists():
+            rules_data = json.loads(policy_file.read_text())
+            categories = rules_data.get("categories", [])
+            rule_count = sum(len(c.get("patterns", [])) for c in categories if isinstance(c, dict))
+            cat_count = len(categories)
+            metrics["Guardrail"] = f"✅ active  {cat_count} categories  {rule_count} patterns"
+        elif guardrail_script.exists():
+            metrics["Guardrail"] = "✅ active  (no policy_rules.json)"
+        else:
+            metrics["Guardrail"] = "Not deployed"
+    except Exception:
+        metrics["Guardrail"] = "Unknown"
+
     return max(0, score), metrics
 
 def gather_diagnostics(metrics: dict) -> dict:

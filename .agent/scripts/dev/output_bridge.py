@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 # Antigravity Domain-Aware Import Logic
 try:
     from lib.paths import REPO_ROOT
@@ -22,6 +22,21 @@ from datetime import datetime
 
 from pathlib import Path as _Path
 SCRIPTS_ROOT = _Path(__file__).resolve().parents[1]
+
+# Guardrail pipeline — singleton, loaded once at import time (zero per-call overhead)
+try:
+    from dev.guardrail_middleware import GuardrailPipeline
+    from health.policy_guardrail import check_inline as _policy_check
+    _guardrail = GuardrailPipeline()
+    _guardrail.register_check(_policy_check, name="policy_rules", halt_on_fail=True)
+    try:
+        from dev.checks.anthropic_safety import anthropic_safety_check as _anthropic_check
+        _guardrail.register_check(_anthropic_check, name="anthropic_safety", halt_on_fail=True)
+    except Exception as _ae:
+        print(f"⚠️  Anthropic safety check unavailable: {_ae}")
+except Exception as _ge:
+    _guardrail = None
+    print(f"⚠️  Guardrail pipeline unavailable: {_ge}")
 
 REQUIRED_SECTIONS = [
     r"🤖 Flow: \*\*\[L[1-4]\]\*\*",
@@ -330,7 +345,15 @@ def main():
         print(f"⚠️ Live audit evaluation failed or skipped: {e}")
         
     save_to_bus(content, agent_name)
-    
+
+    # 5. Guardrail: real-time policy check (must be last — blocks output on violation)
+    if _guardrail is not None:
+        guardrail_result = _guardrail.run(content)
+        if not guardrail_result.passed:
+            guardrail_result.print_veto()
+            guardrail_result.log_to_report()
+            sys.exit(1)
+
     print("✅ SUCCESS: Output validated and mirrored to Bus.")
 
 if __name__ == "__main__":

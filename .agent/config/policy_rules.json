@@ -1,0 +1,91 @@
+{
+  "version": "1.1",
+  "description": "Organizational policy rules for real-time agent output guardrail.",
+  "import_watchdog_commands": true,
+  "categories": [
+    {
+      "name": "forbidden_commands",
+      "severity": "critical",
+      "_note": "Base patterns auto-imported from watchdog_rules.json at runtime. Add org-specific extras here.",
+      "patterns": []
+    },
+    {
+      "name": "credential_leak",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "hardcoded_password",
+          "regex": "password[\"']?\\s*[:=]\\s*[\"'][^\"'\\s]{4,}[\"']",
+          "description": "Hardcoded password in agent output",
+          "block_on_match": true
+        },
+        {
+          "id": "aws_access_key",
+          "regex": "AKIA[0-9A-Z]{16}",
+          "description": "AWS access key ID in output",
+          "block_on_match": true
+        },
+        {
+          "id": "aws_secret_key",
+          "regex": "aws[_-]?secret[_-]?access[_-]?key\\s*[:=]\\s*[\"'][^\"']+[\"']",
+          "description": "AWS secret access key in output",
+          "block_on_match": true
+        },
+        {
+          "id": "private_key_block",
+          "regex": "-----BEGIN\\s+(RSA|EC|OPENSSH)\\s+PRIVATE\\s+KEY-----",
+          "description": "Private key material in output",
+          "block_on_match": true
+        },
+        {
+          "id": "github_token",
+          "regex": "ghp_[A-Za-z0-9]{36}",
+          "description": "GitHub personal access token in output",
+          "block_on_match": true
+        }
+      ]
+    },
+    {
+      "name": "injection_strings",
+      "severity": "high",
+      "patterns": [
+        {
+          "id": "prompt_injection_ignore",
+          "regex": "ignore (all |previous |above |prior )(instructions|rules|system|constraints)",
+          "description": "Prompt injection attempt: ignore instructions",
+          "block_on_match": true
+        },
+        {
+          "id": "prompt_injection_pretend",
+          "regex": "pretend (you are|you're|you have no|you don't have)",
+          "description": "Prompt injection attempt: pretend persona swap",
+          "block_on_match": true
+        },
+        {
+          "id": "jailbreak_dan",
+          "regex": "do anything now|DAN mode|jailbreak mode",
+          "description": "Known jailbreak pattern in output",
+          "block_on_match": true
+        }
+      ]
+    },
+    {
+      "name": "hallucination_markers",
+      "severity": "medium",
+      "patterns": [
+        {
+          "id": "deferred_placeholder",
+          "regex": "TODO:\\s*create this file later|placeholder.*implement later",
+          "description": "Deferred/placeholder output instead of real implementation",
+          "block_on_match": false
+        },
+        {
+          "id": "fabricated_file_path",
+          "regex": "/path/to/your/|/your/project/|/example/path/",
+          "description": "Generic placeholder path in output (possible hallucination)",
+          "block_on_match": false
+        }
+      ]
+    }
+  ]
+}

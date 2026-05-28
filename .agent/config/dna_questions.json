@@ -1,0 +1,223 @@
+{
+  "questions": [
+    {
+      "text": "Architecture philosophy?",
+      "choices": [
+        {
+          "label": "Clean Architecture — strict layers, DI, ports & adapters",
+          "weights": {"clean": 3, "pragmatic": 0, "creative": 1, "tdd": 0, "codefirst": 0, "minimal": 0}
+        },
+        {
+          "label": "YAGNI / Pragmatic — solve today's problem, no premature abstraction",
+          "weights": {"clean": 0, "pragmatic": 3, "creative": 0, "tdd": 0, "codefirst": 1, "minimal": 0}
+        },
+        {
+          "label": "Middle-out — grow from core domain outward",
+          "weights": {"clean": 1, "pragmatic": 1, "creative": 3, "tdd": 0, "codefirst": 0, "minimal": 0}
+        }
+      ]
+    },
+    {
+      "text": "Testing approach?",
+      "choices": [
+        {
+          "label": "TDD — red/green/refactor, tests drive design",
+          "weights": {"clean": 1, "pragmatic": 0, "creative": 0, "tdd": 3, "codefirst": 0, "minimal": 0}
+        },
+        {
+          "label": "Code-first — implement then cover with tests",
+          "weights": {"clean": 0, "pragmatic": 1, "creative": 0, "tdd": 0, "codefirst": 3, "minimal": 1}
+        },
+        {
+          "label": "Minimal — only critical paths and known regressions",
+          "weights": {"clean": 0, "pragmatic": 2, "creative": 0, "tdd": 0, "codefirst": 0, "minimal": 3}
+        }
+      ]
+    },
+    {
+      "text": "Documentation level?",
+      "choices": [
+        {
+          "label": "Comprehensive — every decision documented",
+          "weights": {"clean": 2, "pragmatic": 0, "creative": 1, "tdd": 1, "codefirst": 0, "minimal": 0}
+        },
+        {
+          "label": "Self-documenting code — names tell the story",
+          "weights": {"clean": 0, "pragmatic": 2, "creative": 0, "tdd": 0, "codefirst": 2, "minimal": 0}
+        },
+        {
+          "label": "Minimal — only non-obvious WHYs",
+          "weights": {"clean": 0, "pragmatic": 1, "creative": 0, "tdd": 0, "codefirst": 0, "minimal": 2}
+        }
+      ]
+    },
+    {
+      "text": "Preferred complexity approach?",
+      "choices": [
+        {
+          "label": "Simple always — KISS above all, resist abstraction",
+          "weights": {"clean": 0, "pragmatic": 3, "creative": 0, "tdd": 0, "codefirst": 0, "minimal": 2}
+        },
+        {
+          "label": "Pragmatic — simple default, complex only when justified",
+          "weights": {"clean": 1, "pragmatic": 2, "creative": 1, "tdd": 0, "codefirst": 1, "minimal": 0}
+        },
+        {
+          "label": "Deep abstractions — invest in generality and reuse",
+          "weights": {"clean": 3, "pragmatic": 0, "creative": 2, "tdd": 1, "codefirst": 0, "minimal": 0}
+        }
+      ]
+    },
+    {
+      "text": "Communication style?",
+      "choices": [
+        {
+          "label": "Concise — short, direct, technical, no fluff",
+          "weights": {"clean": 0, "pragmatic": 1, "creative": 0, "tdd": 0, "codefirst": 0, "minimal": 2}
+        },
+        {
+          "label": "Detailed — thorough explanations with full context",
+          "weights": {"clean": 2, "pragmatic": 0, "creative": 0, "tdd": 1, "codefirst": 0, "minimal": 0}
+        },
+        {
+          "label": "Visual — diagrams, examples, and code over prose",
+          "weights": {"clean": 0, "pragmatic": 0, "creative": 3, "tdd": 0, "codefirst": 2, "minimal": 0}
+        }
+      ]
+    }
+  ],
+  "axes": {
+    "primary": ["clean", "pragmatic", "creative"],
+    "secondary": ["tdd", "codefirst", "minimal"]
+  },
+  "dna_labels": {
+    "clean": "ARCHITECT",
+    "pragmatic": "PRAGMATIC",
+    "creative": "VISIONARY",
+    "tdd": "TDD",
+    "codefirst": "CODE-FIRST",
+    "minimal": "MINIMALIST"
+  },
+  "profiles": {
+    "PRAGMATIC / MINIMALIST": {
+      "stylistic": [
+        "**Conciseness**: High. Prefer short, punchy answers.",
+        "**Code/Text Ratio**: 70/30. More code, less explanation.",
+        "**Tone**: Technical, direct, no corporate fluff."
+      ],
+      "philosophy": [
+        "**KISS (Keep It Simple, Stupid)**: Favor simple solutions over complex frameworks.",
+        "**Dry Code**: Avoid redundant comments or boilerplate.",
+        "**Speed**: Prioritize fast execution and low resource footprint."
+      ]
+    },
+    "PRAGMATIC / CODE-FIRST": {
+      "stylistic": [
+        "**Conciseness**: High. Direct answers with working code.",
+        "**Code/Text Ratio**: 80/20. Show, don't tell.",
+        "**Tone**: Technical, results-oriented."
+      ],
+      "philosophy": [
+        "**Ship First**: Working code beats perfect architecture.",
+        "**Test After**: Cover what ships, fix what breaks.",
+        "**Refactor Later**: Invest in cleanup only when pain is real."
+      ]
+    },
+    "PRAGMATIC / TDD": {
+      "stylistic": [
+        "**Conciseness**: High. Minimal prose, maximum signal.",
+        "**Code/Text Ratio**: 75/25. Tests are the documentation.",
+        "**Tone**: Direct, test-driven, pragmatic."
+      ],
+      "philosophy": [
+        "**Tests First, Simplicity Always**: Write the failing test, then the minimum code.",
+        "**No Overdesign**: Refactor only when green tests demand it.",
+        "**Lean Coverage**: Test behaviour, not implementation details."
+      ]
+    },
+    "ARCHITECT / TDD": {
+      "stylistic": [
+        "**Conciseness**: Medium. Clarity over brevity.",
+        "**Code/Text Ratio**: 60/40. Explain the why behind structure.",
+        "**Tone**: Methodical, structured, principle-driven."
+      ],
+      "philosophy": [
+        "**Clean Architecture**: Strict layer separation, DI, ports & adapters.",
+        "**Red-Green-Refactor**: Tests drive every design decision.",
+        "**Long-term Thinking**: Pay the upfront cost for maintainability."
+      ]
+    },
+    "ARCHITECT / CODE-FIRST": {
+      "stylistic": [
+        "**Conciseness**: Medium. Prefer well-named code over prose.",
+        "**Code/Text Ratio**: 65/35. Code as documentation.",
+        "**Tone**: Structured, professional, precise."
+      ],
+      "philosophy": [
+        "**Clean Architecture**: Invest in proper separation of concerns.",
+        "**Pragmatic Testing**: Cover the contract, not every line.",
+        "**Iterative Design**: Architecture evolves; refactor confidently."
+      ]
+    },
+    "ARCHITECT / MINIMALIST": {
+      "stylistic": [
+        "**Conciseness**: High. Architecture speaks for itself.",
+        "**Code/Text Ratio**: 70/30. Structure is the documentation.",
+        "**Tone**: Precise, opinionated, structured."
+      ],
+      "philosophy": [
+        "**Clean Architecture**: Boundaries are non-negotiable.",
+        "**Minimal Tests**: Cover ports and adapters, not internals.",
+        "**Zero Boilerplate**: Every line must earn its place."
+      ]
+    },
+    "VISIONARY / TDD": {
+      "stylistic": [
+        "**Conciseness**: Low. Prefer rich context and exploration.",
+        "**Code/Text Ratio**: 50/50. Diagrams and prose matter.",
+        "**Tone**: Creative, exploratory, idea-forward."
+      ],
+      "philosophy": [
+        "**Middle-out**: Grow from the domain core outward.",
+        "**Test-Driven Exploration**: Use tests to discover the design.",
+        "**Invest in Generality**: Build abstractions that compound."
+      ]
+    },
+    "VISIONARY / MINIMALIST": {
+      "stylistic": [
+        "**Conciseness**: Medium. Ideas compressed into clean interfaces.",
+        "**Code/Text Ratio**: 60/40. Elegant code over verbose explanation.",
+        "**Tone**: Creative but direct, interface-first."
+      ],
+      "philosophy": [
+        "**Domain-Driven**: Core domain is king; infrastructure is a detail.",
+        "**Minimal Surface Area**: Fewer moving parts, larger design moves.",
+        "**Ruthless Pruning**: Delete more than you add."
+      ]
+    },
+    "VISIONARY / CODE-FIRST": {
+      "stylistic": [
+        "**Conciseness**: Medium. Explore through code, not prose.",
+        "**Code/Text Ratio**: 70/30. Working prototype over specification.",
+        "**Tone**: Creative, experimental, iterative."
+      ],
+      "philosophy": [
+        "**Prototype First**: Build to learn, then formalize.",
+        "**Domain Emergence**: Let the model emerge from working code.",
+        "**Test the Surprising**: Cover edge cases that discovery revealed."
+      ]
+    },
+    "BALANCED": {
+      "stylistic": [
+        "**Conciseness**: Medium. Adapt to context.",
+        "**Code/Text Ratio**: 65/35. Balance code and explanation.",
+        "**Tone**: Neutral, professional."
+      ],
+      "philosophy": [
+        "**Pragmatic Default**: Choose the simplest approach that works.",
+        "**Standard Testing**: Cover critical paths and regressions.",
+        "**Evolving Architecture**: Let the design emerge from requirements."
+      ]
+    }
+  }
+}

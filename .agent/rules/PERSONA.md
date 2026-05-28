@@ -1,21 +1,21 @@
 # User Personality Profile (DNA) 🎭
 
-This document defines the preferred communication style, technical depth, and coding philosophy for the current workspace.
+This document defines the preferred communication style, technical depth, and coding philosophy.
 
-## 🧬 Core DNA: [PRAGMATIC / MINIMALIST]
+## 🧬 Core DNA: [ARCHITECT / TDD]
 
 ### 🛰️ Stylistic Preferences
 
-- **Conciseness**: High. Prefer short, punchy answers.
-- **Code/Text Ratio**: 70/30. More code, less explanation.
-- **Tone**: Technical, direct, no corporate fluff.
+- **Conciseness**: Medium. Clarity over brevity.
+- **Code/Text Ratio**: 60/40. Explain the why behind structure.
+- **Tone**: Methodical, structured, principle-driven.
 
 ### 🛠️ Technical Philosophy
 
-- **KISS (Keep It Simple, Stupid)**: Favor simple solutions over complex frameworks.
-- **Dry Code**: Avoid redundant comments or boilerplate.
-- **Speed**: Prioritize fast execution and low resource footprint.
+- **Clean Architecture**: Strict layer separation, DI, ports & adapters.
+- **Red-Green-Refactor**: Tests drive every design decision.
+- **Long-term Thinking**: Pay the upfront cost for maintainability.
 
 ---
 > [!NOTE]
-> This profile is automatically read by `personality_adapter.py` to tune agent behavior.
+> This profile is automatically read by `personality_adapter.py`.

@@ -92,6 +92,18 @@ def review_diff():
     except Exception as e:
         print(f"⚠️ Conflict check skipped: {e}")
 
+    # INTEGRATION: STRIDE Threat Model — analyze staged diff for security risks
+    try:
+        import threat_modeler
+        threats = threat_modeler.analyze()
+        high = [t for t in threats if t.get("severity") == "High" and not t.get("mitigation", "").strip()]
+        if high:
+            print(f"❌ COMMIT BLOCKED: {len(high)} unmitigated High-severity threat(s) detected.")
+            print("Fix or add mitigations, then re-stage.")
+            return False, "Unmitigated High-severity threats."
+    except Exception as e:
+        print(f"⚠️ Threat modeling skipped: {e}")
+
     # NEW: Automatically trace tasks on successful review
     try:
         import task_tracer

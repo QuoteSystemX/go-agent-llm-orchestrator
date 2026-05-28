@@ -2,6 +2,9 @@
 """
 Policy Guardrail - AI Safety Audit
 Enforces architectural and design policies (e.g., Purple Ban, Secret Scanning).
+
+Inline API (for pipeline integration):
+    violations = check_inline(text)   # list[dict], empty = clean
 """
 
 # Antigravity Domain-Aware Import Logic
@@ -27,6 +30,120 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS_DIR = REPO_ROOT / ".agent" / "bus"
+_WATCHDOG_PATH = REPO_ROOT / ".agent" / "config" / "watchdog_rules.json"
+_RULES_CACHE: dict = {}
+_RULES_MTIME: float = 0.0
+_WATCHDOG_MTIME: float = 0.0
+
+
+# ============================================================================
+#  INLINE CHECK API (used by GuardrailPipeline)
+# ============================================================================
+
+def _rules_path() -> Path:
+    return REPO_ROOT / ".agent" / "config" / "policy_rules.json"
+
+
+def _build_watchdog_patterns() -> list[dict]:
+    """Convert watchdog_rules.json block-list into policy pattern dicts."""
+    try:
+        data = json.loads(_WATCHDOG_PATH.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    block = data.get("dangerous_operations", {}).get("commands", {}).get("block", [])
+    return [
+        {
+            "id": f"watchdog_{i:02d}",
+            "regex": re.escape(pattern),
+            "description": f"Watchdog block-listed command: {pattern}",
+            "block_on_match": True,
+            "_source": "watchdog_rules.json",
+        }
+        for i, pattern in enumerate(block)
+        if pattern.strip()
+    ]
+
+
+def _merge_watchdog(rules: dict) -> dict:
+    """Inject watchdog block-list into forbidden_commands if import flag is set."""
+    if not rules.get("import_watchdog_commands", False):
+        return rules
+
+    imported = _build_watchdog_patterns()
+    if not imported:
+        return rules
+
+    import copy
+    rules = copy.deepcopy(rules)
+    for cat in rules.get("categories", []):
+        if cat.get("name") == "forbidden_commands":
+            existing_ids = {p.get("id") for p in cat.get("patterns", [])}
+            cat["patterns"] = cat.get("patterns", []) + [
+                p for p in imported if p["id"] not in existing_ids
+            ]
+            return rules
+
+    rules.setdefault("categories", []).append({
+        "name": "forbidden_commands",
+        "severity": "critical",
+        "patterns": imported,
+    })
+    return rules
+
+
+def _load_rules() -> dict:
+    global _RULES_CACHE, _RULES_MTIME, _WATCHDOG_MTIME
+    rp = _rules_path()
+    try:
+        policy_mtime = os.path.getmtime(rp)
+    except OSError:
+        return {}
+    try:
+        watchdog_mtime = os.path.getmtime(_WATCHDOG_PATH)
+    except OSError:
+        watchdog_mtime = 0.0
+
+    stale = (
+        policy_mtime != _RULES_MTIME
+        or watchdog_mtime != _WATCHDOG_MTIME
+        or not _RULES_CACHE
+    )
+    if stale:
+        try:
+            raw = json.loads(rp.read_text())
+            _RULES_CACHE = _merge_watchdog(raw)
+            _RULES_MTIME = policy_mtime
+            _WATCHDOG_MTIME = watchdog_mtime
+        except (json.JSONDecodeError, OSError):
+            _RULES_CACHE = {}
+    return _RULES_CACHE
+
+
+def check_inline(text: str) -> list[dict]:
+    """Scan text against policy_rules.json. Returns list of violation dicts."""
+    rules = _load_rules()
+    violations: list[dict] = []
+    for category in rules.get("categories", []):
+        cat_name = category.get("name", "unknown")
+        cat_severity = category.get("severity", "medium")
+        for pattern in category.get("patterns", []):
+            regex = pattern.get("regex", "")
+            if not regex:
+                continue
+            try:
+                match = re.search(regex, text, re.IGNORECASE)
+            except re.error:
+                continue
+            if match:
+                violations.append({
+                    "rule_id": pattern.get("id", "unknown"),
+                    "category": cat_name,
+                    "severity": cat_severity,
+                    "description": pattern.get("description", "Policy violation"),
+                    "match": match.group(0)[:120],
+                    "block_on_match": pattern.get("block_on_match", True),
+                })
+    return violations
 
 # Policies
 PURPLE_FORBIDDEN = [r"purple", r"violet", r"indigo", r"#800080", r"rgb\(128,\s*0,\s*128\)"]

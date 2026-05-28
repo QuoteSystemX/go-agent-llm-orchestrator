@@ -221,7 +221,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 
 | Skill                   | Description              |
 | ----------------------- | ------------------------ |
-| `vulnerability-scanner` | Security auditing, OWASP |
+| `vulnerability-scanner` | Security auditing, OWASP — includes `entropy_scanner.py` (Shannon entropy secrets detection, multiprocessing) |
 | `red-team-tactics`      | Offensive security       |
 
 ### Architecture & Planning
@@ -372,8 +372,12 @@ Master validation scripts that orchestrate skill-level scripts.
 | `model_benchmark.py`  | Model speed & quality benchmarking | Model Selection          |
 | `knowledge_synergy.py` | Cross-project knowledge sync    | Post-Mortem, ADR export  |
 | `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
-| `war_room_manager.py`  | Multi-agent incident resolution | After incident           |
+| `war_room_manager.py`  | Active SRE Incident Reflex Loop — real Git-Ops (_create_branch, _run_validation, _commit_fix, _report_pr), repair file scanner | After incident |
 | `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
+| `dna_onboarder.py`     | Interactive Q&A wizard — computes DNA tag via weighted axis scoring, rewrites PERSONA.md | First run / --force |
+| `dna_git_analyzer.py`  | Objective DNA profiling from git history — weighted signal fusion on 6 axes, discrepancy report vs wizard | Onboarding / audit |
+| `dna_session_learner.py` | Hybrid drift detector — multi-signal fusion (B) + event-log history (C); stability, drift, confidence_Δ | Post-session       |
+| `dna_orchestrator.py`   | Unified DNA pipeline — phases 1-3 with confidence-weighted merge; modes manual/semi/auto; evolution log | On-demand / cron   |
 | `resource_forecaster.py` | Token & time budget prediction | Phase 22/23 Gateway Audit |
 | `hidden_war_room.py`   | 4-participant agent debate      | Strategic thinking & Veto |
 | `truth_validator.py`   | Cross-source truth check        | Requirement validation    |
@@ -382,6 +386,8 @@ Master validation scripts that orchestrate skill-level scripts.
 | `auto_adr_drafter.py`  | Autonomous ADR drafting        | Phase 3 Architecture     |
 | `browser_resilience.py` | Browser connectivity manager     | Every web/browser task   |
 | `output_bridge.py`     | Agent output validator & Red-Team Gate | Every final response     |
+| `guardrail_middleware.py` | Extensible GuardrailPipeline — composes check functions with halt_on_fail semantics | Every final response |
+| `checks/anthropic_safety.py` | Anthropic LLM safety classifier (haiku) — harmful_instructions, prompt_injection, pii_leak, jailbreak | Every final response |
 | `model_router.py`     | Unified Provider Router (Gemini/Claude) | Every subagent call      |
 | `self_healer.py`       | Autonomous Script Repair Wrapper       | Tool execution           |
 | `skill_discovery.py`   | JIT Skill Acquisition (URL Fetcher)    | Knowledge expansion      |
@@ -832,7 +838,8 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/analysis/impact_analyzer.py` | Estimates blast radius of a change across the codebase before execution. |
 | `.agent/scripts/dev/code_polisher.py` | Applies senior-level polish: removes dead code, enforces naming conventions, simplifies logic. |
 | `.agent/scripts/misc/failure_correlator.py` | Cross-references recent failures with LESSONS_LEARNED to detect repeated mistakes. |
-| `.agent/scripts/health/threat_modeler.py` | STRIDE-based threat modeler — generates threat model for a given component or PR. |
+| `.agent/scripts/health/threat_modeler.py` | LLM-powered STRIDE threat modeler — parses staged git diffs, validates threat dicts (threat_type/stride_category/severity/component/description/mitigation), saves structured report to `.agent/foresight/threat_model.json`, prints audit warning for unmitigated High-severity threats. |
+| `.agent/scripts/health/tests/test_threat_modeler.py` | 20 unit tests for threat_modeler.py covering diff parsing, schema validation, LLM fallback, save/load, and audit warning logic. |
 | `.agent/scripts/analysis/resource_optimizer.py` | Economic audit — identifies high-token operations and suggests cheaper alternatives. |
 | `.agent/scripts/analysis/ghost_prototyper.py` | Creates throwaway proof-of-concept branches to validate architectural hypotheses. |
 | `.agent/scripts/chaos/autonomous_fuzzer.py` | Generates randomized edge-case inputs to stress-test functions and APIs. |
