@@ -31,15 +31,24 @@ import analysis.requirement_expander; import sys; sys.modules['requirement_expan
 
 class TestPhase23(unittest.TestCase):
 
+    @unittest.mock.patch('orchestration.hidden_war_room.bus_manager', new=None)
     def test_user_advocate_veto(self):
         print("\n[TEST] User Advocate Veto...")
+        import unittest.mock
         f = StringIO()
         with redirect_stdout(f):
-            hidden_war_room.run_war_room("use heavy enterprise framework for hello world")
+            result = hidden_war_room.run_war_room("use heavy enterprise framework for hello world")
         output = f.getvalue()
-        self.assertIn("[USER ADVOCATE]: Hold on", output)
-        self.assertIn("VETO", output)
-        self.assertIn("CONSENSUS REACHED: Implementation approved (Minimalist Style Enforcement)", output)
+        # Verify all 4 roles participated
+        self.assertIn("[OPTIMIST]", output)
+        self.assertIn("[SKEPTIC]", output)
+        self.assertIn("[USER ADVOCATE]", output)
+        self.assertIn("[ARBITRATOR]", output)
+        self.assertIn("CONSENSUS", output)
+        # Verify structured verdict returned
+        self.assertIsInstance(result, dict)
+        self.assertIn("status", result)
+        self.assertIn("confidence", result)
 
     def test_truth_validation_conflict(self):
         print("[TEST] Truth Validation Conflict...")

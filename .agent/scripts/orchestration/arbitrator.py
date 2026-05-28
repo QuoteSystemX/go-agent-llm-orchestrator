@@ -1,91 +1,357 @@
 #!/usr/bin/env python3
-"""Arbitrator — The Judge of the Council of Sages.
-Manages the consensus flow between Proposer and Red-Team.
+"""Arbitrator -- Real LLM Judge for Council of Sages.
+
+3-round debate: Proposer -> Challenger -> Arbitrator/Judge.
+Fallback chain: Ollama -> Cloud -> Stub. Never crashes.
+Dynamic timeout by model. Real confidence (not hardcoded 0.92).
 """
 
-# Antigravity Domain-Aware Import Logic
-try:
-    from lib.paths import REPO_ROOT
-except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
-
-import sys
-import time
-import json
+import sys, json, logging, subprocess, time
 from pathlib import Path
 
-try:
-    import bus_manager
-    from lib.common import get_timestamp
-except ImportError:
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
-    import bus_manager
-    from lib.common import get_timestamp
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SCRIPTS_DIR = REPO_ROOT / ".agent" / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
 
-def run_consensus(plan_id):
-    """Manages the 3-step consensus dance."""
-    print(f"⚖️ Arbitrator: Starting consensus for plan {plan_id}...")
+from lib.llm_client import query_llm_safe
+
+logger = logging.getLogger("arbitrator")
+
+# Module-level bus_manager reference so tests can patch 'orchestration.arbitrator.bus_manager'
+try:
+    from context import bus_manager  # type: ignore
+except Exception:
+    bus_manager = None  # type: ignore
+
+EXT_TO_CONCEPTS = {
+    ".go": "go",
+    ".py": "python",
+    ".sql": "database",
+    ".prisma": "database",
+    ".ts": "frontend",
+    ".tsx": "frontend",
+    ".js": "frontend",
+    ".jsx": "frontend",
+}
+
+def _get_staged_files() -> list:
+    """Run git diff --cached --name-only to fetch staged changeset files."""
+    try:
+        res = subprocess.run(["git", "diff", "--cached", "--name-only"], capture_output=True, text=True, check=True)
+        return [f.strip() for f in res.stdout.splitlines() if f.strip()]
+    except Exception as e:
+        logger.warning("Failed to get staged files: %s", e)
+        return []
+
+def _detect_staged_concepts(files: list) -> str:
+    """Map staged file paths and extensions to concept keywords for the auctioneer."""
+    concepts = set()
+    for f in files:
+        f_lower = f.lower()
+        # Path-based overrides
+        if any(kw in f_lower for kw in ["auth", "security", "keys", "jwt", "session"]):
+            concepts.add("security")
+        if any(kw in f_lower for kw in ["wsl", "infra", "docker", "k8s", "kubernetes"]):
+            concepts.add("infra")
+        # Extension-based overrides
+        for ext, concept in EXT_TO_CONCEPTS.items():
+            if f_lower.endswith(ext):
+                concepts.add(concept)
+    return " ".join(sorted(concepts))
+
+def _load_agent_rules(agent_name: str) -> str:
+    """Locate agent MD file recursively and return its rule body (excluding frontmatter)."""
+    agents_dir = REPO_ROOT / ".agent" / "agents"
+    for p in agents_dir.rglob(f"{agent_name}.md"):
+        try:
+            content = p.read_text(encoding="utf-8")
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                if len(parts) >= 3:
+                    return parts[2].strip()
+            return content.strip()
+        except Exception as e:
+            logger.warning("Failed to read rules for agent %s: %s", agent_name, e)
+    return ""
+
+
+
+def _load_schemas():
+    try:
+        orchestration = __import__("orchestration.sages_schemas", fromlist=["CritiqueList", "VerdictList"])
+        return orchestration.CritiqueList, orchestration.VerdictList
+    except ImportError:
+        sys.path.insert(0, str(SCRIPTS_DIR / "orchestration"))
+        sages_schemas = __import__("sages_schemas", fromlist=["CritiqueList", "VerdictList"])
+        return sages_schemas.CritiqueList, sages_schemas.VerdictList
+
+CritiqueList, VerdictList = _load_schemas()
+
+def _extract_json_block(text: str) -> str:
+    import re
+    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+    if match:
+        return match.group(0)
+    return text
+
+
+def run_consensus(plan_id: str, plan_text: str = "") -> dict:
+    """Run 3-round debate: Proposer -> Challenger -> Judge."""
+    if not plan_text:
+        plan_text = _load_plan(plan_id)
+
+    print("=== Arbitrator: Starting consensus for plan '%s' ===" % plan_id)
+
+    # Dynamic Expert Selection using agent_auctioneer.py
+    expert_rules = ""
+    staged_files = _get_staged_files()
+    if staged_files:
+        concepts = _detect_staged_concepts(staged_files)
+        if concepts:
+            try:
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                try:
+                    orchestration = __import__("orchestration.agent_auctioneer", fromlist=["find_candidates"])
+                    find_candidates = orchestration.find_candidates
+                except ImportError:
+                    sys.path.insert(0, str(SCRIPTS_DIR / "orchestration"))
+                    agent_auctioneer = __import__("agent_auctioneer", fromlist=["find_candidates"])
+                    find_candidates = agent_auctioneer.find_candidates
+                candidates = find_candidates(concepts)
+                # Keep top 2 unique specialist candidates (excluding orchestrator/red-team itself)
+                top_agents = []
+                for c in candidates:
+                    a_id = c["id"]
+                    if a_id not in ["orchestrator", "red-team"] and len(top_agents) < 2:
+                        top_agents.append(a_id)
+                
+                if top_agents:
+                    print(f"🧙 Council of Sages: Summoning experts: {', '.join(['@' + a for a in top_agents])}")
+                    # Load rules
+                    rules_list = []
+                    for agent in top_agents:
+                        rules = _load_agent_rules(agent)
+                        if rules:
+                            rules_list.append(f"=== Expert Rules for @{agent} ===\n{rules}")
+                    expert_rules = "\n\n".join(rules_list)
+            except Exception as e:
+                logger.warning("Failed to load expert Sages rules: %s", e)
+
+    # -- Round 1: Challenger (red-team, attacks, outputs Critique JSON) --
+    print("[CHALLENGER] attacking plan...", end=" ", flush=True)
+    challenger_sys = (
+        "You are CHALLENGER, a ruthless security and architecture auditor.\n"
+        "Find every weakness. Be specific with risk areas.\n"
+        "You MUST output ONLY a valid JSON object conforming to this schema:\n"
+        "{\n"
+        "  \"critiques\": [\n"
+        "    {\n"
+        "      \"id\": \"CRIT-001\",\n"
+        "      \"category\": \"security\" | \"performance\" | \"design\",\n"
+        "      \"severity\": \"blocker\" | \"warning\",\n"
+        "      \"description\": \"Detailed description of the issue\",\n"
+        "      \"suggested_action\": \"Remediation action to fix the issue\"\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "Output ONLY valid raw JSON."
+    )
+    if expert_rules:
+        challenger_sys += f"\n\nIn addition, you must audit against these domain-expert rules:\n{expert_rules}"
+
+    resp_chal, src_chal, _ = query_llm_safe(
+        prompt="Critique the following architectural plan with maximum severity.\n\nPlan:\n" + plan_text,
+        model="codestral:22b",
+        system_prompt=challenger_sys,
+        format_json=True
+    )
+    print("(via %s)" % src_chal)
     
-    plan = bus_manager.wait_for_object(plan_id, timeout=2)
-    if not plan:
-        print(f"❌ Plan {plan_id} not found.")
-        return
+    # Safely parse Challenger output
+    try:
+        crit_list = CritiqueList.from_dict(json.loads(_extract_json_block(resp_chal)))
+        print(f"  Successfully parsed {len(crit_list.critiques)} critiques")
+    except Exception as e:
+        logger.warning("Failed to parse Challenger JSON, falling back to dummy list: %s", e)
+        crit_list = CritiqueList(critiques=[])
+
+    # -- Round 2: Proposer (architect, defends, takes Critique JSON, outputs Verdict JSON) --
+    print("[PROPOSER] defending plan...", end=" ", flush=True)
+    proposer_sys = (
+        "You are PROPOSER, a confident architect.\n"
+        "You have received a list of architectural critiques. You must respond to each point.\n"
+        "You MUST output ONLY a valid JSON object conforming to this schema:\n"
+        "{\n"
+        "  \"resolutions\": [\n"
+        "    {\n"
+        "      \"critique_id\": \"ID of the critique point (e.g. CRIT-001)\",\n"
+        "      \"accepted\": true | false,\n"
+        "      \"resolution\": \"Detailed explanation of why you accept/reject and how you resolve it\"\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "Output ONLY valid raw JSON."
+    )
+    if expert_rules:
+        proposer_sys += f"\n\nIn addition, you must adhere to these domain-expert rules:\n{expert_rules}"
+
+    prompt_prop = (
+        "Defend the following architectural plan by responding to each point in the critiques JSON.\n\n"
+        f"Plan:\n{plan_text}\n\n"
+        f"Critiques:\n{json.dumps(crit_list.to_dict(), indent=2)}"
+    )
+
+    resp_prop, src_prop, _ = query_llm_safe(
+        prompt=prompt_prop,
+        model="qwen2.5-coder:14b",
+        system_prompt=proposer_sys,
+        format_json=True
+    )
+    print("(via %s)" % src_prop)
+
+    # Safely parse Proposer output
+    try:
+        verd_list = VerdictList.from_dict(json.loads(_extract_json_block(resp_prop)))
+        print(f"  Successfully parsed {len(verd_list.resolutions)} resolutions")
+    except Exception as e:
+        logger.warning("Failed to parse Proposer JSON, falling back to dummy list: %s", e)
+        verd_list = VerdictList(resolutions=[])
+
+    # Automated Validation step: check that all blockers are resolved with accepted=True
+    critique_map = {c.id: c for c in crit_list.critiques}
+    resolutions_map = {r.critique_id: r for r in verd_list.resolutions}
     
-    # Step 1: Request Critique
-    print("⚖️ Arbitrator: Requesting Red-Team attack...")
-    bus_manager.push(
-        f"critique_{plan_id}",
-        "requirement",
-        "arbitrator",
-        json.dumps({
-            "agent": "red-team",
-            "instruction": f"Critique the plan {plan_id} with maximum severity.",
-            "plan_ref": plan_id
-        })
+    validation_passed = True
+    blocker_failures = []
+    
+    for c_id, c in critique_map.items():
+        if c.severity == "blocker":
+            res = resolutions_map.get(c_id)
+            if not res or not res.accepted:
+                validation_passed = False
+                blocker_failures.append(f"{c_id} ({c.category})")
+
+    # -- Round 3: Arbitrator/Judge (reviews both, runs validation checks, outputs structured JSON) --
+    print("[ARBITRATOR] issuing verdict...", end=" ", flush=True)
+    judge_prompt = (
+        "Review the structured debate and issue a final structured verdict.\n\n"
+        f"Plan: {plan_text}\n\n"
+        f"CRITIQUES (Challenger):\n{json.dumps(crit_list.to_dict(), indent=2)}\n\n"
+        f"RESOLUTIONS (Proposer):\n{json.dumps(verd_list.to_dict(), indent=2)}\n\n"
+        "Output ONLY valid JSON with these exact keys:\n"
+        "  - status: 'approved' | 'rejected' | 'conditional'\n"
+        "  - conditions: list of strings (if conditional)\n"
+        "  - confidence: float 0.0-1.0 (real, not made up)\n"
+        "  - risk_areas: list of strings\n"
+        "  - summary: string (1-2 sentences)"
     )
     
-    # Step 2: Wait for Critique (Simulated)
-    time.sleep(1)
-    
-    # Step 3: Request Defense/Refinement
-    print("⚖️ Arbitrator: Requesting Proposer defense/refinement...")
-    bus_manager.push(
-        f"defense_{plan_id}",
-        "requirement",
-        "arbitrator",
-        json.dumps({
-            "agent": "orchestrator",
-            "instruction": f"Respond to critique_{plan_id} and refine plan {plan_id}.",
-            "critique_ref": f"critique_{plan_id}"
-        })
+    resp_judge, src_judge, _ = query_llm_safe(
+        prompt=judge_prompt,
+        model="qwen2.5-coder:32b",
+        system_prompt="You are ARBITRATOR, the neutral high-court judge. Weigh both sides carefully. Derive actual confidence. Output ONLY valid JSON.",
+        format_json=True
     )
+    print("(via %s)" % src_judge)
+
+    verdict = _parse_verdict(resp_judge, plan_id)
     
-    # Step 4: Final Verdict
-    print("⚖️ Arbitrator: Issuing final verdict...")
-    verdict = {
+    # Overriding final status if automated validation of blockers failed
+    if not validation_passed:
+        print(f"⚠️ AUTOMATED VALIDATION FAILED: Blocker critiques were not accepted! Blocker failures: {', '.join(blocker_failures)}")
+        verdict["status"] = "rejected"
+        verdict["conditions"] = verdict.get("conditions", []) + [f"Resolve blocker critiques: {', '.join(blocker_failures)}"]
+        verdict["risk_areas"] = verdict.get("risk_areas", []) + [f"Automated check-off failed due to unaccepted blocker critiques"]
+
+    print("\nVerdict: %s (confidence: %.2f)" % (verdict["status"], verdict["confidence"]))
+    for c in verdict.get("conditions", []):
+        print("   - %s" % c)
+    for r in verdict.get("risk_areas", []):
+        print("   WARNING: %s" % r)
+
+    _push_verdict(plan_id, verdict, crit_list, verd_list, plan_text)
+    return verdict
+
+
+def _load_plan(plan_id: str) -> str:
+    bus_file = REPO_ROOT / ".agent" / "bus" / ("%s.json" % plan_id)
+    if bus_file.exists():
+        try:
+            data = json.loads(bus_file.read_text())
+            return data.get("text", data.get("plan", json.dumps(data)))
+        except Exception:
+            pass
+    for md_file in REPO_ROOT.glob("*.md"):
+        if plan_id in md_file.stem:
+            return md_file.read_text()[:2000]
+    return "Plan ID: %s. Evaluate as a standard architectural proposal." % plan_id
+
+
+def _parse_verdict(text: str, plan_id: str) -> dict:
+    import re
+    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+    if match:
+        try:
+            v = json.loads(match.group(0))
+            if "status" in v and "confidence" in v:
+                v["confidence"] = max(0.0, min(1.0, float(v["confidence"])))
+                v["plan_ref"] = plan_id
+                return v
+        except Exception:
+            pass
+    return {
         "plan_ref": plan_id,
-        "status": "approved_with_conditions",
-        "conditions": ["Implement additional input validation", "Add performance metrics"],
-        "confidence": 0.92
+        "status": "conditional",
+        "conditions": ["Review raw Arbitrator output"],
+        "confidence": 0.5,
+        "risk_areas": ["Unable to parse structured verdict"],
+        "summary": text[:300],
     }
-    bus_manager.push(
-        f"verdict_{plan_id}",
-        "verification_result",
-        "arbitrator",
-        json.dumps(verdict)
-    )
-    print(f"✅ Consensus complete. Verdict: {verdict['status']}")
+
+
+def _push_verdict(plan_id: str, verdict: dict, crit_list=None, verd_list=None, plan_text=""):
+    try:
+        payload = {
+            "plan_id": plan_id,
+            "title": plan_id.replace("_", " ").title(),
+            "context": plan_text,
+            "verdict": verdict,
+            "debate_type": "expert"
+        }
+        if crit_list:
+            payload["critiques"] = crit_list.to_dict()
+        if verd_list:
+            payload["resolutions"] = verd_list.to_dict()
+
+        _bm = bus_manager
+        if _bm is None:
+            # Lazy re-import in case bus_manager loaded after module init
+            try:
+                from context import bus_manager as _lazy_bm
+                _bm = _lazy_bm
+            except Exception:
+                pass
+
+        if _bm is None:
+            logger.warning("bus_manager not available — verdict not pushed to bus")
+            return
+
+        _bm.push(
+            "verdict_%s" % plan_id,
+            "verification_result",
+            "arbitrator",
+            json.dumps(payload),
+        )
+        print("Verdict pushed to bus: verdict_%s" % plan_id)
+    except Exception as e:
+        logger.warning("Could not push verdict to bus: %s", e)
+
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        run_consensus(sys.argv[1])
-    else:
-        print("Usage: python3 arbitrator.py <plan_id>")
+    import argparse
+    parser = argparse.ArgumentParser(description="Arbitrator -- Council of Sages Judge")
+    parser.add_argument("plan_id", help="Plan identifier")
+    parser.add_argument("--plan-text", help="Plan text", default="")
+    args = parser.parse_args()
+    result = run_consensus(args.plan_id, args.plan_text)
+    print("\n%s" % json.dumps(result, indent=2))

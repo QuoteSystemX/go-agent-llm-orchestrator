@@ -33,18 +33,28 @@ DECISIONS_FRAGMENT = FRAGMENTS_DIR / "core/07-recent-decisions.md"
 COMPONENTS_FRAGMENT = FRAGMENTS_DIR / "core/04-component-map.md"
 
 def sync_adrs() -> str:
-    if not (ADR_DIR.exists() and DECISIONS_FRAGMENT.exists()):
-        return ""
-        
-    adrs = list(ADR_DIR.glob("*.md"))
-    current_content = DECISIONS_FRAGMENT.read_text()
-    new_links = [f"- [{a.name}](../docs/adr/{a.name})" for a in adrs if a.name not in current_content]
+    updates = []
     
-    if not new_links:
-        return ""
-        
-    DECISIONS_FRAGMENT.write_text(current_content + "\n".join(new_links) + "\n")
-    return f"Linked {len(new_links)} new ADRs"
+    # 1. Sync legacy docs/adr
+    if ADR_DIR.exists() and DECISIONS_FRAGMENT.exists():
+        adrs = list(ADR_DIR.glob("*.md"))
+        current_content = DECISIONS_FRAGMENT.read_text()
+        new_links = [f"- [{a.name}](../docs/adr/{a.name})" for a in adrs if a.name not in current_content]
+        if new_links:
+            DECISIONS_FRAGMENT.write_text(current_content + "\n".join(new_links) + "\n")
+            updates.append(f"Linked {len(new_links)} new ADRs")
+            
+    # 2. Sync new wiki/decisions
+    wiki_decisions_dir = WIKI_DIR / "decisions"
+    if wiki_decisions_dir.exists() and DECISIONS_FRAGMENT.exists():
+        adrs = list(wiki_decisions_dir.glob("*.md"))
+        current_content = DECISIONS_FRAGMENT.read_text()
+        new_links = [f"- [{a.name}](./decisions/{a.name})" for a in adrs if a.name not in current_content and a.name != "_index.md"]
+        if new_links:
+            DECISIONS_FRAGMENT.write_text(current_content + "\n".join(new_links) + "\n")
+            updates.append(f"Linked {len(new_links)} wiki decisions ADRs")
+            
+    return ", ".join(updates) if updates else ""
 
 def sync_scripts() -> str:
     if not COMPONENTS_FRAGMENT.exists():
@@ -67,9 +77,14 @@ def sync_scripts() -> str:
 
 def run_assembly():
     try:
-        subprocess.run(["python3", ".agent/scripts/knowledge/wiki_assembler.py", "--hub"], check=True)
-        return "Assembled ARCHITECTURE.md"
-    except subprocess.CalledProcessError as e:
+        try:
+            from knowledge import wiki_assembler
+            wiki_assembler.assemble_wiki(WIKI_DIR / "ARCHITECTURE.template.md", WIKI_DIR / "ARCHITECTURE.md", "hub")
+            return "Assembled ARCHITECTURE.md"
+        except ImportError:
+            subprocess.run(["python3", ".agent/scripts/knowledge/wiki_assembler.py", "--hub"], check=True)
+            return "Assembled ARCHITECTURE.md"
+    except Exception as e:
         return f"Assembly failed: {e}"
 
 def sync_wiki():

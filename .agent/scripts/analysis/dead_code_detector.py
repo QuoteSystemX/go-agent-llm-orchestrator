@@ -55,8 +55,10 @@ def find_unused_scripts():
     ]
     
     unused = []
+    import re
     for script in all_scripts:
         name = script.name
+        stem = script.stem
         if name in EXCLUDE_LIST: continue
         
         # Grep for the filename in all relevant directories
@@ -64,8 +66,9 @@ def find_unused_scripts():
         for sdir in search_dirs:
             if not Path(sdir).exists(): continue
             try:
-                # Use grep -r to find references
-                res = subprocess.run(["grep", "-r", name, sdir], capture_output=True, text=True)
+                # Use grep -E to find references to either the filename or module stem
+                pattern = f"({re.escape(name)}|{re.escape(stem)})"
+                res = subprocess.run(["grep", "-E", "-r", pattern, sdir], capture_output=True, text=True)
                 for line in res.stdout.splitlines():
                     if not line.strip(): continue
                     # Extract the file path where grep found the match

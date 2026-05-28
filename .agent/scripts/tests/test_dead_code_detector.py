@@ -33,37 +33,46 @@ class TestDeadCodeDetector(unittest.TestCase):
             shutil.rmtree(self.test_root)
 
     @patch('analysis.dead_code_detector.subprocess.run')
-    @patch('analysis.dead_code_detector.Path.rglob')
-    def test_find_unused_scripts(self, mock_rglob, mock_run):
-        # Setup scripts
-        script1 = MagicMock(spec=Path)
-        script1.name = "used_script.py"
-        script1.resolve.return_value = self.test_root / ".agent/scripts/used_script.py"
-        
-        script2 = MagicMock(spec=Path)
-        script2.name = "dead_script.py"
-        script2.resolve.return_value = self.test_root / ".agent/scripts/dead_script.py"
-        
-        mock_rglob.side_effect = [
-            [script1, script2], # scripts_dir.rglob("*.py")
-            []                  # skills_dir.rglob("*.py")
-        ]
-        
-        # Setup grep results
+    def test_find_unused_scripts(self, mock_run):
+        """Verify that scripts with no grep references are reported as unused."""
+        # Build two script Path objects rooted in the test temp dir
+        scripts_base = self.test_root / ".agent" / "scripts"
+        used_script  = scripts_base / "used_script.py"
+        dead_script  = scripts_base / "dead_script.py"
+        used_script.write_text("# used")
+        dead_script.write_text("# dead")
+
         def mock_grep(cmd, capture_output, text):
-            # cmd is ["grep", "-r", name, sdir]
-            name = cmd[2]
-            if name == "used_script.py":
-                return MagicMock(stdout=".agent/agents/coder.md: reference to used_script.py\n")
+            # cmd = ["grep", "-E", "-r", pattern, sdir]
+            pattern = cmd[3] if len(cmd) > 3 else ""
+            if "used_script" in pattern:
+                # Simulate a reference found in a different file (agents/coder.md)
+                ref_path = str(self.test_root / ".agent/agents/coder.md")
+                return MagicMock(stdout=f"{ref_path}: reference to used_script\n")
             return MagicMock(stdout="")
-            
+
         mock_run.side_effect = mock_grep
-        
-        with patch('analysis.dead_code_detector.Path.exists', return_value=True):
-            unused = dead_code_detector.find_unused_scripts()
-            
-            self.assertEqual(len(unused), 1)
-            self.assertEqual(unused[0].name, "dead_script.py")
+
+        # Patch rglob so only our 2 scripts are scanned, skills dir returns empty
+        original_rglob = Path.rglob
+
+        def fake_rglob(self_path, pattern):
+            path_str = str(self_path)
+            if "skills" in path_str:
+                return iter([])
+            if "scripts" in path_str and pattern == "*.py":
+                return iter([used_script, dead_script])
+            return original_rglob(self_path, pattern)
+
+        with patch.object(Path, 'rglob', fake_rglob):
+            # Make all search dirs appear to exist so grep is attempted
+            with patch.object(Path, 'exists', return_value=True):
+                unused = dead_code_detector.find_unused_scripts()
+
+        unused_names = [u.name for u in unused]
+        self.assertIn("dead_script.py", unused_names, f"Expected dead_script.py in unused. Got: {unused_names}")
+        self.assertNotIn("used_script.py", unused_names, f"used_script.py must NOT be in unused. Got: {unused_names}")
+
 
 if __name__ == "__main__":
     unittest.main()

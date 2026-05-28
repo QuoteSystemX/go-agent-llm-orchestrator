@@ -1,4 +1,11 @@
 {
+  "allowed_scripts": [
+    "status_report.py --html",
+    "checklist.py . --fix",
+    "security_scan.py",
+    "doc_healer.py",
+    "chaos_monkey.py"
+  ],
   "limits": {
     "max_consecutive_failures": 3,
     "token_budget_per_task": 100000,

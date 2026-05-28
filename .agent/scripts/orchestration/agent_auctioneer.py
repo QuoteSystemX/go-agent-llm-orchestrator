@@ -37,8 +37,14 @@ def parse_frontmatter(content):
 def load_matrix():
     """
     Dynamically builds agent matrix by scanning the .agent/agents/ folder.
+    Resolves the path relative to this script file so it works regardless of CWD.
     """
-    agents_dir = Path(".agent/agents")
+    # Resolve from script location: .agent/scripts/orchestration/ -> .agent/agents/
+    _script_dir = Path(__file__).resolve().parent
+    agents_dir = _script_dir.parents[1] / "agents"
+    # Fallback: CWD-based (for backward compatibility when run from repo root)
+    if not agents_dir.exists():
+        agents_dir = Path(".agent/agents")
     matrix = {"agents": []}
     
     if not agents_dir.exists():
