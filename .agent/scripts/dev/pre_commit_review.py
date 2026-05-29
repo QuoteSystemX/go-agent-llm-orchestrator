@@ -37,7 +37,7 @@ def get_staged_diff() -> str:
             "git", "diff", "--cached", "--", 
             ":(exclude)*.md", ":(exclude)*.json", ":(exclude)*.jsonl", ":(exclude)*.yml"
         ], cwd=REPO_ROOT).decode("utf-8")
-    except:
+    except Exception:
         return ""
 
 def review_diff():

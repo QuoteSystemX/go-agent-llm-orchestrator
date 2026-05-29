@@ -1,9 +1,12 @@
 import json
+import logging
 import os
 import datetime
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 def get_timestamp() -> str:
     """Returns a unified ISO timestamp."""
@@ -17,7 +20,7 @@ def load_json_safe(path: Path) -> Any:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError) as e:
-        print(f"⚠️ Error loading JSON from {path}: {e}")
+        logger.warning("Error loading JSON from %s: %s", path, e)
         return {}
 
 def save_json_atomic(path: Path, data: Any, indent: int = 2) -> bool:
@@ -30,7 +33,7 @@ def save_json_atomic(path: Path, data: Any, indent: int = 2) -> bool:
         tmp_path.replace(path)
         return True
     except OSError as e:
-        print(f"❌ Error saving JSON to {path}: {e}")
+        logger.error("Error saving JSON to %s: %s", path, e)
         return False
 
 def validate_json(data: Any, schema_path: Path) -> tuple[bool, str]:
@@ -82,7 +85,7 @@ def discover_ollama_url() -> str:
         with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=0.5) as r:
             if r.status == 200:
                 return "http://localhost:11434"
-    except:
+    except Exception:
         pass
 
     # 3. WSL Gateway Fallback
@@ -97,12 +100,12 @@ def discover_ollama_url() -> str:
                             with urllib.request.urlopen(test_url, timeout=0.5) as r:
                                 if r.status == 200:
                                     return f"http://{gw}:11434"
-                        except:
+                        except Exception:
                             pass
 
                         # 3b. WSL + Ollama not running — just inform
-                        print("⚠️  Ollama not reachable on Windows host via WSL gateway")
-    except:
+                        logger.info("Ollama not reachable on Windows host via WSL gateway")
+    except Exception:
         pass
 
     return "http://localhost:11434" # Default fallback

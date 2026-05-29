@@ -51,7 +51,7 @@ class LinterDebtCollector(MetricCollector):
                             if instances > 0:
                                 files_with_debt += 1
                                 total_debt_instances += instances
-                    except:
+                    except Exception:
                         continue
 
         debt_index = (files_with_debt / total_files * 100) if total_files > 0 else 0

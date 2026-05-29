@@ -30,7 +30,7 @@ def load_metrics():
         for line in f:
             try:
                 metrics.append(json.loads(line))
-            except:
+            except Exception:
                 pass
     return metrics
 

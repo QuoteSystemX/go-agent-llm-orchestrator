@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import io
 import unittest
 import shutil
 import sys
@@ -60,13 +61,17 @@ class TestBusDebugger(unittest.TestCase):
             if inputs:
                 return inputs.pop(0)
             raise EOFError()
-            
+
+        captured = io.StringIO()
         with patch('builtins.input', mock_input):
-            with patch('sys.stdout', new=MagicMock()) as mock_stdout:
+            with patch('sys.stdout', captured):
                 debugger.interactive_debug()
-                
-        # Just check it didn't crash
-        self.assertTrue(True)
+
+        output = captured.getvalue()
+        self.assertIn("123", output)
+        self.assertIn("task", output)
+        self.assertIn("system", output)
+        self.assertIn("Object '999' not found", output)
 
 if __name__ == "__main__":
     unittest.main()

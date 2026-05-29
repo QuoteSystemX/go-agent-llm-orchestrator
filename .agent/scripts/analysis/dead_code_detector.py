@@ -47,20 +47,26 @@ def find_unused_scripts():
     ]
     
     EXCLUDE_LIST = [
-        "dead_code_detector.py", # Self
-        "paths.py",             # Core lib
-        "common.py",            # Core lib
-        "output_bridge.py",      # Binary bridge
-        "bus_debugger.py"       # Debug utility
+        "dead_code_detector.py",  # Self
+        "paths.py",               # Core lib
+        "common.py",              # Core lib
+        "output_bridge.py",       # Binary bridge
+        "bus_debugger.py",        # Debug utility
     ]
-    
+
     unused = []
     import re
     for script in all_scripts:
         name = script.name
         stem = script.stem
-        if name in EXCLUDE_LIST: continue
-        
+        if name in EXCLUDE_LIST:
+            continue
+
+        # Skip CLI-entry scripts (have if __name__ == "__main__")
+        content = script.read_text()
+        if '__name__' in content and '"__main__"' in content:
+            continue
+
         # Grep for the filename in all relevant directories
         found = False
         for sdir in search_dirs:
@@ -78,7 +84,7 @@ def find_unused_scripts():
                         found = True
                         break
                 if found: break
-            except:
+            except Exception:
                 continue
         
         if not found:

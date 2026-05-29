@@ -43,7 +43,7 @@ def scan_python_imports(file_path: Path) -> list[str]:
                 if imp not in ["os", "sys", "re", "json", "pathlib", "time", "subprocess", "datetime"]:
                     found.append(imp)
         return found
-    except:
+    except Exception:
         return []
 
 def scan_go_imports(file_path: Path) -> list[str]:

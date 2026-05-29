@@ -13,8 +13,12 @@ except ImportError:
         if d_path not in sys.path:
             sys.path.append(d_path)
 
+import logging
 import sys
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 # Add scripts dir and orchestration subdir to path (agent_auctioneer lives there)
 _SCRIPTS = Path(__file__).resolve().parents[1]
@@ -33,11 +37,11 @@ tasks = [
 ]
 
 for task in tasks:
-    print(f"\n🔍 Task: {task}")
+    logger.info("\n🔍 Task: %s", task)
     candidates = find_candidates(task)
     if not candidates:
-        print("   ❌ No candidates found")
+        logger.info("   ❌ No candidates found")
     else:
         # Show top 2 candidates
         for c in candidates[:2]:
-            print(f"   ✅ {c['id']} (Score: {c['score']}, Indicators: {c['indicators']})")
+            logger.info("   ✅ %s (Score: %s, Indicators: %s)", c['id'], c['score'], c['indicators'])

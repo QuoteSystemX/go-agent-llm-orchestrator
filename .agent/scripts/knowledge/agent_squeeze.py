@@ -31,7 +31,7 @@ def get_git_summary():
         # Get last 3 commit messages
         logs = subprocess.check_output(["git", "log", "-n", "3", "--pretty=%B"], cwd=str(REPO_ROOT), text=True)
         return diff, logs
-    except:
+    except Exception:
         return "", ""
 
 def format_lesson(type_tag: str, skill_tag: str, insight: str) -> str:

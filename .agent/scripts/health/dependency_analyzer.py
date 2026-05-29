@@ -36,7 +36,7 @@ def analyze_go():
                              capture_output=True, text=True)
         deps = res.stdout.strip().split("\n")
         return [d for d in deps if d]
-    except:
+    except Exception:
         return ["Error: 'go' command failed."]
 
 def analyze_python():

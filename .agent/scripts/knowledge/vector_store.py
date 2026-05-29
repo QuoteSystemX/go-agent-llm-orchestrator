@@ -29,7 +29,7 @@ class SimpleVectorStore:
         if self.storage_path.exists():
             try:
                 return json.loads(self.storage_path.read_text())
-            except:
+            except Exception:
                 return []
         return []
 

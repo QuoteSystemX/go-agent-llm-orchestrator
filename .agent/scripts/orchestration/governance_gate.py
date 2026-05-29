@@ -47,7 +47,7 @@ def run_auditor(script_name, target):
     try:
         res = subprocess.run([sys.executable, str(script_path), str(target)], capture_output=True, text=True)
         return res.returncode == 0, res.stdout
-    except:
+    except Exception:
         return False, "Execution Error"
 
 def check_governance(impacted_files):

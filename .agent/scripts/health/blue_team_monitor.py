@@ -70,7 +70,7 @@ def log_metrics(metrics, status):
         try:
             with open(METRICS_FILE, 'r') as f:
                 history = json.load(f)
-        except:
+        except Exception:
             history = []
             
     history.append(log_entry)

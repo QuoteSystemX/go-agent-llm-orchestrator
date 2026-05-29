@@ -54,7 +54,7 @@ def get_stats(agent_name=None):
                 if name not in scores:
                     scores[name] = []
                 scores[name].append(data["score"])
-            except:
+            except Exception:
                 continue
     
     stats = {}

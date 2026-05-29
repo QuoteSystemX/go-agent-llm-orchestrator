@@ -69,7 +69,7 @@ sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
 try:
     from lib.paths import ROUTER_RULES_PATH as RULES_FILE, TELEMETRY_PATH, LESSONS_PATH
     from lib.common import load_json_safe
-    import bus_manager
+    from context import bus_manager
 except ImportError:
     # When lib.common is unavailable, provide minimal fallback
     RULES_FILE = REPO_ROOT / ".agent" / "config" / "router_rules.json"
@@ -80,7 +80,7 @@ except ImportError:
         if not Path(path).exists(): return {}
         try:
             with open(path, 'r') as f: return json.load(f)
-        except: return {}
+        except Exception: return {}
 
 def log_routing_event(task, score, tier, model_id):
     """Log the routing decision to telemetry.json for transparency."""

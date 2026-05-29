@@ -28,7 +28,7 @@ class GoldenSetEngine:
         if self.data_path.exists():
             try:
                 return json.loads(self.data_path.read_text())
-            except:
+            except Exception:
                 return []
         return []
 

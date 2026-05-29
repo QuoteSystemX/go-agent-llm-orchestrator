@@ -33,7 +33,7 @@ def get_git_changes():
         try:
             res = subprocess.check_output(["git", "diff", "--name-only", "HEAD~5"], cwd=REPO_ROOT, stderr=subprocess.DEVNULL)
             files.extend(res.decode().split("\n"))
-        except:
+        except Exception:
             # Fallback to all tracked files if HEAD~5 is too deep
             res = subprocess.check_output(["git", "ls-files"], cwd=REPO_ROOT)
             files.extend(res.decode().split("\n"))
@@ -60,7 +60,7 @@ def get_documented_files():
         for f in wiki_dir.glob("**/*.md"):
             try:
                 docs.append(f.read_text(encoding='utf-8', errors='ignore'))
-            except:
+            except Exception:
                 pass
             
     # Read Skill documentation
@@ -73,7 +73,7 @@ def get_documented_files():
             for f in skills_dir.glob("**/SKILL.md"):
                 try:
                     docs.append(f.read_text(encoding='utf-8', errors='ignore'))
-                except:
+                except Exception:
                     pass
 
     return "\n".join(docs)

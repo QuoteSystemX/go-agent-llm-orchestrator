@@ -31,7 +31,7 @@ def get_file_complexity(path):
         
         # Heuristic: deep indentation + many lines = high complexity
         return (line_count * 0.1) + (max_indent * 0.5)
-    except:
+    except Exception:
         return 0
 
 def get_churn_metrics():
@@ -44,7 +44,7 @@ def get_churn_metrics():
         for f in files:
             churn[f] = churn.get(f, 0) + 1
         return churn
-    except:
+    except Exception:
         return {}
 
 def run_foresight_analysis(repo_root=None):
@@ -67,7 +67,7 @@ def run_foresight_analysis(repo_root=None):
     history = {}
     if history_file.exists():
         try: history = json.loads(history_file.read_text())
-        except: pass
+        except Exception: pass
 
     for ext in monitored_exts:
         for file in repo_root.glob(f"**/*{ext}"):

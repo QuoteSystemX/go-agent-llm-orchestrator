@@ -31,7 +31,7 @@ except ImportError:
     REPO_ROOT = Path(__file__).resolve().parents[3]
     def load_json_safe(p): 
         try: return json.loads(Path(p).read_text())
-        except: return {}
+        except Exception: return {}
     def discover_ollama_url(): return "http://localhost:11434"
 
 # Dynamic imports to satisfy both runtime and static analysis tools
@@ -45,7 +45,7 @@ def _safe_import(module_name, attr_name=None, default=None):
             except ImportError:
                 continue
         return default
-    except:
+    except Exception:
         return default
 
 check_mcp_health = _safe_import("mcp_provisioner", "check_mcp_health", lambda: {"status": "Unknown"})
@@ -77,10 +77,10 @@ def run_external_check(cmd: List[str]) -> Optional[Dict[str, Any]]:
             for match in reversed(matches):
                 try:
                     return json.loads(match.group(1))
-                except:
+                except Exception:
                     continue
         return None
-    except:
+    except Exception:
         return None
 
 def append_history(score: int, metrics: dict):
@@ -230,7 +230,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
         try:
             with open(f) as fp:
                 return json.load(fp)
-        except:
+        except Exception:
             return None
 
     def _run_parallel(scripts: List[Tuple[str, str]], cache_ttls: Dict[str, int]) -> Dict[str, Any]:
@@ -343,7 +343,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
         drift_count = drift_result["count"]
         metrics["Drift"] = f"{drift_count} issues"
         score -= min(30, drift_count * 5)
-    except:
+    except Exception:
         metrics["Drift"] = "Unknown"
 
     # 1a. Check for Agent Skills Integrity
@@ -377,7 +377,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
                         for skill in skills:
                             if not (skills_dir / skill).exists():
                                 missing_skills.add(skill)
-            except:
+            except Exception:
                 continue
         
         if missing_skills:
@@ -413,7 +413,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
             score -= 20
         elif mcp_status == "PASS":
             metrics["MCP Services"] = f"✅ {len(mcp_data.get('metrics', {}))} active"
-    except:
+    except Exception:
         metrics["MCP Services"] = "Unknown"
 
     # 4a. WSL & Host Connectivity
@@ -425,7 +425,7 @@ def calculate_health() -> Tuple[int, Dict[str, Any]]:
             if wsl_status == "WARN": score -= 5
         else:
             metrics["WSL Environment"] = "Non-WSL/Local"
-    except:
+    except Exception:
         metrics["WSL Environment"] = "Unknown"
 
     # 5. UX Audit
@@ -541,7 +541,7 @@ The repository is newly provisioned. To build the local intelligence base, run:
             if days_since > 7:
                 resilience_status += f" (⚠️ Stale: {days_since}d ago)"
                 score -= 5
-        except:
+        except Exception:
             pass
     
     metrics["Resilience"] = resilience_status
@@ -572,7 +572,7 @@ The repository is newly provisioned. To build the local intelligence base, run:
             else:
                 metrics["Neural Memory"] = "MISSING (ollama pull mxbai-embed-large)"
                 score -= 10
-    except:
+    except Exception:
         metrics["Neural Memory"] = "OFFLINE"
         score -= 5
 
@@ -584,7 +584,7 @@ The repository is newly provisioned. To build the local intelligence base, run:
             score -= 5
         else:
             metrics["Cost Logic"] = "OPTIMIZED"
-    except:
+    except Exception:
         metrics["Cost Logic"] = "Unknown"
 
     # 12. Tests (Stub)
@@ -599,7 +599,7 @@ The repository is newly provisioned. To build the local intelligence base, run:
             metrics["Top Agents"] = ", ".join([f"@{k}({v['count']})" for k, v in top_agents])
         else:
             metrics["Top Agents"] = "No activity recorded"
-    except:
+    except Exception:
         metrics["Top Agents"] = "Unknown"
 
     # 14. DNA Profile
@@ -785,7 +785,7 @@ def gather_diagnostics(metrics: dict) -> dict:
                 if stats:
                     detail["agents"] = {k: v for k, v in sorted(stats.items(), key=lambda x: x[1].get("count", 0), reverse=True)[:10]}
                     detail["source"] = "agent_scorer"
-            except:
+            except Exception:
                 detail["error"] = "agent_scorer unavailable"
         
         # DX / UX
@@ -820,7 +820,7 @@ def gather_diagnostics(metrics: dict) -> dict:
                         agent_list.append({"file": os.path.basename(af), "skills": fm.get("skills", []) if isinstance(fm, dict) else []})
                 detail["agents"] = agent_list
                 detail["source"] = "agent frontmatter scan"
-            except:
+            except Exception:
                 pass
 
         diagnostics[k] = detail

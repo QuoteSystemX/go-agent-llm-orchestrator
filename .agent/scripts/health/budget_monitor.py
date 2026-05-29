@@ -39,7 +39,7 @@ def load_guardrails():
         try:
             with open(GUARDRAILS_FILE, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return DEFAULT_LIMITS
 

@@ -251,7 +251,7 @@ def main():
                     
                     if issues:
                         violations.append({"file": str(p.relative_to(REPO_ROOT)), "issues": issues})
-            except:
+            except Exception:
                 continue
 
     if violations:

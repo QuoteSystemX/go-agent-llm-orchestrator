@@ -34,7 +34,7 @@ def get_staged_files() -> list[str]:
     try:
         res = subprocess.check_output(["git", "diff", "--cached", "--name-only"], cwd=REPO_ROOT)
         return [f for f in res.decode().split("\n") if f]
-    except:
+    except Exception:
         return []
 
 def find_active_task() -> Path:

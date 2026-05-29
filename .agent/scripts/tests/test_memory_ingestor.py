@@ -47,15 +47,6 @@ class TestMemoryIngestor(unittest.TestCase):
 
     @patch('knowledge.memory_ingestor.OllamaEmbeddingClient')
     @patch('knowledge.memory_ingestor.SimpleVectorStore')
-    @patch('knowledge.memory_ingestor.Path')
-    def test_ingest_docs(self, mock_path, mock_store, mock_client):
-        # We want to mock the repo_root Path inside ingest_docs
-        # But `Path(__file__)` is hard to mock correctly without breaking Path entirely.
-        # Let's just mock the specific paths it creates.
-        pass
-
-    @patch('knowledge.memory_ingestor.OllamaEmbeddingClient')
-    @patch('knowledge.memory_ingestor.SimpleVectorStore')
     def test_ingest_docs_real(self, mock_store, mock_client):
         # We need to monkey-patch Path locally or just mock the paths list
         (self.wiki_dir / "test1.md").write_text("Hello World")

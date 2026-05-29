@@ -61,7 +61,7 @@ def profile_task(task_desc: str, tier: str):
         tier_result = router_data.get("tier", "?")
         model = router_data.get("model_id", "?")
         provider = router_data.get("provider", "?")
-    except:
+    except Exception:
         tier_result = "?"
         model = "?"
         provider = "?"
@@ -117,7 +117,7 @@ def profile_task(task_desc: str, tier: str):
                 capture_output=True, text=True, timeout=3
             )
             return result.returncode == 0 and "models" in result.stdout
-        except:
+        except Exception:
             return False
     
     def ollama_pull_check():

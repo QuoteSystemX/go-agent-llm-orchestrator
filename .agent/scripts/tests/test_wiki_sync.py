@@ -73,17 +73,6 @@ class TestWikiSync(unittest.TestCase):
         content = self.dec_fragment.read_text()
         self.assertIn("- [ADR-001.md](../docs/adr/ADR-001.md)", content)
 
-    @patch('knowledge.wiki_sync.Path')
-    def test_sync_scripts(self, mock_path):
-        # Mock Path(".agent/scripts").glob("*.py")
-        mock_file = MagicMock()
-        mock_file.name = "new_script.py"
-        mock_path.return_value.glob.return_value = [mock_file]
-        
-        # We need to make sure Path(".agent/scripts") returns our mock
-        # or just use the real directory we created in setUp
-        pass
-
     def test_sync_scripts_real(self):
         (self.scripts_dir / "test_script.py").write_text("print('test')")
         

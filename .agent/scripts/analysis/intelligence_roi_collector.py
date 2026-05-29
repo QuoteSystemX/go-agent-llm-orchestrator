@@ -41,7 +41,7 @@ class IntelligenceROICollector(MetricCollector):
                         if model: local_models.add(model.lower())
                         for alt in ollama_cfg.get(f"{tier_key}_alt", []):
                             local_models.add(alt.lower())
-            except:
+            except Exception:
                 pass
         
         # Fallback prefixes if config loading fails or is incomplete

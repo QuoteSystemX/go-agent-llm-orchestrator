@@ -158,7 +158,7 @@ class ResilientSession:
             cmd_ns = f"nslookup {host_name} {gw} | grep 'Address:' | tail -n1 | awk '{{print $2}}'"
             ip = subprocess.check_output(cmd_ns, shell=True).decode().strip()
             return ip if ip else None
-        except:
+        except Exception:
             return None
 
     def _browser_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
@@ -190,7 +190,7 @@ class ResilientSession:
                     try:
                         browser = p.chromium.connect_over_cdp(target)
                         break
-                    except:
+                    except Exception:
                         continue
 
                 if not browser:
