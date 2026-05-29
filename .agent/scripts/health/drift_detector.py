@@ -136,8 +136,8 @@ def detect_drift():
     # Filter for important files (code, not assets/logs)
     monitored_exts = [".go", ".ts", ".tsx", ".py", ".js"]
     
-    # Paths to ignore for drift detection
-    ignored_paths = ["paperclip-plugin/"]
+    # Paths to ignore for drift detection — archived code is frozen, no doc monitoring needed
+    ignored_paths = ["archive/"]
     
     for f in changes:
         path = Path(f)

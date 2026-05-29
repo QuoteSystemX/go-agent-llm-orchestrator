@@ -32,6 +32,17 @@ POLISH_PROMPT = (
     "a short code snippet showing the improvement.\n\nCode:\n```\n{code}\n```"
 )
 
+def _apply_ruff_fix(path: str) -> bool:
+    """Run ruff --fix on a single file. Returns True if fixes were applied."""
+    with suppress("code_polisher.ruff_fix", level=logging.WARNING):
+        res = subprocess.run(
+            ["python3", "-m", "ruff", "check", "--fix", path],
+            capture_output=True, text=True, timeout=30,
+        )
+        return "Fixed" in res.stdout or res.returncode == 0
+    return False
+
+
 def run_polish(dry_run: bool = True):
     print("💎 Starting Autonomous Code Polishing (Senior Excellence Loop)...")
 
@@ -73,9 +84,17 @@ def run_polish(dry_run: bool = True):
                 total_suggestions += 1
                 print(f"    💡 {suggestion.strip()[:200]}...")
 
-    print(f"\n[POLISH COMPLETE — {total_suggestions} files analyzed with AI suggestions]")
+    ruff_fixes = 0
+    if not dry_run:
+        print("\n🔧 Applying ruff auto-fixes...")
+        for f in diff_files[:10]:
+            if Path(f).exists() and f.endswith(".py") and _apply_ruff_fix(f):
+                ruff_fixes += 1
+                print(f"  ✅ ruff --fix applied: {f}")
+
+    print(f"\n[POLISH COMPLETE — {total_suggestions} AI suggestion(s), {ruff_fixes} ruff fix(es) applied]")
     if dry_run:
-        print("⚠️  Dry-run mode — no changes applied. Use --apply to commit suggestions.")
+        print("⚠️  Dry-run mode — no changes applied. Use --apply to run ruff auto-fixes.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI-powered code polisher")

@@ -36,6 +36,10 @@ class WSLHealthCollector(MetricCollector):
     def __init__(self):
         super().__init__("WSL_Health")
 
+    def run(self) -> dict:
+        self.collect()
+        return self.data
+
     def collect(self):
         is_wsl = False
         kernel_version = platform.release()

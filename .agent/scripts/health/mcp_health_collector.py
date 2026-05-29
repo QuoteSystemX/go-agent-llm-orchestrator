@@ -33,6 +33,10 @@ class MCPHealthCollector(MetricCollector):
     def __init__(self):
         super().__init__("MCP_Health")
 
+    def run(self) -> dict:
+        self.collect()
+        return self.data
+
     def collect(self):
         root = Path(__file__).resolve().parents[3]
         config_path = root / ".agent" / "config" / "mcp_config.json"

@@ -359,7 +359,7 @@ def _push_verdict(plan_id: str, verdict: dict, crit_list=None, verd_list=None, p
         )
         print("Verdict pushed to bus: verdict_%s" % plan_id)
     except Exception as e:
-        logger.warning("Could not push verdict to bus: %s", e)
+        logger.error("Failed to push verdict to bus: %s", e)
 
 
 if __name__ == "__main__":

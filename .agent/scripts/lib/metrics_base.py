@@ -1,6 +1,6 @@
 import json
 import time
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from .paths import REPO_ROOT
 
@@ -39,6 +39,7 @@ class MetricCollector(ABC):
             json.dump(self.data, f, indent=2)
         return file_path
 
+    @abstractmethod
     def run(self) -> dict:
         """Perform collection logic and return metrics dict.
 
