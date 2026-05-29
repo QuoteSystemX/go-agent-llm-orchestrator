@@ -294,8 +294,8 @@ def _load_plan(plan_id: str) -> str:
         try:
             data = json.loads(bus_file.read_text())
             return data.get("text", data.get("plan", json.dumps(data)))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to parse plan from bus file %s: %s", bus_file, e)
     for md_file in REPO_ROOT.glob("*.md"):
         if plan_id in md_file.stem:
             return md_file.read_text()[:2000]
@@ -312,8 +312,8 @@ def _parse_verdict(text: str, plan_id: str) -> dict:
                 v["confidence"] = max(0.0, min(1.0, float(v["confidence"])))
                 v["plan_ref"] = plan_id
                 return v
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to parse Arbitrator JSON verdict — using fallback: %s", e)
     return {
         "plan_ref": plan_id,
         "status": "conditional",
@@ -344,8 +344,8 @@ def _push_verdict(plan_id: str, verdict: dict, crit_list=None, verd_list=None, p
             try:
                 from context import bus_manager as _lazy_bm
                 _bm = _lazy_bm
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to lazy-import bus_manager: %s", e)
 
         if _bm is None:
             logger.warning("bus_manager not available — verdict not pushed to bus")

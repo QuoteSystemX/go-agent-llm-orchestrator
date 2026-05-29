@@ -32,7 +32,9 @@ import json
 import signal
 import argparse
 import subprocess
+import logging
 from pathlib import Path
+from lib.suppress import suppress
 
 AGENT_DIR = Path(".agent")
 PID_FILE = AGENT_DIR / "preview.pid"
@@ -65,13 +67,11 @@ def get_start_command(root):
 
 def start_server(port=3000):
     if PID_FILE.exists():
-        try:
+        with suppress("auto_preview.start_server.pid", level=logging.WARNING):
             pid = int(PID_FILE.read_text().strip())
             if is_running(pid):
                 print(f"⚠️  Preview already running (PID: {pid})")
                 return
-        except:
-            pass # Invalid PID file
 
     root = get_project_root()
     cmd = get_start_command(root)
@@ -125,14 +125,12 @@ def status_server():
     url = "Unknown"
     
     if PID_FILE.exists():
-        try:
+        with suppress("auto_preview.status.pid", level=logging.WARNING):
             pid = int(PID_FILE.read_text().strip())
             if is_running(pid):
                 running = True
                 # Heuristic for URL, strictly we should save it
-                url = "http://localhost:3000" 
-        except:
-            pass
+                url = "http://localhost:3000"
             
     print("\n=== Preview Status ===")
     if running:

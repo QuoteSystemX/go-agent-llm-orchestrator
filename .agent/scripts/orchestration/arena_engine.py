@@ -13,8 +13,10 @@ from datetime import datetime
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts"))
 
+import logging
 from lib.common import load_json_safe
 from lib.llm_client import query_llm
+from lib.suppress import suppress
 
 ARENA_REPORTS_DIR = REPO_ROOT / ".agent" / "reports" / "arena"
 TIER_ORDER = ["L1", "L2", "L3", "L4"]
@@ -26,13 +28,11 @@ def _load_rules():
 
 
 def _get_local_models() -> set:
-    try:
+    with suppress("arena_engine.local_models", level=logging.DEBUG):
         from models.model_router import discover_ollama_url, get_ollama_local_models
         url, _ = discover_ollama_url("auto")
         if url:
             return get_ollama_local_models(url) or set()
-    except Exception:
-        pass
     return set()
 
 

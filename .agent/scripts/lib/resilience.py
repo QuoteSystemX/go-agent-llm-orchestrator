@@ -1,12 +1,15 @@
 import os
 import sys
 import json
+import logging
 import subprocess
 import fnmatch
 import requests
 import urllib3
 import base64
 from typing import Dict, Any, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 # Path to network profiles config (relative to this file's location)
 _PROFILES_PATH = os.path.join(os.path.dirname(__file__), "../../config/network_profiles.json")
@@ -27,8 +30,8 @@ def _load_profiles() -> list:
             with open(path) as f:
                 data = json.load(f)
             return data.get("profiles", [])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("[resilience] _load_profiles failed, returning []: %s", e)
     return []
 
 def _match_profile(host: str, profiles: list) -> Optional[Dict]:

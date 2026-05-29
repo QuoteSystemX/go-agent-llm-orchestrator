@@ -11,6 +11,8 @@ Usage (subprocess):
 Returns JSON to stdout:
     {"ok": true, "result": ..., "duration_ms": 12}
     {"ok": false, "error": "TypeError", "traceback": "...", "crash": true}
+    Optionally includes "warnings": [...] if any non-critical resource limits
+    could not be applied (e.g. RLIMIT_STACK on restricted platforms).
 """
 
 import sys
@@ -106,19 +108,66 @@ MAX_STACK = _RESOURCES["max_stack"]
 MAX_FSIZE = _RESOURCES["max_fsize"]
 
 
-def _apply_limits():
-    """Apply resource limits to the current process."""
+def _apply_limits() -> list:
+    """Apply resource limits to the current process.
+
+    CRITICAL limits (AS/RAM, CPU): must succeed or sandbox refuses to start.
+    OPTIONAL limits (STACK, FSIZE): best-effort, failures are collected as warnings.
+    Verification: reads back critical limits via getrlimit() to confirm they are active.
+
+    Returns:
+        list[str]: Warnings for any optional limits that were not applied.
+
+    Raises:
+        RuntimeError: If any critical limit (AS, CPU) could not be applied or verified.
+    """
+    warnings = []
+
+    # ── Critical limits: fail-fast on failure ──
     try:
         resource.setrlimit(resource.RLIMIT_AS, (MAX_RAM, MAX_RAM))
         resource.setrlimit(resource.RLIMIT_CPU, (MAX_CPU, MAX_CPU + 1))
-        resource.setrlimit(resource.RLIMIT_STACK, (MAX_STACK, MAX_STACK))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_FSIZE, MAX_FSIZE))
-    except Exception:
-        pass  # Some limits may not be supported on all platforms
+    except Exception as e:
+        raise RuntimeError(
+            f"Sandbox CRITICAL resource limit failed to apply: {e}"
+        ) from e
+
+    # ── Optional limits: best-effort ──
+    for rlimit, value, name in [
+        (resource.RLIMIT_STACK, (MAX_STACK, MAX_STACK), "STACK"),
+        (resource.RLIMIT_FSIZE, (MAX_FSIZE, MAX_FSIZE), "FSIZE"),
+    ]:
+        try:
+            resource.setrlimit(rlimit, value)
+        except Exception as e:
+            warnings.append(f"RLIMIT_{name} could not be applied: {e}")
+
+    # ── Verification: confirm critical limits are active ──
+    for rlimit, expected, name in [
+        (resource.RLIMIT_AS, MAX_RAM, "AS"),
+        (resource.RLIMIT_CPU, (MAX_CPU, MAX_CPU + 1), "CPU"),
+    ]:
+        try:
+            soft, _ = resource.getrlimit(rlimit)
+            exp = expected[0] if isinstance(expected, tuple) else expected
+            if soft != exp:
+                raise RuntimeError(
+                    f"Sandbox RLIMIT_{name} verification failed: "
+                    f"requested {exp}, active {soft}"
+                )
+        except RuntimeError:
+            raise
+        except Exception as e:
+            warnings.append(f"RLIMIT_{name} verification could not be read: {e}")
+
     if os.environ.get("SANDBOX_DEBUG"):
-        print(f"[sandbox] RAM={MAX_RAM//1024**2}M CPU={MAX_CPU}s "
-              f"STACK={MAX_STACK//1024**2}M FSIZE={MAX_FSIZE//1024**2}M",
-              file=sys.stderr)
+        parts = [f"[sandbox] RAM={MAX_RAM//1024**2}M CPU={MAX_CPU}s "
+                 f"STACK={MAX_STACK//1024**2}M FSIZE={MAX_FSIZE//1024**2}M"]
+        if warnings:
+            parts.append(f"[WARNINGS: {'; '.join(warnings)}]")
+        print(" ".join(parts), file=sys.stderr)
+
+    return warnings
 
 
 def _discover_repo_root() -> Path:
@@ -218,7 +267,7 @@ def run_sandboxed(spec: dict) -> dict:
     payload = spec.get("payload", None)
     timeout = spec.get("timeout", 10)
 
-    _apply_limits()
+    warnings = _apply_limits()
 
     start = time.monotonic()
     try:
@@ -231,25 +280,40 @@ def run_sandboxed(spec: dict) -> dict:
         signal.alarm(0)  # Cancel alarm
         elapsed = (time.monotonic() - start) * 1000
 
-        return {"ok": True, "result": repr(result)[:500], "duration_ms": round(elapsed, 1)}
+        ret = {"ok": True, "result": repr(result)[:500], "duration_ms": round(elapsed, 1)}
+        if warnings:
+            ret["warnings"] = warnings
+        return ret
 
     except MemoryError:
-        return {"ok": False, "error": "MemoryError", "crash": True,
-                "duration_ms": round((time.monotonic() - start) * 1000, 1),
-                "traceback": "Out of memory (RLIMIT_AS exceeded)"}
+        ret = {"ok": False, "error": "MemoryError", "crash": True,
+               "duration_ms": round((time.monotonic() - start) * 1000, 1),
+               "traceback": "Out of memory (RLIMIT_AS exceeded)"}
+        if warnings:
+            ret["warnings"] = warnings
+        return ret
     except TimeoutError:
-        return {"ok": False, "error": "Timeout", "crash": True,
-                "duration_ms": round((time.monotonic() - start) * 1000, 1),
-                "traceback": f"CPU time exceeded {timeout}s limit"}
+        ret = {"ok": False, "error": "Timeout", "crash": True,
+               "duration_ms": round((time.monotonic() - start) * 1000, 1),
+               "traceback": f"CPU time exceeded {timeout}s limit"}
+        if warnings:
+            ret["warnings"] = warnings
+        return ret
     except RecursionError:
-        return {"ok": False, "error": "RecursionError", "crash": True,
-                "duration_ms": round((time.monotonic() - start) * 1000, 1),
-                "traceback": "Maximum recursion depth exceeded"}
+        ret = {"ok": False, "error": "RecursionError", "crash": True,
+               "duration_ms": round((time.monotonic() - start) * 1000, 1),
+               "traceback": "Maximum recursion depth exceeded"}
+        if warnings:
+            ret["warnings"] = warnings
+        return ret
     except Exception as e:
         tb = traceback.format_exc()
         elapsed = (time.monotonic() - start) * 1000
-        return {"ok": False, "error": type(e).__name__, "crash": True,
-                "duration_ms": round(elapsed, 1), "traceback": tb[-2000:]}
+        ret = {"ok": False, "error": type(e).__name__, "crash": True,
+               "duration_ms": round(elapsed, 1), "traceback": tb[-2000:]}
+        if warnings:
+            ret["warnings"] = warnings
+        return ret
     finally:
         signal.alarm(0)
 

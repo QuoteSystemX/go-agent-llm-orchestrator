@@ -10,7 +10,9 @@ import json
 import subprocess
 import sys
 from datetime import datetime, timezone
+import logging
 from pathlib import Path
+from lib.suppress import suppress
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS_DIR = REPO_ROOT / ".agent" / "bus"
@@ -86,14 +88,12 @@ def collect_active_tasks() -> str:
     lines = []
     for f in task_files:
         first_line = ""
-        try:
+        with suppress("context_autofill.task_file_read", level=logging.WARNING):
             for line in f.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if line and not line.startswith("<!--"):
                     first_line = line.lstrip("#").strip()
                     break
-        except Exception:
-            pass
         lines.append(f"- `{f.name}` — {first_line}")
     return "\n".join(lines)
 

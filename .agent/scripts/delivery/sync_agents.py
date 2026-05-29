@@ -29,8 +29,10 @@ import argparse
 import sys
 import os
 import json
+import logging
 from pathlib import Path
 from typing import Optional
+from lib.suppress import suppress
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
 SOURCE_ROOT = REPO_ROOT
@@ -501,15 +503,13 @@ def _query_ollama_models() -> list:
 
     # 2. WSL gateway if running in WSL
     is_wsl = False
-    try:
+    with suppress("sync_agents.ollama.wsl_detect", level=logging.DEBUG):
         if os.path.exists("/proc/version"):
             with open("/proc/version") as f:
                 is_wsl = "microsoft" in f.read().lower()
-    except Exception:
-        pass
 
     if is_wsl:
-        try:
+        with suppress("sync_agents.ollama.wsl_gateway", level=logging.DEBUG):
             gw = subprocess.check_output(
                 "ip route | grep default | awk '{print $3}'", shell=True
             ).decode().strip()
@@ -521,8 +521,6 @@ def _query_ollama_models() -> list:
 
                 # 2b. WSL gateway failed — just inform
                 print("⚠️  Ollama not reachable on Windows host via WSL gateway")
-        except Exception:
-            pass
 
     return []
 
@@ -534,13 +532,11 @@ def _build_ollama_provider(models: list) -> dict:
     """
     # Try to discover the correct Ollama URL dynamically
     base_url = "http://localhost:11434"
-    try:
+    with suppress("sync_agents.ollama.discover_url", level=logging.DEBUG):
         from lib.common import discover_ollama_url
         discovered = discover_ollama_url()
         if discovered:
             base_url = discovered.rstrip("/")
-    except ImportError:
-        pass
 
     # Filter out embeddings
     chat_models = [m for m in models if "embed" not in m.get("name", "").lower()]

@@ -33,10 +33,13 @@ except ImportError:
             sys.path.append(d_path)
 
 import json
+import logging
 import sys
 import argparse
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 AGENTS_DIR = REPO_ROOT / ".agent" / "agents"
@@ -149,8 +152,8 @@ def _push_batch_to_bus(batch_name: str, tasks: list) -> None:
         try:
             with open(BUS_FILE, "r", encoding="utf-8") as f:
                 bus = json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("[batch_runner] Bus JSON read error, starting fresh state: %s", e)
 
     batch_id = f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     bus.setdefault("objects", []).append({

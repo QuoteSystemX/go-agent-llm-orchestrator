@@ -16,7 +16,9 @@ except ImportError:
 
 import sys
 import subprocess
+import logging
 from pathlib import Path
+from lib.suppress import suppress
 
 def analyze_impact(intent: str):
     print(f"🕸️  Calculating Blast Radius for: '{intent}'...")
@@ -26,12 +28,10 @@ def analyze_impact(intent: str):
     impacted_files = set()
     
     for kw in keywords:
-        try:
-            # Find files where this keyword is used (simulating dependency tracking)
+        # G3 intentional resilience: grep may fail on non-text files
+        with suppress("impact_analyzer.grep_keyword", level=logging.ERROR):
             grep_out = subprocess.check_output(['grep', '-rl', kw, '.'], cwd=Path.cwd()).decode().splitlines()
             impacted_files.update([f for f in grep_out if not f.startswith('./.git') and not f.startswith('./.agent')])
-        except:
-            pass
             
     print(f"📊 Impact Analysis: {len(impacted_files)} files potentially affected.")
     for f in list(impacted_files)[:5]:

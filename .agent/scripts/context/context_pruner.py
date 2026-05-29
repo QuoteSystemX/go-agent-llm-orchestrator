@@ -4,6 +4,7 @@ Removes transient objects and summarizes long-term events in the Context Bus.
 """
 
 # Antigravity Domain-Aware Import Logic
+import logging
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
@@ -22,6 +23,8 @@ import json
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 # Configuration
 BUS_PATH = REPO_ROOT / ".agent" / "bus"
@@ -67,8 +70,8 @@ def prune_bus():
                         json.dump(data, f, indent=2)
                     summarized_count += 1
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("[context_pruner] Failed to process bus file %s: %s", bus_file.name, e)
 
     return {
         "status": "success",

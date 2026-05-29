@@ -25,8 +25,11 @@ import os
 import sys
 import json
 import re
+import logging
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS_DIR = REPO_ROOT / ".agent" / "bus"
@@ -49,6 +52,7 @@ def _build_watchdog_patterns() -> list[dict]:
     try:
         data = json.loads(_WATCHDOG_PATH.read_text())
     except (OSError, json.JSONDecodeError):
+        logger.debug("[policy_guardrail] No watchdog_rules.json — returning empty patterns")
         return []
     block = data.get("dangerous_operations", {}).get("commands", {}).get("block", [])
     return [

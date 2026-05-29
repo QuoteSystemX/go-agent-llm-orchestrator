@@ -16,10 +16,12 @@ Usage:
 
 import argparse
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import stdev
+from lib.suppress import suppress
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS = REPO_ROOT / ".agent" / "bus"
@@ -74,12 +76,10 @@ def _load_output_goals() -> list[str]:
     if not outputs_dir.exists():
         return goals
     for f in outputs_dir.glob("*.json"):
-        try:
+        with suppress("dna_session_learner.goal_parse", level=logging.WARNING):
             data = json.loads(f.read_text())
             if g := data.get("goal", ""):
                 goals.append(g)
-        except Exception:
-            pass
     return goals
 
 

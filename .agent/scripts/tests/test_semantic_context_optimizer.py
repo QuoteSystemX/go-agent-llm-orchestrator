@@ -38,15 +38,12 @@ class TestSemanticContextOptimizer(unittest.TestCase):
         # Should not have all 9 results
         self.assertNotIn("Result 9", res)
 
-    @patch('sys.stdin')
-    def test_main(self, mock_stdin):
-        mock_stdin.read.return_value = "Test input"
-        with patch('sys.stdout', new=MagicMock()) as mock_out:
-            import runpy
-            # Since main doesn't have a function, we have to run it as a script or import it while patching __name__
-            # Actually, the file has an if __name__ == "__main__": block
-            # We can just manually call the logic
-            pass
+    def test_main_direct_call(self):
+        """Call optimize_context directly (same logic as __main__ block)."""
+        text = "Header\n------------------------------\nResult 1"
+        res = optimizer.optimize_context(text, max_length=2000)
+        self.assertEqual(res, text)
+        self.assertIn("Header", res)
 
 if __name__ == "__main__":
     unittest.main()

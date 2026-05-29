@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Antigravity Domain-Aware Import Logic
+import logging
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
@@ -22,10 +23,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 DECISIONS_DIR = REPO_ROOT / "wiki" / "decisions"
 TEMPLATE_PATH = REPO_ROOT / ".agent" / "wiki-templates" / "DECISIONS.md"
-DRIFT_DETECTOR = REPO_ROOT / ".agent" / "scripts" / "drift_detector.py"
+DRIFT_DETECTOR = REPO_ROOT / ".agent" / "scripts" / "health" / "drift_detector.py"
 
 def get_drifts():
     if not DRIFT_DETECTOR.exists():
@@ -36,8 +39,8 @@ def get_drifts():
         if res.returncode == 0:
             data = json.loads(res.stdout)
             return data.get("drifts", [])
-    except:
-        pass
+    except Exception as e:
+        logger.debug("[adr_generator] Drift detector failed, treating as no drifts: %s", e)
     return []
 
 def slugify(text):

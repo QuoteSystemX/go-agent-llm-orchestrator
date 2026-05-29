@@ -2,6 +2,7 @@
 """Profiling script for L1 and L2 routing performance."""
 
 # Antigravity Domain-Aware Import Logic
+import logging
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
@@ -21,6 +22,8 @@ import json
 import sys
 import subprocess
 import os
+
+logger = logging.getLogger(__name__)
 
 # Add scripts dir to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -81,8 +84,8 @@ def profile_task(task_desc: str, tier: str):
                             model_tps = val + " tok/s"
                         elif key == "rank":
                             rank_score = val
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug("[profile_routing] Metric key skipped (unexpected format): %s", e)
     
     # Step 2: Health Check
     def health_check():

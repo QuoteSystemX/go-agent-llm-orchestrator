@@ -9,6 +9,8 @@ Dynamic timeout by model (14b=30s, 32b=60s, deepseek=120s).
 import sys, json, logging, re
 from pathlib import Path
 
+from lib.suppress import suppress
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS_DIR = REPO_ROOT / ".agent" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
@@ -181,12 +183,10 @@ def _parse_verdict(text: str, topic: str) -> dict:
     import re
     match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
     if match:
-        try:
+        with suppress("hidden_war_room.parse_verdict", level=logging.ERROR):
             v = json.loads(match.group(0))
             if all(k in v for k in ("status", "confidence")):
                 return v
-        except Exception:
-            pass
 
     # Fallback: generic verdict
     return {

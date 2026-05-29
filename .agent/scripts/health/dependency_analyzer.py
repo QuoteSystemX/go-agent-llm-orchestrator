@@ -56,8 +56,9 @@ def analyze_python():
     return list(set(deps))
 
 def check_vulnerabilities(deps):
-    # Mock vulnerability check against a small database for demo
-    # In production, use 'safety' or 'osv-scanner'
+    # Mock vulnerability check — ⚠️ NOT PRODUCTION SAFE
+    # In production, use 'safety' or 'osv-scanner' instead
+    print("⚠️ [dependency_analyzer] Using MOCK vulnerability check — not production safe.")
     known_bad = ["log4j", "struts", "requests<2.31.0"]
     found = []
     for d in deps:

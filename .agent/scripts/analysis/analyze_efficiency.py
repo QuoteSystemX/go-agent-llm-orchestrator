@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Antigravity Domain-Aware Import Logic
+import logging
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
@@ -9,16 +10,18 @@ except ImportError:
     SCRIPTS_DIR = Path(__file__).resolve().parents[1]
     if str(SCRIPTS_DIR) not in sys.path:
         sys.path.append(str(SCRIPTS_DIR))
+    REPO_ROOT = Path(__file__).resolve().parents[3]
     for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
         d_path = str(SCRIPTS_DIR / domain)
         if d_path not in sys.path:
             sys.path.append(d_path)
-    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import json
 import sys
 from pathlib import Path
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 METRICS_FILE = REPO_ROOT / ".agent" / "logs" / "metrics.jsonl"
 
 def analyze():
@@ -56,8 +59,9 @@ def analyze():
                     stats[agent]["cache_hits"] += 1
                 elif m.get("cache_hit") == True:
                     stats[agent]["cache_hits"] += 1
-            except:
-                pass
+            except Exception as e:
+                logger.error("[analyze_efficiency] Event parsing failed: %s", e, exc_info=True)
+                raise
 
     print("# AI Efficiency Analysis Report\n")
     if not stats:

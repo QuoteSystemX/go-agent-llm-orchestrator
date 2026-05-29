@@ -54,7 +54,16 @@ def run_trigger():
         except Exception as e:
             results.append({"cmd": cmd, "error": str(e)})
 
-    return {"status": "completed", "results": results}
+    # Real status from subprocess returncodes — not hardcoded
+    total = len(results)
+    failed = sum(1 for r in results if r.get("returncode", 0) != 0 or r.get("error"))
+    if failed == 0:
+        status = "completed"
+    elif failed < total:
+        status = "partial"
+    else:
+        status = "failed"
+    return {"status": status, "results": results, "failed": failed}
 
 if __name__ == "__main__":
     print(json.dumps(run_trigger(), indent=2))

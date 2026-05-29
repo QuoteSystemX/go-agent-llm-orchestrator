@@ -28,9 +28,11 @@ except ImportError:
 
 import sys
 import subprocess
+import logging
 from pathlib import Path
 from datetime import datetime
 import re
+from lib.suppress import suppress
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from lib.paths import REPO_ROOT
@@ -155,13 +157,11 @@ def check_stale_tasks() -> list[str]:
             continue
         m = re.match(r"^(\d{4}-\d{2}-\d{2})-", f.name)
         if m:
-            try:
+            with suppress("autonomous_reviewer_cron.stale_date", level=logging.WARNING):
                 task_date = datetime.strptime(m.group(1), "%Y-%m-%d")
                 age = (today - task_date).days
                 if age > 14:
                     stale.append(f"{f.name} (age: {age}d)")
-            except ValueError:
-                pass
     return stale
 
 

@@ -16,9 +16,12 @@ Usage:
 
 import argparse
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS_DIR = REPO_ROOT / ".agent" / "scripts"
@@ -256,8 +259,9 @@ def main() -> None:
     prev_tag = "BALANCED"
     try:
         prev_tag = json.loads(DNA_BUS_FILE.read_text()).get("dna", "BALANCED")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error("[dna_orchestrator] Failed to load previous DNA tag: %s", e, exc_info=True)
+        raise
 
     results: list[dict] = []
     for pid, phase in phases_to_run.items():

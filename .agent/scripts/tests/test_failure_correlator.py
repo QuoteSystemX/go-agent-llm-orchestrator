@@ -20,8 +20,9 @@ class TestFailureCorrelator(unittest.TestCase):
     def test_correlate_failures_match(self, mock_stdout):
         correlator.correlate_failures("implement cache logic")
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("HISTORICAL MATCH", output)
-        self.assertIn("Recommendation: Use atomic operations", output)
+        self.assertIn("historical correlation(s)", output)
+        self.assertIn("cache/concurrency", output)
+        self.assertIn("Use atomic operations", output)
 
     @patch('sys.stdout', new_callable=MagicMock)
     def test_correlate_failures_no_match(self, mock_stdout):

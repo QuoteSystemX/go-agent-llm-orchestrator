@@ -45,13 +45,12 @@ class TestAgentArena(unittest.TestCase):
         self.assertEqual(verdict["status"], "decided_via_arena")
 
     def test_cli_execution(self):
-        with patch('sys.argv', ['agent_arena.py', 'sid', 'role', 'subtask', 'c1,c2']):
-            with patch('sys.stdout', new=StringIO()) as fake_out:
-                # We need to handle the script's main block manually or call it
-                # Since agent_arena.py has logic in if __name__ == "__main__"
-                # but doesn't wrap it in a main() function, we can't easily call it.
-                # However, we can verify the functions directly.
-                pass
+        # Call the underlying functions directly since __main__ is not importable
+        report = agent_arena.conduct_debate('sid', 'role', ['c1', 'c2'], 'subtask')
+        self.assertIn('session_id', report)
+        self.assertEqual(report['session_id'], 'sid')
+        self.assertEqual(report['role'], 'role')
+        self.assertIn('c1', report['candidates'])
 
 if __name__ == "__main__":
     unittest.main()

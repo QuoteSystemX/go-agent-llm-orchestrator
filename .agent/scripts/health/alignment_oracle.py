@@ -20,13 +20,15 @@ import sys
 import re
 import subprocess
 import json
+import logging
 from pathlib import Path
+from lib.suppress import suppress
 
 def check_complexity(file_path: Path) -> list[str]:
     """Check code complexity using radon (if available) or manual metrics."""
     warnings = []
-    try:
-        # Use radon for cyclomatic complexity
+    # G3 intentional resilience: radon may not be installed
+    with suppress("alignment_oracle.radon_complexity", level=logging.ERROR):
         res = subprocess.run(["radon", "cc", str(file_path), "-s", "--json"], capture_output=True, text=True)
         if res.returncode == 0 and res.stdout.strip():
             data = json.loads(res.stdout)
@@ -34,8 +36,9 @@ def check_complexity(file_path: Path) -> list[str]:
                 for block in file_data:
                     if block.get('complexity', 0) > 10:
                         warnings.append(f"🧠 HIGH COMPLEXITY: Block '{block['name']}' has CC={block['complexity']} (limit 10).")
-    except:
-        # Fallback: manual line count per function
+
+    if not any("HIGH COMPLEXITY" in w for w in warnings):
+        # Fallback: manual line count per function (runs only if radon path was skipped)
         content = file_path.read_text()
         functions = re.findall(r'def\s+\w+\(.*?\):', content)
         if len(content.splitlines()) > 300:

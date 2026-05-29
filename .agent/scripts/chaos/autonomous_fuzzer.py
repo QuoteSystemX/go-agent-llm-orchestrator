@@ -33,15 +33,28 @@ except ImportError:
             sys.path.append(d_path)
 
 import os
+
 import sys
+
 import ast
+
 import json
+
+import logging
+
 import subprocess
+
 import argparse
+
 import random
+
 import string
+
 from pathlib import Path
+
 from datetime import datetime
+
+from lib.suppress import suppress
 
 try:
     from lib.paths import REPO_ROOT, BUS_DIR
@@ -286,10 +299,8 @@ def run_fuzz(target: str, payloads: list, tag: str = "custom") -> list:
 def _load_metrics() -> dict:
     """Load existing fuzz metrics or return empty structure."""
     if FUZZ_METRICS.exists():
-        try:
+        with suppress("autonomous_fuzzer.load_metrics", level=logging.WARNING):
             return json.loads(FUZZ_METRICS.read_text())
-        except Exception:
-            pass
     return {"fuzz_runs": [], "summary": {"total_tests": 0, "total_crashes": 0}}
 
 

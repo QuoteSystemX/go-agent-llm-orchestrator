@@ -84,9 +84,11 @@ class TestAgentScorer(unittest.TestCase):
         """Verify that 'stats' works with exactly 2 arguments (script name + 'stats')."""
         with patch('sys.argv', ['agent_scorer.py', 'stats']):
             # This should NOT trigger the Usage print and sys.exit(1)
-            # which was the bug.
-            if len(sys.argv) < 2:
-                self.fail("Bug regression: stats command should work with 2 arguments")
+            # which was the bug — verify get_stats doesn't crash
+            stats = agent_scorer.get_stats()
+            self.assertIsInstance(stats, dict)
+            # With no data, stats should be empty
+            self.assertEqual(stats, {})
 
 if __name__ == "__main__":
     unittest.main()

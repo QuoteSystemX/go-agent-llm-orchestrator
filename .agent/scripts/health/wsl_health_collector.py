@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Antigravity Domain-Aware Import Logic
+import logging
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
@@ -19,6 +20,8 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Antigravity Standard: Path Resolution
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -43,8 +46,8 @@ class WSLHealthCollector(MetricCollector):
                 with open("/proc/version", "r") as f:
                     version_info = f.read().lower()
                     is_wsl = "microsoft" in version_info
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("[wsl_health] Failed to detect WSL: %s", e)
 
         if not is_wsl:
             # We skip if not in WSL to avoid polluting metrics in other environments
@@ -57,8 +60,8 @@ class WSLHealthCollector(MetricCollector):
         if ollama_url and "//" in ollama_url:
             try:
                 gateway_ip = ollama_url.split("//")[1].split(":")[0]
-            except IndexError:
-                pass
+            except IndexError as e:
+                logger.debug("[wsl_health] Failed to parse gateway IP: %s", e)
         
         gw_status = "DOWN"
         if gateway_ip != "Unknown" and gateway_ip != "localhost" and gateway_ip != "127.0.0.1":
@@ -67,8 +70,8 @@ class WSLHealthCollector(MetricCollector):
                 res = subprocess.run(["ping", "-c", "1", "-W", "1", gateway_ip], capture_output=True, text=True)
                 if res.returncode == 0:
                     gw_status = "UP"
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("[wsl_health] Ping to gateway %s failed: %s", gateway_ip, e)
         else:
             # If it's localhost, we consider it UP for this metric's purpose (it's reachable)
             gw_status = "LOCAL"

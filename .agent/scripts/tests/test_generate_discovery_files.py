@@ -42,27 +42,31 @@ class TestGenerateDiscoveryFiles(unittest.TestCase):
         wiki_dir.mkdir()
         (wiki_dir / "page1.md").write_text("test")
         (self.test_root / "index.html").write_text("html")
-        
+
+        base = "https://example.test"
         with patch('sys.stdout', new=MagicMock()):
-            discovery.generate_sitemap()
-            
+            discovery.generate_sitemap(base)
+
         sitemap_path = self.test_root / "sitemap.xml"
         self.assertTrue(sitemap_path.exists())
         content = sitemap_path.read_text()
         self.assertIn("page1", content)
         self.assertIn("index.html", content)
         self.assertIn("<loc>", content)
+        self.assertIn(base, content)
 
     def test_generate_robots(self):
+        base = "https://example.test"
         with patch('sys.stdout', new=MagicMock()):
-            discovery.generate_robots()
-            
+            discovery.generate_robots(base)
+
         robots_path = self.test_root / "robots.txt"
         self.assertTrue(robots_path.exists())
         content = robots_path.read_text()
         self.assertIn("User-agent: *", content)
         self.assertIn("Allow: /", content)
         self.assertIn("sitemap.xml", content)
+        self.assertIn(base, content)
 
 if __name__ == "__main__":
     unittest.main()

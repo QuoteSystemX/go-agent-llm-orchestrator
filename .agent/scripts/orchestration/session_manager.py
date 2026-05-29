@@ -27,10 +27,13 @@ except ImportError:
 
 import os
 import json
+import logging
 import argparse
 import re
 from pathlib import Path
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 
 def get_project_root(path: str) -> Path:
@@ -41,6 +44,7 @@ def analyze_go_mod(root: Path) -> Dict[str, Any]:
     """Detect Go project details from go.mod."""
     go_mod = root / "go.mod"
     if not go_mod.exists():
+        logger.debug("[session_manager] No go.mod — skipping Go analysis")
         return {}
 
     # A go.mod without any .go source files is not a Go project (e.g. a
@@ -52,6 +56,7 @@ def analyze_go_mod(root: Path) -> Dict[str, Any]:
         for p in root.rglob("*.go")
     )
     if not has_go_sources or nested_only:
+        logger.debug("[session_manager] No .go sources or only nested MCP — skipping Go project")
         return {}
 
     result: Dict[str, Any] = {"type": "Go"}
@@ -104,6 +109,7 @@ def analyze_package_json(root: Path) -> Dict[str, Any]:
     """Detect Node.js project details from package.json."""
     pkg_file = root / "package.json"
     if not pkg_file.exists():
+        logger.debug("[session_manager] No package.json — skipping Node.js analysis")
         return {}
 
     try:
@@ -154,6 +160,7 @@ def analyze_python_project(root: Path) -> Dict[str, Any]:
 
     has_py_sources = any(root.glob("*.py")) or any(root.glob("**/*.py"))
     if not any(f.exists() for f in [pyproject, setup_py, requirements]) and not has_py_sources:
+        logger.debug("[session_manager] No Python project files found — skipping Python analysis")
         return {}
 
     result: Dict[str, Any] = {"type": "Python"}
@@ -178,8 +185,8 @@ def analyze_python_project(root: Path) -> Dict[str, Any]:
         if f.exists():
             try:
                 all_text += f.read_text(encoding="utf-8").lower()
-            except OSError:
-                pass
+            except OSError as e:
+                logger.warning("[session_manager] Could not read project file %s: %s", f.name, e)
 
     for pattern, name in framework_patterns.items():
         if pattern in all_text:
@@ -193,6 +200,7 @@ def analyze_rust_project(root: Path) -> Dict[str, Any]:
     """Detect Rust project details from Cargo.toml."""
     cargo = root / "Cargo.toml"
     if not cargo.exists():
+        logger.debug("[session_manager] No Cargo.toml — skipping Rust analysis")
         return {}
 
     result: Dict[str, Any] = {"type": "Rust"}
@@ -212,8 +220,8 @@ def analyze_rust_project(root: Path) -> Dict[str, Any]:
         for pattern, name in framework_patterns.items():
             if pattern in content:
                 stack.append(name)
-    except OSError:
-        pass
+    except OSError as e:
+        logger.warning("[session_manager] Could not read Cargo.toml: %s", e)
 
     result["stack"] = stack
     return result

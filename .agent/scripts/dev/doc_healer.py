@@ -4,6 +4,7 @@
 import sys
 import os
 import re
+import logging
 from pathlib import Path
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1]
@@ -13,6 +14,8 @@ for _d in ["health", "dev", "context", "delivery", "orchestration", "analysis", 
         sys.path.insert(0, _p)
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from lib.suppress import suppress
 
 try:
     from lib.paths import REPO_ROOT
@@ -61,8 +64,9 @@ def heal_docs():
                     desc = header.split('\n')[0].replace("//", "").strip()
                 elif header.startswith("/*"):
                     desc = header.split('*/')[0].replace("/*", "").replace("*", "").strip().split('\n')[0]
-        except:
+        except Exception:
             pass
+        # G2: bare except was catching SystemExit — changed to except Exception
 
         # Add to ARCHITECTURE.md under a "Recent Additions" section
         if "## 🆕 Recent Additions" not in content:

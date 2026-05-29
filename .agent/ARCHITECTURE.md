@@ -91,6 +91,8 @@ graph TD
   main_test --> filepath
   main_test --> mcp
   maintenance --> filepath
+  test_factory --> ast
+  test_factory --> importlib
   workers --> exec
   workers --> json
   workers_test --> filepath
@@ -907,3 +909,5 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/orchestration/dna_utils.py` | DNA Utils — User Profile Loader & Veto Engine for Council of Sages. |
 | `.agent/scripts/orchestration/sages_schemas.py` | Configuration for Advocate veto behavior. |
 | `.agent/scripts/knowledge/adr_observer.py` | ADR Observer - Reactive Wiki Auto-Publisher for Council of Sages. |
+| `.agent/scripts/lib/data_sources.py` | Shared data access helpers for .agent/scripts/. |
+| `.agent/scripts/lib/suppress.py` | Centralized exception suppression with structured logging. |

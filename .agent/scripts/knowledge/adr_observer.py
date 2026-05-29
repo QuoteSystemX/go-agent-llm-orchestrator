@@ -24,9 +24,11 @@ except ImportError:
 
 import sys
 import json
+import logging
 import re
 from pathlib import Path
 from datetime import datetime
+from lib.suppress import suppress
 
 try:
     from lib.paths import REPO_ROOT, BUS_DIR
@@ -61,13 +63,11 @@ def _adr_already_exists(plan_id: str) -> bool:
     if not DECISIONS_DIR.exists():
         return False
     for f in DECISIONS_DIR.glob("ADR-*.md"):
-        try:
+        with suppress("adr_observer.decision_read", level=logging.WARNING):
             content = f.read_text(encoding="utf-8")
             # Match metadata or references
             if f"plan_ref: {plan_id}" in content or f"plan_ref: '{plan_id}'" in content:
                 return True
-        except Exception:
-            pass
     return False
 
 def compile_expert_debate_log(critiques: dict, resolutions: dict) -> str:
