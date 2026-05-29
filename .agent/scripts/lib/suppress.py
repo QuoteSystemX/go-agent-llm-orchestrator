@@ -36,9 +36,11 @@ def suppress(
     log = logger_obj or logging.getLogger(__name__)
     try:
         yield
-    except raise_on:
-        raise
-    except Exception as e:
+    except BaseException as e:
+        if raise_on is not None and isinstance(e, raise_on):
+            raise
+        if not isinstance(e, Exception):
+            raise
         log.log(level, "[suppress] %s: %s", context, e)
 
 

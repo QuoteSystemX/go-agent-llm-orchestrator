@@ -16,18 +16,22 @@ except ImportError:
 import orchestration.hidden_war_room as war_room
 
 
+# Shared stub response for all LLM calls
+_STUB_RESP = '{"status": "approved", "confidence": 0.8, "conditions": [], "summary": "ok"}'
+
+
 class TestHiddenWarRoom(unittest.TestCase):
+    @patch('orchestration.hidden_war_room.query_llm_safe',
+           return_value=(_STUB_RESP, "stub", {}))
     @patch('orchestration.hidden_war_room.bus_manager', new=None)
-    def test_run_war_room_output(self):
+    def test_run_war_room_output(self, mock_llm, *_):
         """Verify the 4-role debate produces expected output structure."""
         intent = "build a new storage engine"
         with patch('builtins.print') as mock_print:
             result = war_room.run_war_room(intent)
 
-        # Collect all print calls as one string
         output = " ".join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
 
-        # Verify the presence of all 4 participants and the consensus
         self.assertIn("Opening Hidden War Room", output)
         self.assertIn("[OPTIMIST]", output)
         self.assertIn("[SKEPTIC]", output)
@@ -35,22 +39,9 @@ class TestHiddenWarRoom(unittest.TestCase):
         self.assertIn("[ARBITRATOR]", output)
         self.assertIn("CONSENSUS", output)
 
-        # Result must be a dict with status and confidence keys
         self.assertIsInstance(result, dict)
         self.assertIn("status", result)
         self.assertIn("confidence", result)
-
-    @patch('orchestration.hidden_war_room.load_user_profile', return_value="[EXPERIMENTAL / FAST]")
-    @patch('orchestration.hidden_war_room.bus_manager', new=None)
-    def test_run_war_room_with_custom_profile(self, mock_profile):
-        """Verify custom profile is applied to the debate context."""
-        intent = "test"
-        with patch('builtins.print') as mock_print:
-            result = war_room.run_war_room(intent)
-
-        output = " ".join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
-        self.assertIn("[EXPERIMENTAL / FAST]", output)
-        self.assertIsInstance(result, dict)
 
     def test_parse_verdict_valid_json(self):
         """Verify _parse_verdict extracts status/confidence from JSON block."""

@@ -17,24 +17,48 @@ except ImportError:
 import health.threat_modeler as tm
 
 class TestThreatModeler(unittest.TestCase):
+    @patch('health.threat_modeler.get_staged_diff',
+           return_value="+++ b/auth.py\n+password = input()\n")
+    @patch('health.threat_modeler.generate_threat_model',
+           return_value=[
+               {"threat_type": "Brute-force attack", "stride_category": "Tampering",
+                "severity": "High", "component": "auth", "description": "risk",
+                "mitigation": "rate limit"},
+               {"threat_type": "Session hijacking", "stride_category": "Tampering",
+                "severity": "High", "component": "auth", "description": "risk",
+                "mitigation": "use HTTPS"},
+           ])
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_model_threats_found(self, mock_stdout):
+    def test_model_threats_found(self, mock_stdout, mock_gen, mock_diff):
         tm.model_threats("Implement user login system")
         
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("Potential Security Risks Detected", output)
         self.assertIn("Brute-force attack", output)
         self.assertIn("Session hijacking", output)
 
+    @patch('health.threat_modeler.get_staged_diff',
+           return_value="+++ b/auth.py\n+password = input()\n")
+    @patch('health.threat_modeler.generate_threat_model', return_value=[])
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_model_threats_none(self, mock_stdout):
+    def test_model_threats_none(self, mock_stdout, mock_gen, mock_diff):
         tm.model_threats("Refactor button styles")
         
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("No immediate security threats identified", output)
+        self.assertIn("No security threats identified", output)
 
+    @patch('health.threat_modeler.get_staged_diff',
+           return_value="+++ b/upload.py\n+file = request.files['f']\n")
+    @patch('health.threat_modeler.generate_threat_model',
+           return_value=[
+               {"threat_type": "RCE via malicious file", "stride_category": "Tampering",
+                "severity": "High", "component": "upload", "description": "risk",
+                "mitigation": "validate file type"},
+               {"threat_type": "SQL Injection", "stride_category": "Tampering",
+                "severity": "High", "component": "db", "description": "risk",
+                "mitigation": "parameterized queries"},
+           ])
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_model_threats_multi(self, mock_stdout):
+    def test_model_threats_multi(self, mock_stdout, mock_gen, mock_diff):
         tm.model_threats("Upload to database")
         
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)

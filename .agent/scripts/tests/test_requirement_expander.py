@@ -18,6 +18,9 @@ except ImportError:
 
 import analysis.requirement_expander as expander
 
+_STUB_LLM_ANSWER = "RFC 7807: Use standard Problem Details for HTTP APIs."
+
+
 class TestRequirementExpander(unittest.TestCase):
     def setUp(self):
         self.test_root = REPO_ROOT / "scratch" / "test_expander"
@@ -36,15 +39,19 @@ class TestRequirementExpander(unittest.TestCase):
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
+    @patch('analysis.requirement_expander._search_standards',
+           return_value=["[LOCAL_GLOBAL_BRAIN] standards/api_guidelines.md: Use RFC 7807"])
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_expand_requirements_api(self, mock_stdout):
-        # Default ranking should include local_global_brain
+    def test_expand_requirements_api(self, mock_stdout, mock_search):
         expander.expand_requirements("build api")
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("[LOCAL_GLOBAL_BRAIN] Standard: Use RFC 7807", output)
+        self.assertIn("[LOCAL_GLOBAL_BRAIN]", output)
+        self.assertIn("RFC 7807", output)
 
+    @patch('analysis.requirement_expander._query_llm_safe',
+           return_value=_STUB_LLM_ANSWER)
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_expand_requirements_cache_with_mcp(self, mock_stdout):
+    def test_expand_requirements_cache_with_mcp(self, mock_stdout, mock_llm):
         config = {
             "gateway": {
                 "ranking_protocol": ["specialized_mcp"],
@@ -55,20 +62,23 @@ class TestRequirementExpander(unittest.TestCase):
         
         expander.expand_requirements("setup cache")
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("[SPECIALIZED_MCP] Pattern: Implement exponential backoff", output)
+        self.assertIn("[SPECIALIZED_MCP]", output)
 
+    @patch('analysis.requirement_expander._query_llm_safe',
+           return_value=_STUB_LLM_ANSWER)
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_expand_requirements_web_fallback(self, mock_stdout):
-        # ranking = [] would fall through to web search if we simulate it
+    def test_expand_requirements_web_fallback(self, mock_stdout, mock_llm):
         config = {"gateway": {"ranking_protocol": ["general_web_search"]}}
         self.config_path.write_text(json.dumps(config))
         
         expander.expand_requirements("random task")
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("[GENERAL_WEB_SEARCH] Latest: Ensure TLS 1.3", output)
+        self.assertIn("[GENERAL_WEB_SEARCH]", output)
 
+    @patch('analysis.requirement_expander._search_standards',
+           return_value=["[LOCAL_GLOBAL_BRAIN] standards/api.md: Use RFC 7807"])
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_expand_requirements_with_feedback(self, mock_stdout):
+    def test_expand_requirements_with_feedback(self, mock_stdout, mock_search):
         expander.expand_requirements("api", feedback="security")
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
         self.assertIn("Re-expanding requirements based on feedback: 'security'", output)

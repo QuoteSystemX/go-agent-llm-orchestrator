@@ -33,22 +33,16 @@ class TestAutonomousFuzzer(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=MagicMock)
     def test_run_fuzz_with_targets(self, mock_stdout):
-        # Create a target package
-        (self.test_root / "pkg").mkdir()
-        
-        fuzzer.run_fuzz()
-        
-        output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("Fuzzing targets: ['pkg']", output)
-        self.assertIn("Stress testing: pkg", output)
+        results = fuzzer.run_fuzz(target="os.path.join", payloads=["", "../etc/passwd"], tag="test")
+        self.assertIsInstance(results, list)
+        self.assertGreater(len(results), 0)
 
     @patch('sys.stdout', new_callable=MagicMock)
     def test_run_fuzz_no_targets(self, mock_stdout):
-        fuzzer.run_fuzz()
-        
-        output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
-        self.assertIn("No target packages found", output)
-        self.assertIn(".agent/scripts", output)
+        # run_fuzz requires target/payloads; empty payloads = no tests
+        results = fuzzer.run_fuzz(target="nonexistent.func", payloads=[], tag="empty")
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 0)
 
 if __name__ == "__main__":
     unittest.main()

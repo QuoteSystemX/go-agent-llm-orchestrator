@@ -56,18 +56,22 @@ def _check_telemetry_limits(content: dict):
         print(f"\n⚠️  BUS ALERT: Telemetry indicates budget breach! Cost: ${cost:.2f}", file=sys.stderr)
 
 def push(obj_id: str, obj_type: str, author: str, content_str: str,
-         metadata: Optional[str] = None) -> None:
-    """Push a new object onto the bus."""
+         metadata: Optional[str] = None) -> bool:
+    """Push a new object onto the bus.
+
+    Returns True on success, False on duplicate or invalid type.
+    Does NOT call sys.exit() — safe for programmatic use.
+    """
     if obj_type not in VALID_TYPES:
         print(f"❌ Invalid type '{obj_type}'. Must be one of: {', '.join(VALID_TYPES)}")
-        sys.exit(1)
+        return False
 
     data = load_json_safe(BUS_FILE) or {"version": "1.0.0", "objects": []}
     
     # Check for duplicates
     if any(obj["id"] == obj_id for obj in data.get("objects", [])):
-        print(f"❌ Error: Object with ID '{obj_id}' already exists on the bus.")
-        sys.exit(1)
+        print(f"ℹ️  Object with ID '{obj_id}' already exists on the bus — skipping.")
+        return False
 
     try:
         content = json.loads(content_str)
@@ -98,6 +102,7 @@ def push(obj_id: str, obj_type: str, author: str, content_str: str,
     data["objects"].append(new_obj)
     save_json_atomic(BUS_FILE, data)
     print(f"✅ Pushed '{obj_id}' ({obj_type}) by {author}.", file=sys.stderr)
+    return True
 
 def pull(obj_id: str) -> None:
     """Pull an object from the bus and print as JSON."""

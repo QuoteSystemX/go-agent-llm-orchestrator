@@ -57,13 +57,14 @@ class TestBusManager(unittest.TestCase):
             self.assertEqual(data["content"]["key"], "val")
 
     def test_push_invalid_type(self):
-        with self.assertRaises(SystemExit):
-            bus.push("obj1", "invalid-type", "test", "content")
+        result = bus.push("obj1", "invalid-type", "test", "content")
+        self.assertFalse(result)
 
     def test_push_duplicate(self):
-        bus.push("obj1", "requirement", "test", "content")
-        with self.assertRaises(SystemExit):
-            bus.push("obj1", "requirement", "test", "content")
+        result1 = bus.push("obj1", "requirement", "test", "content")
+        self.assertTrue(result1)
+        result2 = bus.push("obj1", "requirement", "test", "content")
+        self.assertFalse(result2)
 
     def test_delete(self):
         bus.push("obj1", "requirement", "test", "content")

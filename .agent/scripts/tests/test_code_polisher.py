@@ -17,18 +17,22 @@ except ImportError:
 import dev.code_polisher as polisher
 
 class TestCodePolisher(unittest.TestCase):
+    @patch('dev.code_polisher.query_llm_safe')
     @patch('subprocess.check_output')
-    def test_run_polish_with_changes(self, mock_output):
+    def test_run_polish_with_changes(self, mock_output, mock_llm):
         mock_output.return_value = b"file1.py\nfile2.py"
+        mock_llm.return_value = ("suggestion", "stub", {})
         
         with patch('sys.stdout', new=MagicMock()):
             polisher.run_polish()
             
         mock_output.assert_called_once()
 
+    @patch('dev.code_polisher.query_llm_safe')
     @patch('subprocess.check_output')
-    def test_run_polish_no_git(self, mock_output):
+    def test_run_polish_no_git(self, mock_output, mock_llm):
         mock_output.side_effect = Exception("Git not found")
+        mock_llm.return_value = ("suggestion", "stub", {})
         
         with patch('sys.stdout', new=MagicMock()):
             polisher.run_polish()

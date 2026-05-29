@@ -38,7 +38,9 @@ class TestSelfHealer(unittest.TestCase):
             shutil.rmtree(self.test_root)
 
     @patch('subprocess.run')
-    def test_run_success(self, mock_run):
+    @patch('health.self_healer.bus_manager')
+    def test_run_success(self, mock_bus, mock_run):
+        mock_bus.push.return_value = True
         mock_proc = MagicMock()
         mock_proc.stdout = "Success Output"
         mock_run.return_value = mock_proc
@@ -48,8 +50,9 @@ class TestSelfHealer(unittest.TestCase):
 
     @patch('subprocess.run')
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_run_missing_module(self, mock_stdout, mock_run):
-        # Mock failure
+    @patch('health.self_healer.bus_manager')
+    def test_run_missing_module(self, mock_bus, mock_stdout, mock_run):
+        mock_bus.push.return_value = True
         mock_err = subprocess.CalledProcessError(1, ["python", "app.py"])
         mock_err.stderr = "ModuleNotFoundError: No module named 'rich'"
         mock_run.side_effect = mock_err
@@ -63,7 +66,9 @@ class TestSelfHealer(unittest.TestCase):
 
     @patch('subprocess.run')
     @patch('os.chmod')
-    def test_run_permission_denied(self, mock_chmod, mock_run):
+    @patch('health.self_healer.bus_manager')
+    def test_run_permission_denied(self, mock_bus, mock_chmod, mock_run):
+        mock_bus.push.return_value = True
         script = self.test_root / "script.py"
         script.write_text("print(1)")
         
@@ -75,7 +80,9 @@ class TestSelfHealer(unittest.TestCase):
         self.assertTrue(mock_chmod.called)
 
     @patch('subprocess.run')
-    def test_generate_repair_request(self, mock_run):
+    @patch('health.self_healer.bus_manager')
+    def test_generate_repair_request(self, mock_bus, mock_run):
+        mock_bus.push.return_value = True
         script = Path("failing.py")
         script.write_text("import non_existent")
         

@@ -4,6 +4,7 @@ import shutil
 import sys
 import os
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -32,7 +33,11 @@ class TestCIAutoFixer(unittest.TestCase):
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
-    def test_run_auto_fix(self):
+    @patch('dev.ci_auto_fixer._run_lint', return_value=[
+        {'file': 'test.py', 'line': 1, 'col': 1, 'code': 'F401', 'message': 'module imported but unused'}
+    ])
+    @patch('dev.ci_auto_fixer._apply_auto_fix', return_value=False)
+    def test_run_auto_fix(self, mock_fix, mock_lint):
         fixer.run_auto_fix()
         
         task_file = Path("tasks/ci-auto-fix-needed.md")

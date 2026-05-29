@@ -29,23 +29,25 @@ import analysis.truth_validator; import sys; sys.modules['truth_validator'] = sy
 import analysis.resource_forecaster; import sys; sys.modules['resource_forecaster'] = sys.modules['analysis.resource_forecaster']; import analysis.resource_forecaster as resource_forecaster
 import analysis.requirement_expander; import sys; sys.modules['requirement_expander'] = sys.modules['analysis.requirement_expander']; import analysis.requirement_expander as requirement_expander
 
+_STUB_VERDICT = '{"status": "approved", "confidence": 0.8, "conditions": [], "summary": "ok"}'
+
+
 class TestPhase23(unittest.TestCase):
 
+    @unittest.mock.patch('orchestration.hidden_war_room.query_llm_safe',
+                         return_value=(_STUB_VERDICT, "stub", {}))
     @unittest.mock.patch('orchestration.hidden_war_room.bus_manager', new=None)
-    def test_user_advocate_veto(self):
+    def test_user_advocate_veto(self, mock_llm, *_):
         print("\n[TEST] User Advocate Veto...")
-        import unittest.mock
         f = StringIO()
         with redirect_stdout(f):
             result = hidden_war_room.run_war_room("use heavy enterprise framework for hello world")
         output = f.getvalue()
-        # Verify all 4 roles participated
         self.assertIn("[OPTIMIST]", output)
         self.assertIn("[SKEPTIC]", output)
         self.assertIn("[USER ADVOCATE]", output)
         self.assertIn("[ARBITRATOR]", output)
         self.assertIn("CONSENSUS", output)
-        # Verify structured verdict returned
         self.assertIsInstance(result, dict)
         self.assertIn("status", result)
         self.assertIn("confidence", result)
@@ -56,28 +58,29 @@ class TestPhase23(unittest.TestCase):
         with redirect_stdout(f):
             truth_validator.validate_truth("setup auth system", [])
         output = f.getvalue()
-        self.assertIn("🚨 CONFLICT_OF_TRUTH DETECTED!", output)
+        self.assertIn("CONFLICT_OF_TRUTH DETECTED!", output)
         self.assertIn("[LOCAL]: Use JWT", output)
 
     def test_budget_guardrail_veto(self):
         print("[TEST] Budget Guardrail Veto...")
-        # Create a prompt long enough to exceed 50 words (50 * 1500 = 75,000 tokens > 50,000 max)
         long_intent = " ".join(["word"] * 60)
         f = StringIO()
         with redirect_stdout(f):
             res = resource_forecaster.forecast_resources(long_intent)
         output = f.getvalue()
         self.assertFalse(res)
-        self.assertIn("🚨 BUDGET_EXCEEDED", output)
+        self.assertIn("BUDGET_EXCEEDED", output)
         self.assertIn("[USER ADVOCATE]: VETO", output)
 
-    def test_requirement_feedback_loop(self):
+    @unittest.mock.patch('analysis.requirement_expander._search_standards', return_value=[])
+    @unittest.mock.patch('analysis.requirement_expander._query_llm_safe', return_value="")
+    def test_requirement_feedback_loop(self, mock_llm, mock_search):
         print("[TEST] Requirement Feedback Loop...")
         f = StringIO()
         with redirect_stdout(f):
             requirement_expander.expand_requirements("api", feedback="security first")
         output = f.getvalue()
-        self.assertIn("🔄 Re-expanding requirements based on feedback: 'security first'", output)
+        self.assertIn("Re-expanding requirements based on feedback: 'security first'", output)
         self.assertIn("Starting Ranked Requirement Expansion for: 'api focus on security first'", output)
 
 if __name__ == "__main__":

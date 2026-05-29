@@ -24,10 +24,10 @@ class TestGhostPrototyper(unittest.TestCase):
         self.assertIn("feasible", output)
 
     @patch('sys.stdout', new_callable=MagicMock)
-    def test_run_ghost_proto_failure(self, mock_stdout):
-        with self.assertRaises(SystemExit) as cm:
-            ghost.run_ghost_proto("This is impossible to build")
-        self.assertEqual(cm.exception.code, 1)
+    @patch('analysis.ghost_prototyper._try_go_build', return_value=False)
+    def test_run_ghost_proto_failure(self, mock_build, mock_stdout):
+        result = ghost.run_ghost_proto("impossible task")
+        self.assertFalse(result)
         output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
         self.assertIn("FAILED", output)
 
