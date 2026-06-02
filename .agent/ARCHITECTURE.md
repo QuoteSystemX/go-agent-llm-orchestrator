@@ -376,6 +376,8 @@ Master validation scripts that orchestrate skill-level scripts.
 | `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
 | `war_room_manager.py`  | Active SRE Incident Reflex Loop — real Git-Ops (_create_branch, _run_validation, _commit_fix, _report_pr), repair file scanner | After incident |
 | `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
+| `bus_sse_server.py`    | Lightweight SSE server for live dashboard updates | Monitoring, Cockpit Ops |
+| `tough_auditor.py`     | Adversarial LLM-powered Git Diff Auditor & Gatekeeper | Pre-commit, PR review |
 | `dna_onboarder.py`     | Interactive Q&A wizard — computes DNA tag via weighted axis scoring, rewrites PERSONA.md | First run / --force |
 | `dna_git_analyzer.py`  | Objective DNA profiling from git history — weighted signal fusion on 6 axes, discrepancy report vs wizard | Onboarding / audit |
 | `dna_session_learner.py` | Hybrid drift detector — multi-signal fusion (B) + event-log history (C); stability, drift, confidence_Δ | Post-session       |
@@ -570,6 +572,18 @@ Contextual Knowledge Search.
 Self-healing Documentation.
 
 - `python3 .agent/scripts/dev/doc_healer.py` - Analyzes code and updates ARCHITECTURE.md for new files.
+
+### `bus_sse_server.py`
+
+Lightweight SSE server for live dashboard updates.
+
+- `python3 .agent/scripts/health/bus_sse_server.py` - Runs local SSE stream server to broadcast health metrics and updates.
+
+### `tough_auditor.py`
+
+Adversarial LLM-powered Git Diff Auditor & Gatekeeper.
+
+- `python3 .agent/scripts/orchestration/tough_auditor.py` - Evaluates code changes with extreme criticism and severity, logs agent quality scores, and warns/blocks if the quality is suboptimal.
 
 ---
 

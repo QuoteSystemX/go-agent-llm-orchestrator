@@ -78,7 +78,7 @@ def check_python_coverage(project_path: Path) -> dict:
     stats = {'untyped_functions': 0, 'typed_functions': 0, 'any_count': 0}
     
     py_files = list(project_path.rglob("*.py"))
-    py_files = [f for f in py_files if not any(x in str(f) for x in ['venv', '__pycache__', '.git', 'node_modules', '.agent'])]
+    py_files = [f for f in py_files if not any(x in str(f) for x in ['venv', '__pycache__', '.git', 'node_modules', '.agent', 'scratch'])]
     
     if not py_files:
         return {'type': 'python', 'files': 0, 'passed': [], 'issues': ["[!] No Python files found"], 'stats': stats}
