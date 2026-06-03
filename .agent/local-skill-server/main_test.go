@@ -56,6 +56,10 @@ func TestHandlers(t *testing.T) {
 }
 
 func TestValidatePath(t *testing.T) {
+	root, err := filepath.Abs(".")
+	if err != nil {
+		t.Fatal(err)
+	}
 	cases := []struct {
 		path    string
 		wantErr bool
@@ -63,10 +67,12 @@ func TestValidatePath(t *testing.T) {
 		{"safe/path", false},
 		{"../../unsafe", true},
 		{"/abs/path/with/..", true},
+		{filepath.Join(root, "safe/path"), false},
+		{"/etc/passwd", true},
 	}
 
 	for _, c := range cases {
-		err := validatePath(c.path)
+		err := validatePath(c.path, root)
 		if (err != nil) != c.wantErr {
 			t.Errorf("validatePath(%q) error = %v, wantErr %v", c.path, err, c.wantErr)
 		}

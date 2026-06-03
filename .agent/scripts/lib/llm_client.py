@@ -83,6 +83,22 @@ def get_dynamic_timeout(model: str, default: int = 60) -> int:
     return MODEL_TIMEOUT_MAP.get(model, default)
 
 
+def inject_lessons_context(prompt: str, system_prompt: Optional[str]) -> Optional[str]:
+    """Inject relevant lessons from wiki/LESSONS_LEARNED.md if applicable."""
+    try:
+        from models.semantic_experience import search_semantic
+        match = search_semantic(prompt)
+        if match and "🎯 Best Contextual Match" in match:
+            lesson_block = f"\n\n### 🚨 HISTORICAL LESSONS LEARNED (DO NOT REPEAT THESE ERRORS):\n{match}\n"
+            if system_prompt:
+                return system_prompt + lesson_block
+            else:
+                return "You are a helpful coding assistant." + lesson_block
+    except Exception as e:
+        logger.warning("Failed to inject JIT lessons context: %s", e)
+    return system_prompt
+
+
 def query_llm_safe(
     prompt: str,
     model: Optional[str] = None,
@@ -102,6 +118,7 @@ def query_llm_safe(
         model = default_model
 
     timeout = get_dynamic_timeout(model)
+    system_prompt = inject_lessons_context(prompt, system_prompt)
 
     # ── Level 1: Ollama ──
     try:

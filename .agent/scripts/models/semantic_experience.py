@@ -27,26 +27,50 @@ except ImportError:
     from lib.paths import REPO_ROOT
 
 def search_semantic(query: str):
-    lessons_file = REPO_ROOT / "wiki" / "LESSONS_LEARNED.md"
-    if not lessons_file.exists():
+    lesson_files = []
+    
+    # 1. Global lessons file
+    global_lessons = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
+    if global_lessons.exists():
+        lesson_files.append(global_lessons)
+        
+    # 2. Local decentralized lessons in skills
+    skills_dir = REPO_ROOT / ".agent" / "skills"
+    if skills_dir.exists():
+        lesson_files.extend(skills_dir.rglob("LESSONS.md"))
+        
+    # 3. Archive lessons
+    archive_dir = REPO_ROOT / "wiki" / "archive" / "experience"
+    if archive_dir.exists():
+        lesson_files.extend(archive_dir.glob("*.md"))
+
+    if not lesson_files:
         return "No experience base found."
 
-    content = lessons_file.read_text(encoding="utf-8")
-    
-    # Split into entries
-    entries = re.split(r'### ', content)[1:]
-    
+    entries = []
+    for f_path in lesson_files:
+        try:
+            content = f_path.read_text(encoding="utf-8")
+            # Split into entries (discarding anything before the first '### ')
+            parts = re.split(r'\n### |^### ', content)
+            for p in parts:
+                cleaned = p.strip()
+                if cleaned:
+                    entries.append((f_path.name, cleaned))
+        except Exception:
+            continue
+
     results = []
     query_words = set(query.lower().split())
     
-    for entry in entries:
+    for origin, entry in entries:
         title = entry.split('\n')[0]
         # Calculate overlap
         entry_words = set(entry.lower().replace('`', '').replace('|', '').split())
         overlap = len(query_words.intersection(entry_words))
         
         if overlap > 0:
-            results.append((overlap, title, entry))
+            results.append((overlap, title, origin, entry))
 
     if not results:
         return f"No semantic matches for '{query}'."
@@ -55,7 +79,7 @@ def search_semantic(query: str):
     results.sort(key=lambda x: x[0], reverse=True)
     
     top = results[0]
-    return f"🎯 Best Contextual Match (Score: {top[0]}):\n### {top[1]}\n{top[2]}"
+    return f"🎯 Best Contextual Match (Score: {top[0]}, Source: {top[2]}):\n### {top[3]}"
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

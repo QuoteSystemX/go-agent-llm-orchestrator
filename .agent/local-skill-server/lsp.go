@@ -195,43 +195,64 @@ func (c *lspClient) call(method string, params interface{}) (json.RawMessage, er
 		return nil, err
 	}
 
-	// Read response
-	line, err := c.stdout.ReadString('\n')
-	if err != nil {
-		return nil, err
-	}
+	expectedID := c.id
 
-	if !strings.HasPrefix(line, "Content-Length:") {
-		return nil, fmt.Errorf("invalid LSP response header: %s", line)
-	}
+	for {
+		line, err := c.stdout.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
 
-	lenStr := strings.TrimSpace(strings.TrimPrefix(line, "Content-Length:"))
-	contentLen, err := strconv.Atoi(lenStr)
-	if err != nil {
-		return nil, err
-	}
+		lineClean := strings.TrimSpace(line)
+		if lineClean == "" {
+			continue
+		}
 
-	// Skip empty line
-	_, _ = c.stdout.ReadString('\n')
+		if !strings.HasPrefix(lineClean, "Content-Length:") {
+			continue
+		}
 
-	body := make([]byte, contentLen)
-	if _, err := io.ReadFull(c.stdout, body); err != nil {
-		return nil, err
-	}
+		lenStr := strings.TrimSpace(strings.TrimPrefix(lineClean, "Content-Length:"))
+		contentLen, err := strconv.Atoi(lenStr)
+		if err != nil {
+			return nil, err
+		}
 
-	var resp struct {
-		Result json.RawMessage `json:"result"`
-		Error  interface{}     `json:"error"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
+		// Read empty line (separator \r\n)
+		for {
+			nextLine, err := c.stdout.ReadString('\n')
+			if err != nil {
+				return nil, err
+			}
+			if strings.TrimSpace(nextLine) == "" {
+				break
+			}
+		}
 
-	if resp.Error != nil {
-		return nil, fmt.Errorf("LSP error: %v", resp.Error)
-	}
+		body := make([]byte, contentLen)
+		if _, err := io.ReadFull(c.stdout, body); err != nil {
+			return nil, err
+		}
 
-	return resp.Result, nil
+		var resp struct {
+			ID     *int            `json:"id"`
+			Result json.RawMessage `json:"result"`
+			Error  interface{}     `json:"error"`
+		}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			continue
+		}
+
+		if resp.ID == nil || *resp.ID != expectedID {
+			continue
+		}
+
+		if resp.Error != nil {
+			return nil, fmt.Errorf("LSP error: %v", resp.Error)
+		}
+
+		return resp.Result, nil
+	}
 }
 
 // --- MCP Handlers ---

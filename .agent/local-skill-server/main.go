@@ -337,7 +337,7 @@ func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult,
 }
 
 func (h *handler) loadItem(path string) (*mcp.CallToolResult, error) {
-	if verr := validatePath(path); verr != nil {
+	if verr := validatePath(path, h.projectRoot); verr != nil {
 		return mcp.NewToolResultError(verr.Error()), nil
 	}
 	data, err := os.ReadFile(path)
@@ -372,8 +372,20 @@ func (h *handler) tailLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.Cal
 	return mcp.NewToolResultText(fmt.Sprintf("Tail of last %d lines from .agent/logs/audit.log...", lines)), nil
 }
 
-func validatePath(path string) error {
-	if strings.Contains(path, "..") {
+func validatePath(path string, projectRoot string) error {
+	cleaned := filepath.Clean(path)
+	if !filepath.IsAbs(cleaned) {
+		cleaned = filepath.Join(projectRoot, cleaned)
+	}
+
+	evaled, err := filepath.EvalSymlinks(cleaned)
+	if err != nil {
+		evaled = cleaned
+	}
+
+	cleanRoot := filepath.Clean(projectRoot)
+	rel, err := filepath.Rel(cleanRoot, evaled)
+	if err != nil || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
 		return fmt.Errorf("invalid path traversal attempt")
 	}
 	return nil

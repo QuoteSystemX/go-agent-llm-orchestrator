@@ -217,6 +217,88 @@ def list_skill_tags() -> str:
     return f"Skill tags ({len(sorted_tags)}): " + ", ".join(sorted_tags)
 
 
+def consolidate_lessons() -> str:
+    """Consolidate duplicate/similar lessons in all LESSONS files."""
+    from lib.llm_client import query_llm_safe
+    import json
+    
+    lesson_files = []
+    global_lessons = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
+    if global_lessons.exists():
+        lesson_files.append(global_lessons)
+    skills_dir = REPO_ROOT / ".agent" / "skills"
+    if skills_dir.exists():
+        lesson_files.extend(skills_dir.rglob("LESSONS.md"))
+
+    print("🔄 Running Semantic Consolidation Loop (Option B)...")
+    consolidated_total = 0
+
+    for file_path in lesson_files:
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            header, entries = parse_entries(content)
+            if not entries:
+                continue
+
+            entries_text = ""
+            for idx, entry in enumerate(entries):
+                entries_text += f"\n--- ENTRY {idx} ---\n### {entry}\n"
+
+            prompt = (
+                "You are the Knowledge Consolidation Engine.\n"
+                "Review the following list of lessons learned. Identify any entries that have >= 80% semantic overlap (i.e. they address the same root cause, context, and prevention strategy).\n\n"
+                "For any duplicates or highly similar entries found, merge them into a single, comprehensive and clear lesson entry.\n"
+                "Keep unique lessons untouched.\n\n"
+                f"LIST OF ENTRIES:\n{entries_text}\n\n"
+                "Output ONLY a JSON object with two fields:\n"
+                "  - \"consolidated_indexes\": a list of lists of integers representing groups of indexes that were merged (e.g. [[0, 2], [1, 4]]).\n"
+                "  - \"merged_entries\": a list of strings representing the new consolidated Markdown block for each group (in '### [YYYY-MM-DD] ...' format).\n\n"
+                "Provide ONLY the raw JSON object."
+            )
+
+            resp, src, _ = query_llm_safe(
+                prompt=prompt,
+                model="gemini-3-flash",
+                system_prompt="You are a precise technical editor. Output only JSON.",
+                format_json=True
+            )
+
+            if src == "stub" or "⚠️ [LLM Unavailable]" in resp:
+                print(f"  ⚠️ LLM Unavailable for {file_path.name}. Skipping.")
+                continue
+
+            match = re.search(r"\{[^{}]*\}", resp, re.DOTALL)
+            if match:
+                result = json.loads(match.group(0))
+                groups = result.get("consolidated_indexes", [])
+                merged = result.get("merged_entries", [])
+
+                if groups and len(groups) == len(merged):
+                    to_remove = set()
+                    for group in groups:
+                        to_remove.update(group)
+
+                    new_entries = []
+                    # Add non-merged entries
+                    for idx, entry in enumerate(entries):
+                        if idx not in to_remove:
+                            new_entries.append(f"### {entry.strip()}")
+
+                    # Add newly merged entries
+                    for merged_entry in merged:
+                        new_entries.append(merged_entry.strip())
+
+                    # Write back to file
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(header.strip() + "\n\n" + "\n\n".join(new_entries) + "\n")
+                    
+                    consolidated_total += len(to_remove) - len(merged)
+                    print(f"  ✅ Consolidated {len(to_remove)} entries into {len(merged)} in {file_path.name}")
+        except Exception as e:
+            print(f"  ⚠️ Failed to consolidate {file_path.name}: {e}")
+
+    return f"Consolidation complete: merged {consolidated_total} duplicate entries."
+
 
 def main():
     if "--skill" in sys.argv:
@@ -235,6 +317,8 @@ def main():
             sys.exit(1)
     elif "--list-skills" in sys.argv:
         print(list_skill_tags())
+    elif "--consolidate" in sys.argv:
+        print(consolidate_lessons())
     else:
         print(distill_lessons())
 

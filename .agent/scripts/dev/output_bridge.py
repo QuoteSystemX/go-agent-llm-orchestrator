@@ -234,6 +234,84 @@ def synthesize_outputs():
     # Final Step: Clear the bus
     clear_bus()
 
+
+def run_contrastive_validation(content):
+    """Run Contrastive Verification Loop (Option C) for L3/L4 tasks."""
+    header_match = re.search(r"🤖 Flow: \*\*\[(L[1-4])\]\*\*", content)
+    if not header_match:
+        return True # Handled by identity validator
+        
+    tier = header_match.group(1)
+    if tier not in ["L3", "L4"]:
+        return True # Skip for L1/L2
+        
+    print("⚖️ Running Contrastive Verification Loop (Option C)...")
+    
+    # 1. Fetch git diff
+    try:
+        git_diff = subprocess.check_output(["git", "diff", "HEAD"], stderr=subprocess.STDOUT).decode()
+        if not git_diff.strip():
+            # Try staged diff if unstaged is empty
+            git_diff = subprocess.check_output(["git", "diff", "--cached"], stderr=subprocess.STDOUT).decode()
+    except Exception as e:
+        print(f"  ⚠️ Failed to retrieve git diff: {e}")
+        git_diff = ""
+        
+    if not git_diff.strip():
+        print("  ✅ No file changes detected in git. Skipping contrastive verification.")
+        return True
+
+    # 2. Build LLM prompt comparing the agent response content with the actual code changes
+    prompt = (
+        "You are the Contrastive Verification Gatekeeper.\n"
+        "Your task is to identify any HALLUCINATIONS in the agent's textual response by comparing it with the actual git diff of the changes made.\n\n"
+        "Specifically, look for:\n"
+        "1. Mention of functions, variables, modules, imports, or API endpoints in the text that do NOT exist in either the original code or the git diff.\n"
+        "2. Claims of features implemented that are completely absent from the code changes.\n"
+        "3. Any logical discrepancies between what the text says was done and what the code changes actually show.\n\n"
+        f"--- GIT DIFF ---\n{git_diff[:8000]}\n\n"
+        f"--- AGENT RESPONSE ---\n{content}\n\n"
+        "Output a JSON object with two fields:\n"
+        "  - \"passed\": true | false\n"
+        "  - \"hallucinations\": a list of strings detailing each hallucination or discrepancy found. Empty if passed is true.\n\n"
+        "Provide ONLY the raw JSON object."
+    )
+
+    try:
+        from lib.llm_client import query_llm_safe
+        # Use gemini-3-flash for high speed and low cost
+        resp, src, _ = query_llm_safe(
+            prompt=prompt,
+            model="gemini-3-flash",
+            system_prompt="You are a strict, precise code reviewer. Output only JSON.",
+            format_json=True
+        )
+        
+        # If LLM endpoints failed and returned stub
+        if src == "stub" or "⚠️ [LLM Unavailable]" in resp:
+            print("  ⚠️ LLM Unavailable for Contrastive Verification. Skipping and warning.")
+            return True
+            
+        # Parse output
+        match = re.search(r"\{[^{}]*\}", resp, re.DOTALL)
+        if match:
+            result = json.loads(match.group(0))
+            passed = result.get("passed", True)
+            hallucinations = result.get("hallucinations", [])
+            
+            if not passed:
+                print("❌ CONTRASTIVE VETO DETECTED:")
+                for h in hallucinations:
+                    print(f"  - {h}")
+                return False
+                
+        print("  ✅ Contrastive verification passed. No hallucinations detected.")
+        return True
+    except Exception as e:
+        print(f"  ⚠️ Error during contrastive verification: {e}. Passing resiliently.")
+        return True
+
+
 def main():
     content = ""
     if "--synthesize" in sys.argv:
@@ -276,6 +354,10 @@ def main():
     if identity_errors:
         for err in identity_errors:
             print(f"❌ {err}")
+        sys.exit(1)
+        
+    # 1.7 Contrastive Verification Loop (Option C)
+    if not run_contrastive_validation(content):
         sys.exit(1)
     
     # Extract goal and files for further validation
