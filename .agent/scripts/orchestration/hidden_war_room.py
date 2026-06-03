@@ -9,12 +9,12 @@ Dynamic timeout by model (14b=30s, 32b=60s, deepseek=120s).
 import sys, json, logging, re
 from pathlib import Path
 
-from lib.suppress import suppress
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS_DIR = REPO_ROOT / ".agent" / "scripts"
-sys.path.insert(0, str(SCRIPTS_DIR))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
+from lib.suppress import suppress
 from lib.llm_client import query_llm_safe
 from orchestration.dna_utils import load_dna, build_dna_block, check_veto, build_dna_context
 

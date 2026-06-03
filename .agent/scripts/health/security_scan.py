@@ -101,7 +101,7 @@ def scan_file(path: Path) -> list[dict]:
         for pattern, description in SECRET_PATTERNS:
             if re.search(pattern, line):
                 # Ignore obvious test/example values
-                if any(v in line.lower() for v in ["example", "placeholder", "your_", "<", "TODO", "xxx"]):
+                if any(v in line.lower() for v in ["example", "placeholder", "your_", "<", "todo", "xxx"]):
                     continue
                 findings.append({
                     "severity": "CRITICAL",
