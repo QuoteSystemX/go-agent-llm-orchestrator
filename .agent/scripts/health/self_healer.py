@@ -64,8 +64,35 @@ def run_with_healing(command):
                 print(f"💡 Detected missing module: {missing_module}")
                 # Try to find it in the repo (common Antigravity issue)
                 found = list(Path(".agent/scripts").rglob(f"{missing_module}.py"))
+                if not found:
+                    found = list(Path(".agent/scripts").rglob(f"{missing_module}"))
                 if found:
-                    print(f"✅ Found module in repo: {found[0]}. Suggesting PYTHONPATH update.")
+                    parent_dir = str(found[0].parent.resolve())
+                    print(f"✅ Found module in repo at: {parent_dir}. Attempting PYTHONPATH auto-healing...")
+                    
+                    # Prepare environment with prepended parent_dir
+                    env = os.environ.copy()
+                    existing_pythonpath = env.get("PYTHONPATH", "")
+                    if existing_pythonpath:
+                        env["PYTHONPATH"] = f"{parent_dir}{os.pathsep}{existing_pythonpath}"
+                    else:
+                        env["PYTHONPATH"] = parent_dir
+                    
+                    # Retry execution of original command with new PYTHONPATH
+                    try:
+                        retry_process = subprocess.run(
+                            command,
+                            capture_output=True,
+                            text=True,
+                            check=True,
+                            env=env
+                        )
+                        print("🎉 Auto-Healing Success: Command succeeded after adjusting PYTHONPATH!")
+                        print(retry_process.stdout)
+                        return True
+                    except subprocess.CalledProcessError as retry_err:
+                        error_msg = retry_err.stderr or retry_err.stdout
+                        print(f"❌ Retried execution failed: {error_msg}")
                 else:
                     print(f"🛠  Suggesting installation: pip install {missing_module}")
             else:

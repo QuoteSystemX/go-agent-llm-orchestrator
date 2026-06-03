@@ -69,12 +69,27 @@ def run_foresight_analysis(repo_root=None):
         try: history = json.loads(history_file.read_text())
         except Exception: pass
 
+    abs_root = repo_root.resolve()
     for ext in monitored_exts:
         for file in repo_root.glob(f"**/*{ext}"):
-            if ".agent" in str(file) or "node_modules" in str(file) or "dist" in str(file):
+            abs_file = file.resolve()
+            
+            # Prevent path traversal outside the repository root
+            if not str(abs_file).startswith(str(abs_root)):
                 continue
                 
-            rel_path = str(file.relative_to(repo_root))
+            try:
+                rel_path = str(abs_file.relative_to(abs_root))
+            except ValueError as e:
+                # Log relative path calculation error if it fails
+                print(f"⚠️ Warning: Failed to calculate relative path for {file}: {e}", file=sys.stderr)
+                continue
+            
+            # Skip ignored directories (auxiliary, archived, scratch, and config folders)
+            ignored_dirs = {".agent", "node_modules", "dist", "archive", "scratch", ".claude", ".opencode"}
+            if any(part in ignored_dirs for part in Path(rel_path).parts):
+                continue
+                
             complexity = get_file_complexity(file)
             file_churn = churn.get(rel_path, 0)
             

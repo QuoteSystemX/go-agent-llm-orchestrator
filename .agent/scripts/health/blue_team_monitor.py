@@ -25,6 +25,7 @@ import psutil
 import subprocess
 from pathlib import Path
 from datetime import datetime
+from lib.common import save_json_atomic
 
 # Paths
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -76,8 +77,7 @@ def log_metrics(metrics, status):
     history.append(log_entry)
     history = history[-100:]
     
-    with open(METRICS_FILE, 'w') as f:
-        json.dump(history, f, indent=2)
+    save_json_atomic(METRICS_FILE, history)
 
 def read_previous_status() -> str:
     """Read the last written stability status, default to HEALTHY."""
@@ -123,12 +123,11 @@ def main() -> None:
     log_metrics(metrics, status)
 
     # 5. Write status for status_report
-    with open(BUS_DIR / "blue_team_status.json", "w") as f:
-        json.dump({
-            "status": status,
-            "system_health": "OK" if metrics['cpu_percent'] < 90 else "HIGH_LOAD",
-            "timestamp": datetime.utcnow().isoformat() + "Z"
-        }, f, indent=2)
+    save_json_atomic(BUS_DIR / "blue_team_status.json", {
+        "status": status,
+        "system_health": "OK" if metrics['cpu_percent'] < 90 else "HIGH_LOAD",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    })
 
 if __name__ == "__main__":
     main()

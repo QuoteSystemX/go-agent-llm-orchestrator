@@ -65,6 +65,34 @@ class TestSelfHealer(unittest.TestCase):
         self.assertIn("Suggesting installation: pip install rich", output)
 
     @patch('subprocess.run')
+    @patch('sys.stdout', new_callable=MagicMock)
+    @patch('health.self_healer.bus_manager')
+    def test_run_missing_module_healed(self, mock_bus, mock_stdout, mock_run):
+        mock_bus.push.return_value = True
+        
+        # Setup mock: first call throws CalledProcessError, second call succeeds
+        mock_err = subprocess.CalledProcessError(1, ["python", "app.py"])
+        mock_err.stderr = "ModuleNotFoundError: No module named 'llm_client'"
+        
+        mock_ok = MagicMock()
+        mock_ok.stdout = "Auto-Healed Output"
+        
+        mock_run.side_effect = [mock_err, mock_ok]
+        
+        # Ensure the test repo has a mock .agent/scripts/lib/llm_client.py
+        lib_dir = Path(".agent/scripts/lib")
+        lib_dir.mkdir(parents=True, exist_ok=True)
+        (lib_dir / "llm_client.py").write_text("print(1)")
+        
+        success = healer.run_with_healing(["python", "app.py"])
+        self.assertTrue(success)
+        
+        output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+        self.assertIn("Detected missing module: llm_client", output)
+        self.assertIn("Attempting PYTHONPATH auto-healing...", output)
+        self.assertIn("Auto-Healing Success", output)
+
+    @patch('subprocess.run')
     @patch('os.chmod')
     @patch('health.self_healer.bus_manager')
     def test_run_permission_denied(self, mock_bus, mock_chmod, mock_run):

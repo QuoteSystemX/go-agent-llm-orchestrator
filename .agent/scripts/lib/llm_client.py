@@ -196,6 +196,7 @@ def query_llm_safe(
         logger.warning("Cloud fallback also failed: %s", e)
 
     # ── Level 3: Stub ──
+    logger.warning("🚨 [OFFLINE] Ни одна LLM не доступна (все эндпоинты вернули ошибку). Использование заглушки.")
     stub = f"⚠️ [LLM Unavailable] Fallback for: {prompt[:100]}..."
     stats = {"warning": "All LLM endpoints failed, using stub", "model": model}
     return stub, "stub", stats

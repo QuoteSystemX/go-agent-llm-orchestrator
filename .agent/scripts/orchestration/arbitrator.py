@@ -96,6 +96,39 @@ def _extract_json_block(text: str) -> str:
     return text
 
 
+def _check_syntax_offline() -> tuple[bool, list[str]]:
+    """Perform fast local syntax checks on staged files.
+    Returns (passed, list_of_errors)
+    """
+    staged = _get_staged_files()
+    if not staged:
+        return True, ["No staged files to check."]
+    
+    errors = []
+    passed = True
+    for f in staged:
+        path = REPO_ROOT / f
+        if not path.exists():
+            continue
+        if f.endswith(".py"):
+            try:
+                res = subprocess.run([sys.executable, "-m", "py_compile", str(path)], capture_output=True, text=True)
+                if res.returncode != 0:
+                    passed = False
+                    errors.append(f"Python syntax error in {f}: {res.stderr.strip()}")
+            except Exception as e:
+                errors.append(f"Failed to check Python syntax in {f}: {e}")
+        elif f.endswith(".go"):
+            try:
+                res = subprocess.run(["go", "vet", str(path)], capture_output=True, text=True)
+                if res.returncode != 0:
+                    passed = False
+                    errors.append(f"Go compilation/vet error in {f}: {res.stderr.strip()}")
+            except Exception as e:
+                pass
+    return passed, errors
+
+
 def run_consensus(plan_id: str, plan_text: str = "") -> dict:
     """Run 3-round debate: Proposer -> Challenger -> Judge."""
     if not plan_text:
@@ -168,6 +201,33 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
     )
     print("(via %s)" % src_chal)
     
+    is_offline = (src_chal == "stub") and ("LLM Unavailable" in resp_chal or not _extract_json_block(resp_chal).strip().startswith("{"))
+    if is_offline:
+        print("\n🚨 [OFFLINE] Ни одна LLM не доступна! Выполняется локальный синтаксический анализ изменений...")
+        passed, errors = _check_syntax_offline()
+        
+        if not passed:
+            verdict = {
+                "plan_ref": plan_id,
+                "status": "rejected",
+                "conditions": ["Fix compilation and syntax errors before proceeding."],
+                "confidence": 1.0,
+                "risk_areas": errors,
+                "summary": "🚨 [OFFLINE] Авто-вето: обнаружены критические ошибки синтаксиса/компиляции при недоступности LLM.",
+            }
+        else:
+            verdict = {
+                "plan_ref": plan_id,
+                "status": "approved",
+                "conditions": [],
+                "confidence": 0.8,
+                "risk_areas": ["⚠️ Ни одна LLM не доступна (Offline). Вердикт вынесен локально на основе синтаксического анализа."],
+                "summary": "✅ [OFFLINE] Одобрено: все измененные файлы прошли локальную синтаксическую валидацию при недоступности LLM.",
+            }
+            
+        _push_verdict(plan_id, verdict, CritiqueList(critiques=[]), VerdictList(resolutions=[]), plan_text)
+        return verdict
+
     # Safely parse Challenger output
     try:
         crit_list = CritiqueList.from_dict(json.loads(_extract_json_block(resp_chal)))

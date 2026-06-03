@@ -32,29 +32,42 @@ class TestAutoADRDrafter(unittest.TestCase):
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
 
-    def test_draft_adr(self):
+    @patch('knowledge.auto_adr_drafter.query_llm_safe')
+    def test_draft_adr_with_llm(self, mock_query):
+        mock_query.return_value = ("# Mocked LLM ADR\nContent", "ollama", {})
         conflict = "ambiguous state manager"
-        drafter.draft_adr(conflict)
+        content = drafter.draft_adr(conflict)
         
-        expected_path = Path("wiki/decisions/ADR-022-auto-resolved.md")
+        expected_path = Path("wiki/decisions/ADR-001-auto-resolved.md")
         self.assertTrue(expected_path.exists())
+        self.assertEqual(content, "# Mocked LLM ADR\nContent")
         
-        content = expected_path.read_text()
-        self.assertIn(f"Autonomous Resolution for '{conflict}'", content)
+        # Test auto-increment
+        content2 = drafter.draft_adr(conflict)
+        expected_path2 = Path("wiki/decisions/ADR-002-auto-resolved.md")
+        self.assertTrue(expected_path2.exists())
+
+    @patch('knowledge.auto_adr_drafter.query_llm_safe')
+    def test_draft_adr_fallback(self, mock_query):
+        mock_query.return_value = ("⚠️ [LLM Unavailable]", "stub", {})
+        conflict = "ambiguous state manager"
+        content = drafter.draft_adr(conflict)
+        
+        expected_path = Path("wiki/decisions/ADR-001-auto-resolved.md")
+        self.assertTrue(expected_path.exists())
         self.assertIn("Status: Proposed (Autonomous)", content)
+        self.assertIn("bridge/adapter pattern", content)
 
     @patch('sys.exit')
     @patch('sys.argv', ['auto_adr_drafter.py', 'test', 'conflict'])
-    def test_main(self, mock_exit):
+    @patch('knowledge.auto_adr_drafter.query_llm_safe')
+    def test_main(self, mock_query, mock_exit):
+        mock_query.return_value = ("⚠️ [LLM Unavailable]", "stub", {})
         with patch('sys.stdout', new=MagicMock()):
-            # We need to re-import or reload main to use patched argv if it was already imported
-            import importlib
-            importlib.reload(drafter)
-            # Actually, main is guarded by if __name__ == "__main__", so we call drafter.draft_adr directly or mock main logic
-            # Let's just call draft_adr with args join
+            # Run the main script body logic under sys.argv patch
             drafter.draft_adr("test conflict")
             
-        self.assertTrue(Path("wiki/decisions/ADR-022-auto-resolved.md").exists())
+        self.assertTrue(Path("wiki/decisions/ADR-001-auto-resolved.md").exists())
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,7 @@ import json
 import importlib.util
 from pathlib import Path
 from io import StringIO
+from unittest.mock import patch
 
 # Antigravity Domain-Aware Import Logic
 try:
@@ -152,6 +153,37 @@ class TestRepairer(unittest.TestCase):
         # Should create SomeFile.md NOT SomeFile.md.md
         self.assertTrue((self.vault / "SomeFile.md").exists())
         self.assertFalse((self.vault / "SomeFile.md.md").exists())
+
+    def test_fix_broken_links_creates_intelligent_stubs(self):
+        mock_file = self.test_root / "self_healer.py"
+        mock_file.write_text(
+            '"""\n'
+            'Self Healer module docstring.\n'
+            'Does some healing magic.\n'
+            '"""\n'
+            'class HealerClass:\n'
+            '    pass\n'
+            'def heal_function():\n'
+            '    pass\n'
+        )
+        
+        (self.vault / "Source.md").write_text("Link to [[self_healer]].")
+        validator = Validator(self.vault)
+        result = validator.validate_all()
+        
+        with patch.object(mod, 'REPO_ROOT', self.test_root):
+            repairer = Repairer(self.vault, dry_run=False)
+            fixed = repairer.fix_broken_links(result)
+            
+        self.assertEqual(fixed, 1)
+        stub_file = self.vault / "self_healer.md"
+        self.assertTrue(stub_file.exists())
+        
+        content = stub_file.read_text()
+        self.assertIn("Self Healer module docstring.", content)
+        self.assertIn("Class | `HealerClass` |", content)
+        self.assertIn("Function | `heal_function` |", content)
+        self.assertIn("Type**: File", content)
 
     def test_add_frontmatter(self):
         (self.vault / "Note.md").write_text("# Bare content")

@@ -318,6 +318,145 @@ class Validator:
                         )
 
 
+def _generate_intelligent_stub(clean_target: str, source_file: str) -> str:
+    # 1. Search for a matching file/folder in the project
+    found_path = None
+    ignore_dirs = {".git", "node_modules", "__pycache__", ".venv", "venv", "bin", "dist", "build"}
+    
+    for p in REPO_ROOT.rglob("*"):
+        parts = p.relative_to(REPO_ROOT).parts
+        if any(part in ignore_dirs for part in parts):
+            continue
+        if p.stem == clean_target or p.name == clean_target:
+            if p.suffix in [".py", ".go", ".ts", ".tsx", ".js", ".jsx"] or p.is_dir():
+                found_path = p
+                break
+            elif not found_path:
+                found_path = p
+
+    if not found_path:
+        # Fallback to default stub if not found in codebase
+        return (
+            f"# {clean_target}\n\n"
+            f"> [!note] Auto-generated stub\n"
+            f"This file was created by `obsidian_validator.py --fix` to resolve a broken wikilink.\n"
+            f"Referenced from: [[{source_file}]]\n"
+        )
+
+    # 2. Extract metadata
+    rel_path = found_path.relative_to(REPO_ROOT)
+    item_type = "Folder" if found_path.is_dir() else "File"
+    lang = "Unknown"
+    
+    if found_path.is_file():
+        suffix = found_path.suffix.lower()
+        if suffix == ".py":
+            lang = "Python"
+        elif suffix == ".go":
+            lang = "Go"
+        elif suffix in [".ts", ".tsx"]:
+            lang = "TypeScript"
+        elif suffix in [".js", ".jsx"]:
+            lang = "JavaScript"
+        elif suffix in [".yaml", ".yml"]:
+            lang = "YAML"
+        elif suffix == ".json":
+            lang = "JSON"
+        elif suffix == ".md":
+            lang = "Markdown"
+
+    # 3. Build docstring/description and symbol extraction
+    description = "No description available."
+    symbols = []
+    
+    if found_path.is_dir():
+        description = f"Directory containing the following files (up to 10 shown):\n"
+        files = [f.name for f in found_path.iterdir() if not f.name.startswith(".")]
+        for f in sorted(files)[:10]:
+            description += f"- `{f}`\n"
+    else:
+        try:
+            content = found_path.read_text(encoding="utf-8", errors="ignore")
+            
+            # Extract docstring
+            if lang == "Python":
+                doc_match = re.search(r'"""(.*?)"""', content, re.DOTALL)
+                if not doc_match:
+                    doc_match = re.search(r"'''(.*?)'''", content, re.DOTALL)
+                if doc_match:
+                    description = doc_match.group(1).strip()
+                else:
+                    comments = []
+                    for line in content.splitlines()[:10]:
+                        if line.strip().startswith("#"):
+                            comments.append(line.strip().lstrip("#").strip())
+                    if comments:
+                        description = "\n".join(comments)
+                
+                # Parse python classes and functions
+                for line in content.splitlines():
+                    class_match = re.match(r"class\s+(\w+)", line.strip())
+                    if class_match:
+                        symbols.append({"type": "Class", "name": class_match.group(1)})
+                    def_match = re.match(r"def\s+(\w+)", line.strip())
+                    if def_match:
+                        symbols.append({"type": "Function", "name": def_match.group(1)})
+                        
+            elif lang == "Go":
+                pkg_match = re.search(r"(?://.*\n)*\s*package\s+\w+", content)
+                if pkg_match:
+                    comments = re.findall(r"//\s*(.*)", pkg_match.group(0))
+                    if comments:
+                        description = "\n".join(comments).strip()
+                
+                # Parse go functions and structs
+                for line in content.splitlines():
+                    func_match = re.match(r"func\s+(\w+)", line.strip())
+                    if func_match:
+                        symbols.append({"type": "Function", "name": func_match.group(1)})
+                    type_match = re.match(r"type\s+(\w+)\s+struct", line.strip())
+                    if type_match:
+                        symbols.append({"type": "Struct", "name": type_match.group(1)})
+            else:
+                comments = []
+                for line in content.splitlines()[:15]:
+                    stripped = line.strip()
+                    if stripped.startswith("//"):
+                        comments.append(stripped.lstrip("/").strip())
+                    elif stripped.startswith("/*") or stripped.startswith("*"):
+                        comments.append(stripped.lstrip("/*").rstrip("*/").strip())
+                if comments:
+                    description = "\n".join([c for c in comments if c]).strip()
+        except Exception as e:
+            description = f"Failed to parse file: {e}"
+
+    # 4. Format the Markdown content
+    symbols_table = ""
+    if symbols:
+        symbols_table = "\n### Exported Symbols\n\n| Type | Name |\n| :--- | :--- |\n"
+        for s in symbols[:20]:
+            symbols_table += f"| {s['type']} | `{s['name']}` |\n"
+        if len(symbols) > 20:
+            symbols_table += f"| ... | and {len(symbols) - 20} more |\n"
+
+    markdown = f"""# {clean_target}
+
+> [!NOTE]
+> **Автогенерация (Семантическая заглушка)**: Этот файл был сгенерирован автоматически на основе структуры кодовой базы проекта для замены битой вики-ссылки.
+
+## Metadata
+- **Type**: {item_type}
+- **Language**: {lang}
+- **Path**: [`{rel_path}`](file:///{found_path.resolve()})
+- **Referenced from**: [[{source_file}]]
+
+## Overview
+{description}
+{symbols_table}
+"""
+    return markdown
+
+
 # ─── Repairer ────────────────────────────────────────────────────────────────
 
 class Repairer:
@@ -341,12 +480,10 @@ class Repairer:
                 print(f"  🔧 Would create: {stub_path.name}")
                 fixed += 1
                 continue
-            stub_path.write_text(
-                f"# {target}\n\n"
-                f"> [!note] Auto-generated stub\n"
-                f"This file was created by `obsidian_validator.py --fix` to resolve a broken wikilink.\n"
-                f"Referenced from: [[{source}]]\n"
-            )
+            
+            # Generate intelligent stub on codebase search
+            content = _generate_intelligent_stub(clean_target, source)
+            stub_path.write_text(content, encoding="utf-8")
             fixed += 1
         self.fixes_applied += fixed
         return fixed

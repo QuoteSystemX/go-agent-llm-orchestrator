@@ -96,6 +96,72 @@ def draft_adr_suggestion(impacted: list[dict]) -> str | None:
     )
 
 
+def calculate_file_risk(file_path: str) -> int:
+    """Calculate blast-radius risk score for a file [10, 100]:
+    1. Diff size (up to 30 pts)
+    2. References / imports in other files (up to 40 pts)
+    3. Core component bonus (up to 20 pts)
+    """
+    # 1. Diff size / line count
+    lines_count = 0
+    try:
+        # Check diff since HEAD
+        res = subprocess.run(
+            ["git", "diff", "HEAD", "--numstat", "--", file_path],
+            capture_output=True, text=True, timeout=5
+        )
+        out = res.stdout.strip()
+        if out:
+            parts = out.split()
+            if len(parts) >= 2:
+                added = int(parts[0]) if parts[0].isdigit() else 0
+                deleted = int(parts[1]) if parts[1].isdigit() else 0
+                lines_count = added + deleted
+    except Exception:
+        pass
+
+    if lines_count == 0:
+        # Fallback/New File: Count total lines in the file if it exists
+        p = Path(file_path)
+        if p.exists() and p.is_file():
+            try:
+                with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                    lines_count = len(f.readlines())
+            except Exception:
+                pass
+
+    diff_score = min(lines_count, 30)
+
+    # 2. Reference count in project files (excluding .git and .agent)
+    ref_count = 0
+    basename = Path(file_path).stem
+    if basename:
+        try:
+            res = subprocess.run(
+                ["git", "grep", "-I", "-w", basename],
+                capture_output=True, text=True, timeout=5
+            )
+            lines = res.stdout.splitlines()
+            for line in lines:
+                parts = line.split(":", 1)
+                if parts and parts[0] != file_path:
+                    ref_count += 1
+        except Exception:
+            pass
+
+    ref_score = min(ref_count * 5, 40)
+
+    # 3. Core component bonus
+    path_parts = Path(file_path).parts
+    is_core = any(
+        core in path_parts or any(core in part for part in path_parts)
+        for core in ["local-skill-server", "lib", "context", "orchestration"]
+    )
+    core_bonus = 20 if is_core else 0
+
+    return min(10 + diff_score + ref_score + core_bonus, 100)
+
+
 def main():
     print("🔭 Scanning for structural changes...")
     changes = get_git_changes()
@@ -128,7 +194,7 @@ def main():
             {
                 "file": e["path"],
                 "status": e["status"],
-                "risk_score": 50 if e["path"].endswith(".py") else 30,
+                "risk_score": calculate_file_risk(e["path"]),
                 "description": "Structural change without documented ADR",
             }
             for e in impacted

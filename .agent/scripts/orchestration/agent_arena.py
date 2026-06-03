@@ -127,6 +127,9 @@ def conduct_debate(session_id: str, role: str, candidates: list, subtask: str) -
         "ollama" if "ollama" in unique_sources else "cloud"
     )
 
+    if overall_source == "stub":
+        print("🚨 [OFFLINE] Ни одна LLM не доступна! Арена работает в автономном режиме заглушек.")
+
     return {
         "session_id": session_id,
         "role": role,

@@ -74,5 +74,36 @@ class TestPredictiveWatcher(unittest.TestCase):
         
         self.assertIn("✅ No major structural changes detected.", f.getvalue())
 
+    def test_calculate_file_risk(self):
+        # Create a mock core file with 15 lines
+        lib_dir = Path("lib")
+        lib_dir.mkdir()
+        mock_file = lib_dir / "core_file.py"
+        mock_file.write_text("\n".join(f"line {i}" for i in range(15)))
+        
+        # Test risk calculation
+        risk = predictive_watcher.calculate_file_risk(str(mock_file))
+        # Expected: 10 (base) + 15 (diff_score) + 0 (ref_score) + 20 (core_bonus) = 45
+        self.assertEqual(risk, 45)
+
+    @patch("subprocess.run")
+    def test_calculate_file_risk_with_git(self, mock_run):
+        mock_diff = MagicMock()
+        mock_diff.stdout = "25\t5\tlib/core_file.py"
+        
+        mock_grep = MagicMock()
+        mock_grep.stdout = "file1.py:import core_file\nfile2.py:import core_file\n"
+        
+        mock_run.side_effect = [mock_diff, mock_grep]
+        
+        lib_dir = Path("lib")
+        lib_dir.mkdir(exist_ok=True)
+        mock_file = lib_dir / "core_file.py"
+        mock_file.write_text("dummy")
+        
+        risk = predictive_watcher.calculate_file_risk(str(mock_file))
+        # Expected: 10 (base) + 30 (diff) + 10 (ref) + 20 (core) = 70
+        self.assertEqual(risk, 70)
+
 if __name__ == "__main__":
     unittest.main()

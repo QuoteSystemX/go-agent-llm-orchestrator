@@ -59,5 +59,30 @@ class TestEntropyAnalyzer(unittest.TestCase):
         self.assertTrue(any(r["file"] == "risky.py" for r in report))
         self.assertTrue(report[0]["risk_score"] > 20)
 
+    @patch('context.entropy_analyzer.get_churn_metrics')
+    @patch('sys.stdout', new_callable=MagicMock)
+    def test_ignored_directories_and_path_traversal(self, mock_stdout, mock_churn):
+        # Create an ignored directory and file
+        archive_dir = self.test_root / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        (archive_dir / "old_archived.py").write_text("def old_code():\n    pass")
+        
+        # Create a valid file
+        (self.test_root / "active_code.py").write_text("def main():\n    print('hello')")
+        
+        mock_churn.return_value = {"active_code.py": 1, "archive/old_archived.py": 1}
+        
+        entropy.run_foresight_analysis(repo_root=self.test_root)
+        
+        report_file = self.test_root / ".agent" / "foresight" / "latest_risk_report.json"
+        self.assertTrue(report_file.exists())
+        
+        report = json.loads(report_file.read_text())
+        
+        # Verify active_code.py is in the report, but old_archived.py is ignored
+        files_in_report = [r["file"] for r in report]
+        self.assertIn("active_code.py", files_in_report)
+        self.assertNotIn("archive/old_archived.py", files_in_report)
+
 if __name__ == "__main__":
     unittest.main()
