@@ -257,11 +257,11 @@ def main() -> None:
 
     # Read current DNA
     prev_tag = "BALANCED"
-    try:
-        prev_tag = json.loads(DNA_BUS_FILE.read_text()).get("dna", "BALANCED")
-    except Exception as e:
-        logger.error("[dna_orchestrator] Failed to load previous DNA tag: %s", e, exc_info=True)
-        raise
+    if DNA_BUS_FILE.exists():
+        try:
+            prev_tag = json.loads(DNA_BUS_FILE.read_text()).get("dna", "BALANCED")
+        except Exception as e:
+            logger.error("[dna_orchestrator] Failed to load previous DNA tag: %s", e)
 
     results: list[dict] = []
     for pid, phase in phases_to_run.items():

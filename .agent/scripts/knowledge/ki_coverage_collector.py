@@ -29,7 +29,10 @@ except ImportError:
 class KICoverageCollector(MetricCollector):
     def __init__(self):
         super().__init__("KI_Coverage")
-        self.exclude_dirs = {".agent", ".git", ".claude", ".opencode", "node_modules", "venv", "__pycache__"}
+        self.exclude_dirs = {
+            ".agent", ".git", ".claude", ".opencode", "node_modules", "venv", "__pycache__",
+            ".next", ".turbo", "dist", "build", "out", ".expo", ".vercel"
+        }
         self.code_extensions = {".py", ".go", ".js", ".ts", ".tsx"}
 
     def run(self):

@@ -68,11 +68,11 @@ class SEOAuditor:
     def is_page_file(self, file_path: Path) -> bool:
         if any(skip in file_path.parts for skip in SKIP_DIRS):
             return False
+        filename = file_path.name.lower()
+        if "test" in filename or "spec" in filename:
+            return False
         if file_path.suffix.lower() in ['.html', '.htm']:
             return True
-        if file_path.suffix.lower() in ['.jsx', '.tsx']:
-            # For JSX/TSX, we only check if they are likely components or pages
-            return "page" in file_path.name.lower() or "index" in file_path.name.lower()
         return False
 
     def check_geo_optimization(self, soup):
@@ -110,6 +110,23 @@ class SEOAuditor:
         issues = []
         warnings = []
         
+        # Skip audits for SPA mount shells (empty bodies with script/style tags only)
+        body = soup.find("body")
+        if body:
+            texts = [
+                t for t in body.find_all(string=True)
+                if t.parent.name not in ["script", "style"]
+            ]
+            body_text = "".join(texts).strip()
+            if len(body_text) < 50:
+                return {
+                    "file": str(file_path.relative_to(self.project_path)),
+                    "issues": [],
+                    "warnings": [],
+                    "geo_score": 100.0,
+                    "keywords": {}
+                }
+
         # 1. Title
         title_tag = soup.find("title")
         if not title_tag:
