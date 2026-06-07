@@ -1,0 +1,34 @@
+version: "1"
+store_url: "sqlite:///${workspace}/.headroom/cache.db"
+default_mode: OPTIMIZE
+
+compression:
+  smart_crusher:
+    enabled: true
+    max_items_after_crush: 15
+    min_tokens_to_crush: 150
+    variance_threshold: 1.5
+    toin_confidence_threshold: 0.3
+  code_compressor:
+    enabled: true
+    languages: [typescript, tsx, javascript, css, scss, json]
+    preserve_imports: true
+    preserve_types: true
+    ast_tool: ast-grep-cli
+  cache_aligner:
+    use_dynamic_detector: true
+    entropy_threshold: 0.6
+  relevance_scorer:
+    mode: hybrid
+
+output_buffer_tokens: 4000
+intercept_tool_results: true
+
+bus_integration:
+  ccr_threshold_tokens: 400
+  enabled: true
+
+waste_signals:
+  - html_noise
+  - base64_images
+  - bundle_stats_trim

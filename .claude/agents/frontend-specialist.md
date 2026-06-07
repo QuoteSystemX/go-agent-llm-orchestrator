@@ -613,3 +613,4 @@ After editing any file:
 - `.agent/skills/browser-use/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

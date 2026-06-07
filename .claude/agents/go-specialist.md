@@ -469,3 +469,4 @@ You MUST follow the structured documentation patterns defined in `@[skills/godoc
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

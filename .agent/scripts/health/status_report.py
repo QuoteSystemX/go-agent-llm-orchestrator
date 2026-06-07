@@ -590,6 +590,100 @@ The repository is newly provisioned. To build the local intelligence base, run:
     # 12. Tests (Stub)
     metrics["Tests"] = "PASS"
 
+    # 12a. Headroom (Context Compression Layer)
+    try:
+        import shutil as _shutil
+        import datetime as _datetime
+        import urllib.request as _urllib_req
+
+        _headroom_dir = REPO_ROOT / ".headroom"
+        _lock_path = _headroom_dir / "version.lock"
+        _cache_db = _headroom_dir / "cache.db"
+
+        # --- Installed version ---
+        _headroom_ver = None
+        _headroom_short = None
+        if _shutil.which("headroom"):
+            _vp = subprocess.run(
+                ["headroom", "--version"], capture_output=True, text=True, timeout=5
+            )
+            if _vp.returncode == 0:
+                _raw = _vp.stdout.strip()
+                _headroom_ver = _raw
+                _headroom_short = _raw.split()[-1]  # "0.23.0" from "headroom, version 0.23.0"
+
+        # --- Version freshness (version.lock, TTL 24h) ---
+        _latest_ver = None
+        _ver_label = ""
+        if _headroom_short:
+            _lock_data = {}
+            if _lock_path.exists():
+                try:
+                    _lock_data = json.loads(_lock_path.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+
+            _cache_ok = False
+            if _lock_data.get("checked_at") and _lock_data.get("installed") == _headroom_short:
+                try:
+                    _checked = _datetime.datetime.fromisoformat(
+                        _lock_data["checked_at"].rstrip("Z")
+                    )
+                    _cache_ok = (
+                        (_datetime.datetime.utcnow() - _checked).total_seconds() < 86400
+                    )
+                except Exception:
+                    pass
+
+            if _cache_ok:
+                _latest_ver = _lock_data.get("latest")
+            else:
+                try:
+                    _req = _urllib_req.Request(
+                        "https://pypi.org/pypi/headroom-ai/json",
+                        headers={"User-Agent": "antigravity-status/1.0"},
+                    )
+                    with _urllib_req.urlopen(_req, timeout=3) as _r:
+                        _latest_ver = json.loads(_r.read().decode())["info"]["version"]
+                    # Update lock with fresh data
+                    if _headroom_dir.exists():
+                        _lock_path.write_text(
+                            json.dumps({
+                                "installed": _headroom_short,
+                                "latest": _latest_ver,
+                                "checked_at": _datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                                "is_current": _headroom_short == _latest_ver,
+                            }, indent=2) + "\n",
+                            encoding="utf-8",
+                        )
+                except Exception:
+                    _latest_ver = _lock_data.get("latest")  # fallback to cached
+
+            if _latest_ver:
+                if _headroom_short == _latest_ver:
+                    _ver_label = f" ✅ latest"
+                else:
+                    _ver_label = f" ⚠️ → {_latest_ver} available"
+
+        # --- Proxy check ---
+        _proxy_up = False
+        try:
+            _urllib_req.urlopen("http://localhost:8787/healthz", timeout=1)
+            _proxy_up = True
+        except Exception:
+            pass
+
+        _cache_info = f" | cache: {_cache_db.stat().st_size // 1024}KB" if _cache_db.exists() else ""
+
+        if _proxy_up:
+            metrics["Headroom"] = f"Proxy (Tier 2){_ver_label}{_cache_info}"
+        elif _headroom_ver:
+            metrics["Headroom"] = f"MCP (v{_headroom_short}){_ver_label}{_cache_info}"
+        else:
+            metrics["Headroom"] = "not installed (pip install headroom-ai[mcp])"
+    except Exception:
+        metrics["Headroom"] = "Unknown"
+
     # 13. Top Agents (Heatmap)
     try:
         stats = get_agent_stats()

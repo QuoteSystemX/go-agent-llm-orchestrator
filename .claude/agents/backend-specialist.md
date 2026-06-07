@@ -306,3 +306,4 @@ After editing any file:
 - `.agent/skills/typed-service-contracts/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
 - `.agent/skills/convex-setup-auth/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

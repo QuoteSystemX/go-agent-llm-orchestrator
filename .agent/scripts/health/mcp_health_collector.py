@@ -15,6 +15,8 @@ except ImportError:
             sys.path.append(d_path)
 
 import os
+import shutil
+import subprocess
 import sys
 import json
 from pathlib import Path
@@ -64,14 +66,31 @@ class MCPHealthCollector(MetricCollector):
             name, cfg = name_cfg
             cmd = cfg.get("command")
             args = cfg.get("args", [])
-            
+
             if not cmd:
                 return name, "MISSING_CMD", "WARN"
-            
+
             full_cmd = [cmd] + args
             is_main = name == "local-skill-server"
-            
+
             is_healthy, msg = check_mcp_health(name, None if is_main else full_cmd)
+
+            # Fallback for stdio-based MCP servers: if the binary exists in PATH
+            # but the server exited non-zero (stdio servers don't accept empty stdin),
+            # verify via a lightweight health subcommand before marking DOWN.
+            if not is_healthy and shutil.which(cmd):
+                health_probe = cfg.get("_health_cmd", None)
+                if health_probe:
+                    probe_cmd = health_probe if isinstance(health_probe, list) else health_probe.split()
+                else:
+                    probe_cmd = [cmd, "--version"]
+                try:
+                    result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        is_healthy = True
+                except Exception:
+                    pass
+
             status = "PASS" if is_healthy else "WARN"
             return name, "UP" if is_healthy else "DOWN", status
 

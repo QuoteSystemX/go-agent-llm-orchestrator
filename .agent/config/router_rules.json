@@ -233,6 +233,16 @@
     "cloud_on_tiers": [],
     "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud."
   },
+  "headroom_proxy": {
+    "enabled": true,
+    "port": 8787,
+    "upstream_ollama": "http://localhost:11434",
+    "proxy_url": "http://localhost:8787",
+    "healthcheck_path": "/healthz",
+    "healthcheck_timeout_ms": 1000,
+    "fallback_direct": true,
+    "comment": "When headroom proxy is running, route Ollama requests through it for 60-95% token savings. fallback_direct=true: if proxy is down, router uses Ollama directly — no interruptions."
+  },
   "fallbacks": {
     "L1": "L2",
     "L2": "L3",

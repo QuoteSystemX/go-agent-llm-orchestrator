@@ -820,11 +820,38 @@ def main() -> None:
                 overall_passed = False
             results.append({"name": name, "passed": False})
 
+    # Headroom presence check (non-blocking informational)
+    print_header("🗜️  HEADROOM CHECK")
+    _headroom_config = REPO_ROOT / ".headroom" / "config.yaml"
+    _headroom_mcp_cfg = REPO_ROOT / ".agent" / "config" / "mcp_config.json"
+    _headroom_skill = REPO_ROOT / ".agent" / "skills" / "headroom-patterns" / "SKILL.md"
+    _mcp_has_headroom = False
+    try:
+        import json as _json
+        _mcp = _json.loads(_headroom_mcp_cfg.read_text())
+        _mcp_has_headroom = "headroom-mcp" in _mcp.get("mcpServers", {})
+    except Exception:
+        pass
+    _headroom_ok = _headroom_config.exists() and _mcp_has_headroom and _headroom_skill.exists()
+    if _headroom_ok:
+        print_success("Headroom: config + MCP + skill — OK")
+        results.append({"name": "Headroom Setup", "passed": True})
+    else:
+        _missing = []
+        if not _headroom_config.exists():
+            _missing.append(".headroom/config.yaml (run headroom_setup.py)")
+        if not _mcp_has_headroom:
+            _missing.append("headroom-mcp в mcp_config.json")
+        if not _headroom_skill.exists():
+            _missing.append("skills/headroom-patterns/SKILL.md")
+        print_warning(f"Headroom: не настроен — {', '.join(_missing)}")
+        results.append({"name": "Headroom Setup", "passed": False})
+
     print_header("🏁 FINAL STATUS")
     for res in results:
         status = f"{Colors.GREEN}PASS{Colors.ENDC}" if res["passed"] else f"{Colors.RED}FAIL{Colors.ENDC}"
         print(f"| {res['name']:<25} | {status} |")
-    
+
     if not overall_passed:
         print_error("\nChecklist FAILED. Please fix the mandatory issues above.")
         sys.exit(1)

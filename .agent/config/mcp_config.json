@@ -1,6 +1,14 @@
 {
     "_readme": "Template config for Antigravity (Gemini). Copy to your Antigravity workspace and replace YOUR_API_KEY placeholders. The 'skills' server is required; 'context7' and 'shadcn' are optional extras.",
     "mcpServers": {
+        "headroom-mcp": {
+            "command": "headroom",
+            "args": ["mcp"],
+            "env": {
+                "HEADROOM_CONFIG_DIR": "${workspaceFolder}/.headroom",
+                "HEADROOM_WORKSPACE_DIR": "${workspaceFolder}"
+            }
+        },
         "local-skill-server": {
             "command": "/usr/bin/env",
             "args": ["agent-kit-server"]

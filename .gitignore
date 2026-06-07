@@ -44,3 +44,7 @@ go.work.sum
 
 # Local Skill Server Binaries
 .agent/local-skill-server/bin/
+
+# Headroom CCR cache
+.headroom/cache.db
+.headroom/sessions/

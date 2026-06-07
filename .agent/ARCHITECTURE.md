@@ -893,6 +893,8 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server/handlers_infra.go` | System module for handlers_infra.go. |
 | `.agent/mcp-server/db_security.go` | System module for db_security.go. |
 | `fix_design.js` | System module for fix_design.js. |
+| `.agent/scripts/health/bus_sse_server.py` | Lightweight SSE HTTP server for live dashboard updates — serves `dashboard.html`, streams bus file changes via SSE (`/api/stream/bus`), exposes health API (`/api/health`), and provides Cockpit Exec endpoint (`POST /api/exec`) for running allowed maintenance scripts. Port 3201. |
+| `.agent/scripts/orchestration/tough_auditor.py` | Adversarial LLM-powered Git Diff Auditor — evaluates staged/unstaged changes with extreme criticism via local Ollama, assigns quality scores (1.0–5.0), logs to `agent_scorer.py`, and warns/blocks if quality is suboptimal. Selects the best available Ollama model automatically. |
 | `.agent/scripts/orchestration/agent_scorer.py` | Log a quality score for an agent's work. |
 | `.agent/skills/nextflow-development/scripts/utils/ncbi_utils.py` | NCBI Utilities for GEO/SRA Data Access |
 | `paperclip-plugin-auth-hub/src/ui/entry.ts` | System module for entry.ts. |

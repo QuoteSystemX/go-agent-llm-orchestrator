@@ -147,13 +147,16 @@ AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
     "ai-engineer":            ["mcp-integration", "hook-development", "skill-creator",
                                "agent-development", "command-development"],
     "backend-specialist":     ["api-development", "postgres-best-practices", "typed-service-contracts",
-                               "better-auth-best-practices", "convex-setup-auth", "paperclip-worker"],
+                               "better-auth-best-practices", "convex-setup-auth", "paperclip-worker",
+                               "headroom-patterns"],
     "frontend-specialist":    ["shadcn-best-practices", "next-best-practices", "ui-ux-pro-max",
                                "browser-use", "playwright-best-practices",
-                               "better-auth-best-practices", "paperclip-worker"],
+                               "better-auth-best-practices", "paperclip-worker",
+                               "headroom-patterns"],
     "mobile-developer":       ["paperclip-worker"],
-    "go-specialist":          ["paperclip-worker"],
-    "test-engineer":          ["test-driven-development", "verification-before-completion"],
+    "go-specialist":          ["paperclip-worker", "headroom-patterns"],
+    "test-engineer":          ["test-driven-development", "verification-before-completion",
+                               "headroom-patterns"],
     "qa-automation-engineer": ["playwright-best-practices", "browser-use", "agent-browser"],
     "devops-engineer":        ["github-actions-expert", "sentry-cli-expert"],
     "sre-engineer":           ["sentry-cli-expert"],
@@ -165,6 +168,8 @@ AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
                                "agent-development", "command-development"],
     "visual-designer":        ["visual-explainer"],
     "analyst":                ["scientific-problem-selection"],
+    "debugger":               ["headroom-patterns"],
+    "performance-optimizer":  ["headroom-patterns"],
 }
 
 # Read-only Bash and MCP operations that should not prompt the user each time.
@@ -179,6 +184,9 @@ CLAUDE_PERMISSIONS_ALLOW = [
     "Bash(python3 .agent/scripts/delivery/sync_agents.py --check*)",
     "Bash(python3 .agent/scripts/dev/checklist.py*)",
     "mcp__local-skill-server__*",
+    "mcp__headroom-mcp__headroom_compress",
+    "mcp__headroom-mcp__headroom_retrieve",
+    "mcp__headroom-mcp__headroom_stats",
     "mcp__github__get_*",
     "mcp__github__list_*",
     "mcp__github__search_*",
@@ -264,7 +272,7 @@ def skill_exists(skill_name: str) -> bool:
 # Builders
 # ---------------------------------------------------------------------------
 
-def build_agent_file(src_path: Path, target: str, is_workflow: bool = False) -> str:
+def build_agent_file(src_path: Path, target: str, is_workflow: bool = False, no_headroom: bool = False) -> str:
     raw = src_path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(raw)
     agent_name = src_path.stem
@@ -290,6 +298,8 @@ def build_agent_file(src_path: Path, target: str, is_workflow: bool = False) -> 
 
     if target == "claude" and not is_workflow:
         extras = AGENT_SKILL_EXTRAS.get(agent_name, [])
+        if no_headroom:
+            extras = [s for s in extras if s != "headroom-patterns"]
         all_skills = list(dict.fromkeys(skills + extras))  # merge, dedup, preserve order
         skill_lines = "\n".join(f"- `.agent/skills/{s}/SKILL.md`" for s in all_skills if skill_exists(s))
         if skill_lines:
@@ -566,7 +576,7 @@ def _get_coding_model(models: list) -> Optional[dict]:
         return max(coding_models, key=lambda m: m.get("size", 0))
     return None
 
-def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: str = "", profile: str = "", no_commands: bool = False, no_workflows: bool = False):
+def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: str = "", profile: str = "", no_commands: bool = False, no_workflows: bool = False, no_headroom: bool = False):
     config = TARGETS[target]
     config["agents_out"].mkdir(parents=True, exist_ok=True)
     config["commands_out"].mkdir(parents=True, exist_ok=True)
@@ -589,7 +599,7 @@ def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: st
             
         out_path = config["agents_out"] / src.name
         expected_files.add(out_path)
-        content = build_agent_file(src, target, is_workflow=False)
+        content = build_agent_file(src, target, is_workflow=False, no_headroom=no_headroom)
         _write(out_path, content, dry_run, check)
 
     # 2. Workflows as Agents (Claude only usually)
@@ -598,7 +608,7 @@ def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: st
             # Workflows are generally universal unless we add profile support for them too
             out_path = config["agents_out"] / f"wf-{src.name}"
             expected_files.add(out_path)
-            content = build_agent_file(src, target, is_workflow=True)
+            content = build_agent_file(src, target, is_workflow=True, no_headroom=no_headroom)
             _write(out_path, content, dry_run, check)
 
     # 3. Workflows as Commands
@@ -719,6 +729,8 @@ def main():
     parser.add_argument("--profile", metavar="NAME", default="")
     parser.add_argument("--no-commands", action="store_true")
     parser.add_argument("--no-workflows", action="store_true")
+    parser.add_argument("--no-headroom", action="store_true",
+                        help="Exclude headroom-patterns skill injection (for repos without headroom-ai)")
     parser.add_argument("--root", metavar="PATH", help="Override repository root path")
     args = parser.parse_args()
 
@@ -733,7 +745,7 @@ def main():
         TARGETS["opencode"]["commands_out"] = TARGET_ROOT / ".opencode" / "commands"
         TARGETS["opencode"]["config_out"]   = TARGET_ROOT / "opencode.json"
 
-    sync(args.target, args.dry_run, args.check, args.agent, args.profile, args.no_commands, args.no_workflows)
+    sync(args.target, args.dry_run, args.check, args.agent, args.profile, args.no_commands, args.no_workflows, args.no_headroom)
 
 if __name__ == "__main__":
     main()
