@@ -31,7 +31,7 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+
 from lib.suppress import suppress
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
@@ -454,19 +454,26 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
             }
         
         dest_data["mcp"] = converted
-        
-        # Ollama provider provisioning - auto-detect local models
+
+        # Auto-generate agent section from .agent/agents/
         if target == "opencode":
-            ollama_models = _query_ollama_models()
-            if ollama_models:
-                ollama_provider = _build_ollama_provider(ollama_models)
-                dest_data.setdefault("provider", {}).update(ollama_provider)
-                # Set default to best coding model using 'model' key (not default_model!)
-                coding = _get_coding_model(ollama_models)
-                if coding:
-                    model_name = coding.get("name", "qwen2.5-coder:32b").replace(":latest", "")
-                    dest_data["model"] = f"ollama-local/{model_name}"
-                print(f"  📝 Ollama: {len(ollama_models)} models added")
+            # Collect all agent names first for router-rules loading
+            all_agent_names = _collect_agent_names()
+            _ensure_router_rules_loaded(all_agent_names)
+
+            agent_configs = _build_agent_section()
+            if agent_configs:
+                # Add model assignments based on agent tier (from router_rules.json)
+                for agent_name in agent_configs:
+                    agent_configs[agent_name]["model"] = _get_agent_model(agent_name)
+                dest_data["agent"] = agent_configs
+                print(f"  🤖 Agents: {len(agent_configs)} subagents configured for task()")
+
+            # Auto-generate provider section (MCP LLM Broker HTTP API)
+            provider_config = _build_provider_section()
+            if provider_config:
+                dest_data["provider"] = provider_config
+                print(f"  🔌 Provider: mcp-llm-broker ({len(provider_config.get('mcp-llm-broker', {}).get('models', {}))} models)")
         
         new_content = json.dumps(dest_data, indent=2) + "\n"
         
@@ -489,92 +496,7 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
     except Exception as e:
         print(f"  ⚠️ Failed to sync MCP config: {e}")
 
-def _query_ollama_models() -> list:
-    """Query Ollama API for available models.
-    
-    Tries localhost first, then WSL gateway if applicable.
-    """
-    import urllib.request
-    import subprocess
 
-    def _try_url(url: str, timeout: int = 5) -> list:
-        try:
-            req = urllib.request.Request(url)
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode())
-                return data.get("models", [])
-        except Exception:
-            return None
-
-    # 1. Try localhost first
-    models = _try_url("http://localhost:11434/api/tags")
-    if models is not None:
-        return models
-
-    # 2. WSL gateway if running in WSL
-    is_wsl = False
-    with suppress("sync_agents.ollama.wsl_detect", level=logging.DEBUG):
-        if os.path.exists("/proc/version"):
-            with open("/proc/version") as f:
-                is_wsl = "microsoft" in f.read().lower()
-
-    if is_wsl:
-        with suppress("sync_agents.ollama.wsl_gateway", level=logging.DEBUG):
-            gw = subprocess.check_output(
-                "ip route | grep default | awk '{print $3}'", shell=True
-            ).decode().strip()
-            if gw:
-                wsl_url = f"http://{gw}:11434/api/tags"
-                models = _try_url(wsl_url, timeout=3)
-                if models is not None:
-                    return models
-
-                # 2b. WSL gateway failed — just inform
-                print("⚠️  Ollama not reachable on Windows host via WSL gateway")
-
-    return []
-
-def _build_ollama_provider(models: list) -> dict:
-    """Build Ollama provider config from models list.
-    
-    Uses WSL-aware URL discovery to set the correct baseURL
-    (localhost for Linux/WSL2-with-forwarding, WSL gateway IP otherwise).
-    """
-    # Try to discover the correct Ollama URL dynamically
-    base_url = "http://localhost:11434"
-    with suppress("sync_agents.ollama.discover_url", level=logging.DEBUG):
-        from lib.common import discover_ollama_url
-        discovered = discover_ollama_url()
-        if discovered:
-            base_url = discovered.rstrip("/")
-
-    # Filter out embeddings
-    chat_models = [m for m in models if "embed" not in m.get("name", "").lower()]
-    
-    models_config = {}
-    for model in chat_models:
-        name = model.get("name", "").replace(":latest", "")
-        models_config[name] = {"name": name}
-    
-    return {
-        "ollama-local": {
-            "npm": "@ai-sdk/openai-compatible",
-            "name": "Ollama Local",
-            "options": {"baseURL": f"{base_url}/v1"},
-            "models": models_config
-        }
-    }
-
-def _get_coding_model(models: list) -> Optional[dict]:
-    """Get best coding model from list."""
-    coding_keywords = ["coder", "code", "deepseek", "codellama", "devstral"]
-    coding_models = [
-        m for m in models 
-        if any(k in m.get("name", "").lower() for k in coding_keywords)
-    ]
-    if coding_models:
-        return max(coding_models, key=lambda m: m.get("size", 0))
-    return None
 
 def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: str = "", profile: str = "", no_commands: bool = False, no_workflows: bool = False, no_headroom: bool = False):
     config = TARGETS[target]
@@ -693,15 +615,24 @@ def build_claude_settings() -> str:
             "PreToolUse": [
                 {
                     "matcher": "Bash",
-                    "hooks": [{"type": "command", "command": _GUARDRAIL_CMD}]
+                    "hooks": [
+                        {"type": "command", "command": "rtk hook claude"},
+                        {"type": "command", "command": _GUARDRAIL_CMD},
+                    ]
                 }
             ],
             "Stop": [
                 {
-                    "hooks": [{
-                        "type": "command",
-                        "command": "python3 .agent/scripts/context/context_autofill.py 2>/dev/null || true"
-                    }]
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "python3 .agent/scripts/context/context_autofill.py 2>/dev/null || true"
+                        },
+                        {
+                            "type": "command",
+                            "command": "truncate -s0 /tmp/mcp-broker.log 2>/dev/null || true"
+                        },
+                    ]
                 }
             ]
         }
@@ -719,6 +650,334 @@ def sync_claude_keybindings(dry_run: bool, check: bool):
     path = TARGET_ROOT / ".claude" / "keybindings.json"
     content = _json.dumps(CLAUDE_KEYBINDINGS, indent=2) + "\n"
     _write_json(path, content, dry_run, check)
+
+def _build_provider_section() -> dict:
+    """Build opencode provider config pointing to the MCP LLM Broker HTTP API.
+    
+    Scans local backends (Ollama, Jan, LM Studio) to discover available models
+    and generates a provider entry for the broker's OpenAI-compatible endpoint.
+    Falls back to a small default model set if no backends are running.
+    """
+    import subprocess
+    import shutil
+
+    port = 11436
+    models = _discover_local_models()
+
+    # Fallback: ensure at least some models
+    if not models:
+        models = {
+            "llama3.2:3b":  {},
+            "qwen2.5-coder:7b": {},
+            "deepseek-coder:6.7b": {},
+        }
+
+    mcp_broker_port = os.environ.get("MCP_BROKER_HTTP_PORT", str(port))
+
+    # Add tier model aliases so agent model assignments always resolve
+    for alias in ["auto", "L1", "L2", "L3", "L4"]:
+        if alias not in models:
+            models[alias] = {}
+    for tier_val in _model_tier_map.values():
+        if tier_val not in models:
+            models[tier_val] = {}
+
+    return {
+        "mcp-llm-broker": {
+            "name": "MCP LLM Broker",
+            "npm": "@ai-sdk/openai-compatible",
+            "options": {
+                "baseURL": f"http://localhost:{mcp_broker_port}/v1",
+            },
+            "models": models,
+        },
+    }
+
+
+def _discover_local_models() -> dict:
+    """Discover available models from local LLM backends."""
+    import subprocess
+    import shutil
+    import urllib.request
+    import urllib.error
+    import json as _json
+
+    models = {}
+
+    # 1. Ollama
+    ollama_url = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    try:
+        resp = urllib.request.urlopen(f"{ollama_url}/api/tags", timeout=1)
+        data = _json.loads(resp.read())
+        for m in data.get("models", []):
+            name = m.get("name", "")
+            if name:
+                models[name] = {}
+    except Exception:
+        pass
+
+    # 2. Jan / LM Studio (OpenAI-compatible)
+    for backend_url in ["http://localhost:1337", "http://localhost:1234"]:
+        try:
+            resp = urllib.request.urlopen(f"{backend_url}/v1/models", timeout=1)
+            data = _json.loads(resp.read())
+            for m in data.get("data", []):
+                mid = m.get("id", "")
+                if mid:
+                    models[mid] = {}
+        except Exception:
+            pass
+
+    return models
+
+
+# ---------------------------------------------------------------------------
+# Router Rules Config Loader
+# ---------------------------------------------------------------------------
+
+def _load_router_rules() -> dict:
+    """Load .agent/config/router_rules.json and return parsed dict, or empty dict."""
+    rules_path = SOURCE_ROOT / ".agent" / "config" / "router_rules.json"
+    if not rules_path.exists():
+        logging.warning("router_rules.json not found at %s", rules_path)
+        return {}
+    try:
+        import json as _json
+        return _json.loads(rules_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        logging.warning("Failed to parse router_rules.json: %s", e)
+        return {}
+
+
+def _build_model_tier_map(rules: dict) -> dict[str, str]:
+    """Extract L1-L4 model mapping from router_rules.json models.ollama section.
+    
+    Falls back to simple defaults if config is missing.
+    """
+    models_cfg = rules.get("models", {})
+    ollama_cfg = models_cfg.get("ollama", {})
+    
+    tier_map = {}
+    for tier in ["L1", "L2", "L3", "L4"]:
+        model = ollama_cfg.get(tier, "")
+        if model:
+            tier_map[tier] = model
+    
+    # Fallback defaults
+    if not tier_map:
+        tier_map = {
+            "L1": "llama3.2:3b",
+            "L2": "qwen2.5-coder:7b",
+            "L3": "qwen2.5-coder:32b",
+            "L4": "qwen3-coder:30b",
+        }
+    
+    return tier_map
+
+
+def _build_agent_tier_map(rules: dict, all_agent_names: list[str]) -> dict[str, str]:
+    """Derive agent→tier mapping from router_rules.json.
+    
+    Strategy (in order):
+    1. Match agent name against each rule's `skills` list (exact match)
+    2. Match agent name (word-boundary) against each rule's `keywords`
+    3. Explicit lookup in `agent_tiers` section of router_rules.json
+    4. Match agent `domains` (from frontmatter) against `domain_tiers` section
+    5. Default L2
+    """
+    import re as _re
+
+    rule_list = rules.get("rules", [])
+    explicit_tiers = rules.get("agent_tiers", {})
+    domain_tiers = rules.get("domain_tiers", {})
+    tier_map: dict[str, str] = {}
+
+    # Phase 1: match by skills list (from rules section)
+    for rule in rule_list:
+        complexity = rule.get("complexity", "L2")
+        skills = [s.strip().lower() for s in rule.get("skills", [])]
+        for agent in all_agent_names:
+            if agent.lower() in skills:
+                if agent not in tier_map:
+                    tier_map[agent] = complexity
+
+    # Phase 2: match by keywords against agent NAME only (word-boundary)
+    for rule in rule_list:
+        complexity = rule.get("complexity", "L2")
+        keywords = [k.strip().lower() for k in rule.get("keywords", [])]
+        for agent in all_agent_names:
+            if agent in tier_map:
+                continue
+            agent_normalized = agent.lower().replace("-", " ").replace("_", " ")
+            for kw in keywords:
+                pattern = r'(?<![a-z0-9])' + _re.escape(kw) + r'(?![a-z0-9])'
+                if _re.search(pattern, agent_normalized):
+                    tier_map[agent] = complexity
+                    break
+
+    # Phase 3: explicit agent_tiers lookup (from config)
+    for agent in all_agent_names:
+        if agent in tier_map:
+            continue
+        if agent in explicit_tiers:
+            tier_map[agent] = explicit_tiers[agent]
+
+    # Phase 4: domain_tiers match against agent frontmatter domains
+    if domain_tiers:
+        agent_domains = _load_agent_domains(all_agent_names)
+        for agent in all_agent_names:
+            if agent in tier_map:
+                continue
+            domains = agent_domains.get(agent, [])
+            for domain in domains:
+                domain_lower = domain.strip().lower()
+                if domain_lower in domain_tiers:
+                    tier_map[agent] = domain_tiers[domain_lower]
+                    break
+                # Also check if any domain_tiers key is a substring of the domain
+                for dt_key, dt_tier in sorted(domain_tiers.items(),
+                                               key=lambda x: -len(x[0])):
+                    if dt_key in domain_lower:
+                        tier_map[agent] = dt_tier
+                        break
+                if agent in tier_map:
+                    break
+
+    # Phase 5: default L2
+    for agent in all_agent_names:
+        if agent not in tier_map:
+            tier_map[agent] = "L2"
+
+    return tier_map
+
+
+def _load_agent_domains(agent_names: list[str]) -> dict[str, list[str]]:
+    """Read agent domains from frontmatter for domain-tier matching."""
+    domains: dict[str, list[str]] = {}
+    agents_dir = SOURCE_ROOT / ".agent" / "agents"
+    for src in agents_dir.rglob("**/*.md"):
+        name = src.stem
+        if name not in agent_names:
+            continue
+        content = src.read_text(encoding="utf-8")
+        fm, _ = parse_frontmatter(content)
+        raw = fm.get("domains", "")
+        # Parse comma-separated or bracket-wrapped list
+        raw_clean = raw.strip().strip("[]").strip()
+        parts = [d.strip().strip('"').strip("'") for d in raw_clean.split(",") if d.strip()]
+        domains[name] = parts
+    return domains
+
+
+def _collect_agent_names() -> list[str]:
+    """Return sorted list of all agent names from .agent/agents/."""
+    agents_dir = SOURCE_ROOT / ".agent" / "agents"
+    if not agents_dir.exists():
+        return []
+    names = sorted(src.stem for src in agents_dir.rglob("**/*.md") if src.stem)
+    return names
+
+
+def _load_agent_descriptions(agent_names: list[str]) -> dict[str, str]:
+    """Read agent descriptions from frontmatter for keyword matching."""
+    descs: dict[str, str] = {}
+    agents_dir = SOURCE_ROOT / ".agent" / "agents"
+    for src in agents_dir.rglob("**/*.md"):
+        name = src.stem
+        if name not in agent_names:
+            continue
+        content = src.read_text(encoding="utf-8")
+        fm, _ = parse_frontmatter(content)
+        descs[name] = fm.get("description", "")
+    return descs
+
+
+# Lazy-loaded router-rules state
+_router_rules: dict = {}
+_model_tier_map: dict[str, str] = {}
+_agent_tier_map: dict[str, str] = {}
+
+
+def _ensure_router_rules_loaded(all_agent_names: list[str] | None = None):
+    """Load router_rules.json once and build tier maps."""
+    global _router_rules, _model_tier_map, _agent_tier_map
+    if _router_rules:
+        return
+    _router_rules = _load_router_rules()
+    _model_tier_map = _build_model_tier_map(_router_rules)
+    if all_agent_names:
+        _agent_tier_map = _build_agent_tier_map(_router_rules, all_agent_names)
+
+
+def _get_agent_model(agent_name: str) -> str:
+    """Get the broker model string for an agent based on its tier (from router_rules.json)."""
+    global _agent_tier_map, _model_tier_map
+    tier = _agent_tier_map.get(agent_name, "L2")
+    model = _model_tier_map.get(tier, "qwen2.5-coder:7b")
+    return f"mcp-llm-broker/{model}"
+
+
+def _build_agent_section() -> dict:
+    """Scan .agent/agents/ and build opencode agent config entries.
+    
+    Each agent gets mode:"subagent" (except orchestrator which is primary)
+    and permissions derived from its tool list.
+    """
+    agents_dir = SOURCE_ROOT / ".agent" / "agents"
+    if not agents_dir.exists():
+        return {}
+
+    agent_configs = {}
+    primary_agents = {"orchestrator"}  # These remain primary, NOT subagents
+
+    for src in sorted(agents_dir.rglob("**/*.md")):
+        name = src.stem
+        raw = src.read_text(encoding="utf-8")
+        fm, _ = parse_frontmatter(raw)
+        agent_name = fm.get("name", name)
+
+        # Determine mode
+        if agent_name in primary_agents:
+            continue  # Skip primary agents (they use default_agent)
+
+        # Parse tools to derive permissions
+        tools_str = fm.get("tools") or AGENT_DEFAULT_TOOLS.get(agent_name, "")
+        tools = [t.strip() for t in tools_str.split(",") if t.strip()]
+
+        permissions = {}
+        tool_to_perm = {
+            "Read":  "read",
+            "Write": "edit",
+            "Edit":  "edit",
+            "Bash":  "bash",
+            "Glob":  "glob",
+            "Grep":  "grep",
+        }
+        for tool_name, perm_name in tool_to_perm.items():
+            if any(t == tool_name or t.startswith(tool_name) for t in tools):
+                permissions[perm_name] = "allow"
+
+        # Fallback: if no tools parsed, give read-only
+        if not permissions:
+            permissions["read"] = "allow"
+
+        entry = {
+            "mode": "subagent",
+            "permission": permissions,
+            "description": fm.get("description", f"Specialist: {agent_name}"),
+        }
+
+        # If agent has a 'model' field in frontmatter, preserve it
+        if fm.get("model") and fm["model"] != "inherit":
+            entry["model"] = fm["model"]
+
+        # Hide from @ autocomplete to reduce noise (still callable via task())
+        entry["hidden"] = True
+
+        agent_configs[agent_name] = entry
+
+    return agent_configs
+
 
 def main():
     parser = argparse.ArgumentParser()

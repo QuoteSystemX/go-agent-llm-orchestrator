@@ -563,15 +563,80 @@ The repository is newly provisioned. To build the local intelligence base, run:
 
     try:
         import urllib.request
-        base_url = discover_ollama_url()
-        with urllib.request.urlopen(f"{base_url}/api/tags") as response:
-            tags = json.loads(response.read().decode())
-            models = [m["name"] for m in tags.get("models", [])]
-            if "mxbai-embed-large:latest" in models or "mxbai-embed-large" in models:
-                metrics["Neural Memory"] = "READY"
-            else:
-                metrics["Neural Memory"] = "MISSING (ollama pull mxbai-embed-large)"
-                score -= 10
+        ollama_ready = False
+        jan_ready = False
+        lms_ready = False
+        active_backends = []
+
+        # Check if WSL host
+        is_wsl = False
+        gw_ip = None
+        try:
+            if os.path.exists("/proc/version"):
+                with open("/proc/version", "r") as f:
+                    if "microsoft" in f.read().lower():
+                        is_wsl = True
+                        cmd = "ip route | grep default | awk '{print $3}'"
+                        gw_ip = subprocess.check_output(cmd, shell=True).decode().strip()
+        except Exception:
+            pass
+
+        # 1. Check Ollama
+        try:
+            base_url = discover_ollama_url()
+            with urllib.request.urlopen(f"{base_url}/api/tags", timeout=1.0) as response:
+                tags = json.loads(response.read().decode())
+                models = [m["name"] for m in tags.get("models", [])]
+                if "mxbai-embed-large:latest" in models or "mxbai-embed-large" in models:
+                    ollama_ready = True
+                    active_backends.append("Ollama (READY)")
+                else:
+                    active_backends.append("Ollama (MISSING mxbai-embed-large)")
+        except Exception:
+            pass
+
+        # 2. Check Jan (port 1337)
+        jan_urls = []
+        if is_wsl and gw_ip:
+            jan_urls.append(f"http://{gw_ip}:1337/v1/models")
+        jan_urls.append("http://localhost:1337/v1/models")
+        
+        for url in jan_urls:
+            try:
+                with urllib.request.urlopen(url, timeout=0.5) as response:
+                    data = json.loads(response.read().decode())
+                    jan_ready = True
+                    models = [m["id"] for m in data.get("data", [])]
+                    active_backends.append(f"Jan (ONLINE: {len(models)} models)")
+                    break
+            except Exception:
+                pass
+
+        # 3. Check LM Studio (port 1234)
+        lms_urls = []
+        if is_wsl and gw_ip:
+            lms_urls.append(f"http://{gw_ip}:1234/v1/models")
+        lms_urls.append("http://localhost:1234/v1/models")
+        
+        for url in lms_urls:
+            try:
+                with urllib.request.urlopen(url, timeout=0.5) as response:
+                    data = json.loads(response.read().decode())
+                    lms_ready = True
+                    models = [m["id"] for m in data.get("data", [])]
+                    active_backends.append(f"LM Studio (ONLINE: {len(models)} models)")
+                    break
+            except Exception:
+                pass
+
+        if ollama_ready or jan_ready or lms_ready:
+            metrics["Neural Memory"] = " | ".join(active_backends)
+        elif active_backends:
+            metrics["Neural Memory"] = " | ".join(active_backends)
+            score -= 10
+        else:
+            metrics["Neural Memory"] = "OFFLINE"
+            score -= 5
     except Exception:
         metrics["Neural Memory"] = "OFFLINE"
         score -= 5
@@ -675,14 +740,88 @@ The repository is newly provisioned. To build the local intelligence base, run:
 
         _cache_info = f" | cache: {_cache_db.stat().st_size // 1024}KB" if _cache_db.exists() else ""
 
+        # --- Extended Headroom stats ---
+        _extended_stats = ""
+        if _headroom_ver:
+            try:
+                _cmd = ["headroom", "memory", "stats"]
+                if _cache_db.exists():
+                    _cmd += ["--db-path", str(_cache_db)]
+                _proc_stats = subprocess.run(
+                    _cmd, capture_output=True, text=True, timeout=5
+                )
+                if _proc_stats.returncode == 0:
+                    _stats_out = _proc_stats.stdout
+                    _m_total = "0"
+                    _db_size = "N/A"
+                    for _line in _stats_out.splitlines():
+                        if "Total Memories:" in _line:
+                            _m_total = _line.split(":")[-1].replace("│", "").strip()
+                        if "Database Size:" in _line:
+                            _db_size = _line.split(":")[-1].replace("│", "").strip()
+                    _extended_stats = f" | db: {_db_size} | memories: {_m_total}"
+            except Exception:
+                pass
+
         if _proxy_up:
-            metrics["Headroom"] = f"Proxy (Tier 2){_ver_label}{_cache_info}"
+            metrics["Headroom"] = f"Proxy (Tier 2){_ver_label}{_cache_info}{_extended_stats}"
         elif _headroom_ver:
-            metrics["Headroom"] = f"MCP (v{_headroom_short}){_ver_label}{_cache_info}"
+            metrics["Headroom"] = f"MCP (v{_headroom_short}){_ver_label}{_cache_info}{_extended_stats}"
         else:
             metrics["Headroom"] = "not installed (pip install headroom-ai[mcp])"
     except Exception:
         metrics["Headroom"] = "Unknown"
+
+    # 12b. RTK (Rust Token Killer)
+    try:
+        import shutil as _shutil
+        _rtk_ver = None
+        if _shutil.which("rtk"):
+            _vp = subprocess.run(
+                ["rtk", "--version"], capture_output=True, text=True, timeout=5
+            )
+            if _vp.returncode == 0:
+                _rtk_ver = _vp.stdout.strip().split()[-1]
+
+        if _rtk_ver:
+            _hook_ok = False
+            _claude_settings = Path.home() / ".claude" / "settings.json"
+            if _claude_settings.exists():
+                try:
+                    _settings = json.loads(_claude_settings.read_text(encoding="utf-8"))
+                    for _hook in _settings.get("hooks", {}).get("PreToolUse", []):
+                        for _h in _hook.get("hooks", []):
+                            if "rtk hook" in _h.get("command", ""):
+                                _hook_ok = True
+                                break
+                except Exception:
+                    pass
+
+            _rtk_stats = ""
+            try:
+                _proc_gain = subprocess.run(
+                    ["rtk", "gain"], capture_output=True, text=True, timeout=5
+                )
+                if _proc_gain.returncode == 0:
+                    _gain_out = _proc_gain.stdout
+                    if "No tracking data yet" not in _gain_out:
+                        _cmds = "0"
+                        _saved = "0"
+                        for _line in _gain_out.splitlines():
+                            if "Total commands:" in _line:
+                                _cmds = _line.split(":")[-1].strip()
+                            if "Tokens saved:" in _line:
+                                _saved = _line.split(":")[-1].strip()
+                        _rtk_stats = f" | cmds: {_cmds} | saved: {_saved}"
+            except Exception:
+                pass
+
+            _hook_label = " (hook active)" if _hook_ok else " (hook missing - run rtk init -g)"
+            metrics["RTK (Token Killer)"] = f"active (v{_rtk_ver}){_hook_label}{_rtk_stats}"
+        else:
+            metrics["RTK (Token Killer)"] = "not installed (run brew install rtk && rtk init -g)"
+    except Exception:
+        metrics["RTK (Token Killer)"] = "Unknown"
 
     # 13. Top Agents (Heatmap)
     try:
@@ -1893,14 +2032,52 @@ def main() -> None:
     # Append history even in CLI mode
     append_history(score, metrics)
 
-    print(f"\n{'='*40}")
-    print(f"🚀 ANTIGRAVITY WORKSPACE HEALTH: {score}%")
-    print(f"{'='*40}")
+    width = 80
+    print(f"\n{'='*width}")
+    print(f"🚀 ANTIGRAVITY WORKSPACE HEALTH: {score}%".center(width))
+    print(f"{'='*width}")
     
     for k, v in metrics.items():
-        print(f"  - {k:<15}: {v}")
+        print(f"  - {k:<20}: {v}")
     
-    print(f"{'='*40}\n")
+    print(f"{'='*width}\n")
+    
+    # Show RTK details if installed
+    import shutil
+    if shutil.which("rtk"):
+        try:
+            res = subprocess.run(
+                ["rtk", "gain", "-p", "-g"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                print("📊 RTK TOKEN SAVINGS & GRAPH (PROJECT SCOPE)".center(width))
+                print(res.stdout)
+                print(f"{'='*width}\n")
+        except Exception:
+            pass
+
+    # Show Headroom details if installed
+    if shutil.which("headroom"):
+        try:
+            headroom_dir = REPO_ROOT / ".headroom"
+            cache_db = headroom_dir / "cache.db"
+            if cache_db.exists():
+                res = subprocess.run(
+                    ["headroom", "memory", "stats", "--db-path", str(cache_db)],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    print("📊 HEADROOM MEMORY & CACHE STATUS (PROJECT SCOPE)".center(width))
+                    print(res.stdout)
+                    print(f"{'='*width}\n")
+        except Exception:
+            pass
+
     if score < 70:
         print("⚠️  Workspace health is low. Run 'checklist.py --fix' and update documentation.")
     else:

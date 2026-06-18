@@ -1,5 +1,14 @@
 {
   "scoring": {
+    "base_score": 5,
+    "failure_context": {
+      "keywords": ["fail", "error", "retry", "broken", "bug", "hallucination"],
+      "max_bonus": 3
+    },
+    "budget": {
+      "threshold_ratio": 0.85,
+      "penalty": -3
+    },
     "thresholds": {
       "L1": 3,
       "L2": 7,
@@ -13,14 +22,31 @@
       "refactor": 5,
       "implement": 4,
       "fix": 3,
-      "add": 6,
+      "add": 3,
       "lint": -2,
       "typo": -5,
       "readme": -5,
       "documentation": 2,
       "drift": 8,
       "sync": 5,
-      "deployment": 5
+      "deployment": 5,
+      "анализ": 5,
+      "отладка": 5,
+      "дебаг": 5,
+      "реализуй": 4,
+      "реализовать": 4,
+      "сделай": 3,
+      "исправ": 3,
+      "проверь": 3,
+      "создай": 3,
+      "создать": 3,
+      "рефактор": 5,
+      "ошибк": 3,
+      "баг": 3,
+      "архитектур": 9,
+      "безопасност": 7,
+      "деплой": 5,
+      "мигра": 6
     }
   },
   "domain_affinity": {
@@ -113,6 +139,25 @@
         "qwen3.6:27b"
       ]
     },
+    "jan": {
+      "_comment": "Jan model IDs — fetched from Jan /v1/models on 2026-06-13",
+      "L1": "Jan-v3.5-4B-Q4_K_XL",
+      "L1_alt": [
+        "gemma-4-12B-it-abliterated-uncensored_i1-IQ4_XS"
+      ],
+      "L2": "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS",
+      "L2_alt": [
+        "gemma-4-12B-it-abliterated-uncensored_i1-IQ4_XS"
+      ],
+      "L3": "Qwen3_6-27B-IQ4_XS",
+      "L3_alt": [
+        "gemma-4-26B-A4B-it-UD-IQ4_XS"
+      ],
+      "L4": "Qwen3_6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS",
+      "L4_alt": [
+        "gemma-4-26B-A4B-it-UD-IQ4_XS"
+      ]
+    },
     "antigravity": {
       "L1": "gemini-3-flash",
       "L2": "gemini-3.1-pro-low",
@@ -123,6 +168,36 @@
   "model_rankings": {
     "_formula": "rank_score = quality * 5 + tps * 0.5 - time",
     "_benchmark_date": "2026-05-10",
+    "Jan-v3.5-4B-Q4_K_XL": {
+      "tier": "L1",
+      "quality_score": 60,
+      "benchmark": { "avg_time": 4.0, "avg_tps": 80, "success": 100 },
+      "rank_score": 336
+    },
+    "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS": {
+      "tier": "L2",
+      "quality_score": 78,
+      "benchmark": { "avg_time": 10.0, "avg_tps": 40, "success": 100 },
+      "rank_score": 400
+    },
+    "gemma-4-26B-A4B-it-UD-IQ4_XS": {
+      "tier": "L3",
+      "quality_score": 85,
+      "benchmark": { "avg_time": 20.0, "avg_tps": 20, "success": 100 },
+      "rank_score": 415
+    },
+    "Qwen3_6-27B-IQ4_XS": {
+      "tier": "L3",
+      "quality_score": 86,
+      "benchmark": { "avg_time": 22.0, "avg_tps": 22, "success": 100 },
+      "rank_score": 430
+    },
+    "Qwen3_6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS": {
+      "tier": "L3",
+      "quality_score": 88,
+      "benchmark": { "avg_time": 25.0, "avg_tps": 18, "success": 100 },
+      "rank_score": 424
+    },
     "codestral:22b": {
       "tier": "L1",
       "quality_score": 82,
@@ -243,10 +318,125 @@
     "fallback_direct": true,
     "comment": "When headroom proxy is running, route Ollama requests through it for 60-95% token savings. fallback_direct=true: if proxy is down, router uses Ollama directly — no interruptions."
   },
+  "concurrency": {
+    "ollama": 2,
+    "jan": 1,
+    "lm-studio": 1,
+    "default": 4
+  },
+  "semantic_cache": {
+    "enabled": true,
+    "threshold": 0.95
+  },
+  "agent_tiers": {
+    "explorer-agent": "L1",
+    "code-archaeologist": "L1",
+    "documentation-writer": "L1",
+    "seo-specialist": "L1",
+    "frontend-specialist": "L2",
+    "backend-specialist": "L2",
+    "python-specialist": "L2",
+    "mobile-developer": "L2",
+    "devops-engineer": "L2",
+    "database-architect": "L2",
+    "test-engineer": "L2",
+    "debugger": "L2",
+    "performance-optimizer": "L2",
+    "visual-designer": "L2",
+    "product-manager": "L2",
+    "product-owner": "L2",
+    "project-planner": "L2",
+    "reviewer": "L2",
+    "git-master": "L2",
+    "backend-lead": "L2",
+    "frontend-lead": "L2",
+    "go-specialist": "L3",
+    "crypto-specialist": "L3",
+    "crypto-go-architect": "L3",
+    "grpc-architect": "L3",
+    "rest-api-designer": "L3",
+    "ai-engineer": "L3",
+    "qa-automation-engineer": "L3",
+    "analyst": "L3",
+    "sre-engineer": "L3",
+    "k8s-engineer": "L3",
+    "cloud-engineer": "L3",
+    "data-engineer": "L3",
+    "wiki-architect": "L3",
+    "archivist": "L3",
+    "meta-architect": "L3",
+    "maintainer": "L3",
+    "penetration-tester": "L3",
+    "security-auditor": "L4",
+    "red-team": "L4",
+    "chaos-monkey": "L4",
+    "ceo": "L4",
+    "cto": "L4",
+    "risk-manager": "L4",
+    "ethics-auditor": "L4",
+    "release-manager": "L4",
+    "grafana-master": "L4",
+    "game-developer": "L4",
+    "prompt-specialist": "L4"
+  },
+  "domain_tiers": {
+    "discovery": "L1",
+    "legacy": "L1",
+    "documentation": "L1",
+    "seo": "L1",
+    "backend": "L2",
+    "frontend": "L2",
+    "mobile": "L2",
+    "testing": "L2",
+    "debug": "L2",
+    "devops": "L2",
+    "database": "L2",
+    "performance": "L2",
+    "git": "L2",
+    "product": "L2",
+    "planning": "L2",
+    "review": "L2",
+    "visual": "L2",
+    "ai": "L3",
+    "llm": "L3",
+    "crypto": "L3",
+    "grpc": "L3",
+    "security": "L3",
+    "analyst": "L3",
+    "sre": "L3",
+    "k8s": "L3",
+    "cloud": "L3",
+    "data": "L3",
+    "wiki": "L3",
+    "architecture": "L3",
+    "maintenance": "L3",
+    "penetration": "L3",
+    "chaos": "L4",
+    "risk": "L4",
+    "strategy": "L4",
+    "leadership": "L4",
+    "release": "L4",
+    "ethics": "L4",
+    "governance": "L4",
+    "game": "L4",
+    "prompts": "L4",
+    "red-teaming": "L4",
+    "grafana": "L4"
+  },
   "fallbacks": {
     "L1": "L2",
     "L2": "L3",
     "L3": "L4",
     "L4": "L4"
+  },
+  "provider_settings": {
+    "jan": {
+      "n_ctx": 131072,
+      "chars_per_token": 4
+    },
+    "ollama": {
+      "n_ctx": 131072,
+      "chars_per_token": 4
+    }
   }
 }

@@ -1,0 +1,7 @@
+# Dev build output from `go build .` or `make build`
+mcp-llm-broker
+bin/mcp-llm-broker
+
+# lipo intermediates from `make build-darwin`
+bin/mcp-llm-broker-darwin-amd64
+bin/mcp-llm-broker-darwin-arm64

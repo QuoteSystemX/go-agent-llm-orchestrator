@@ -13,7 +13,6 @@ sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
 
 from lib.common import load_json_safe, save_json_atomic
 from lib.llm_client import query_llm
-from models.model_router import route
 
 GOLDEN_TASKS_PATH = REPO_ROOT / ".agent" / "scripts" / "qa" / "golden_tasks.json"
 REPORTS_DIR = REPO_ROOT / ".agent" / "reports" / "intelligence"
@@ -43,8 +42,12 @@ def run_benchmark():
     for task in tasks:
         print(f"  📝 Testing: {task['name']}...", end="", flush=True)
         
-        # Determine model to use via router
-        model = args.model if args.model else route(task['prompt']).model_id
+        if args.model:
+            model = args.model
+        else:
+            from lib.llm_client import call_mcp_broker
+            res = call_mcp_broker("get_routing_decision", {"task_description": task['prompt']})
+            model = res.get("model_id", "qwen2.5-coder:14b")
         
         response, stats = query_llm(task['prompt'], model)
         

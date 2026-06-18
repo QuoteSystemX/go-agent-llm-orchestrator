@@ -29,10 +29,14 @@ def _load_rules():
 
 def _get_local_models() -> set:
     with suppress("arena_engine.local_models", level=logging.DEBUG):
-        from models.model_router import discover_ollama_url, get_ollama_local_models
-        url, _ = discover_ollama_url("auto")
-        if url:
-            return get_ollama_local_models(url) or set()
+        from lib.llm_client import call_mcp_broker
+        res = call_mcp_broker("detect_backends", {})
+        models = set()
+        for backend in res.get("backends", []):
+            if backend.get("available"):
+                for m in backend.get("models", []):
+                    models.add(m)
+        return models
     return set()
 
 
@@ -56,14 +60,13 @@ def _resolve_model_for_tier(tier: str, ollama_models: dict, local_models: set) -
 def get_dynamic_duelists(prompt: str):
     """Resolve duelists + judge dynamically based on prompt complexity."""
     try:
-        from models.model_router import route
-        result = route(prompt)
+        from lib.llm_client import call_mcp_broker
+        res = call_mcp_broker("get_routing_decision", {"task_description": prompt})
+        target_tier = res.get("tier", "L2")
+        target_model = res.get("model_id", "qwen2.5-coder:14b")
     except Exception as e:
         print("Router failed: %s. Using defaults." % e)
         return ["qwen2.5-coder:14b"], "qwen2.5-coder:32b"
-
-    target_tier = result.tier
-    target_model = result.model_id
     print("Router: Tier [%s] -> recommended '%s'" % (target_tier, target_model))
 
     rules = _load_rules()

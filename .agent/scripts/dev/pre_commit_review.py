@@ -34,8 +34,9 @@ except ImportError:
 def get_staged_diff() -> str:
     try:
         return subprocess.check_output([
-            "git", "diff", "--cached", "--", 
-            ":(exclude)*.md", ":(exclude)*.json", ":(exclude)*.jsonl", ":(exclude)*.yml"
+            "git", "diff", "--cached", "--",
+            ":(exclude)*.md", ":(exclude)*.json", ":(exclude)*.jsonl",
+            ":(exclude)*.yml", ":(exclude)*.html",
         ], cwd=REPO_ROOT).decode("utf-8")
     except Exception:
         return ""
@@ -56,10 +57,15 @@ def review_diff():
     # Extract keywords/titles from lessons (simple regex for demo)
     lesson_topics = re.findall(r'### \[\d+-\d+-\d+\] \[\w+\] \[([\w-]+)\] (.*)', lessons)
     
+    # Only scan added lines to avoid false positives from removed code
+    added_lines = "\n".join(
+        l for l in diff.splitlines()
+        if l.startswith("+") and not l.startswith("+++")
+    ).lower()
+
     warnings = []
     for skill, title in lesson_topics:
-        # If the skill tag or keywords from title appear in the diff (+ lines)
-        if skill in diff.lower():
+        if skill in added_lines:
             warnings.append(f"Found mention of skill '{skill}' in diff (Context: {title})")
 
     if warnings:

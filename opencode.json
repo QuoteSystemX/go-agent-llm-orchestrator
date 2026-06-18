@@ -19,6 +19,16 @@
     "network": "allow"
   },
   "mcp": {
+    "mcp-llm-broker": {
+      "type": "local",
+      "command": [
+        ".agent/mcp-llm-broker/mcp-llm-broker.sh",
+        "--http-port",
+        "11436"
+      ],
+      "enabled": true,
+      "env": {}
+    },
     "headroom-mcp": {
       "type": "local",
       "command": [
@@ -91,5 +101,663 @@
       "env": {}
     }
   },
-  "default_agent": "orchestrator"
+  "default_agent": "orchestrator",
+  "agent": {
+    "maintainer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Senior Maintainer and Quality Guardian. Responsible for code review, PR audits, and ensuring adherence to ARCHITECTURE.md and KNOWLEDGE.md. Use for blocking poor-quality PRs, security audits, and performance verification.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "meta-architect": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Strategist for autonomous agent kit evolution. Audits agent performance via telemetry, identifies missing specializations, designs new agent specs, and evolves global protocols. Triggers on agent failure patterns, /evolve, /audit-agents, or when telemetry shows quality regression.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "project-planner": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Smart project planning agent. Breaks down user requests into tasks, plans file structure, determines which agent does what, creates dependency graph. Use when starting new projects or planning major features.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "reviewer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Automated code auditor that scans the codebase and generates a prioritized task queue in tasks/. Triggers on keywords like review, audit, scan code, generate tasks, code quality, technical debt. Invoke when you want a comprehensive codebase health report or need tasks/ populated with actionable improvement cards.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "ai-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "AI/LLM specialist \u2014 RAG pipelines, prompt engineering, tool use, agentic loops, vector databases, model evaluation, streaming, cost optimization, and Python AI stack (Anthropic SDK, OpenAI SDK, LangChain, LlamaIndex, RAGAS). Use when tasks involve LLM integration, AI features, embeddings, or AI system design.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "backend-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert backend architect for Node.js, Python, and modern serverless/edge systems. Use for API development, server-side logic, database integration, and security. Triggers on backend, server, api, endpoint, database, auth. Does NOT handle Go \u2014 delegate to go-specialist (pure Go), crypto-specialist (pure crypto/TON), or crypto-go-architect (Go + Crypto combined).",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "chaos-monkey": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Resilience testing specialist. Intentionally injects failures to verify system self-healing, measure MTTR, and surface blast radius. Triggers on CHAOS_ENABLED=1, resilience, MTTR, chaos-drill, failure-injection, or when >7 days since last drill.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "explorer-agent": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Advanced codebase discovery, deep architectural analysis, and proactive research agent. The eyes and ears of the framework. Use for initial audits, refactoring plans, and deep investigative tasks. Always runs before project-planner on unfamiliar codebases.",
+      "hidden": true,
+      "model": "mcp-llm-broker/codestral:22b"
+    },
+    "game-developer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Game development across all platforms (PC, Web, Mobile, VR/AR). Use when building games with Unity, Godot, Unreal, Phaser, Three.js, or any game engine. Covers game mechanics, multiplayer, optimization, 2D/3D graphics, and game design patterns.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "git-master": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialist in Git internals, conflict resolution, and repository health. Use when merge conflicts occur, history needs analysis, or complex rebase/cherry-pick operations are required.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "mobile-developer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in React Native and Flutter mobile development. Use for cross-platform mobile apps, native features, and mobile-specific patterns. Triggers on mobile, react native, flutter, ios, android, app store, expo.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "prompt-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in LLM orchestration, prompt design, benchmarking, and token economy. Use for optimizing agent instructions, creating few-shot examples, A/B testing prompts, and reducing hallucination. Triggers on prompt, instruction, system-prompt, few-shot, CoT, benchmarking, golden-set, arena, token-optimization.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "analyst": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "BMAD lifecycle driver. Runs Discovery interviews, writes PRD, drives Architecture decisions, generates Story cards, and plans Sprints. Use for any product lifecycle task \u2014 discovery, brief, PRD, architecture, stories, sprint, BMAD, epic, user story, product planning, requirements, MoSCoW.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "backend-lead": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Backend Engineering Lead \u2014 tactical layer between CTO and backend squad. Receives technical tasks from CTO, decomposes into concrete sub-tasks, and delegates to go-specialist, database-architect, debugger, test-engineer, or reviewer via @mention. Triggers on backend, API, Go, service, database, endpoint, squad lead, or delegation from cto. NEVER implements \u2014 always routes.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "ceo": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Chief Executive Officer. Sets business strategy, approves major architectural decisions, resolves CTO/risk-manager conflicts, and signs off on production releases. Triggers on strategy, roadmap, approval, veto-resolution, milestone, budget, or executive escalation.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "cto": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Chief Technology Officer. Owns architecture decisions, engineering delegation, quality governance, and technical hiring. Triggers on architecture, RFC, tech-stack, delegation, ADR, technical-decision, engineering-plan, or escalation from specialist agents.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "documentation-writer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in technical documentation. Writes README files, API docs, code comments (JSDoc/TSDoc/GoDoc), changelogs, and llms.txt. Invoked explicitly by user OR auto-invoked when a new project/package has no README. DO NOT invoke during normal feature development \u2014 wiki-architect owns design docs and ADRs.",
+      "hidden": true,
+      "model": "mcp-llm-broker/codestral:22b"
+    },
+    "frontend-lead": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Frontend Engineering Lead \u2014 tactical layer between CTO and frontend squad. Receives UI/UX and frontend tasks from CTO, decomposes into concrete sub-tasks, and delegates to frontend-specialist, visual-designer, or qa-automation-engineer via @mention. Triggers on frontend, UI, UX, React, Next.js, component, page, design, or delegation from cto. NEVER implements \u2014 always routes.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "product-manager": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in product requirements, user stories, metrics, and acceptance criteria. Use for defining features, clarifying ambiguity, writing PRDs, prioritizing work, and running discovery sessions. Triggers on requirements, user story, acceptance criteria, PRD, product specs, feature definition, roadmap.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "product-owner": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Strategic facilitator bridging business needs and technical execution. Expert in requirements elicitation, backlog prioritization, roadmap management, and BMAD lifecycle governance. Triggers on requirements, user story, backlog, MVP, PRD, stakeholder, roadmap, sprint planning, backlog grooming.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "release-manager": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialist in software release lifecycles, semantic versioning (SemVer), and automated changelog generation. Manages version files, git tags, and release notes. Ensures production readiness through final pre-flight audits. Triggers on release, deploy, version, tag, changelog, CHANGELOG.md, VERSION.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "risk-manager": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Chief Risk Officer. Audits PRs for risk exposure, enforces circuit breakers, and vetos deployments that breach defined risk parameters. Use for pre-flight audits, scenario analysis, infrastructure risk, and security governance. Triggers on deployment, breaking-change, production, audit, risk, veto.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "wiki-architect": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "\"Karpathy Wiki-First specialist \u2014 writes Mental Model documents, Intuition sections, ADRs, and system design docs. Detects wiki vs code drift. Enforces Prose-First workflow: wiki before code. Use when a component lacks documentation, when drift is suspected, or before any new feature implementation.\"",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "code-archaeologist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in legacy code, refactoring, and understanding undocumented systems. Use for reading messy code, reverse engineering, and modernization planning. Triggers on legacy, refactor, spaghetti code, analyze repo, explain codebase.",
+      "hidden": true,
+      "model": "mcp-llm-broker/codestral:22b"
+    },
+    "debugger": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in systematic debugging, root cause analysis, and crash investigation. Use for complex bugs, production issues, performance problems, and error analysis. Triggers on bug, error, crash, not working, broken, investigate, fix.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "performance-optimizer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. Use for improving speed, reducing bundle size, and optimizing runtime performance. Triggers on performance, optimize, speed, slow, memory, cpu, benchmark, lighthouse.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "qa-automation-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialist in test automation infrastructure and E2E testing. Focuses on Playwright, Cypress, CI pipelines, and breaking the system. Triggers on e2e, automated test, pipeline, playwright, cypress, regression.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "test-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in testing, TDD, regression prevention, and coverage auditing. Use for writing tests, improving coverage, auditing untested code, debugging test failures, and building regression suites. Triggers on test, spec, coverage, jest, pytest, vitest, playwright, e2e, unit test, regression, untested.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "archivist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Governs the high-fidelity knowledge lifecycle. Captures architectural pivots, distills lessons, prunes stale context, and maintains SNR > 7.0 in the project brain. Triggers on session-end, breaking changes, post-incident, and explicit /distill calls.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "data-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflow orchestration, Kafka streaming, ClickHouse/BigQuery analytics, dimensional data modeling (Kimball), and PySpark. Triggers on pipeline, etl, elt, dbt, airflow, kafka, clickhouse, bigquery, spark, data warehouse, data lake, data modeling, streaming, batch.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "database-architect": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert database architect for schema design, query optimization, migrations, and modern serverless databases. Use for database operations, schema changes, indexing, and data modeling. Triggers on database, sql, schema, migration, query, postgres, index, table.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "grafana-master": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in Grafana dashboards, data visualization, and observability engineering. Designs premium-plus dashboards that provide instant insights. Triggers on dashboard, PromQL, LogQL, visualization, SLI, SLO, observability, grafana_manager.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "ethics-auditor": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "AI alignment and ethics governance auditor. Detects hallucinations, enforces policy guardrails, and vetos unsafe deployments. Triggers on auth/finance/prod changes, AI model calls, policy violations, or explicit /ethics-audit.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "crypto-go-architect": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Glue agent that bridges Go engineering and Crypto/TON domain expertise. Designs systems where crypto logic maps onto Go implementation \u2014 exchange pipelines, TON indexers, HFT engines, on-chain executors. Triggers when BOTH Go (golang, grpc, gin, fiber, xsync) AND Crypto (ton, crypto, exchange, trading, blockchain, dex) signals are present, OR on architecture/pipeline/design/system-design tasks in a crypto-go context.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "go-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worker pools, fan-in/out, backpressure), goroutine leak prevention, pgx pool management, profiling (pprof, trace), observability (OpenTelemetry, slog/zap), storage (PostgreSQL/pgx, Redis), and gRPC/Protobuf. Triggers on golang, go, grpc, protobuf, gin, echo, fiber, xsync, pprof, bench, goroutine, context. Does NOT handle crypto/TON/blockchain \u2014 use crypto-specialist or crypto-go-architect for those.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "grpc-architect": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "gRPC and Protobuf contract architect for Go microservices. Designs .proto service definitions, enforces buf toolchain standards, prevents breaking changes, and ensures backward compatibility across service boundaries. Triggers on proto, grpc, buf, protobuf, service contract, rpc.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "cloud-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Multi-cloud infrastructure specialist \u2014 AWS/GCP/Azure provisioning, IAM least-privilege, VPC/VNet networking, cost optimization (spot/reserved/CUDs), KMS secrets rotation, CDN/edge configuration, container registries, multi-cloud abstraction patterns. Use when tasks involve cloud infrastructure, IAM policies, networking design, cost reduction, or secrets management across AWS/GCP/Azure.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "devops-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in deployment, server management, CI/CD, and production operations. CRITICAL - Use for deployment, server access, rollback, and production changes. HIGH RISK operations. Triggers on deploy, production, server, pm2, ssh, release, rollback, ci/cd.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "k8s-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Deep Kubernetes specialist \u2014 Helm charts, Operators, RBAC, HPA/VPA/KEDA, Ingress, NetworkPolicy, namespace isolation, CRDs, service mesh, cluster hardening, observability. Use when tasks involve K8s manifests, Helm, cluster configuration, scaling, or Kubernetes security.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "sre-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Site Reliability Engineer \u2014 SLO/SLI/SLA definition, error budget management, OpenTelemetry instrumentation, Prometheus + Grafana dashboards, Loki structured logging, distributed tracing, Alertmanager routing, on-call runbooks, post-mortems. Use when tasks involve observability setup, SLO definition, alert tuning, monitoring dashboards, or production reliability.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "python-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-safe architecture. Triggers on python, .py files, FastAPI, Django, asyncio, pydantic, pytest, data-pipeline, or when CTO delegates a Python-domain task.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "crypto-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/off-chain architecture, and financial math. Language-agnostic \u2014 focuses on WHAT to build, not HOW in Go. Triggers on ton, crypto, exchange, trading, blockchain, hft, quotes, dex, amm, func, tact, mev, wallet, jetton. For Go implementation of crypto systems use crypto-go-architect instead.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "penetration-tester": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in offensive security, penetration testing, red team operations, and vulnerability exploitation. Use for security assessments, attack simulations, and finding exploitable vulnerabilities. Triggers on pentest, exploit, attack, hack, breach, pwn, redteam, offensive.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "red-team": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialized Auditor and Adversarial Agent. Finds flaws, vulnerabilities, and inefficiencies in proposals. Devil's Advocate for architectural integrity.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "security-auditor": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Elite cybersecurity expert. Think like an attacker, defend like an expert. OWASP 2025, supply chain security, zero trust architecture. Triggers on security, vulnerability, owasp, xss, injection, auth, encrypt, supply chain, pentest.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen3-coder:30b"
+    },
+    "frontend-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Senior Frontend Architect who builds maintainable React/Next.js systems with performance-first mindset. Use when working on UI components, styling, state management, responsive design, or frontend architecture. Triggers on keywords like component, react, vue, ui, ux, css, tailwind, responsive.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    },
+    "rest-api-designer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "REST API designer specializing in OpenAPI 3.x contract-first design, HTTP semantics, versioning strategies, and backward compatibility. Writes specs before implementation. Triggers on openapi, swagger, REST, http api, endpoint design, api contract, json schema.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:32b"
+    },
+    "seo-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "SEO and GEO (Generative Engine Optimization) expert. Handles SEO audits, Core Web Vitals, E-E-A-T optimization, AI search visibility. Use for SEO improvements, content optimization, or AI citation strategies.",
+      "hidden": true,
+      "model": "mcp-llm-broker/codestral:22b"
+    },
+    "visual-designer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialist in UI/UX aesthetics, design systems, and visual quality. Produces design tokens, typography scales, OKLCH palettes, and component specs. Triggers on design, UI, theme, palette, typography, glassmorphism, design-system, ux-audit.",
+      "hidden": true,
+      "model": "mcp-llm-broker/qwen2.5-coder:14b"
+    }
+  },
+  "provider": {
+    "mcp-llm-broker": {
+      "name": "MCP LLM Broker",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://localhost:11436/v1"
+      },
+      "models": {
+        "llama3.2:3b": {},
+        "qwen2.5-coder:7b": {},
+        "deepseek-coder:6.7b": {},
+        "auto": {},
+        "L1": {},
+        "L2": {},
+        "L3": {},
+        "L4": {},
+        "codestral:22b": {},
+        "qwen2.5-coder:14b": {},
+        "qwen2.5-coder:32b": {},
+        "qwen3-coder:30b": {}
+      }
+    }
+  }
 }

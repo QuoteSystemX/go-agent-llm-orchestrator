@@ -91,7 +91,7 @@ trigger: always_on
 **Every response that involves code changes, features, or complex logic MUST be validated via `bin/output-bridge`.**
 
 1. **Format**: Follow the structure: Header, Goal, Implementation, Components, Result.
-2. **Validation**: Run `cat response.md | bin/output-bridge`.
+2. **Validation**: Run `cat .agent/tmp/response.md | bin/output-bridge` (or pipe the response string directly).
 3. **Strict Mode**: Responses that fail gateway validation are REJECTED and must be corrected.
 
 ### 🧠 HYBRID ROUTING PROTOCOL (MANDATORY - ENFORCED)

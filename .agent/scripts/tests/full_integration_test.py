@@ -153,7 +153,7 @@ class FullIntegrationTest(unittest.TestCase):
         external_tests = [
             "test_reliability.py",
             "test_phase_23.py",
-            "test_model_router.py",
+            "test_mcp_llm_broker.py",
             "test_tracer.py",
             "test_global_brain.py"
         ]

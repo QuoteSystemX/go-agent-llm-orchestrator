@@ -33,17 +33,24 @@ class TestStatusReport(unittest.TestCase):
         # Mock parallel run results
         mock_run.return_value = MagicMock(returncode=0)
         
-        # Mock Neural Memory check (Ollama)
-        mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({"models": [{"name": "mxbai-embed-large"}]}).encode()
-        mock_url.return_value.__enter__.return_value = mock_response
+        # Mock Neural Memory check (Ollama OK, others offline)
+        def urlopen_mock(url, *args, **kwargs):
+            url_str = url.full_url if hasattr(url, "full_url") else str(url)
+            if "11434" in url_str or "tags" in url_str:
+                mock_response = MagicMock()
+                mock_response.read.return_value = json.dumps({"models": [{"name": "mxbai-embed-large"}]}).encode()
+                mock_cm = MagicMock()
+                mock_cm.__enter__.return_value = mock_response
+                return mock_cm
+            raise Exception("Connection refused")
+        mock_url.side_effect = urlopen_mock
 
         with patch('health.status_report.load_json_safe', return_value={}):
             score, metrics = status_report.calculate_health()
             
             self.assertTrue(score > 80)
             self.assertEqual(metrics["Drift"], "0 issues")
-            self.assertEqual(metrics["Neural Memory"], "READY")
+            self.assertEqual(metrics["Neural Memory"], "Ollama (READY)")
 
     @patch('health.status_report.REPO_ROOT', Path('/tmp/fake_repo'))
     @patch('drift_detector.detect_drift')

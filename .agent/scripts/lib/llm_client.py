@@ -1,10 +1,9 @@
 import json
-import time
-import urllib.request
+import logging
+import subprocess
 from typing import Any, Dict, Optional, Tuple
 from pathlib import Path
 import sys
-import logging
 
 logger = logging.getLogger("llm_client")
 
@@ -12,92 +11,46 @@ logger = logging.getLogger("llm_client")
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
 
-from lib.common import discover_ollama_url
-
-OLLAMA_BASE_URL = discover_ollama_url()
+def call_mcp_broker(tool_name: str, arguments: dict) -> dict:
+    """Helper to run bin/mcp-llm-broker and invoke a tool using CLI mode."""
+    broker_bin = REPO_ROOT / "bin" / "mcp-llm-broker"
+    if not broker_bin.exists():
+        # Fallback build if binary is missing during execution
+        try:
+            logger.info("mcp-llm-broker not found. Attempting to build...")
+            subprocess.run(["make", "build-server"], cwd=str(REPO_ROOT), check=True, capture_output=True)
+        except Exception as e:
+            raise FileNotFoundError(f"mcp-llm-broker binary not found and failed to build: {e}")
+            
+    # Run the binary with CLI mode flags
+    cmd = [
+        str(broker_bin),
+        "--workspace", str(REPO_ROOT),
+        "--tool", tool_name,
+        "--args", json.dumps(arguments)
+    ]
+    
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.returncode != 0:
+        raise RuntimeError(f"mcp-llm-broker exited with code {result.returncode}. Stderr: {result.stderr}")
+        
+    return json.loads(result.stdout.strip())
 
 def query_llm(prompt: str, model: str, system_prompt: Optional[str] = None, format_json: bool = False) -> Tuple[str, Dict[str, Any]]:
-    """
-    Unified LLM query interface.
-    Currently supports Ollama. Can be extended to cloud providers.
-    """
-    url = f"{OLLAMA_BASE_URL}/api/generate"
-    
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.1, # Low temperature for benchmarks/audits
-            "num_ctx": 8192
-        }
-    }
-    
-    if format_json:
-        payload["format"] = "json"
-        
-    if system_prompt:
-        payload["system"] = system_prompt
-        
-    start_time = time.time()
+    """Unified LLM query interface routing through Go mcp-llm-broker."""
     try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=300) as resp:
-            data = json.loads(resp.read())
-            elapsed = time.time() - start_time
-            response_text = data.get("response", "")
+        args = {
+            "prompt": prompt,
+            "difficulty_hint": prompt[:200],
+            "model": model
+        }
+        if system_prompt:
+            args["system_prompt"] = system_prompt
             
-            stats = {
-                "elapsed_seconds": elapsed,
-                "model": model,
-                "total_duration": data.get("total_duration", 0),
-                "load_duration": data.get("load_duration", 0),
-                "sample_count": data.get("sample_count", 0),
-                "sample_duration": data.get("sample_duration", 0),
-                "prompt_eval_count": data.get("prompt_eval_count", 0),
-                "prompt_eval_duration": data.get("prompt_eval_duration", 0),
-                "eval_count": data.get("eval_count", 0),
-                "eval_duration": data.get("eval_duration", 0),
-                "tps": (data.get("eval_count", 0) / (data.get("eval_duration", 1) / 1e9))
-            }
-            
-            return response_text, stats
+        res = call_mcp_broker("execute_prompt", args)
+        return res.get("response", ""), res.get("stats", {})
     except Exception as e:
         return f"❌ Error querying LLM: {e}", {"error": str(e)}
-
-# ── Dynamic timeout by model ──
-MODEL_TIMEOUT_MAP = {
-    "qwen2.5-coder:14b": 30,
-    "qwen2.5-coder:32b": 60,
-    "codestral:22b": 60,
-    "qwen3-coder:30b": 90,
-    "deepseek-r1:32b": 120,
-}
-
-def get_dynamic_timeout(model: str, default: int = 60) -> int:
-    """Return timeout in seconds based on model name."""
-    return MODEL_TIMEOUT_MAP.get(model, default)
-
-
-def inject_lessons_context(prompt: str, system_prompt: Optional[str]) -> Optional[str]:
-    """Inject relevant lessons from wiki/LESSONS_LEARNED.md if applicable."""
-    try:
-        from models.semantic_experience import search_semantic
-        match = search_semantic(prompt)
-        if match and "🎯 Best Contextual Match" in match:
-            lesson_block = f"\n\n### 🚨 HISTORICAL LESSONS LEARNED (DO NOT REPEAT THESE ERRORS):\n{match}\n"
-            if system_prompt:
-                return system_prompt + lesson_block
-            else:
-                return "You are a helpful coding assistant." + lesson_block
-    except Exception as e:
-        logger.warning("Failed to inject JIT lessons context: %s", e)
-    return system_prompt
-
 
 def query_llm_safe(
     prompt: str,
@@ -106,131 +59,46 @@ def query_llm_safe(
     default_model: str = "qwen2.5-coder:14b",
     format_json: bool = False,
 ) -> Tuple[str, str, Dict[str, Any]]:
-    """Query LLM with full fallback chain.
-
-    Fallback: Ollama → Cloud (via model_router) → Stub.
-    Dynamic timeout by model. Never raises.
-
-    Returns: (response_text, source, stats)
-      source: "ollama" | "cloud" | "stub"
-    """
-    if model is None:
-        model = default_model
-
-    timeout = get_dynamic_timeout(model)
-    system_prompt = inject_lessons_context(prompt, system_prompt)
-
-    # ── Level 1: Ollama ──
+    """Query LLM with Go mcp-llm-broker, fallback, caching, and token-saving."""
+    difficulty_hint = prompt[:300]
+    
     try:
-        url = f"{OLLAMA_BASE_URL}/api/generate"
-        payload = {
-            "model": model,
+        args = {
             "prompt": prompt,
-            "stream": False,
-            "options": {"temperature": 0.1, "num_ctx": 8192},
         }
-        if format_json:
-            payload["format"] = "json"
+        if model:
+            args["model"] = model
         if system_prompt:
-            payload["system"] = system_prompt
-
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        start = time.time()
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read())
-            elapsed = time.time() - start
-            text = data.get("response", "")
-            stats = {
-                "elapsed_seconds": elapsed,
-                "model": model,
-                "tps": (data.get("eval_count", 0) / (data.get("eval_duration", 1) / 1e9)),
-            }
-            return text, "ollama", stats
+            args["system_prompt"] = system_prompt
+        if difficulty_hint:
+            args["difficulty_hint"] = difficulty_hint
+            
+        res = call_mcp_broker("execute_prompt", args)
+        
+        response_text = res.get("response", "")
+        source = res.get("source", "unknown")
+        stats = res.get("stats", {})
+        if "model" in res:
+            stats["model"] = res["model"]
+            
+        return response_text, source, stats
     except Exception as e:
-        logger.warning("Ollama failed for %s: %s", model, e)
-
-    # ── Level 2: Cloud fallback via model_router ──
-    try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from models.model_router import route
-        result = route(prompt)
-        if (
-            hasattr(result, "provider")
-            and result.provider
-            and result.provider != "ollama"
-        ):
-            cloud_model = getattr(result, "model_id", model)
-            cloud_url = f"{OLLAMA_BASE_URL}/api/generate"  # still same Ollama URL unless cloud has own endpoint
-            cloud_timeout = 30  # cloud should be fast
-            payload = {
-                "model": cloud_model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {"temperature": 0.1, "num_ctx": 4096},
-            }
-            if format_json:
-                payload["format"] = "json"
-            if system_prompt:
-                payload["system"] = system_prompt
-            req = urllib.request.Request(
-                cloud_url,
-                data=json.dumps(payload).encode(),
-                headers={"Content-Type": "application/json"},
-            )
-            start = time.time()
-            with urllib.request.urlopen(req, timeout=cloud_timeout) as resp:
-                data = json.loads(resp.read())
-                elapsed = time.time() - start
-                text = data.get("response", "")
-                stats = {
-                    "elapsed_seconds": elapsed,
-                    "model": cloud_model,
-                    "fallback_reason": f"ollama failed, used {result.provider}",
-                }
-                return text, "cloud", stats
-    except Exception as e:
-        logger.warning("Cloud fallback also failed: %s", e)
-
-    # ── Level 3: Stub ──
-    logger.warning("🚨 [OFFLINE] Ни одна LLM не доступна (все эндпоинты вернули ошибку). Использование заглушки.")
-    stub = f"⚠️ [LLM Unavailable] Fallback for: {prompt[:100]}..."
-    stats = {"warning": "All LLM endpoints failed, using stub", "model": model}
-    return stub, "stub", stats
-
+        logger.warning("mcp-llm-broker failed: %s. Using stub fallback.", e)
+        stub = f"⚠️ [LLM Unavailable] Fallback for: {prompt[:100]}..."
+        stats = {"warning": str(e), "model": model or default_model}
+        return stub, "stub", stats
 
 def query_chat(messages: list, model: str) -> Tuple[str, Dict[str, Any]]:
-    """
-    Chat interface for models that support it.
-    """
-    url = f"{OLLAMA_BASE_URL}/api/chat"
-    
-    payload = {
-        "model": model,
-        "messages": messages,
-        "stream": False
-    }
-    
-    start_time = time.time()
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=300) as resp:
-            data = json.loads(resp.read())
-            elapsed = time.time() - start_time
-            message = data.get("message", {}).get("content", "")
+    """Chat interface converted to route through mcp-llm-broker."""
+    # Build flat prompt from chat history
+    flat_prompt = ""
+    system_prompt = ""
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "system":
+            system_prompt = content
+        else:
+            flat_prompt += f"{role.upper()}: {content}\n"
             
-            stats = {
-                "elapsed_seconds": elapsed,
-                "model": model
-            }
-            
-            return message, stats
-    except Exception as e:
-        return f"❌ Error querying Chat LLM: {e}", {"error": str(e)}
+    return query_llm(flat_prompt, model, system_prompt=system_prompt)

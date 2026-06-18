@@ -223,15 +223,18 @@ def _do_upgrade(root: Path) -> bool:
     """Install latest headroom-ai[mcp] via pip. Returns True on success."""
     print("\n🔄 Upgrading headroom-ai...")
     before = _get_installed_version()
+    cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "headroom-ai[mcp]"]
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "headroom-ai[mcp]"],
-            capture_output=False,
-            timeout=120,
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            print("❌ pip upgrade failed")
-            return False
+            print("  ⚠️  Standard pip installation failed (possibly externally managed environment). Retrying with --break-system-packages...")
+            cmd.append("--break-system-packages")
+            result = subprocess.run(cmd, capture_output=False, timeout=120)
+            if result.returncode != 0:
+                print("❌ pip upgrade failed")
+                return False
+        else:
+            print(result.stdout)
     except Exception as e:
         print(f"❌ Upgrade error: {e}")
         return False
@@ -248,6 +251,78 @@ def _do_upgrade(root: Path) -> bool:
     return True
 
 
+def provision_rtk(dry_run: bool):
+    """Detect and provision Rust Token Killer (RTK)."""
+    print("\n🔍 Checking RTK (Rust Token Killer)...")
+    rtk_installed = False
+    try:
+        proc = subprocess.run(["rtk", "--version"], capture_output=True, text=True, timeout=5)
+        if proc.returncode == 0:
+            rtk_installed = True
+            print(f"  ✅ rtk is already installed: {proc.stdout.strip()}")
+    except Exception:
+        pass
+
+    if not rtk_installed:
+        print("  ⚠️  rtk is not installed. Attempting installation...")
+        if dry_run:
+            print("  ⏭️  [dry-run] Skipping rtk installation")
+            return
+
+        # Attempt 1: Check if brew is available (common on macOS)
+        brew_path = shutil.which("brew")
+        if brew_path:
+            print("  📦 Detected Homebrew. Running: brew install rtk...")
+            try:
+                subprocess.run([brew_path, "install", "rtk"], check=True)
+                print("  ✅ rtk successfully installed via Homebrew!")
+                rtk_installed = True
+            except subprocess.CalledProcessError as e:
+                print(f"  ❌ Homebrew installation failed: {e}")
+
+        # Attempt 2: If brew not available or failed, try quick installer sh
+        if not rtk_installed:
+            curl_path = shutil.which("curl")
+            if curl_path:
+                print("  📦 Running quick installer script...")
+                try:
+                    curl_proc = subprocess.Popen([curl_path, "-fsSL", "https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh"], stdout=subprocess.PIPE)
+                    subprocess.run(["sh"], stdin=curl_proc.stdout, check=True)
+                    print("  ✅ rtk successfully installed via quick install script!")
+                    rtk_installed = True
+                except Exception as e:
+                    print(f"  ❌ Quick installer failed: {e}")
+
+        # Attempt 3: Try cargo install if cargo is available
+        if not rtk_installed:
+            cargo_path = shutil.which("cargo")
+            if cargo_path:
+                print("  📦 Detected cargo. Running: cargo install --git https://github.com/rtk-ai/rtk...")
+                try:
+                    subprocess.run([cargo_path, "install", "--git", "https://github.com/rtk-ai/rtk"], check=True)
+                    print("  ✅ rtk successfully installed via cargo!")
+                    rtk_installed = True
+                except subprocess.CalledProcessError as e:
+                    print(f"  ❌ Cargo installation failed: {e}")
+
+        if not rtk_installed:
+            print("  ❌ Failed to install rtk automatically.")
+            print("     Please install manually using one of the following methods:")
+            print("       - brew install rtk")
+            print("       - curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh")
+            print("       - cargo install --git https://github.com/rtk-ai/rtk")
+            return
+
+    # Once installed, initialize it
+    if rtk_installed and not dry_run:
+        print("  🔧 Initializing RTK hooks...")
+        try:
+            subprocess.run(["rtk", "init", "-g", "--auto-patch"], check=True)
+            print("  ✅ RTK hooks initialized globally!")
+        except subprocess.CalledProcessError as e:
+            print(f"  ⚠️  Failed to run 'rtk init -g --auto-patch': {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Headroom provisioner for target repos")
     parser.add_argument("--root", required=True, help="Path to target repo root")
@@ -261,6 +336,8 @@ def main():
                         help="Upgrade headroom-ai to latest version via pip, then re-provision")
     parser.add_argument("--check-version", action="store_true",
                         help="Check installed vs latest PyPI version and exit")
+    parser.add_argument("--no-rtk", action="store_true",
+                        help="Skip provisioning of RTK (Rust Token Killer)")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -295,6 +372,8 @@ def main():
             provision_tier2(root, args.profile, dry_run=False)
         else:
             provision_tier1(root, args.profile, dry_run=False)
+        if not args.no_rtk:
+            provision_rtk(dry_run=False)
         print("✅ Done\n")
         return
 
@@ -306,6 +385,9 @@ def main():
         provision_tier2(root, args.profile, args.dry_run)
     else:
         provision_tier1(root, args.profile, args.dry_run)
+
+    if not args.no_rtk:
+        provision_rtk(args.dry_run)
 
     # Show version status after normal provision
     if not args.dry_run:

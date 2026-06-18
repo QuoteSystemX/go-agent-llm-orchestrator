@@ -1,6 +1,10 @@
 {
     "_readme": "Template config for Antigravity (Gemini). Copy to your Antigravity workspace and replace YOUR_API_KEY placeholders. The 'skills' server is required; 'context7' and 'shadcn' are optional extras.",
     "mcpServers": {
+        "mcp-llm-broker": {
+            "command": ".agent/mcp-llm-broker/mcp-llm-broker.sh",
+            "args": ["--http-port", "11436"]
+        },
         "headroom-mcp": {
             "command": "headroom",
             "args": ["mcp"],

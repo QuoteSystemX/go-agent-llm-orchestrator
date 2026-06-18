@@ -47,13 +47,11 @@ def profile_task(task_desc: str, tier: str):
     
     # Step 1: Model Router
     def call_router():
-        result = subprocess.run(
-            [sys.executable, "model_router.py", task_desc, "--json"],
-            capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__))
-        )
-        return result.stdout
+        from lib.llm_client import call_mcp_broker
+        res = call_mcp_broker("get_routing_decision", {"task_description": task_desc})
+        return json.dumps(res)
     
-    router_output, t = measure_step("model_router.py", call_router)
+    router_output, t = measure_step("mcp-llm-broker", call_router)
     step_times["router"] = t
     
     try:
@@ -119,13 +117,6 @@ def profile_task(task_desc: str, tier: str):
             return result.returncode == 0 and "models" in result.stdout
         except Exception:
             return False
-    
-    def ollama_pull_check():
-        result = subprocess.run(
-            [sys.executable, "model_router.py", task_desc],
-            capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__))
-        )
-        return result.stdout
     
     _, t = measure_step("Ollama availability", ollama_check)
     step_times["ollama_check"] = t

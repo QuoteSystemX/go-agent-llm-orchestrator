@@ -38,13 +38,33 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
+  broker_test --> filepath
+  broker_test --> http
+  broker_test --> httptest
+  broker_test --> json
+  broker_test --> mcp
   bus_watcher --> filepath
   bus_watcher --> fsnotify
   bus_watcher --> json
   bus_watcher_test --> filepath
+  circuit_breaker_test --> filepath
+  circuit_breaker_test --> http
+  circuit_breaker_test --> json
   db --> sql
   db --> stdlib
   db_security --> sql
+  executor --> filepath
+  executor --> hex
+  executor --> http
+  executor --> json
+  executor --> mcp
+  executor --> sha256
+  executor --> utf8
+  executor_test --> filepath
+  executor_test --> http
+  executor_test --> httptest
+  executor_test --> json
+  executor_test --> mcp
   handlers_bmad --> exec
   handlers_bmad --> filepath
   handlers_bmad --> mcp
@@ -72,6 +92,11 @@ graph TD
   helpers --> mcp
   helpers --> s3
   hooks_test --> filepath
+  http_server --> http
+  http_server --> json
+  http_server_test --> http
+  http_server_test --> httptest
+  http_server_test --> json
   indexer --> filepath
   indexer --> fsnotify
   indexer --> sql
@@ -80,6 +105,7 @@ graph TD
   lsp --> filepath
   lsp --> json
   lsp --> mcp
+  main --> exec
   main --> filepath
   main --> fs
   main --> fsnotify
@@ -91,6 +117,12 @@ graph TD
   main_test --> filepath
   main_test --> mcp
   maintenance --> filepath
+  mcda --> exec
+  mcda --> http
+  mcda --> json
+  router --> filepath
+  router --> json
+  router_test --> json
   test_factory --> ast
   test_factory --> importlib
   workers --> exec

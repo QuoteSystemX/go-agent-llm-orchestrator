@@ -199,7 +199,10 @@ def run_fix():
     try:
         sync_all_script = REPO_ROOT / ".agent" / "scripts" / "delivery" / "sync_all.py"
         if sync_all_script.exists():
-            res = subprocess.run([sys.executable, str(sync_all_script)], capture_output=True, text=True)
+            import os
+            clean_env = os.environ.copy()
+            if "PYTHONPATH" in clean_env: del clean_env["PYTHONPATH"]
+            res = subprocess.run([sys.executable, str(sync_all_script)], env=clean_env, capture_output=True, text=True)
             if res.returncode == 0:
                 print_success("Unified Sync Pipeline completed successfully.")
             else:
@@ -245,12 +248,15 @@ def run_fix():
             if not blue_status_file.exists():
                 blue_monitor = REPO_ROOT / ".agent" / "scripts" / "health" / "blue_team_monitor.py"
                 if blue_monitor.exists():
-                    subprocess.run([sys.executable, str(blue_monitor)], capture_output=True, text=True)
+                    clean_env = os.environ.copy()
+                    if "PYTHONPATH" in clean_env: del clean_env["PYTHONPATH"]
+                    subprocess.run([sys.executable, str(blue_monitor)], env=clean_env, capture_output=True, text=True)
                 
             chaos_monkey = REPO_ROOT / ".agent" / "scripts" / "chaos" / "chaos_monkey.py"
             if chaos_monkey.exists():
                 env = os.environ.copy()
                 env["CHAOS_ENABLED"] = "1"
+                if "PYTHONPATH" in env: del env["PYTHONPATH"]
                 # Run chaos monkey with safe latency fuzzer and automatic analysis
                 res = subprocess.run(
                     [sys.executable, str(chaos_monkey), "--latency", "--analyze"],
@@ -264,7 +270,9 @@ def run_fix():
                     # Run status report dashboard output update once more to include fresh resilience metrics
                     status_report_script = REPO_ROOT / ".agent" / "scripts" / "health" / "status_report.py"
                     if status_report_script.exists():
-                        subprocess.run([sys.executable, str(status_report_script), "--html"], capture_output=True, text=True)
+                        clean_env = os.environ.copy()
+                        if "PYTHONPATH" in clean_env: del clean_env["PYTHONPATH"]
+                        subprocess.run([sys.executable, str(status_report_script), "--html"], env=clean_env, capture_output=True, text=True)
                 else:
                     print_warning("Resilience drill failed!")
                     if res.stdout: print(res.stdout)
@@ -736,7 +744,7 @@ def main() -> None:
 
     # Custom Check: Models Logic Coverage
     print_step("Checking Models Logic Coverage")
-    critical_models = ["model_router.py", "prompt_optimizer.py"]
+    critical_models = ["prompt_optimizer.py"]
     ok, msg = check_script_coverage("models", critical_only=critical_models)
     if ok:
         print_success(f"Models Coverage: {msg}")
@@ -793,10 +801,17 @@ def main() -> None:
             
         print_step(f"Running {name}...")
         try:
+            # Clean PYTHONPATH to prevent site-packages conflict between host/runner Python versions
+            import os
+            clean_env = os.environ.copy()
+            if "PYTHONPATH" in clean_env:
+                del clean_env["PYTHONPATH"]
+            
             # Run the script and capture output
             result = subprocess.run(
                 [sys.executable, str(full_path)],
                 cwd=REPO_ROOT,
+                env=clean_env,
                 capture_output=True,
                 text=True
             )
