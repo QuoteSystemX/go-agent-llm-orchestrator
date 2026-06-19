@@ -65,8 +65,10 @@ Every response MUST start with the following header (replace placeholders with r
 
 ```text
 🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🪙 **Tokens**: <input/output> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
-🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
+🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** [| 🗜️ **Headroom**: <stats> | 🛡️ **RTK**: <stats>] | 🛡️ **Sentinel**: **ACTIVE/OFF**
 ```
+
+*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings.*
 
 **Mandatory Content Structure (Premium Standard):**
 

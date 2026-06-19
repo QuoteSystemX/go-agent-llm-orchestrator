@@ -147,8 +147,10 @@ Every response MUST start with the following header (replace placeholders with r
 
 ```text
 🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🪙 **Tokens**: <input/output> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
-🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** | 🛡️ Sentinel: **ACTIVE/OFF**
+🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** [| 🗜️ **Headroom**: <stats> | 🛡️ **RTK**: <stats>] | 🛡️ **Sentinel**: **ACTIVE/OFF**
 ```
+
+*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings.*
 
 **Mandatory Content Structure (Premium Standard):**
 
@@ -479,3 +481,38 @@ Whenever an agent is tasked with **testing, building, or modifying** a Go projec
 - Linter fails because it cannot resolve internal library types.
 
 **Solution**: Run `harden_go_env.py`.
+
+---
+
+# RTK - Rust Token Killer (Google Antigravity)
+
+**Usage**: Token-optimized CLI proxy for shell commands.
+
+## Rule
+
+Always prefix shell commands with `rtk` to minimize token consumption.
+
+Examples:
+
+```bash
+rtk git status
+rtk cargo test
+rtk ls src/
+rtk grep "pattern" src/
+rtk find "*.rs" .
+rtk docker ps
+rtk gh pr list
+```
+
+## Meta Commands
+
+```bash
+rtk gain              # Show token savings
+rtk gain --history    # Command history with savings
+rtk discover          # Find missed RTK opportunities
+rtk proxy <cmd>       # Run raw (no filtering, for debugging)
+```
+
+## Why
+
+RTK filters and compresses command output before it reaches the LLM context, saving 60-90% tokens on common operations. Always use `rtk <cmd>` instead of raw commands.
