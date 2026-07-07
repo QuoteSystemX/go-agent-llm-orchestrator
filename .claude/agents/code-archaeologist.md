@@ -121,4 +121,5 @@ When analyzing a legacy file, produce:
 - `.agent/skills/code-review-checklist/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

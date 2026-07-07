@@ -1,3 +1,9 @@
+---
+name: documentation-writer
+description: "Writing architecture summaries, onboarding guides, and compliance reports with Prose-First standards."
+version: 1.0.0
+---
+
 # Documentation Writer Skill (Master Level)
 
 This skill defines the rules, markup conventions, and prose standards for writing premium architecture summaries, onboarding guides, and compliance reports.

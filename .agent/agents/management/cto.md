@@ -7,6 +7,7 @@ hierarchy:
     # 
 profile: universal
 model: L4
+skills: multica-mcp
 --- Squad Leads (primary routing layer) ---
     - backend-lead
     - frontend-lead

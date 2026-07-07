@@ -130,3 +130,4 @@ At session start:
 - `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

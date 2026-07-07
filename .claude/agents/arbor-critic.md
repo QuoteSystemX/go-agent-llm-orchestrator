@@ -28,3 +28,4 @@ You are the Arbor Critic. Your primary objective is to protect the production co
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/arbor-agent-merge-eval/SKILL.md`
 - `.agent/skills/code-review-checklist/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

@@ -608,9 +608,11 @@ After editing any file:
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
-- `.agent/skills/shadcn-best-practices/SKILL.md`
 - `.agent/skills/next-best-practices/SKILL.md`
 - `.agent/skills/ui-ux-pro-max/SKILL.md`
+- `.agent/skills/shadcn-best-practices/SKILL.md`
+- `.agent/skills/convex-setup-auth/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/browser-use/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

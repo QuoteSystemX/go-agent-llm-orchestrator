@@ -5,7 +5,7 @@ hierarchy:
   reports_to: backend-lead
   delegates_to: []
 tools: Read, Bash, Grep, Glob, semantic_definition, semantic_hover, logs_tail, health_check, system_info, search_fulltext
-skills: clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes
+skills: clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes, multica-mcp
 domains: debugging, bugfix, analysis
 profile: universal
 model: L2

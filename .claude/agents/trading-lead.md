@@ -229,3 +229,4 @@ A trading task is complete when ALL of the following are true:
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

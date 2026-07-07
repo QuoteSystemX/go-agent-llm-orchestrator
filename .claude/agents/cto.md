@@ -151,3 +151,9 @@ A task or architecture is done when:
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
+
+
+---
+
+> **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/multica-mcp/SKILL.md`

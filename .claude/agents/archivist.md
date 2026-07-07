@@ -151,5 +151,10 @@ python3 .agent/scripts/health/drift_detector.py
 - `.agent/skills/systemic-thinking/SKILL.md`
 - `.agent/skills/wiki-writing/SKILL.md`
 - `.agent/skills/architecture-governance/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/wiki-obsidian-bridge/SKILL.md`
+- `.agent/skills/obsidian-cli/SKILL.md`
+- `.agent/skills/obsidian-markdown/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

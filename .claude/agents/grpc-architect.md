@@ -161,3 +161,4 @@ For any Go code you generate or modify, you MUST follow the structured documenta
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

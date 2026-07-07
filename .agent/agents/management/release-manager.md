@@ -7,7 +7,7 @@ hierarchy:
   delegates_to:
     - sre-engineer
     - documentation-writer
-skills: git-master, lint-and-validate, testing-patterns, clean-code
+skills: git-master, lint-and-validate, testing-patterns, clean-code, multica-mcp
 domains: release, versioning, deployment
 tools: Read, Grep, Glob, Bash, Edit, Write, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge, knowledge_read, tasks_submit
 profile: universal

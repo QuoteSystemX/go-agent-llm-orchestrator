@@ -426,3 +426,4 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 - `.agent/skills/behavioral-modes/SKILL.md`
 - `.agent/skills/parallel-agents/SKILL.md`
 - `.agent/skills/experience-injector/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

@@ -1,3 +1,9 @@
+---
+name: chaos-monkey
+description: "Injecting synthetic faults, simulating disasters, and verifying system/agent resilience."
+version: 1.0.0
+---
+
 # Chaos Monkey Injection Skill (Master Level)
 
 This skill defines the operational manual, CLI execution flags, and safety guidelines for actively injecting synthetic faults and simulating real-world disasters in sandbox environments.

@@ -27,3 +27,4 @@ You are the Arbor Search Agent. Your mission is to perform literature searches a
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/arbor-agent-search/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

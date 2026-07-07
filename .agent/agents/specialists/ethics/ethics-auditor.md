@@ -5,7 +5,7 @@ hierarchy:
   reports_to: cto
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Write, council_list, search_knowledge, search_fulltext
-skills: vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, clean-code
+skills: vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, clean-code, multica-mcp
 description: AI alignment and ethics governance auditor. Detects hallucinations, enforces policy guardrails, and vetos unsafe deployments. Triggers on auth/finance/prod changes, AI model calls, policy violations, or explicit /ethics-audit.
 profile: universal
 model: L4

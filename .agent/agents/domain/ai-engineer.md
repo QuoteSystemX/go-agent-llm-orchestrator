@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash, search_knowledge, search_fulltext, knowledge_read, skills_search, logs_tail
 model: L3
-skills: llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry
+skills: llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp
 domains: ai, llm, embeddings, rag
 profile: universal
 ---

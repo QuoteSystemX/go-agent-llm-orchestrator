@@ -178,3 +178,5 @@ spectral lint openapi.yaml       # Custom rules (breaking changes)
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/typed-service-contracts/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

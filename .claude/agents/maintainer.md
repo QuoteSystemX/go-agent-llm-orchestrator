@@ -136,3 +136,10 @@ Final decision: ✅ Approve / ⚠️ Request Changes / 🚫 Block
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/mcp-builder/SKILL.md`
 - `.agent/skills/command-development/SKILL.md`
+- `.agent/skills/playwright-best-practices/SKILL.md`
+- `.agent/skills/test-driven-development/SKILL.md`
+- `.agent/skills/verification-before-completion/SKILL.md`
+- `.agent/skills/requesting-code-review/SKILL.md`
+- `.agent/skills/hook-development/SKILL.md`
+- `.agent/skills/mcp-integration/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

@@ -9,8 +9,7 @@ hierarchy:
     - product-manager
     - product-owner
     - release-manager
-skills:
-  - clean-code
+skills: - clean-code, multica-mcp
   - bmad-lifecycle
   - brainstorming
   - plan-writing

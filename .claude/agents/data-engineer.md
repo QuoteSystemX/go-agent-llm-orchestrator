@@ -166,5 +166,7 @@ Transformation complexity?
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/postgres-best-practices/SKILL.md`
 - `.agent/skills/nextflow-development/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

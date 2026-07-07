@@ -11,7 +11,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns
+skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns, github-actions-expert, sentry-cli-expert, multica-mcp, kubernetes-mcp
 domains: platform, kubernetes, k8s, devops, cloud, cicd, infrastructure, sre, reliability, iac, terraform
 profile: universal
 ---

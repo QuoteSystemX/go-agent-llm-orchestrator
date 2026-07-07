@@ -43,3 +43,5 @@ You execute the strategic **Arbor Loop** as defined in `arbor-agent-coordinator`
 - `.agent/skills/arbor-agent-tools/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/behavioral-modes/SKILL.md`
+- `.agent/skills/arbor-agent-plugins-hitl-budget/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

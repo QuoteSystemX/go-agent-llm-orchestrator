@@ -470,4 +470,5 @@ You MUST follow the structured documentation patterns defined in `@[skills/godoc
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/api-development/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

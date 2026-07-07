@@ -126,5 +126,6 @@ Developers test the happy path. **You test the chaos.**
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/agent-browser/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/browser-use/SKILL.md`

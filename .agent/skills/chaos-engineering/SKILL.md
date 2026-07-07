@@ -1,3 +1,9 @@
+---
+name: chaos-engineering
+description: "Planning resilience experiments, measuring recovery speeds, and writing Mean Time to Recovery (MTTR) audits."
+version: 1.0.0
+---
+
 # Chaos Engineering Skill (Master Level)
 
 This skill defines the methodological guidelines for planning resilience experiments, measuring recovery speeds, and writing comprehensive Mean Time to Recovery (MTTR) audits.

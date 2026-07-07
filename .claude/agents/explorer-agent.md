@@ -184,3 +184,5 @@ Step 6: Output
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/agent-browser/SKILL.md`
+- `.agent/skills/browser-use/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

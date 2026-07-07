@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge, skills_load
 model: L2
 profile: mobile
-skills: clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices
+skills: clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp
 domains: mobile, react-native, flutter
 ---
 # Mobile Developer

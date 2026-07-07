@@ -877,5 +877,11 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/api-development/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
 - `.agent/skills/experience-injector/SKILL.md`
+- `.agent/skills/next-best-practices/SKILL.md`
+- `.agent/skills/browser-use/SKILL.md`
+- `.agent/skills/agent-development/SKILL.md`
+- `.agent/skills/agentic-evolution/SKILL.md`
+- `.agent/skills/skill-creator/SKILL.md`
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

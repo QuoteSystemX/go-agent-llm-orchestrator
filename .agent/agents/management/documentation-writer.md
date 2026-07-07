@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge, search_fulltext, bmad_status
 model: L1
-skills: clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry
+skills: clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, visual-explainer, multica-mcp
 domains: documentation, docs, wiki
 profile: universal
 ---

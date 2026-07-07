@@ -1,6 +1,6 @@
 ---
 name: convex-setup-auth
-description: 
+description: "Implement secure authentication in Convex with user management and access control."
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0
 priority: NORMAL

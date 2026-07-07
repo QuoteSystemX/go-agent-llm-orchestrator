@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge
 model: L2
-skills: git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry
+skills: git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp
 domains: git, merge, rebase, conflicts, history
 profile: universal
 ---

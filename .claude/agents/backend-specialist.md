@@ -304,6 +304,9 @@ After editing any file:
 - `.agent/skills/api-development/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
 - `.agent/skills/postgres-best-practices/SKILL.md`
-- `.agent/skills/typed-service-contracts/SKILL.md`
+- `.agent/skills/supabase-postgres-best-practices/SKILL.md`
+- `.agent/skills/turso-db/SKILL.md`
 - `.agent/skills/convex-setup-auth/SKILL.md`
+- `.agent/skills/typed-service-contracts/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

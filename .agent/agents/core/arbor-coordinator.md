@@ -7,7 +7,7 @@ hierarchy:
     - arbor-executor
     - arbor-critic
     - arbor-search-agent
-skills: arbor-research-agent, arbor-agent-orchestrator, arbor-agent-setup-intake, arbor-agent-coordinator, arbor-agent-resume-report, arbor-agent-tools, clean-code, behavioral-modes
+skills: arbor-research-agent, arbor-agent-orchestrator, arbor-agent-setup-intake, arbor-agent-coordinator, arbor-agent-resume-report, arbor-agent-tools, clean-code, behavioral-modes, arbor-agent-plugins-hitl-budget, multica-mcp
 domains: research, benchmarking, coordination, planning, optimization
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 profile: universal

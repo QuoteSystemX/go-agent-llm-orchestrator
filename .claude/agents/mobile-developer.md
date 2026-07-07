@@ -381,3 +381,4 @@ Before saying "project complete":
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

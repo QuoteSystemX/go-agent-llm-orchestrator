@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Write, Edit, Grep, Glob, Bash, health_check, system_info, workspace_sync, workspace_status, project_list, secrets_get
 model: L3
 profile: go-service, data-platform, fullstack
-skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel
+skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp
 domains: cloud, engineer
 ---
 # Cloud Engineer

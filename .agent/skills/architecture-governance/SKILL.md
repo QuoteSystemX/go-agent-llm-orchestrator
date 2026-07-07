@@ -1,3 +1,9 @@
+---
+name: architecture-governance
+description: "Enforcing architectural standards, maintaining codebase health, preventing directory drift, and documenting decisions using Architecture Decision Records (ADRs)."
+version: 1.0.0
+---
+
 # Architecture Governance Skill (Master Level)
 
 This skill defines the procedures and mandatory rules for enforcing architectural standards, maintaining codebase health, preventing directory drift, and documenting decisions using Architecture Decision Records (ADRs).

@@ -259,3 +259,4 @@ git log --oneline -1 src/cache/
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/json-canvas/SKILL.md`
 - `.agent/skills/obsidian-bases/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

@@ -176,3 +176,4 @@ Every game has this cycle:
 - `.agent/skills/game-development/game-audio/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

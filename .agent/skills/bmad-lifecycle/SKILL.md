@@ -1,6 +1,6 @@
 ---
 name: bmad-lifecycle
-description: BMAD product lifecycle phase knowledge. Phases: Discovery → PRD → Architecture → Stories → Sprint. Each phase produces a wiki artifact consumed by the next. Use when driving structured product development, interpreting BMAD artifacts, or routing story cards to specialist agents.
+description: "BMAD product lifecycle phase knowledge. Phases: Discovery → PRD → Architecture → Stories → Sprint. Each phase produces a wiki artifact consumed by the next. Use when driving structured product development, interpreting BMAD artifacts, or routing story cards to specialist agents."
 allowed-tools: Read, Glob, Grep
 version: 1.0.0
 ---

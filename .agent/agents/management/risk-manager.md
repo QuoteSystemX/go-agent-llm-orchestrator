@@ -10,8 +10,7 @@ hierarchy:
     - red-team
     - penetration-tester
     - sre-engineer
-skills:
-  - clean-code
+skills: - clean-code, multica-mcp
   - bmad-lifecycle
   - architecture
 domains: security, audit, risk

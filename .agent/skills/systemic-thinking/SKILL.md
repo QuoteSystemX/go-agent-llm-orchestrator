@@ -1,3 +1,9 @@
+---
+name: systemic-thinking
+description: "Global codebase analysis, import tracing, and cross-repository dependency mapping."
+version: 1.0.0
+---
+
 # Systemic Thinking Skill (Master Level)
 
 This skill defines the procedures and mandatory rules for global codebase analysis, import tracing, and cross-repo dependency mapping to prevent changes in isolation.

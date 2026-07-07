@@ -159,3 +159,10 @@ An evolution cycle is complete when:
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/prompt-engineering/SKILL.md`
+- `.agent/skills/agent-development/SKILL.md`
+- `.agent/skills/agentic-evolution/SKILL.md`
+- `.agent/skills/skill-creator/SKILL.md`
+- `.agent/skills/dispatching-parallel-agents/SKILL.md`
+- `.agent/skills/prompts-best-practices/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

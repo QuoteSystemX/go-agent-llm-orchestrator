@@ -155,3 +155,9 @@ What needs documenting?
 - `.agent/skills/i18n-localization/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/wiki-obsidian-bridge/SKILL.md`
+- `.agent/skills/obsidian-cli/SKILL.md`
+- `.agent/skills/obsidian-markdown/SKILL.md`
+- `.agent/skills/obsidian-validator/SKILL.md`
+- `.agent/skills/visual-explainer/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

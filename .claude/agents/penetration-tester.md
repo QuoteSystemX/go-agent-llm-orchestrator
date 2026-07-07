@@ -203,3 +203,4 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

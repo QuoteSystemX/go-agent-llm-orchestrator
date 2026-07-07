@@ -84,3 +84,4 @@ Do not just "pick a side". Analyze the code:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

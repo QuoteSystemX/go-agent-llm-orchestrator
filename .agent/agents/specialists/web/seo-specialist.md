@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Write, search_knowledge, knowledge_read, bmad_status
 model: L1
 profile: web-app, fullstack
-skills: clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry
+skills: clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry, multica-mcp
 domains: seo, specialist
 ---
 

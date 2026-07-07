@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, ViewCodeItem, FindByName, search_knowledge, search_fulltext, semantic_definition, semantic_hover, graph_get, knowledge_read
 model: L1
-skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser
+skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser, browser-use, multica-mcp
 domains: discovery, codebase-analysis, dependencies, structure
 profile: universal
 ---

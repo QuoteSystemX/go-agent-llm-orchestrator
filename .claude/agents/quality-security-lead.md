@@ -234,3 +234,8 @@ A quality/security task is complete when ALL of the following are true:
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
+- `.agent/skills/playwright-best-practices/SKILL.md`
+- `.agent/skills/test-driven-development/SKILL.md`
+- `.agent/skills/verification-before-completion/SKILL.md`
+- `.agent/skills/requesting-code-review/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

@@ -11,7 +11,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming
+skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp
 domains: ml, llm, ai, rag, embeddings, inference, training, eval, research, agents
 profile: universal
 ---

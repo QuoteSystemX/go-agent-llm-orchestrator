@@ -1,3 +1,9 @@
+---
+name: knowledge-distillation
+description: "Distilling operational logs, incident post-mortems, and debugging runs into evergreen lessons."
+version: 1.0.0
+---
+
 # Knowledge Distillation Skill (Master Level)
 
 This skill defines the procedures and mandatory rules for distilling high-entropy operational logs, incident post-mortems, and debugging runs into evergreen structural lessons.

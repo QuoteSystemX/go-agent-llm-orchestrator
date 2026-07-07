@@ -131,3 +131,4 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 - `.agent/skills/bash-linux/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`

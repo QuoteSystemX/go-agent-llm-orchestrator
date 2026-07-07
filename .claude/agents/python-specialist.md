@@ -163,3 +163,4 @@ If a task is complex or ambiguous, ask before coding:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/performance-profiling/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
