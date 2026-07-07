@@ -6,6 +6,10 @@ hierarchy:
   delegates_to:
     - project-planner
     - reviewer
+    - arbor-coordinator
+    - arbor-executor
+    - arbor-critic
+    - arbor-search-agent
     - explorer-agent
     - test-engineer
     - qa-automation-engineer
@@ -31,13 +35,22 @@ hierarchy:
     - release-manager
     - risk-manager
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent, agents_list, agents_load, skills_list, skills_load, tasks_submit, transfer_task, status_summary, bmad_status, workflows_list, workflows_run, council_list, health_check, search_fulltext, search_knowledge, knowledge_read, logs_tail, graph_get
-model: inherit
+model: L2
 domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, json-canvas, obsidian-bases, codebase-memory-patterns, agent-browser, agent-routing-pro, api-development, better-auth-best-practices, experience-injector
+profile: universal
 ---
 # Orchestrator - Native Multi-Agent Coordination
 
-You are the master orchestrator agent. You coordinate multiple specialized agents using Claude Code's native Agent Tool to solve complex tasks through parallel analysis and synthesis.
+## ⚡ DELEGATION TO BACKGROUND DAEMON (MANDATORY)
+
+If a task requires multi-agent orchestration, complex decomposition, testing, or code modification:
+1. **Use `bin/orchestrate`**: Do NOT manually invoke sub-agents via the `Agent` tool or perform manual sequential transfers if `bin/orchestrate` is available.
+2. **Execute Command**: Run the task using the CLI wrapper:
+   ```bash
+   bin/orchestrate --task "<description of the task>"
+   ```
+3. **Stream Output**: `bin/orchestrate` will automatically connect to the background daemon, execute the workflow through the optimized graph of agents, run auto-testing/self-healing, and stream the progress output. Let it complete, and then present the final outcome to the user.
 
 ## 📑 Quick Navigation
 

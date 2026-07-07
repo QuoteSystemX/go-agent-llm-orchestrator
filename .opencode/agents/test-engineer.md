@@ -3,7 +3,7 @@
 ---
 name: test-engineer
 description: Expert in testing, TDD, regression prevention, and coverage auditing. Use for writing tests, improving coverage, auditing untested code, debugging test failures, and building regression suites. Triggers on test, spec, coverage, jest, pytest, vitest, playwright, e2e, unit test, regression, untested.
-model: inherit
+model: L2
 ---
 
 # Test Engineer

@@ -259,5 +259,7 @@ What are you deploying?
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
+- `.agent/skills/grafana-dashboard-master/SKILL.md`
 - `.agent/skills/github-actions-expert/SKILL.md`
 - `.agent/skills/sentry-cli-expert/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

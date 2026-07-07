@@ -50,6 +50,7 @@ graph TD
   circuit_breaker_test --> filepath
   circuit_breaker_test --> http
   circuit_breaker_test --> json
+  config --> v11
   db --> sql
   db --> stdlib
   db_security --> sql
@@ -123,6 +124,7 @@ graph TD
   router --> filepath
   router --> json
   router_test --> json
+  run --> slog
   test_factory --> ast
   test_factory --> importlib
   workers --> exec
@@ -643,8 +645,10 @@ A thin adapter layer in `.claude/` makes the same agents and skills available to
 - `.claude/agents/*.md` — 41 specialist agents + 20 workflow agents (generated, @-invokable)
 - `.claude/commands/*.md` — 20 slash commands `/name` (generated, same source as workflows)
 - `.agent/scripts/delivery/sync_agents.py` — Universal generator script (`--target [claude|opencode]`, `--profile`, `--agent`, `--dry-run`)
+- `.agent/scripts/delivery/codebase_memory_setup.py` — codebase-memory service provisioning and synchronization
 - `.agent/local-skill-server/` — Go MCP binary source (`agents_*`, `skills_*`, `workflows_*` tools)
 - `.agent/mcp-server-agent-kit/` — Extended Go MCP binary (Council, Jobs, RBAC, Governance)
+- `.agent/mcp-llm-broker/` — Local proxy, dynamic rule injection, and routing broker (contains `mcda.go` for multi-candidate decision algorithm)
 
 ### Skill Loading: Unified Agent vs Claude Code
 
@@ -869,12 +873,15 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | File | Description |
 | --- | --- |
 | `.agent/scripts/misc/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
+| `.agent/scripts/health/headroom_benchmark.py` | Headroom Compression Benchmark — tests compression ratios on realistic agent conversation histories. |
 | `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
 | `.agent/scripts/orchestration/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
 | `.agent/scripts/orchestration/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
 | `.agent/scripts/dev/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
+| `.agent/scripts/delivery/codebase_memory_setup.py` | Codebase memory service provisioning and workspace database configuration. |
 | `.agent/scripts/delivery/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
 | `.agent/scripts/misc/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
+| `.agent/mcp-llm-broker/mcda.go` | Multi-Candidate Decision Algorithm (MCDA) for broker routing decisions. |
 | `.agent/scripts/chaos_monkey.py` | Deliberate fault injection for resilience testing (run on throwaway branches only). |
 | `.agent/scripts/knowledge/semantic_brain_engine.py` | TF-IDF semantic search engine over LESSONS_LEARNED and global knowledge base. |
 | `.agent/scripts/orchestration/agent_skill_auditor.py` | Ensures every agent has mandatory skills (clean-code) and valid SKILL.md metadata. |
@@ -925,6 +932,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server/handlers_infra.go` | System module for handlers_infra.go. |
 | `.agent/mcp-server/db_security.go` | System module for db_security.go. |
 | `fix_design.js` | System module for fix_design.js. |
+| `.agent/scripts/orchestration/dead_ends.py` | Dead-Ends Registry — keeps session-level registry of failed patches and normalizes them for fuzzy comparison to prevent loops. |
 | `.agent/scripts/health/bus_sse_server.py` | Lightweight SSE HTTP server for live dashboard updates — serves `dashboard.html`, streams bus file changes via SSE (`/api/stream/bus`), exposes health API (`/api/health`), and provides Cockpit Exec endpoint (`POST /api/exec`) for running allowed maintenance scripts. Port 3201. |
 | `.agent/scripts/orchestration/tough_auditor.py` | Adversarial LLM-powered Git Diff Auditor — evaluates staged/unstaged changes with extreme criticism via local Ollama, assigns quality scores (1.0–5.0), logs to `agent_scorer.py`, and warns/blocks if quality is suboptimal. Selects the best available Ollama model automatically. |
 | `.agent/scripts/orchestration/agent_scorer.py` | Log a quality score for an agent's work. |
@@ -959,3 +967,13 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/knowledge/adr_observer.py` | ADR Observer - Reactive Wiki Auto-Publisher for Council of Sages. |
 | `.agent/scripts/lib/data_sources.py` | Shared data access helpers for .agent/scripts/. |
 | `.agent/scripts/lib/suppress.py` | Centralized exception suppression with structured logging. |
+| `.agent/mcp-llm-broker/executor.go` | System module for executor.go. |
+| `.agent/scripts/orchestration/squad_schemas.py` | Pydantic schemas for the squad orchestration system: `AgentNode`, `HierarchyGraph` (with DFS cycle detection), `TaskState` with atomic save/load to `.agent/bus/task_state.json`. |
+| `.agent/scripts/orchestration/squad_orchestrator.py` | Dynamic squad orchestrator — scans agent metadata, builds a validated dependency graph, routes tasks CTO→lead→specialist+QA in parallel, verifies with `go test -race`, self-heals up to 3 times, exports structured trace JSON. |
+| `.agent/scripts/tests/test_squad_orchestrator.py` | 20 unit tests covering AgentScanner, GraphBuilder (cycle detection), ToolSandbox enforcement, Output Guardrails, dynamic routing, self-heal retry success/exhausted, and TaskState persistence. |
+| `.agent/mcp-llm-broker/constants.go` | Core constants including local LLM provider names, default URLs, pricing rates, latency balancing weights, and circuit breaker configuration parameters. |
+| `.agent/mcp-llm-broker/http_server.go` | OpenAI-compatible HTTP and JSON-RPC API server implementing chat completion endpoints, streaming parser, and request delegation handler. |
+| `.agent/scripts/orchestration/daemon/sandbox.py` | Security sandbox and command validation engine for the orchestrator daemon implementing bubblewrap (bwrap) isolation and secret masking. |
+| `.agent/scripts/orchestration/daemon/db.py` | SQLite database layer for the agent orchestrator daemon handling WAL-mode persistence of tasks, agent nodes cache, workspace locks, and execution traces. |
+| `.agent/scripts/orchestration/daemon/server.py` | IPC server daemon for the agent squad orchestrator, listening on Unix Domain Socket, executing tasks, and persisting states. |
+| `.agent/scripts/orchestration/daemon/client.py` | CLI client for the agent squad orchestrator daemon, connecting via UDS to manage task status and trigger execution. |

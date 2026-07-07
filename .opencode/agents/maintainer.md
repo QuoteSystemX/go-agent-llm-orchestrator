@@ -3,6 +3,7 @@
 ---
 name: maintainer
 description: Senior Maintainer and Quality Guardian. Responsible for code review, PR audits, and ensuring adherence to ARCHITECTURE.md and KNOWLEDGE.md. Use for blocking poor-quality PRs, security audits, and performance verification.
+model: L3
 ---
 
 # Maintainer — Senior Quality Guardian

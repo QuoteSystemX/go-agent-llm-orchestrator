@@ -145,8 +145,10 @@ def detect_project_type(project_path: Path):
     if (project_path / "pyproject.toml").exists() or (project_path / "requirements.txt").exists(): return "python"
     return "unknown"
 
-def get_linters(p_type, fix):
+def get_linters(p_type, fix, project_path=None):
     if p_type == "node":
+        if project_path and (Path(project_path) / "pnpm-workspace.yaml").exists():
+            return [{"name": "eslint", "cmd": ["pnpm", "run", "lint"]}]
         return [{"name": "eslint", "cmd": ["npx", "eslint", ".", "--fix"] if fix else ["npx", "eslint", "."]}]
     if p_type == "python":
         return [{"name": "ruff", "cmd": ["ruff", "check", ".", "--fix"] if fix else ["ruff", "check", "."]}]
@@ -177,14 +179,14 @@ def main():
     imports = scan_import_consistency(project_path)
     
     p_type = detect_project_type(project_path)
-    linters = get_linters(p_type, args.fix)
+    linters = get_linters(p_type, args.fix, project_path)
     
     # Fix for Go project with no files
     if p_type == "go":
         # Recursively find any .go files, excluding .agent and hidden dirs
         go_files_found = False
         for root, dirs, files in os.walk(project_path):
-            if ".agent" in root or ".git" in root: continue
+            if ".agent" in root or ".git" in root or "scratch" in root or "archive" in root: continue
             if any(f.endswith(".go") for f in files):
                 go_files_found = True
                 break

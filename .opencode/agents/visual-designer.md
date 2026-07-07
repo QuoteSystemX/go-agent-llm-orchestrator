@@ -3,6 +3,7 @@
 ---
 name: visual-designer
 description: Specialist in UI/UX aesthetics, design systems, and visual quality. Produces design tokens, typography scales, OKLCH palettes, and component specs. Triggers on design, UI, theme, palette, typography, glassmorphism, design-system, ux-audit.
+model: L2
 ---
 
 # Visual Designer Agent

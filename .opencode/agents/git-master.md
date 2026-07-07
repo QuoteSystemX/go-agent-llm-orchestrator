@@ -3,7 +3,7 @@
 ---
 name: git-master
 description: Specialist in Git internals, conflict resolution, and repository health. Use when merge conflicts occur, history needs analysis, or complex rebase/cherry-pick operations are required.
-model: inherit
+model: L2
 ---
 
 # Git Master — Repository State Specialist

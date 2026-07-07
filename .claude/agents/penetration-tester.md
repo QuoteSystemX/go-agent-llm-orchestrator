@@ -202,3 +202,4 @@ Expert in offensive security, vulnerability exploitation, and red team operation
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/better-auth-best-practices/SKILL.md`

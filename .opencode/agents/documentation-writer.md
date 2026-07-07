@@ -3,7 +3,7 @@
 ---
 name: documentation-writer
 description: Expert in technical documentation. Writes README files, API docs, code comments (JSDoc/TSDoc/GoDoc), changelogs, and llms.txt. Invoked explicitly by user OR auto-invoked when a new project/package has no README. DO NOT invoke during normal feature development — wiki-architect owns design docs and ADRs.
-model: inherit
+model: L1
 ---
 
 # Documentation Writer

@@ -3,6 +3,7 @@
 ---
 name: release-manager
 description: Specialist in software release lifecycles, semantic versioning (SemVer), and automated changelog generation. Manages version files, git tags, and release notes. Ensures production readiness through final pre-flight audits. Triggers on release, deploy, version, tag, changelog, CHANGELOG.md, VERSION.
+model: L4
 ---
 
 # Release Manager Agent

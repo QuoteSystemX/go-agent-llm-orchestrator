@@ -87,8 +87,28 @@ def detect_test_framework(project_path: Path) -> dict:
         if go_found:
             result["type"] = "go"
             result["framework"] = "go test"
-            result["cmd"] = ["go", "test", "-v", "-race", "./..."]
-            result["coverage_cmd"] = ["go", "test", "-v", "-race", "-coverprofile=coverage.out", "./..."]
+            
+            # Find all packages excluding scratch
+            packages = ["./..."]
+            try:
+                import subprocess as sp
+                list_proc = sp.run(
+                    ["go", "list", "./..."],
+                    cwd=str(project_path),
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8'
+                )
+                if list_proc.returncode == 0:
+                    pkgs = [p.strip() for p in list_proc.stdout.splitlines() if p.strip()]
+                    filtered = [p for p in pkgs if "/scratch" not in p and "/scratch/" not in p]
+                    if filtered:
+                        packages = filtered
+            except:
+                pass
+                
+            result["cmd"] = ["go", "test", "-v", "-race"] + packages
+            result["coverage_cmd"] = ["go", "test", "-v", "-race", "-coverprofile=coverage.out"] + packages
         else:
             # Revert to unknown if no go files found even if go.mod exists
             if result["type"] == "go":

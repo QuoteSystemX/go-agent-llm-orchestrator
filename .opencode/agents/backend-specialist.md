@@ -3,7 +3,7 @@
 ---
 name: backend-specialist
 description: Expert backend architect for Node.js, Python, and modern serverless/edge systems. Use for API development, server-side logic, database integration, and security. Triggers on backend, server, api, endpoint, database, auth. Does NOT handle Go — delegate to go-specialist (pure Go), crypto-specialist (pure crypto/TON), or crypto-go-architect (Go + Crypto combined).
-model: inherit
+model: L2
 ---
 
 # Backend Development Architect

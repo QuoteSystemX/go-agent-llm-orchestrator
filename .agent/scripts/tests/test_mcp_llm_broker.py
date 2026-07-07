@@ -19,9 +19,8 @@ from lib.llm_client import call_mcp_broker, query_llm_safe
 
 class TestMCPLlmBroker(unittest.TestCase):
     
-    @patch('subprocess.Popen')
-    def test_call_mcp_broker_success(self, mock_popen):
-        # Mock the process communicate to return a valid JSON-RPC response
+    @patch('subprocess.run')
+    def test_call_mcp_broker_success(self, mock_run):
         mock_proc = MagicMock()
         mock_proc.returncode = 0
         
@@ -31,23 +30,8 @@ class TestMCPLlmBroker(unittest.TestCase):
             "model": "qwen2.5-coder:14b",
             "stats": {"cached": False}
         }
-        
-        rpc_response = {
-            "jsonrpc": "2.0",
-            "result": {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": json.dumps(response_data)
-                    }
-                ]
-            },
-            "id": 1
-        }
-        
-        mock_proc.communicate.return_value = (json.dumps(rpc_response) + "\n", "")
-        mock_proc.poll.return_value = 0
-        mock_popen.return_value = mock_proc
+        mock_proc.stdout = json.dumps(response_data)
+        mock_run.return_value = mock_proc
         
         res = call_mcp_broker("execute_prompt", {"prompt": "hello"})
         self.assertEqual(res["response"], "Hello world from Go!")

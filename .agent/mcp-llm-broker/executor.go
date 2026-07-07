@@ -87,12 +87,13 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	}
 
 	env := b.detectEnv()
-	client := &http.Client{Timeout: 1 * time.Second}
+	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
 
 	// Detect pulled models
 	pulled := make(map[string]string)
 	ollamaURL := b.getOllamaURL(env)
-	if models, err := b.fetchOllamaModels(client, ollamaURL); err == nil {
+	if models, err := b.fetchOllamaModels(discoverCtx, ollamaURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderOllama
 		}
@@ -100,14 +101,14 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	} else {
 		fmt.Fprintf(os.Stderr, "[DEBUG] executor: Ollama not available: %v\n", err)
 	}
-	if models, err := b.fetchOpenAICompatibleModels(client, DefaultJanURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultJanURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderJan
 		}
 		fmt.Fprintf(os.Stderr, "[DEBUG] executor: Jan models found (local): %v\n", models)
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderJan
 			}
@@ -118,13 +119,13 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	} else {
 		fmt.Fprintf(os.Stderr, "[DEBUG] executor: Jan not available locally: %v\n", err)
 	}
-	if models, err := b.fetchOpenAICompatibleModels(client, DefaultLMStudioURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultLMStudioURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderLMStudio
 		}
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1234", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderLMStudio
 			}
@@ -199,6 +200,16 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 		}
 	}
 
+	// 1b. Inject dynamic rules
+	var loader RuleLoaderPort = NewFileRuleLoaderAdapter(b.workspaceRoot)
+	injectedPrompt, err := loader.LoadRules(systemPrompt, prompt, decision.Tier)
+	if err == nil {
+		systemPrompt = injectedPrompt
+		fmt.Fprintf(os.Stderr, "[DEBUG] executor: dynamically injected rules (tier=%s), final sysPromptLen=%d\n", decision.Tier, len(systemPrompt))
+	} else {
+		fmt.Fprintf(os.Stderr, "[WARN] executor: failed to inject dynamic rules: %v\n", err)
+	}
+
 	// 2. Token Saving Middleware (Pre-processing)
 	processedPrompt := b.runPreprocessMiddleware(prompt)
 
@@ -218,7 +229,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	// 3b. Semantic Caching
 	var promptEmbedding []float64
 	if rules.SemanticCache.Enabled {
-		baseURL := b.getExecutionURL(decision.Provider, env, rules)
+		baseURL := b.getExecutionURL(ctx, decision.Provider, env, rules)
 		emb, embErr := b.fetchEmbedding(ctx, decision.Provider, baseURL, decision.ModelID, processedPrompt)
 		if embErr == nil {
 			promptEmbedding = emb
@@ -333,7 +344,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	if useAgenticLoop && !isLocalOnly(ctx) {
 		loopProvider := decision.Provider
 		loopModel := decision.ModelID
-		loopURL := b.getExecutionURL(loopProvider, env, rules)
+		loopURL := b.getExecutionURL(ctx, loopProvider, env, rules)
 		fmt.Fprintf(os.Stderr, "[INFO] executor: orchestrator → local agentic loop (provider=%s model=%s url=%s)\n",
 			loopProvider, loopModel, loopURL)
 		resp, aerr := b.executeAgenticLoop(ctx, processedPrompt, systemPrompt, loopModel, loopProvider, loopURL, maxTokens, decision.Score, decision.Tier)
@@ -349,7 +360,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 		if b.isCircuitOpen(decision.Provider) {
 			return nil, fmt.Errorf("cannot execute overridden model %s: provider %s circuit is OPEN", decision.ModelID, decision.Provider)
 		}
-		baseURL := b.getExecutionURL(decision.Provider, env, rules)
+		baseURL := b.getExecutionURL(ctx, decision.Provider, env, rules)
 		fmt.Fprintf(os.Stderr, "[DEBUG] executor: modelOverride path — model=%s, provider=%s, tier=%s, baseURL=%s\n", decision.ModelID, decision.Provider, decision.Tier, baseURL)
 		responseText, executionErr = executeWithSchemaRetry(decision.ModelID, decision.Provider, baseURL, processedPrompt, systemPrompt, jsonSchema, stream, 2)
 		finalProvider = decision.Provider
@@ -371,7 +382,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 			if isLocalOnly(ctx) {
 				return nil, fmt.Errorf("local-only request routed to cloud (%s tier=%s) — no local model available; refusing cloud", decision.ModelID, decision.Tier)
 			}
-			baseURL := b.getExecutionURL(decision.Provider, env, rules)
+			baseURL := b.getExecutionURL(ctx, decision.Provider, env, rules)
 			responseText, executionErr = executeWithSchemaRetry(decision.ModelID, decision.Provider, baseURL, processedPrompt, systemPrompt, jsonSchema, stream, 2)
 			finalProvider = decision.Provider
 			finalModel = decision.ModelID
@@ -389,7 +400,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 						continue
 					}
 					skippedAll = false
-					baseURL := b.getExecutionURL(cand.Provider, env, rules)
+					baseURL := b.getExecutionURL(ctx, cand.Provider, env, rules)
 					fmt.Fprintf(os.Stderr, "[DEBUG] executor: trying candidate[%d] model=%s provider=%s baseURL=%s\n", i, cand.Model, cand.Provider, baseURL)
 					responseText, executionErr = executeWithSchemaRetry(cand.Model, cand.Provider, baseURL, processedPrompt, systemPrompt, jsonSchema, stream, 2)
 					if executionErr == nil {
@@ -432,7 +443,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 			}
 
 			cloudModel := b.pickBestCloud(decision.Tier, rules)
-			cloudURL := b.getExecutionURL(cloudProvider, env, rules)
+			cloudURL := b.getExecutionURL(ctx, cloudProvider, env, rules)
 			
 			fallbackResponse, errFb := executeWithSchemaRetry(cloudModel, cloudProvider, cloudURL, processedPrompt, systemPrompt, jsonSchema, stream, 2)
 			if errFb == nil {
@@ -498,7 +509,7 @@ func (b *BrokerServer) handleExecutePrompt(ctx context.Context, req mcp.CallTool
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-func (b *BrokerServer) getExecutionURL(provider string, env EnvironmentInfo, rules *RouterRules) string {
+func (b *BrokerServer) getExecutionURL(ctx context.Context, provider string, env EnvironmentInfo, rules *RouterRules) string {
 	if b.urlOverrides != nil {
 		if override, ok := b.urlOverrides[provider]; ok {
 			return override
@@ -514,7 +525,6 @@ func (b *BrokerServer) getExecutionURL(provider string, env EnvironmentInfo, rul
 	// Ollama — with optional headroom proxy
 	if provider == ProviderOllama || provider == "ollama" {
 		if rules.HeadroomProxy.Enabled {
-			client := &http.Client{Timeout: 100 * time.Millisecond}
 			url := rules.HeadroomProxy.ProxyURL
 			if url == "" {
 				url = fmt.Sprintf("http://localhost:%d", rules.HeadroomProxy.Port)
@@ -523,39 +533,61 @@ func (b *BrokerServer) getExecutionURL(provider string, env EnvironmentInfo, rul
 			if hPath == "" {
 				hPath = "/healthz"
 			}
-			resp, err := client.Get(url + hPath)
+			reqCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+			req, err := http.NewRequestWithContext(reqCtx, "GET", url+hPath, nil)
 			if err == nil {
-				resp.Body.Close()
-				if resp.StatusCode == http.StatusOK {
-					return url
+				client := b.clientFast
+				if client == nil {
+					client = &http.Client{Timeout: 10 * time.Second}
+				}
+				resp, err := client.Do(req)
+				if err == nil {
+					resp.Body.Close()
+					if resp.StatusCode == http.StatusOK {
+						cancel()
+						return url
+					}
 				}
 			}
+			cancel()
 		}
 		return b.getOllamaURL(env)
 	}
 
-	// Local OpenAI-compatible providers (with WSL gateway priority)
-	// In WSL, Jan runs on Windows and is reachable via the WSL gateway IP, NOT localhost.
-	// Check WSL gateway FIRST; fall back to localhost only if the gateway is unreachable.
+	// Local OpenAI-compatible providers — try localhost first, then WSL gateway.
+	// Use the configured health timeout so all local providers get the same budget.
+	localTimeoutMs := rules.Timeouts.HealthMs
+	if localTimeoutMs <= 0 {
+		localTimeoutMs = rules.HybridRouting.OllamaHealthTimeoutMs
+	}
+	if localTimeoutMs <= 0 {
+		localTimeoutMs = 1500
+	}
+	localTimeout := time.Duration(localTimeoutMs) * time.Millisecond
+
 	if provider == ProviderJan {
 		if env.IsWSL && env.WSLGateway != "" {
 			wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-			client := &http.Client{Timeout: 300 * time.Millisecond}
-			if _, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+			reqCtx, cancel := context.WithTimeout(ctx, localTimeout)
+			if _, err := b.fetchOpenAICompatibleModels(reqCtx, wslURL); err == nil {
+				cancel()
 				return wslURL
 			}
+			cancel()
 		}
 		return DefaultJanURL
 	}
 	if provider == ProviderLMStudio {
 		if env.IsWSL && env.WSLGateway != "" {
-			client := &http.Client{Timeout: 100 * time.Millisecond}
-			if _, err := b.fetchOpenAICompatibleModels(client, DefaultLMStudioURL); err != nil {
+			reqCtx, cancel := context.WithTimeout(ctx, localTimeout)
+			if _, err := b.fetchOpenAICompatibleModels(reqCtx, DefaultLMStudioURL); err != nil {
 				wslURL := fmt.Sprintf("http://%s:1234", env.WSLGateway)
-				if _, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+				if _, err2 := b.fetchOpenAICompatibleModels(reqCtx, wslURL); err2 == nil {
+					cancel()
 					return wslURL
 				}
 			}
+			cancel()
 		}
 		return DefaultLMStudioURL
 	}
@@ -602,7 +634,17 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 
 	// No system prompt truncation — context window is configured by the user in Jan/Ollama.
 
-	client := &http.Client{Timeout: 300 * time.Second} // Long timeout for generation
+	genTimeout := 300 * time.Second
+	if rules != nil && rules.Timeouts.GenerationS > 0 {
+		genTimeout = time.Duration(rules.Timeouts.GenerationS) * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, genTimeout)
+	defer cancel()
+
+	client := b.clientSlow
+	if client == nil {
+		client = &http.Client{Timeout: genTimeout}
+	}
 	startTime := time.Now()
 
 	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) || strings.Contains(baseURL, HeadroomPortStr) {
@@ -708,7 +750,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 
 	// Jan uses Anthropic /messages — independent from the /v1/chat/completions queue.
 	if provider == ProviderJan {
-		url := fmt.Sprintf("%s/messages", baseURL)
+		url := fmt.Sprintf("%s/v1/messages", baseURL)
 
 		janCall := func(sysPrompt string, outTokens int) (*http.Response, error) {
 			payload := map[string]interface{}{
@@ -1266,7 +1308,17 @@ func (b *BrokerServer) executeAgenticLoop(
 		{"role": "user", "content": userContent},
 	}
 
-	longClient := &http.Client{Timeout: 300 * time.Second}
+	genTimeout := 300 * time.Second
+	if rules != nil && rules.Timeouts.GenerationS > 0 {
+		genTimeout = time.Duration(rules.Timeouts.GenerationS) * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, genTimeout)
+	defer cancel()
+
+	longClient := b.clientSlow
+	if longClient == nil {
+		longClient = &http.Client{Timeout: genTimeout}
+	}
 	var lastText string
 	startTime := time.Now()
 	var totalOutputTokens int
@@ -1577,7 +1629,11 @@ func (b *BrokerServer) streamAgenticIteration(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("anthropic-version", "2023-06-01")
 
-	resp, err := (&http.Client{Timeout: 300 * time.Second}).Do(req)
+	client := b.clientSlow
+	if client == nil {
+		client = &http.Client{Timeout: 300 * time.Second}
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -1730,7 +1786,7 @@ func (b *BrokerServer) compactMessagesHistory(
 		return messages
 	}
 
-	compactModel := b.findL1ModelForJan(baseURL)
+	compactModel := b.findL1ModelForJan(ctx, baseURL)
 	if compactModel == "" {
 		compactModel = fallbackModel // L3 orchestrator — already warm in Jan
 	}
@@ -1767,7 +1823,10 @@ func (b *BrokerServer) compactMessagesHistory(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("anthropic-version", "2023-06-01")
 
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := b.clientFast
+	if client == nil {
+		client = &http.Client{Timeout: 60 * time.Second}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[WARN] compact: HTTP: %v\n", err)
@@ -1813,13 +1872,14 @@ func (b *BrokerServer) compactMessagesHistory(
 
 // findL1ModelForJan fetches Jan's loaded model list and returns the first one
 // that matches an L1-tier config entry. Returns "" if none is found.
-func (b *BrokerServer) findL1ModelForJan(baseURL string) string {
+func (b *BrokerServer) findL1ModelForJan(ctx context.Context, baseURL string) string {
 	rules, _ := b.loadRules()
 	if rules == nil {
 		return ""
 	}
-	client := &http.Client{Timeout: 2 * time.Second}
-	pulledList, err := b.fetchOpenAICompatibleModels(client, baseURL)
+	reqCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	pulledList, err := b.fetchOpenAICompatibleModels(reqCtx, baseURL)
 	if err != nil || len(pulledList) == 0 {
 		return ""
 	}
@@ -2148,7 +2208,17 @@ func cosineSimilarity(a, b []float64) float64 {
 }
 
 func (b *BrokerServer) fetchEmbedding(ctx context.Context, provider string, baseURL string, model string, prompt string) ([]float64, error) {
-	client := &http.Client{Timeout: 5 * time.Second}
+	cacheTimeout := 5 * time.Second
+	if rules, err := b.loadRules(); err == nil && rules.Timeouts.SemanticCacheS > 0 {
+		cacheTimeout = time.Duration(rules.Timeouts.SemanticCacheS) * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, cacheTimeout)
+	defer cancel()
+
+	client := b.clientFast
+	if client == nil {
+		client = &http.Client{Timeout: cacheTimeout}
+	}
 
 	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) || strings.Contains(baseURL, HeadroomPortStr) {
 		url := fmt.Sprintf("%s/api/embeddings", baseURL)
@@ -2320,3 +2390,135 @@ func (b *BrokerServer) isCircuitOpen(provider string) bool {
 		return false
 	}
 }
+
+// RuleLoaderPort defines the contract for loading agent rules.
+type RuleLoaderPort interface {
+	LoadRules(systemPrompt, userPrompt, tier string) (string, error)
+}
+
+// FileRuleLoaderAdapter implements RuleLoaderPort by reading rules from local filesystem.
+type FileRuleLoaderAdapter struct {
+	workspaceRoot string
+}
+
+func NewFileRuleLoaderAdapter(workspaceRoot string) *FileRuleLoaderAdapter {
+	return &FileRuleLoaderAdapter{workspaceRoot: workspaceRoot}
+}
+
+func (a *FileRuleLoaderAdapter) LoadRules(systemPrompt, userPrompt, tier string) (string, error) {
+	rulesDir := filepath.Join(a.workspaceRoot, ".agent", "rules", "gemini")
+	
+	// Core rules (always injected)
+	filesToLoad := []string{
+		"00_protocol.md",
+		"04_tier0_universal.md",
+		"10_rtk.md",
+	}
+
+	// Code rules
+	promptLower := strings.ToLower(userPrompt) + " " + strings.ToLower(systemPrompt)
+	isCodeTask := tier == "L2" || tier == "L3" || tier == "L4" ||
+		strings.Contains(promptLower, "code") ||
+		strings.Contains(promptLower, "test") ||
+		strings.Contains(promptLower, "implement") ||
+		strings.Contains(promptLower, "refactor") ||
+		strings.Contains(promptLower, "go") ||
+		strings.Contains(promptLower, "python") ||
+		strings.Contains(promptLower, "rust") ||
+		strings.Contains(promptLower, "bug") ||
+		strings.Contains(promptLower, "fix")
+
+	if isCodeTask {
+		filesToLoad = append(filesToLoad, "05_tier1_code.md")
+	}
+
+	// Go specific
+	if strings.Contains(promptLower, "go") || strings.Contains(promptLower, "golang") {
+		filesToLoad = append(filesToLoad, "09_go_dependency_management.md")
+	}
+
+	// Design / UI
+	isDesignTask := strings.Contains(promptLower, "ui") ||
+		strings.Contains(promptLower, "design") ||
+		strings.Contains(promptLower, "css") ||
+		strings.Contains(promptLower, "html") ||
+		strings.Contains(promptLower, "frontend") ||
+		strings.Contains(promptLower, "dashboard") ||
+		strings.Contains(promptLower, "style")
+	if isDesignTask {
+		filesToLoad = append(filesToLoad, "06_tier2_design.md")
+	}
+
+	// Gateway (Tier L4 only)
+	if tier == "L4" {
+		filesToLoad = append(filesToLoad, "03_gateway.md")
+	}
+
+	var rulesBuilder strings.Builder
+	rulesBuilder.WriteString("<!-- DYNAMICALLY INJECTED RULES -->\n")
+	
+	for _, fname := range filesToLoad {
+		fpath := filepath.Join(rulesDir, fname)
+		content, err := os.ReadFile(fpath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] FileRuleLoaderAdapter: failed to read rule file %s: %v\n", fname, err)
+			continue
+		}
+		
+		// Schema validation step (verify trigger: always_on or trigger: paperclip_infra_only)
+		if !strings.Contains(string(content), "trigger: always_on") && !strings.Contains(string(content), "trigger: paperclip_infra_only") {
+			fmt.Fprintf(os.Stderr, "[WARN] FileRuleLoaderAdapter: rule file %s lacks expected trigger schema\n", fname)
+		}
+
+		rulesBuilder.Write(content)
+		rulesBuilder.WriteString("\n\n---\n\n")
+	}
+
+	cleanSystemPrompt := stripOldRules(systemPrompt)
+
+	// Combine dynamically loaded rules with the original cleaned system prompt
+	finalPrompt := rulesBuilder.String() + cleanSystemPrompt
+	return finalPrompt, nil
+}
+
+func stripOldRules(prompt string) string {
+	lines := strings.Split(prompt, "\n")
+	var result []string
+	skipping := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		
+		// If we encounter a major rules header, start skipping
+		if strings.HasPrefix(trimmed, "## TIER 0: UNIVERSAL RULES") ||
+			strings.HasPrefix(trimmed, "## TIER 1: CODE RULES") ||
+			strings.HasPrefix(trimmed, "## TIER 2: DESIGN RULES") ||
+			strings.HasPrefix(trimmed, "## TIER 3: PAPERCLIP AGENTIC PROTOCOLS") ||
+			strings.HasPrefix(trimmed, "# 🛡️ QuoteSystemX Go Dependency Management") ||
+			strings.HasPrefix(trimmed, "# RTK - Rust Token Killer") ||
+			strings.HasPrefix(trimmed, "## 🤖 INTELLIGENT AGENT ROUTING") ||
+			strings.HasPrefix(trimmed, "## 📥 REQUEST CLASSIFIER") ||
+			strings.HasPrefix(trimmed, "# Output Gateway Protocol") ||
+			strings.HasPrefix(trimmed, "## 📤 OUTPUT GATEWAY") ||
+			strings.HasPrefix(trimmed, "<!-- \n🔴 ATTENTION: THIS FILE IS AUTO-GENERATED") ||
+			strings.HasPrefix(trimmed, "🔴 ATTENTION: THIS FILE IS AUTO-GENERATED") {
+			skipping = true
+			continue
+		}
+
+		if skipping {
+			if strings.Contains(trimmed, "Always use rtk <cmd> instead of raw commands.") ||
+				strings.Contains(trimmed, "Always use `rtk <cmd>` instead of raw commands.") ||
+				trimmed == "-->" {
+				skipping = false
+				continue
+			}
+			continue
+		}
+
+		result = append(result, line)
+	}
+
+	return strings.Join(result, "\n")
+}
+

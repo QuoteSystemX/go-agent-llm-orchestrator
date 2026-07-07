@@ -13,6 +13,8 @@ domains:
   - architecture
 skills: clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, knowledge_read, agents_list, agents_load, skills_list, skills_load
+profile: universal
+model: L3
 ---
 
 # Meta-Architect (@meta-architect)

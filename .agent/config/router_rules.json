@@ -306,7 +306,7 @@
     "ollama_base_url": "auto",
     "ollama_health_timeout_ms": 1500,
     "cloud_on_tiers": [],
-    "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud."
+    "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud. Set jan_base_url or JAN_BASE_URL env var to override Jan auto-detection (useful in WSL)."
   },
   "headroom_proxy": {
     "enabled": true,
@@ -438,5 +438,20 @@
       "n_ctx": 131072,
       "chars_per_token": 4
     }
+  },
+  "timeouts": {
+    "generation_s": 300,
+    "health_ms": 1500,
+    "semantic_cache_s": 60
+  },
+  "pricing_per_1k_tokens": {
+    "_comment": "USD cost per 1K tokens. Local models = $0. Cloud rates are approximate.",
+    "local": 0.0,
+    "antigravity": 0.005,
+    "gemini-3-flash": 0.0005,
+    "gemini-3.1-pro-low": 0.003,
+    "gemini-3.1-pro-high": 0.008,
+    "gpt-oss-120b": 0.012,
+    "default_cloud": 0.005
   }
 }

@@ -5,9 +5,10 @@ hierarchy:
   reports_to: wiki-architect
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge, search_fulltext, bmad_status
-model: inherit
+model: L1
 skills: clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry
 domains: documentation, docs, wiki
+profile: universal
 ---
 # Documentation Writer
 

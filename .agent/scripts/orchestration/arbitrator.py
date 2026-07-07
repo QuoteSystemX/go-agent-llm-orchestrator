@@ -195,7 +195,6 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
 
     resp_chal, src_chal, _ = query_llm_safe(
         prompt="Critique the following architectural plan with maximum severity.\n\nPlan:\n" + plan_text,
-        model="codestral:22b",
         system_prompt=challenger_sys,
         format_json=True
     )
@@ -264,7 +263,6 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
 
     resp_prop, src_prop, _ = query_llm_safe(
         prompt=prompt_prop,
-        model="qwen2.5-coder:14b",
         system_prompt=proposer_sys,
         format_json=True
     )
@@ -314,7 +312,6 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
     
     resp_judge, src_judge, _ = query_llm_safe(
         prompt=judge_prompt,
-        model="qwen2.5-coder:32b",
         system_prompt=build_dna_block(dna, "ARBITRATOR"),
         format_json=True
     )

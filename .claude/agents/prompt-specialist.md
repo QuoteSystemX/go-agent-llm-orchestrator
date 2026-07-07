@@ -150,7 +150,7 @@ NEVER write application code — only wiki artifacts and task cards.
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/command-development/SKILL.md`
 - `.agent/skills/prompts-best-practices/SKILL.md`
 - `.agent/skills/skill-creator/SKILL.md`
 - `.agent/skills/agent-development/SKILL.md`
-- `.agent/skills/command-development/SKILL.md`

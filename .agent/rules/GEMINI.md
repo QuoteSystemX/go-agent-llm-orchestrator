@@ -98,7 +98,7 @@ trigger: always_on
 
 **Before executing ANY sub-task or delegation, the agent MUST:**
 
-1. **Call the Router**: Run `python3 .agent/scripts/models/model_router.py "<task_description>" --json`.
+1. **Call the Router**: Run `./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "<task_description>"}'`.
 2. **Respect the Decision**:
    - If `provider == "ollama"`, use `ollama_agent.py` with local models.
    - If `provider == "antigravity"`, use built-in cloud agents (fallback only).
@@ -108,7 +108,7 @@ trigger: always_on
 
 ```bash
 # CORRECT workflow for ANY Ollama task:
-python3 .agent/scripts/models/model_router.py "task description" --json
+./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "task description"}'
 # → Response: {"provider": "ollama", "model_id": "qwen3-coder:30b", "tier": "L4"}
 
 # Use ollama_agent.py for filesystem-aware analysis:
@@ -255,6 +255,34 @@ When user's prompt is NOT in English:
 1. What is the GOAL of this agent/skill?
 2. What PRINCIPLES must I apply?
 3. How does this DIFFER from generic output?
+### 💰 Token Optimization (Global Mandatory)
+
+**ALL agents MUST apply these optimizations at ALL times — no exceptions.**
+
+#### 🛡️ RTK — Prefix every shell command
+```bash
+rtk git status       # instead of: git status
+rtk ls src/          # instead of: ls src/
+rtk grep "x" .       # instead of: grep "x" .
+```
+RTK filters command output before it reaches LLM context, saving 60-90% tokens.
+
+#### 🗜️ Headroom — Compress large tool outputs
+Call `headroom_compress` BEFORE adding to context when:
+- Tool output (grep, find, diff, log) > 200 tokens
+- File content > 300 tokens
+- Any stack trace or JSON structure
+
+```
+result = bash("grep -r 'pattern' src/")
+compressed = headroom_compress(content=result, content_type="code")
+# work with compressed — LLM calls headroom_retrieve if needed
+```
+
+### 🔀 Parallel Task Execution & Concurrency
+When executing tasks in parallel (e.g., dev work by `go-specialist` and testing by `test-engineer` via the squad orchestrator):
+1. **File Isolation**: Agents must modify strictly separate files (e.g., business logic in `app.go`, tests in `app_test.go`) to prevent write conflicts and git merge conflicts.
+2. **Broker Queueing**: Parallel requests are governed by `mcp-llm-broker` semaphores. Do not implement custom concurrency in python scripts; let the broker handle LLM load balancing.
 
 ---
 
@@ -398,7 +426,7 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 ### Agents & Skills
 
 - **Masters**: `orchestrator`, `project-planner`, `archivist`, `security-auditor` (Cyber/Audit), `backend-specialist` (API/DB), `frontend-specialist` (UI/UX), `mobile-developer`, `debugger`, `game-developer`
-- **Key Skills**: `clean-code`, `brainstorming`, `app-builder`, `frontend-design`, `better-auth-best-practices`, `ui-ux-pro-max`, `postgres-best-practices`, `playwright-best-practices`, `next-best-practices`, `plan-writing`, `behavioral-modes`
+- **Key Skills**: `clean-code`, `brainstorming`, `app-builder`, `frontend-design`, `better-auth-best-practices`, `ui-ux-pro-max`, `postgres-best-practices`, `playwright-best-practices`, `next-best-practices`, `plan-writing`, `behavioral-modes`, `json-canvas`, `obsidian-bases`
 
 ### Key Scripts
 
@@ -483,6 +511,10 @@ Whenever an agent is tasked with **testing, building, or modifying** a Go projec
 **Solution**: Run `harden_go_env.py`.
 
 ---
+
+> [!NOTE]
+> **trigger: always_on**
+
 
 # RTK - Rust Token Killer (Google Antigravity)
 

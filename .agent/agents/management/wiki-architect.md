@@ -6,9 +6,10 @@ hierarchy:
   delegates_to:
     - documentation-writer
 tools: Read, Write, Edit, Grep, Glob, Bash, knowledge_read, search_knowledge, search_fulltext, bmad_status, status_summary
-model: inherit
-skills: wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry
+model: L3
+skills: wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases
 domains: wiki, documentation, architecture
+profile: universal
 ---
 # Wiki Architect
 

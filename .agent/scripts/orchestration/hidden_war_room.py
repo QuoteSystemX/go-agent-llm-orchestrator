@@ -36,7 +36,7 @@ def _get_dna():
     return _DNA_CACHE
 
 
-def run_war_room(topic: str, model: str = "qwen2.5-coder:14b") -> dict:
+def run_war_room(topic: str, model: str = None) -> dict:
     """Run 4-role DNA-aware debate via real LLM calls.
 
     All roles receive DNA context. Advocate returns structured JSON with veto.
@@ -48,7 +48,7 @@ def run_war_room(topic: str, model: str = "qwen2.5-coder:14b") -> dict:
     dna_context = build_dna_context(dna)
     full_context = f"{dna_context}\n\nTopic: {topic}"
 
-    print(f"⚔️  Opening Hidden War Room (via {model}) for: '{topic}'...")
+    print(f"⚔️  Opening Hidden War Room (via {model or 'auto-routed model'}) for: '{topic}'...")
     print(f"👤 DNA Profile: [{dna.dna}] (veto_mode={dna.veto_config.mode})")
 
     # ── Round 1: Optimist (DNA-aware) ──
@@ -91,7 +91,7 @@ def run_war_room(topic: str, model: str = "qwen2.5-coder:14b") -> dict:
 
     # ── Round 4: Arbitrator (DNA-aware, gets all 3 + veto) ──
     print("\n🎭 [ARBITRATOR] issuing verdict...", end=" ", flush=True)
-    judge_model = "qwen2.5-coder:32b" if "32b" in model else model
+    judge_model = "qwen2.5-coder:32b" if model and "32b" in model else model
     arb_prompt = (
         f"Analyze the following debate and issue a final structured verdict.\n\n"
         f"Topic: {topic}\n\n{dna_context}\n\n"

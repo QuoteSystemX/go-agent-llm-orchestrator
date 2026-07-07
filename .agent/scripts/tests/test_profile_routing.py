@@ -35,12 +35,20 @@ class TestProfileRouting(unittest.TestCase):
         def side_effect(*args, **kwargs):
             mock_proc = MagicMock()
             cmd = args[0]
-            if "status_report.py" in cmd:
+            cmd_str = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
+            if "status_report.py" in cmd_str:
                 mock_proc.returncode = 0
-            elif "conflict_resolver.py" in cmd:
+            elif "conflict_resolver.py" in cmd_str:
                 mock_proc.returncode = 0
-            elif "curl" in cmd:
+            elif "curl" in cmd_str:
                 mock_proc.stdout = "models"
+                mock_proc.returncode = 0
+            elif "mcp-llm-broker" in cmd_str:
+                mock_proc.stdout = json.dumps({
+                    "tier": "L1",
+                    "model_id": "model1",
+                    "provider": "ollama"
+                })
                 mock_proc.returncode = 0
             else:
                 mock_proc.stdout = ""

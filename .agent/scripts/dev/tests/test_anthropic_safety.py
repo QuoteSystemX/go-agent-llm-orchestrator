@@ -21,9 +21,9 @@ from dev.checks.anthropic_safety import anthropic_safety_check
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _mock_response(findings: list) -> MagicMock:
-    """Build a fake urllib response object returning Anthropic-format JSON."""
+    """Build a fake urllib response object returning OpenAI-format JSON."""
     body = json.dumps({
-        "content": [{"type": "text", "text": json.dumps({"findings": findings})}]
+        "choices": [{"message": {"content": json.dumps({"findings": findings})}}]
     }).encode()
     mock_resp = MagicMock()
     mock_resp.read.return_value = body

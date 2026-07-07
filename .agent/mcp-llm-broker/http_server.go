@@ -760,19 +760,20 @@ func (b *BrokerServer) tryStreamDirect(
 	onContent func(string),
 ) error {
 	env := b.detectEnv()
-	shortClient := &http.Client{Timeout: 2 * time.Second}
+	discoverCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 
 	// Detect Jan and record its base URL.
 	pulled := make(map[string]string)
 	var janURL string
-	if models, err := b.fetchOpenAICompatibleModels(shortClient, DefaultJanURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultJanURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderJan
 		}
 		janURL = DefaultJanURL
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(shortClient, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderJan
 			}
@@ -935,18 +936,19 @@ func (b *BrokerServer) tryToolsDirect(
 	tierOverride string,
 ) (*ToolUseResult, error) {
 	env := b.detectEnv()
-	shortClient := &http.Client{Timeout: 2 * time.Second}
+	discoverCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 
 	pulled := make(map[string]string)
 	var janURL string
-	if models, err := b.fetchOpenAICompatibleModels(shortClient, DefaultJanURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultJanURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderJan
 		}
 		janURL = DefaultJanURL
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(shortClient, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderJan
 			}
@@ -1109,14 +1111,14 @@ func stripThinkBlocks(s string) string {
 }
 
 // fetchModelsWithWSLFallback tries the given URL first, then falls back to WSL gateway.
-func (b *BrokerServer) fetchModelsWithWSLFallback(client *http.Client, localURL, port string, env EnvironmentInfo) ([]string, string, error) {
-	models, err := b.fetchOpenAICompatibleModels(client, localURL)
+func (b *BrokerServer) fetchModelsWithWSLFallback(ctx context.Context, localURL, port string, env EnvironmentInfo) ([]string, string, error) {
+	models, err := b.fetchOpenAICompatibleModels(ctx, localURL)
 	if err == nil {
 		return models, localURL, nil
 	}
 	if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, port)
-		models, err = b.fetchOpenAICompatibleModels(client, wslURL)
+		models, err = b.fetchOpenAICompatibleModels(ctx, wslURL)
 		if err == nil {
 			return models, wslURL, nil
 		}
@@ -1131,20 +1133,22 @@ func (b *BrokerServer) handleListModels(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	client := &http.Client{Timeout: 1 * time.Second}
+	listCtx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+	defer cancel()
+
 	env := b.detectEnv()
 	var models []ModelObject
 
 	// Ollama
 	ollamaURL := b.getOllamaURL(env)
-	if ollamaModels, err := b.fetchOllamaModels(client, ollamaURL); err == nil {
+	if ollamaModels, err := b.fetchOllamaModels(listCtx, ollamaURL); err == nil {
 		for _, m := range ollamaModels {
 			models = append(models, ModelObject{ID: m, Object: "model", OwnedBy: "ollama"})
 		}
 	}
 
 	// Jan (with WSL gateway fallback)
-	if janModels, janURL, err := b.fetchModelsWithWSLFallback(client, DefaultJanURL, "1337", env); err == nil {
+	if janModels, janURL, err := b.fetchModelsWithWSLFallback(listCtx, DefaultJanURL, "1337", env); err == nil {
 		for _, m := range janModels {
 			models = append(models, ModelObject{ID: m, Object: "model", OwnedBy: "jan"})
 		}
@@ -1152,7 +1156,7 @@ func (b *BrokerServer) handleListModels(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// LM Studio (with WSL gateway fallback)
-	if lmsModels, lmsURL, err := b.fetchModelsWithWSLFallback(client, DefaultLMStudioURL, "1234", env); err == nil {
+	if lmsModels, lmsURL, err := b.fetchModelsWithWSLFallback(listCtx, DefaultLMStudioURL, "1234", env); err == nil {
 		for _, m := range lmsModels {
 			models = append(models, ModelObject{ID: m, Object: "model", OwnedBy: "lm-studio"})
 		}

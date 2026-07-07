@@ -24,8 +24,9 @@ import time
 import urllib.request
 from datetime import datetime
 
-from lib.common import discover_ollama_url
+from lib.common import discover_ollama_url, discover_broker_url
 OLLAMA_URL = discover_ollama_url()
+BROKER_URL = discover_broker_url()
 
 # Benchmark-optimized model assignments
 MODEL_MAP = {
@@ -68,15 +69,16 @@ def get_best_model(task_complexity: int = 5) -> str:
 
 
 def query_ollama(prompt: str, model: str = "qwen3-coder:30b") -> tuple[str, float, float]:
-    """Send prompt to Ollama and get response with timing."""
+    """Send prompt to the broker and get response with timing."""
     req_data = {
         "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0.3, "num_ctx": 8192}
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "stream": False
     }
     req = urllib.request.Request(
-        f"{OLLAMA_URL}/api/generate",
+        f"{BROKER_URL}/v1/chat/completions",
         data=json.dumps(req_data).encode(),
         headers={"Content-Type": "application/json"}
     )
@@ -85,11 +87,17 @@ def query_ollama(prompt: str, model: str = "qwen3-coder:30b") -> tuple[str, floa
         with urllib.request.urlopen(req, timeout=300) as resp:
             result = json.loads(resp.read())
             elapsed = time.time() - start
-            tokens = len(result.get("response", "")) // 4
+            choices = result.get("choices", [])
+            content = ""
+            if choices:
+                content = choices[0].get("message", {}).get("content", "")
+            tokens = result.get("usage", {}).get("completion_tokens")
+            if tokens is None or tokens <= 0:
+                tokens = len(content) // 4
             tps = tokens / elapsed if elapsed > 0 else 0
-            return result.get("response", ""), elapsed, tps
+            return content, elapsed, tps
     except Exception as e:
-        return f"❌ Ollama error: {e}", time.time() - start, 0
+        return f"❌ Broker error: {e}", time.time() - start, 0
 
 
 def read_file(path: str) -> str:

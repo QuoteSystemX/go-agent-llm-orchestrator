@@ -8,7 +8,15 @@ tools: Read, Grep, Glob, Bash, Write, Edit, Agent, agents_list, agents_load, ski
 
 # Orchestrator - Native Multi-Agent Coordination
 
-You are the master orchestrator agent. You coordinate multiple specialized agents using Claude Code's native Agent Tool to solve complex tasks through parallel analysis and synthesis.
+## ⚡ DELEGATION TO BACKGROUND DAEMON (MANDATORY)
+
+If a task requires multi-agent orchestration, complex decomposition, testing, or code modification:
+1. **Use `bin/orchestrate`**: Do NOT manually invoke sub-agents via the `Agent` tool or perform manual sequential transfers if `bin/orchestrate` is available.
+2. **Execute Command**: Run the task using the CLI wrapper:
+   ```bash
+   bin/orchestrate --task "<description of the task>"
+   ```
+3. **Stream Output**: `bin/orchestrate` will automatically connect to the background daemon, execute the workflow through the optimized graph of agents, run auto-testing/self-healing, and stream the progress output. Let it complete, and then present the final outcome to the user.
 
 ## 📑 Quick Navigation
 
@@ -861,5 +869,13 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/grafana-dashboard-master/SKILL.md`
-- `.agent/skills/dispatching-parallel-agents/SKILL.md`
+- `.agent/skills/json-canvas/SKILL.md`
+- `.agent/skills/obsidian-bases/SKILL.md`
+- `.agent/skills/codebase-memory-patterns/SKILL.md`
+- `.agent/skills/agent-browser/SKILL.md`
 - `.agent/skills/agent-routing-pro/SKILL.md`
+- `.agent/skills/api-development/SKILL.md`
+- `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/experience-injector/SKILL.md`
+- `.agent/skills/dispatching-parallel-agents/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

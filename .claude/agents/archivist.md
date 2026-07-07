@@ -152,3 +152,4 @@ python3 .agent/scripts/health/drift_detector.py
 - `.agent/skills/wiki-writing/SKILL.md`
 - `.agent/skills/architecture-governance/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

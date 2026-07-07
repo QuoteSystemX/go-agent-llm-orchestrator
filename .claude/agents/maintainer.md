@@ -135,3 +135,4 @@ Final decision: ✅ Approve / ⚠️ Request Changes / 🚫 Block
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/mcp-builder/SKILL.md`
+- `.agent/skills/command-development/SKILL.md`

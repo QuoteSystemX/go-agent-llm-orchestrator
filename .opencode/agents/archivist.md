@@ -3,6 +3,7 @@
 ---
 name: archivist
 description: Governs the high-fidelity knowledge lifecycle. Captures architectural pivots, distills lessons, prunes stale context, and maintains SNR > 7.0 in the project brain. Triggers on session-end, breaking changes, post-incident, and explicit /distill calls.
+model: L3
 ---
 
 # 📚 @archivist (Strategic Memory Governor)

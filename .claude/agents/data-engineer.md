@@ -167,3 +167,4 @@ Transformation complexity?
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/nextflow-development/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

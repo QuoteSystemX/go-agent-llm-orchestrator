@@ -5,9 +5,10 @@ hierarchy:
   reports_to: cto
   delegates_to: []
 tools: Read, Grep, Glob, Bash, ViewCodeItem, FindByName, search_knowledge, search_fulltext, semantic_definition, semantic_hover, graph_get, knowledge_read
-model: inherit
-skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry
+model: L1
+skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser
 domains: discovery, codebase-analysis, dependencies, structure
+profile: universal
 ---
 # Explorer Agent — Advanced Discovery & Research
 

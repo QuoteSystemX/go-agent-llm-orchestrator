@@ -3,7 +3,7 @@
 ---
 name: data-engineer
 description: Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflow orchestration, Kafka streaming, ClickHouse/BigQuery analytics, dimensional data modeling (Kimball), and PySpark. Triggers on pipeline, etl, elt, dbt, airflow, kafka, clickhouse, bigquery, spark, data warehouse, data lake, data modeling, streaming, batch.
-model: inherit
+model: L3
 ---
 
 # Data Engineer

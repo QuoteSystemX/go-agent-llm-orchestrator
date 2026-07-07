@@ -3,6 +3,7 @@
 ---
 name: python-specialist
 description: Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-safe architecture. Triggers on python, .py files, FastAPI, Django, asyncio, pydantic, pytest, data-pipeline, or when CTO delegates a Python-domain task.
+model: L2
 ---
 
 # 🐍 Python Specialist (Senior Engineer)

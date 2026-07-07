@@ -42,10 +42,22 @@ TASKS_DIR = REPO_ROOT / "tasks"
 AUDIT_LOG = REPO_ROOT / "wiki" / "archive" / "audit-log.md"
 
 
-def slugify(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r"[^a-z0-9]+", "-", text)
-    return text.strip("-")[:40]
+import hashlib
+
+def generate_task_slug(title: str, max_len: int = 50) -> str:
+    """Generate a clean, readable slug truncated at a word boundary with a unique hash."""
+    h = hashlib.md5(title.encode("utf-8")).hexdigest()[:6]
+    clean = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    
+    if len(clean) > max_len:
+        truncated = clean[:max_len]
+        last_dash = truncated.rfind("-")
+        if last_dash > 15:
+            clean = truncated[:last_dash]
+        else:
+            clean = truncated
+            
+    return f"{clean}-{h}"
 
 
 def task_exists(slug: str) -> bool:
@@ -54,10 +66,9 @@ def task_exists(slug: str) -> bool:
     return any(f.name.endswith(f"-{slug}.md") for f in TASKS_DIR.glob("*.md"))
 
 
-def create_task(tag: str, title: str, body: str, agent: str = "reviewer", priority: str = "Medium") -> str:
+def create_task(tag: str, title: str, body: str, slug: str, agent: str = "reviewer", priority: str = "Medium") -> str:
     TASKS_DIR.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now().strftime("%Y-%m-%d")
-    slug = slugify(title)
     filename = f"{date_str}-{slug}.md"
     filepath = TASKS_DIR / filename
 
@@ -140,7 +151,7 @@ def check_roadmap_tasks() -> list[str]:
 
     untracked = []
     for item in pending:
-        slug = slugify(item[:40])
+        slug = generate_task_slug(item)
         if not task_exists(slug):
             untracked.append(item)
     return untracked
@@ -223,11 +234,16 @@ def main() -> None:
     if drift_issues:
         print(f"   Found {len(drift_issues)} drift issue(s)")
         for issue in drift_issues[:3]:
-            slug = slugify(str(issue)[:40])
+            if "failed" in str(issue).lower():
+                print(f"   ⚠️ Drift check failed: {issue}")
+                continue
+            title = f"Fix doc drift: {str(issue)}"
+            slug = generate_task_slug(title)
             if not task_exists(slug):
                 result = create_task(
-                    "CHORE", f"Fix doc drift: {str(issue)[:60]}",
+                    "CHORE", title,
                     f"Drift detected by drift_detector.py:\n{issue}",
+                    slug=slug,
                     agent="documentation-writer",
                 )
                 results["tasks_created"].append(result)
@@ -240,11 +256,13 @@ def main() -> None:
     results["missing_infra"] = missing
     for item in missing:
         print(f"   MISSING: {item['message']}")
-        slug = slugify(item["message"][:40])
+        title = f"Restore missing: {item['path'].split('/')[-1] if '/' in str(item['path']) else item['path']}"
+        slug = generate_task_slug(title)
         if not task_exists(slug):
             result = create_task(
-                "INFRA", f"Restore missing: {item['path'].split('/')[-1]}",
+                "INFRA", title,
                 item["message"],
+                slug=slug,
                 agent="devops-engineer",
                 priority="High",
             )
@@ -256,9 +274,11 @@ def main() -> None:
     results["roadmap_pending"] = pending
     for item in pending:
         print(f"   Untracked: {item[:60]}")
+        slug = generate_task_slug(item)
         result = create_task(
-            "STORY", item[:80],
+            "STORY", item,
             f"Roadmap item from 'Now' sprint not yet converted to a task card:\n{item}",
+            slug=slug,
             agent="orchestrator",
             priority="High",
         )

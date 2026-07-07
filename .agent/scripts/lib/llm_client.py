@@ -32,7 +32,7 @@ def call_mcp_broker(tool_name: str, arguments: dict) -> dict:
     
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
-        raise RuntimeError(f"mcp-llm-broker exited with code {result.returncode}. Stderr: {result.stderr}")
+        raise RuntimeError(f"mcp-llm-broker exited with code {result.returncode}.\nStderr: {result.stderr}\nStdout: {result.stdout}")
         
     return json.loads(result.stdout.strip())
 

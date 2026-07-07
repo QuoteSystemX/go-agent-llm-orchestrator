@@ -2,11 +2,13 @@
 name: visual-designer
 description: Specialist in UI/UX aesthetics, design systems, and visual quality. Produces design tokens, typography scales, OKLCH palettes, and component specs. Triggers on design, UI, theme, palette, typography, glassmorphism, design-system, ux-audit.
 hierarchy:
-  reports_to: cto
+  reports_to: frontend-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Write, Edit, knowledge_read, search_knowledge, skills_load, status_summary
 skills: frontend-design, web-design-guidelines, design-token-architecture, clean-code
 domains: visual, designer
+profile: universal
+model: L2
 ---
 
 # Visual Designer Agent

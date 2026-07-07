@@ -232,3 +232,4 @@ After database changes:
 - `.agent/skills/postgres-best-practices/SKILL.md`
 - `.agent/skills/turso-db/SKILL.md`
 - `.agent/skills/supabase-postgres-best-practices/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

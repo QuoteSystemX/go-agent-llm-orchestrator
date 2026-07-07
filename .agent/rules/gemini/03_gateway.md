@@ -16,7 +16,7 @@ trigger: always_on
 
 **Before executing ANY sub-task or delegation, the agent MUST:**
 
-1. **Call the Router**: Run `python3 .agent/scripts/models/model_router.py "<task_description>" --json`.
+1. **Call the Router**: Run `./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "<task_description>"}'`.
 2. **Respect the Decision**:
    - If `provider == "ollama"`, use `ollama_agent.py` with local models.
    - If `provider == "antigravity"`, use built-in cloud agents (fallback only).
@@ -26,7 +26,7 @@ trigger: always_on
 
 ```bash
 # CORRECT workflow for ANY Ollama task:
-python3 .agent/scripts/models/model_router.py "task description" --json
+./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "task description"}'
 # → Response: {"provider": "ollama", "model_id": "qwen3-coder:30b", "tier": "L4"}
 
 # Use ollama_agent.py for filesystem-aware analysis:

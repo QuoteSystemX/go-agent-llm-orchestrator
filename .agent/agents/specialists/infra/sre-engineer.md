@@ -2,12 +2,12 @@
 name: sre-engineer
 description: Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry instrumentation, Prometheus + Grafana dashboards, Loki structured logging, distributed tracing, Alertmanager routing, on-call runbooks, post-mortems. Use when tasks involve observability setup, SLO definition, alert tuning, monitoring dashboards, or production reliability.
 hierarchy:
-  reports_to: cto
+  reports_to: platform-lead
   delegates_to: []
 tools: Read, Write, Edit, Grep, Glob, Bash, health_check, health_fix, system_info, metrics_get, logs_tail, workspace_status, secrets_get
-model: inherit
+model: L3
 profile: go-service, data-platform, fullstack
-skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel
+skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master
 domains: sre, engineer
 ---
 # SRE Engineer

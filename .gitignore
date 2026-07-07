@@ -48,3 +48,7 @@ go.work.sum
 # Headroom CCR cache
 .headroom/cache.db
 .headroom/sessions/
+
+# codebase-memory-mcp index cache and binaries
+.codebase-memory/
+bin/codebase-memory-mcp-*

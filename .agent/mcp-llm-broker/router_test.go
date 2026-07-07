@@ -50,8 +50,11 @@ func TestCalculateScore(t *testing.T) {
 				"L4": 13,
 			},
 			Weights: map[string]int{
-				"refactor": 3,
-				"fix":      1,
+				"refactor":       3,
+				"fix":            1,
+				"lint":           2,
+				"исправ":         5,
+				"critical audit": 10,
 			},
 		},
 	}
@@ -65,6 +68,42 @@ func TestCalculateScore(t *testing.T) {
 	score = srv.calculateScore("fix bug", rules)
 	if score != 5 {
 		t.Errorf("Expected score 5, got %d", score)
+	}
+
+	// Test prefix matches (e.g. linter matches lint)
+	score = srv.calculateScore("run linter", rules)
+	if score != 6 { // 4 (base) + 2 (lint)
+		t.Errorf("Expected score 6 for 'linter', got %d", score)
+	}
+
+	// Test non-prefix containing words (e.g. splinter shouldn't match lint)
+	score = srv.calculateScore("fix splinter in wood", rules)
+	if score != 5 { // 4 (base) + 1 (fix) - 'lint' should NOT match 'splinter'
+		t.Errorf("Expected score 5 for 'splinter', got %d", score)
+	}
+
+	// Test Russian stem match (исправить matches исправ)
+	score = srv.calculateScore("надо исправить баг", rules)
+	if score != 9 { // 4 (base) + 5 (исправ)
+		t.Errorf("Expected score 9 for 'исправить', got %d", score)
+	}
+
+	// Test Russian typo match (испрОвить has 1 typo compared to исправ, matches)
+	score = srv.calculateScore("надо испровить баг", rules)
+	if score != 9 { // 4 (base) + 5 (исправ)
+		t.Errorf("Expected score 9 for 'испровить', got %d", score)
+	}
+
+	// Test English typo match (refaktir has 2 typos compared to refactor, matches because len >= 6)
+	score = srv.calculateScore("refaktir code", rules)
+	if score != 7 { // 4 (base) + 3 (refactor)
+		t.Errorf("Expected score 7 for 'refaktir', got %d", score)
+	}
+
+	// Test severe typo (too many typos, should NOT match)
+	score = srv.calculateScore("reffffactor code", rules)
+	if score != 4 { // only base score
+		t.Errorf("Expected score 4 for 'reffffactor', got %d", score)
 	}
 }
 

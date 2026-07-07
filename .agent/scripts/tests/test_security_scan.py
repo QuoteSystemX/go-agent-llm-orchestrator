@@ -18,7 +18,7 @@ import health.security_scan as security_scan
 
 class TestSecurityScan(unittest.TestCase):
     def setUp(self):
-        self.test_root = REPO_ROOT / "scratch" / "test_security"
+        self.test_root = REPO_ROOT / "test_security_temp"
         if self.test_root.exists():
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
@@ -59,12 +59,12 @@ class TestSecurityScan(unittest.TestCase):
 
     def test_check_forbidden_files(self):
         # Create forbidden files
-        (self.test_root / "test.bak").touch()
+        (self.test_root / "forbidden.bak").touch()
         (self.test_root / "error.log").touch()
         (self.test_root / "normal.py").touch()
         
         findings = security_scan.check_forbidden_files()
-        self.assertTrue(any("test.bak" in f["file"] for f in findings))
+        self.assertTrue(any("forbidden.bak" in f["file"] for f in findings))
         self.assertTrue(any("error.log" in f["file"] for f in findings))
         self.assertFalse(any("normal.py" in f["file"] for f in findings))
 

@@ -56,7 +56,7 @@ class TestAutoADRDrafter(unittest.TestCase):
         expected_path = Path("wiki/decisions/ADR-001-auto-resolved.md")
         self.assertTrue(expected_path.exists())
         self.assertIn("Status: Proposed (Autonomous)", content)
-        self.assertIn("bridge/adapter pattern", content)
+        self.assertIn("Clean Code standards", content)
 
     @patch('sys.exit')
     @patch('sys.argv', ['auto_adr_drafter.py', 'test', 'conflict'])

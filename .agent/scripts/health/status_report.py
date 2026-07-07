@@ -823,6 +823,59 @@ The repository is newly provisioned. To build the local intelligence base, run:
     except Exception:
         metrics["RTK (Token Killer)"] = "Unknown"
 
+    # 12c. Codebase Memory
+    try:
+        _cm_bin = REPO_ROOT / "bin" / "codebase-memory-mcp"
+        _cm_installed = False
+        _cm_ver = "Unknown"
+        if _cm_bin.exists():
+            _cm_installed = True
+            # Get version
+            try:
+                _proc_ver = subprocess.run(
+                    [str(_cm_bin), "--version"], capture_output=True, text=True, timeout=5
+                )
+                if _proc_ver.returncode == 0:
+                    _cm_ver = _proc_ver.stdout.strip().split()[-1]
+            except Exception:
+                pass
+
+        if _cm_installed:
+            # Query projects info using list_projects
+            _cm_stats = ""
+            try:
+                _proc_list = subprocess.run(
+                    [str(_cm_bin), "cli", "list_projects"], capture_output=True, text=True, timeout=5
+                )
+                if _proc_list.returncode == 0:
+                    _json_match = re.search(r"(\{.*\})", _proc_list.stdout)
+                    if _json_match:
+                        _proj_data = json.loads(_json_match.group(1))
+                        _projects = _proj_data.get("projects", [])
+                        if _projects:
+                            _proj = None
+                            for _p in _projects:
+                                if Path(_p.get("root_path", "")).resolve() == REPO_ROOT.resolve():
+                                    _proj = _p
+                                    break
+                            if not _proj:
+                                _proj = _projects[0]
+                            
+                            _proj_name = _proj.get("name")
+                            _nodes = _proj.get("nodes", 0)
+                            _edges = _proj.get("edges", 0)
+                            _size_mb = round(_proj.get("size_bytes", 0) / (1024 * 1024), 2)
+                            _cm_stats = f" | project: {_proj_name} | nodes: {_nodes} | edges: {_edges} | size: {_size_mb}MB"
+                        else:
+                            _cm_stats = " | no projects indexed (run make setup or index manually)"
+            except Exception:
+                pass
+            metrics["Codebase Memory"] = f"active (v{_cm_ver}){_cm_stats}"
+        else:
+            metrics["Codebase Memory"] = "not installed"
+    except Exception:
+        metrics["Codebase Memory"] = "Unknown"
+
     # 13. Top Agents (Heatmap)
     try:
         stats = get_agent_stats()
@@ -986,6 +1039,23 @@ def gather_diagnostics(metrics: dict) -> dict:
                     detail["risks"] = data[:10]
                 detail["source"] = "foresight/latest_risk_report.json"
         
+        # Codebase Memory
+        elif "Codebase Memory" in k:
+            _cm_bin = REPO_ROOT / "bin" / "codebase-memory-mcp"
+            if _cm_bin.exists():
+                try:
+                    _proc_list = subprocess.run(
+                        [str(_cm_bin), "cli", "list_projects"], capture_output=True, text=True, timeout=5
+                    )
+                    if _proc_list.returncode == 0:
+                        _json_match = re.search(r"(\{.*\})", _proc_list.stdout)
+                        if _json_match:
+                            _proj_data = json.loads(_json_match.group(1))
+                            detail["projects"] = _proj_data.get("projects", [])
+                            detail["source"] = "codebase-memory-mcp cli list_projects"
+                except Exception as e:
+                    detail["error"] = str(e)
+
         # Resilience / Chaos — load chaos report
         elif "Resilience" in k or "MTTR" in v_str:
             chaos_file = BUS_DIR / "chaos_report.json"
@@ -1178,7 +1248,6 @@ def export_to_html(score: int, metrics: dict, diagnostics: dict = None):
             max-width: 900px; 
             width: 100%;
             animation: fadeIn 0.8s ease-out;
-            max-width: 65ch;
         }}
 
         @keyframes fadeIn {{
@@ -1241,8 +1310,9 @@ def export_to_html(score: int, metrics: dict, diagnostics: dict = None):
             background: rgba(255, 255, 255, 0.03);
             border-radius: 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
             transition: all 0.2s ease;
             border: 1px solid transparent;
         }}
@@ -1254,21 +1324,27 @@ def export_to_html(score: int, metrics: dict, diagnostics: dict = None):
         }}
 
         .metric-left {{
-            display: flex; flex-direction: column; gap: 4px;
-            min-width: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 12px;
         }}
 
         .metric-key {{ 
             color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 400;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
 
         .metric-value {{ 
             font-weight: 600;
             font-size: 14px;
-            flex-shrink: 0;
-            margin-left: 8px;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
         }}
 
         .sparkline {{
@@ -1542,7 +1618,7 @@ def export_to_html(score: int, metrics: dict, diagnostics: dict = None):
                 <div class="terminal-output" id="terminalOutput"></div>
             </div>
             <span class="file-hint" id="cockpitHint">
-                🖥️ Start SSE server for cockpit controls: <code>python3 .agent/scripts/health/bus_sse_server.py --port 3207</code>
+                🖥️ Start SSE server for cockpit controls: <code>python3 .agent/scripts/health/bus_sse_server.py</code>
             </span>
         </section>
 

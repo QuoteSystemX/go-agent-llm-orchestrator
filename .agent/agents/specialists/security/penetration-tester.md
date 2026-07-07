@@ -2,12 +2,13 @@
 name: penetration-tester
 description: Expert in offensive security, penetration testing, red team operations, and vulnerability exploitation. Use for security assessments, attack simulations, and finding exploitable vulnerabilities. Triggers on pentest, exploit, attack, hack, breach, pwn, redteam, offensive.
 hierarchy:
-  reports_to: cro
+  reports_to: quality-security-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, system_info, secrets_get, council_list, knowledge_read
-model: inherit
-skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry
+model: L3
+skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices
 domains: penetration, tester
+profile: universal
 ---
 # Penetration Tester
 

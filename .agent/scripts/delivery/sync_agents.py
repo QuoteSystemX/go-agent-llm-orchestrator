@@ -138,14 +138,18 @@ COMMAND_META: dict[str, dict] = {
         "argument-hint": "",
         "allowed-tools": "Read, Grep, Bash",
     },
+    "dag-run": {
+        "argument-hint": "",
+        "allowed-tools": "Read, Grep, Glob, Bash, Write, Edit",
+    },
 }
 
 # Skills injected by the sync script into agent files (in addition to frontmatter skills).
 # Covers the 31 skills that exist in .agent/skills/ but are not referenced in any agent .md.
 AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
-    "orchestrator":           ["dispatching-parallel-agents", "agent-routing-pro"],
+    "orchestrator":           ["dispatching-parallel-agents", "agent-routing-pro", "headroom-patterns"],
     "ai-engineer":            ["mcp-integration", "hook-development", "skill-creator",
-                               "agent-development", "command-development"],
+                               "agent-development", "command-development", "headroom-patterns"],
     "backend-specialist":     ["api-development", "postgres-best-practices", "typed-service-contracts",
                                "better-auth-best-practices", "convex-setup-auth", "paperclip-worker",
                                "headroom-patterns"],
@@ -158,18 +162,22 @@ AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
     "test-engineer":          ["test-driven-development", "verification-before-completion",
                                "headroom-patterns"],
     "qa-automation-engineer": ["playwright-best-practices", "browser-use", "agent-browser"],
-    "devops-engineer":        ["github-actions-expert", "sentry-cli-expert"],
-    "sre-engineer":           ["sentry-cli-expert"],
-    "database-architect":     ["postgres-best-practices", "turso-db", "supabase-postgres-best-practices"],
-    "data-engineer":          ["nextflow-development"],
-    "archivist":              ["semantic-search"],
-    "reviewer":               ["verification-before-completion", "requesting-code-review"],
+    "devops-engineer":        ["github-actions-expert", "sentry-cli-expert", "headroom-patterns"],
+    "sre-engineer":           ["sentry-cli-expert", "headroom-patterns"],
+    "database-architect":     ["postgres-best-practices", "turso-db", "supabase-postgres-best-practices",
+                               "headroom-patterns"],
+    "data-engineer":          ["nextflow-development", "headroom-patterns"],
+    "archivist":              ["semantic-search", "headroom-patterns"],
+    "reviewer":               ["verification-before-completion", "requesting-code-review",
+                               "headroom-patterns"],
     "prompt-specialist":      ["prompts-best-practices", "skill-creator",
                                "agent-development", "command-development"],
     "visual-designer":        ["visual-explainer"],
-    "analyst":                ["scientific-problem-selection"],
+    "analyst":                ["scientific-problem-selection", "headroom-patterns"],
     "debugger":               ["headroom-patterns"],
     "performance-optimizer":  ["headroom-patterns"],
+    "security-auditor":       ["headroom-patterns"],
+    "code-archaeologist":     ["headroom-patterns"],
 }
 
 # Read-only Bash and MCP operations that should not prompt the user each time.
@@ -236,6 +244,7 @@ CLAUDE_KEYBINDINGS = [
     {"key": "ctrl+shift+r", "command": "/reviewer"},
     {"key": "ctrl+shift+t", "command": "/test"},
     {"key": "ctrl+shift+c", "command": "/create"},
+    {"key": "ctrl+shift+g", "command": "/dag-run"},
 ]
 
 # ---------------------------------------------------------------------------
@@ -407,17 +416,8 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
             "$schema": "https://opencode.ai/config.json",
             "default_agent": "orchestrator",
             "instructions": [
-                ".agent/agents/core/orchestrator.md",
                 ".agent/rules/gemini/00_protocol.md",
-                ".agent/rules/gemini/01_classifier.md",
-                ".agent/rules/gemini/02_routing.md",
-                ".agent/rules/ADAPTIVE_ROUTING.md",
-                ".agent/rules/gemini/03_gateway.md",
-                ".agent/rules/gemini/04_tier0_universal.md",
-                ".agent/rules/gemini/05_tier1_code.md",
-                ".agent/rules/gemini/06_tier2_design.md",
-                ".agent/rules/gemini/07_reference.md",
-                ".agent/rules/LESSONS_LEARNED.md"
+                ".agent/rules/gemini/01_classifier.md"
             ],
             "permission": {
                 "shell": "allow",
@@ -653,34 +653,16 @@ def sync_claude_keybindings(dry_run: bool, check: bool):
 
 def _build_provider_section() -> dict:
     """Build opencode provider config pointing to the MCP LLM Broker HTTP API.
-    
-    Scans local backends (Ollama, Jan, LM Studio) to discover available models
-    and generates a provider entry for the broker's OpenAI-compatible endpoint.
-    Falls back to a small default model set if no backends are running.
+
+    Only tier-level aliases (auto, L1-L4) are registered as models.
+    The MCP LLM Broker resolves each alias to a concrete model at runtime
+    using router_rules.json — keeping opencode.json fully provider-agnostic.
     """
-    import subprocess
-    import shutil
-
     port = 11436
-    models = _discover_local_models()
-
-    # Fallback: ensure at least some models
-    if not models:
-        models = {
-            "llama3.2:3b":  {},
-            "qwen2.5-coder:7b": {},
-            "deepseek-coder:6.7b": {},
-        }
-
     mcp_broker_port = os.environ.get("MCP_BROKER_HTTP_PORT", str(port))
 
-    # Add tier model aliases so agent model assignments always resolve
-    for alias in ["auto", "L1", "L2", "L3", "L4"]:
-        if alias not in models:
-            models[alias] = {}
-    for tier_val in _model_tier_map.values():
-        if tier_val not in models:
-            models[tier_val] = {}
+    # Only expose tier aliases — broker resolves to real models via router_rules.json
+    models = {alias: {} for alias in ["auto", "L1", "L2", "L3", "L4"]}
 
     return {
         "mcp-llm-broker": {
@@ -910,11 +892,14 @@ def _ensure_router_rules_loaded(all_agent_names: list[str] | None = None):
 
 
 def _get_agent_model(agent_name: str) -> str:
-    """Get the broker model string for an agent based on its tier (from router_rules.json)."""
-    global _agent_tier_map, _model_tier_map
+    """Return a tier-level model alias for an agent (e.g. 'mcp-llm-broker/L2').
+
+    The MCP LLM Broker resolves L1-L4 aliases to concrete models at runtime
+    using router_rules.json, making opencode.json provider-agnostic.
+    """
+    global _agent_tier_map
     tier = _agent_tier_map.get(agent_name, "L2")
-    model = _model_tier_map.get(tier, "qwen2.5-coder:7b")
-    return f"mcp-llm-broker/{model}"
+    return f"mcp-llm-broker/{tier}"
 
 
 def _build_agent_section() -> dict:

@@ -3,6 +3,7 @@
 ---
 name: risk-manager
 description: Chief Risk Officer. Audits PRs for risk exposure, enforces circuit breakers, and vetos deployments that breach defined risk parameters. Use for pre-flight audits, scenario analysis, infrastructure risk, and security governance. Triggers on deployment, breaking-change, production, audit, risk, veto.
+model: L4
 ---
 
 # Agent Risk Manager (Chief Risk Officer)

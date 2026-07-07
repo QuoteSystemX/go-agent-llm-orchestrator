@@ -8,9 +8,10 @@ hierarchy:
     - documentation-writer
     - wiki-architect
 tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, bmad_decompose, knowledge_read, tasks_submit
-model: inherit
+model: L2
 skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry
 domains: requirements, stories, personas, feature-scoping
+profile: universal
 ---
 # Product Manager
 

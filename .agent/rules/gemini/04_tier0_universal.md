@@ -65,3 +65,32 @@ When user's prompt is NOT in English:
 1. What is the GOAL of this agent/skill?
 2. What PRINCIPLES must I apply?
 3. How does this DIFFER from generic output?
+### 💰 Token Optimization (Global Mandatory)
+
+**ALL agents MUST apply these optimizations at ALL times — no exceptions.**
+
+#### 🛡️ RTK — Prefix every shell command
+```bash
+rtk git status       # instead of: git status
+rtk ls src/          # instead of: ls src/
+rtk grep "x" .       # instead of: grep "x" .
+```
+RTK filters command output before it reaches LLM context, saving 60-90% tokens.
+
+#### 🗜️ Headroom — Compress large tool outputs
+Call `headroom_compress` BEFORE adding to context when:
+- Tool output (grep, find, diff, log) > 200 tokens
+- File content > 300 tokens
+- Any stack trace or JSON structure
+
+```
+result = bash("grep -r 'pattern' src/")
+compressed = headroom_compress(content=result, content_type="code")
+# work with compressed — LLM calls headroom_retrieve if needed
+```
+
+### 🔀 Parallel Task Execution & Concurrency
+When executing tasks in parallel (e.g., dev work by `go-specialist` and testing by `test-engineer` via the squad orchestrator):
+1. **File Isolation**: Agents must modify strictly separate files (e.g., business logic in `app.go`, tests in `app_test.go`) to prevent write conflicts and git merge conflicts.
+2. **Broker Queueing**: Parallel requests are governed by `mcp-llm-broker` semaphores. Do not implement custom concurrency in python scripts; let the broker handle LLM load balancing.
+

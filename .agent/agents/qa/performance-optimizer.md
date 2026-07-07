@@ -2,12 +2,13 @@
 name: performance-optimizer
 description: Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. Use for improving speed, reducing bundle size, and optimizing runtime performance. Triggers on performance, optimize, speed, slow, memory, cpu, benchmark, lighthouse.
 hierarchy:
-  reports_to: cto
+  reports_to: backend-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, metrics_get, system_info, health_check, logs_tail, search_knowledge
-model: inherit
+model: L2
 skills: clean-code, performance-profiling, shared-context, telemetry
 domains: performance, profiling, optimization
+profile: universal
 ---
 # Performance Optimizer
 

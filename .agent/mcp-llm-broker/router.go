@@ -22,6 +22,13 @@ type RouterRules struct {
 	AgentTiers       map[string]string                  `json:"agent_tiers,omitempty"`
 	DomainTiers      map[string]string                  `json:"domain_tiers,omitempty"`
 	CircuitBreaker   *CircuitBreakerConfig              `json:"circuit_breaker,omitempty"`
+	Timeouts         TimeoutsConfig                     `json:"timeouts,omitempty"`
+}
+
+type TimeoutsConfig struct {
+	GenerationS    int `json:"generation_s"`
+	HealthMs       int `json:"health_ms"`
+	SemanticCacheS int `json:"semantic_cache_s"`
 }
 
 // CircuitBreakerConfig holds per-workspace circuit breaker tuning knobs.
@@ -244,6 +251,26 @@ func (b *BrokerServer) makeRoutingDecision(taskDesc string, pulledModels map[str
 	}, nil
 }
 
+func tokenize(text string) map[string]bool {
+	tokens := make(map[string]bool)
+	var current strings.Builder
+	for _, r := range text {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || (r >= 'A' && r <= 'Z') ||
+			r == '_' || r == '-' || (r >= 0x0400 && r <= 0x04FF) {
+			current.WriteString(strings.ToLower(string(r)))
+		} else {
+			if current.Len() > 0 {
+				tokens[current.String()] = true
+				current.Reset()
+			}
+		}
+	}
+	if current.Len() > 0 {
+		tokens[current.String()] = true
+	}
+	return tokens
+}
+
 func (b *BrokerServer) calculateScore(taskDesc string, rules *RouterRules) int {
 	baseScore := rules.Scoring.BaseScore
 	if baseScore == 0 {
@@ -251,10 +278,49 @@ func (b *BrokerServer) calculateScore(taskDesc string, rules *RouterRules) int {
 	}
 	score := baseScore
 
+	// Tokenize task description into clean words to prevent false substring matches (e.g. 'lint' in 'splinter')
+	tokens := tokenize(taskDesc)
+
 	// 1. Keyword weights
-	descLower := strings.ToLower(taskDesc)
 	for kw, weight := range rules.Scoring.Weights {
-		if strings.Contains(descLower, kw) {
+		matched := false
+		kwLower := strings.ToLower(kw)
+		
+		// If keyword is a phrase (contains space), use substring match
+		if strings.Contains(kwLower, " ") {
+			if strings.Contains(strings.ToLower(taskDesc), kwLower) {
+				matched = true
+			}
+		} else {
+			// Otherwise match against individual tokens
+			for t := range tokens {
+				tLower := strings.ToLower(t)
+				// 1. Exact or prefix match (stemming)
+				if tLower == kwLower || (len(kwLower) >= 3 && strings.HasPrefix(tLower, kwLower)) {
+					matched = true
+					break
+				}
+				// 2. Fuzzy match (typos)
+				tRunes := []rune(tLower)
+				kwRunes := []rune(kwLower)
+				compareRunes := tRunes
+				if len(tRunes) > len(kwRunes) {
+					compareRunes = tRunes[:len(kwRunes)]
+				}
+				dist := levenshteinDistance(string(compareRunes), kwLower)
+				maxAllowedTypos := 1
+				if len(kwRunes) >= 6 {
+					maxAllowedTypos = 2
+				}
+				// Only match if keyword length is >= 3 and edit distance is <= allowed typos
+				if len(kwRunes) >= 3 && dist <= maxAllowedTypos {
+					matched = true
+					break
+				}
+			}
+		}
+		
+		if matched {
 			score += weight
 		}
 	}

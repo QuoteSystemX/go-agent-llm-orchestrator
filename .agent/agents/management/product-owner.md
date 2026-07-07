@@ -8,9 +8,10 @@ hierarchy:
     - project-planner
     - reviewer
 tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, knowledge_read, tasks_submit, status_summary
-model: inherit
+model: L2
 skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry
 domains: product, backlog, strategy
+profile: universal
 ---
 # Product Owner
 

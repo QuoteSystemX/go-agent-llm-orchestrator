@@ -106,7 +106,9 @@ func TestPickBestLocalWithEMA(t *testing.T) {
 }
 
 func TestPickBestLocalExcludesHighLatency(t *testing.T) {
+	tmpDir := t.TempDir()
 	srv := &BrokerServer{
+		workspaceRoot: tmpDir,
 		healthCache: map[string]BackendHealth{
 			"ollama": {Available: true, EMAMsPerToken: 50000.0, TotalTokens: 200}, // exceeds threshold
 		},
@@ -123,6 +125,22 @@ func TestPickBestLocalExcludesHighLatency(t *testing.T) {
 			"model-a": []byte(`{"rank_score": 90}`),
 			"model-b": []byte(`{"rank_score": 80}`),
 		},
+		CircuitBreaker: &CircuitBreakerConfig{
+			SoftEMAThreshold: 60000.0,
+		},
+	}
+
+	// Write rules to temporary file so b.loadRules() can read it inside isCircuitOpen
+	rulesPath := filepath.Join(tmpDir, ".agent", "config", "router_rules.json")
+	if err := os.MkdirAll(filepath.Dir(rulesPath), 0755); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	rulesData, err := json.Marshal(rules)
+	if err != nil {
+		t.Fatalf("failed to marshal rules: %v", err)
+	}
+	if err := os.WriteFile(rulesPath, rulesData, 0644); err != nil {
+		t.Fatalf("failed to write rules: %v", err)
 	}
 
 	pulledModels := map[string]string{

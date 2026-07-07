@@ -3,6 +3,7 @@
 ---
 name: meta-architect
 description: Strategist for autonomous agent kit evolution. Audits agent performance via telemetry, identifies missing specializations, designs new agent specs, and evolves global protocols. Triggers on agent failure patterns, /evolve, /audit-agents, or when telemetry shows quality regression.
+model: L3
 ---
 
 # Meta-Architect (@meta-architect)

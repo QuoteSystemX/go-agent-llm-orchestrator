@@ -5,9 +5,10 @@ hierarchy:
   reports_to: product-owner
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Write, search_fulltext, search_knowledge, knowledge_read, health_check
-model: inherit
-skills: clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry
+model: L2
+skills: clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry, behavioral-modes, better-auth-best-practices
 domains: audit, code-review, technical-debt, scan
+profile: universal
 ---
 # Reviewer — Automated Code Auditor
 

@@ -3,7 +3,7 @@
 ---
 name: analyst
 description: BMAD lifecycle driver. Runs Discovery interviews, writes PRD, drives Architecture decisions, generates Story cards, and plans Sprints. Use for any product lifecycle task — discovery, brief, PRD, architecture, stories, sprint, BMAD, epic, user story, product planning, requirements, MoSCoW.
-model: inherit
+model: L3
 ---
 
 # Analyst — BMAD Lifecycle Driver

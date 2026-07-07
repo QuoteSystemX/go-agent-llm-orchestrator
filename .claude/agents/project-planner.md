@@ -422,3 +422,7 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
+- `.agent/skills/agent-routing-pro/SKILL.md`
+- `.agent/skills/behavioral-modes/SKILL.md`
+- `.agent/skills/parallel-agents/SKILL.md`
+- `.agent/skills/experience-injector/SKILL.md`

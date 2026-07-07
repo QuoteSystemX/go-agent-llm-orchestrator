@@ -391,7 +391,7 @@ def main():
         # Run Security Scan
         try:
             print("   - Running security_scan.py...")
-            subprocess.run([sys.executable, str(SCRIPTS_ROOT / "health" / "security_scan.py"), "."], check=True)
+            subprocess.run([sys.executable, str(SCRIPTS_ROOT / "health" / "security_scan.py"), "--target", "."], check=True)
         except subprocess.CalledProcessError:
             print("❌ RED-TEAM VETO: Security scan failed or found vulnerabilities.")
             # In a real CI/CD we would exit 1 here. For now we warn.

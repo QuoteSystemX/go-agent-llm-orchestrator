@@ -55,7 +55,7 @@ class TestMCPHealthCollector(unittest.TestCase):
         (self.config_dir / "mcp_config.json").write_text(json.dumps({
             "mcpServers": {
                 "server1": {"command": "echo", "args": ["1"]},
-                "server2": {"command": "echo", "args": ["2"]}
+                "server2": {"command": "nonexistentcommand", "args": ["2"]}
             }
         }))
         

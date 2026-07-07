@@ -14,8 +14,14 @@ Endpoints:
 Press Ctrl+C to stop.
 """
 
-import os, sys, json, time, threading, re, subprocess
+import os, sys, json, time, threading, re, subprocess, socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
+try:
+    from http.server import ThreadingHTTPServer
+except ImportError:
+    from socketserver import ThreadingMixIn
+    class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+        daemon_threads = True
 from datetime import datetime
 from pathlib import Path
 
@@ -26,6 +32,40 @@ DATA_DIR = REPO_ROOT / ".agent" / "data"
 DASHBOARD_PATH = REPO_ROOT / ".agent" / "dashboard.html"
 HISTORY_PATH = DATA_DIR / "metrics_history.jsonl"
 WATCHDOG_PATH = REPO_ROOT / ".agent" / "config" / "watchdog_rules.json"
+ORCHESTRATOR_SOCKET_PATH = REPO_ROOT / ".agent" / "bus" / "orchestrator.sock"
+
+# Import existing WSL detection logic from the project
+if str(SCRIPT_DIR.parent) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR.parent))
+
+try:
+    from lib.common import _is_wsl as is_wsl
+except ImportError:
+    def is_wsl() -> bool:
+        """Detect if running under Windows Subsystem for Linux."""
+        try:
+            with open("/proc/version", "r") as f:
+                return "microsoft" in f.read().lower() or "wsl" in f.read().lower()
+        except Exception:
+            return False
+
+def send_uds_request(payload: dict) -> dict:
+    """Connect to orchestrator UDS, send payload, and receive JSON response."""
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        s.connect(str(ORCHESTRATOR_SOCKET_PATH))
+        req_data = json.dumps(payload).encode("utf-8") + b"\n"
+        s.sendall(req_data)
+        
+        resp_data = s.recv(65536)
+        if not resp_data:
+            return {"status": "error", "message": "Empty response from orchestrator daemon."}
+        return json.loads(resp_data.decode("utf-8").strip())
+    except Exception as e:
+        return {"status": "error", "message": f"UDS Connection failed: {e}"}
+    finally:
+        s.close()
+
 
 POLL_INTERVAL = 1.0  # seconds
 PORT = 3201
@@ -122,6 +162,19 @@ class SSEHandler(BaseHTTPRequestHandler):
             exec_id = path.split("/api/output/")[1].split("/")[0]
             self._handle_output(exec_id)
 
+        elif path == "/api/orchestrator/graph":
+            res = send_uds_request({"action": "scan_graph"})
+            self._send_json(200 if res.get("status") == "success" else 500, res)
+
+        elif path.startswith("/api/orchestrator/status/"):
+            task_id = path.split("/api/orchestrator/status/")[1].split("/")[0]
+            res = send_uds_request({"action": "status", "task_id": task_id})
+            self._send_json(200 if res.get("status") != "error" else 500, res)
+
+        elif path.startswith("/api/orchestrator/stream/"):
+            task_id = path.split("/api/orchestrator/stream/")[1].split("/")[0]
+            self._handle_orchestrator_stream(task_id)
+
         elif path == "/data/metrics_history.jsonl":
             mime = "text/plain" if not HISTORY_PATH.exists() else "application/x-ndjson"
             self._read_file_or_404(HISTORY_PATH, mime)
@@ -139,6 +192,8 @@ class SSEHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/api/exec":
             self._handle_exec()
+        elif self.path == "/api/orchestrator/run":
+            self._handle_orchestrator_run()
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -333,17 +388,151 @@ class SSEHandler(BaseHTTPRequestHandler):
             "code": code,
         })
 
+    # ── Orchestrator Daemon Proxy ──
+    def _handle_orchestrator_run(self):
+        """Send run task request to orchestrator daemon."""
+        content_len = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_len) if content_len else b"{}"
+        try:
+            req = json.loads(body)
+        except json.JSONDecodeError:
+            self._send_json(400, {"error": "invalid JSON"})
+            return
 
-def start_server(port=3201, bus_dir=None):
-    """Start the SSE HTTP server."""
+        task_desc = req.get("task", "")
+        task_id = req.get("task_id", "")
+        dry_run = req.get("dry_run", False)
+
+        if not task_desc:
+            self._send_json(400, {"error": "Missing task description"})
+            return
+
+        import uuid
+        if not task_id:
+            task_id = f"task_{uuid.uuid4().hex[:8]}"
+
+        payload = {
+            "action": "run_task",
+            "task_id": task_id,
+            "task": task_desc,
+            "dry_run": dry_run
+        }
+        res = send_uds_request(payload)
+        self._send_json(200, res)
+
+    def _handle_orchestrator_stream(self, task_id: str):
+        """Connect to orchestrator socket 'attach' action and stream logs as SSE."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("X-Accel-Buffering", "no")
+        self.end_headers()
+
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            s.connect(str(ORCHESTRATOR_SOCKET_PATH))
+            req_payload = {"action": "attach", "task_id": task_id}
+            s.sendall(json.dumps(req_payload).encode("utf-8") + b"\n")
+            
+            with s.makefile("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        res = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    
+                    self.wfile.write(f"event: update\ndata: {json.dumps(res)}\n\n".encode("utf-8"))
+                    self.wfile.flush()
+                    
+                    # If completed or failed, we can terminate the SSE stream
+                    task_data = res.get("task", {})
+                    status = task_data.get("status", "").lower()
+                    if status in ("completed", "failed"):
+                        break
+        except Exception as e:
+            err_resp = {"status": "error", "message": f"SSE UDS stream error: {e}"}
+            try:
+                self.wfile.write(f"event: error\ndata: {json.dumps(err_resp)}\n\n".encode("utf-8"))
+                self.wfile.flush()
+            except Exception:
+                pass
+        finally:
+            s.close()
+
+
+
+def get_wsl_ip() -> str:
+    """Get the WSL network interface IP address."""
+    # Method 1: Try connecting to a dummy socket to find local interface IP used for routing
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        pass
+
+    # Method 2: Try running 'hostname -I'
+    try:
+        ips = subprocess.check_output(["hostname", "-I"], text=True).strip().split()
+        if ips:
+            return ips[0]
+    except Exception:
+        pass
+
+    # Method 3: Fallback to socket gethostbyname
+    try:
+        return socket.gethostbyname(socket.gethostname())
+    except Exception:
+        return "127.0.0.1"
+
+
+def start_server(port=None, bus_dir=None):
+    """Start the SSE HTTP server with automatic port selection and WSL support."""
     global BUS_DIR
     if bus_dir:
         BUS_DIR = Path(bus_dir)
-    server = HTTPServer(("0.0.0.0", port), SSEHandler)
-    print(f"  🔴 SSE Bus Server:    http://localhost:{port}/")
-    print(f"  📡 SSE Stream:        http://localhost:{port}/api/stream/bus")
-    print(f"  📊 Health API:        http://localhost:{port}/api/health")
-    print(f"  ⚡ Cockpit Exec:      POST http://localhost:{port}/api/exec")
+
+    if port is None:
+        port = 3207 if is_wsl() else 3201
+
+    server = None
+    for attempt in range(10):
+        try:
+            server = ThreadingHTTPServer(("0.0.0.0", port), SSEHandler)
+            break
+        except OSError as e:
+            if e.errno == 98 or "already in use" in str(e).lower():
+                print(f"  ⚠️  Port {port} is already in use. Trying next port...")
+                port += 1
+            else:
+                raise e
+
+    if not server:
+        print("  ❌ Could not find an open port to bind to.")
+        sys.exit(1)
+
+    wsl_ip = None
+    if is_wsl():
+        wsl_ip = get_wsl_ip()
+
+    if wsl_ip:
+        print(f"  🔴 SSE Bus Server:    http://{wsl_ip}:{port}/  (WSL IP)")
+        print(f"                        http://localhost:{port}/")
+        print(f"  📡 SSE Stream:        http://{wsl_ip}:{port}/api/stream/bus")
+        print(f"  📊 Health API:        http://{wsl_ip}:{port}/api/health")
+        print(f"  ⚡ Cockpit Exec:      POST http://{wsl_ip}:{port}/api/exec")
+    else:
+        print(f"  🔴 SSE Bus Server:    http://localhost:{port}/")
+        print(f"  📡 SSE Stream:        http://localhost:{port}/api/stream/bus")
+        print(f"  📊 Health API:        http://localhost:{port}/api/health")
+        print(f"  ⚡ Cockpit Exec:      POST http://localhost:{port}/api/exec")
     print(f"  📁 Serving dashboard: {DASHBOARD_PATH}")
     print(f"  👀 Watching:          {BUS_DIR}")
     print(f"  🔄 Poll interval:     {POLL_INTERVAL}s")
@@ -359,7 +548,7 @@ def start_server(port=3201, bus_dir=None):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Live Dashboard SSE Server")
-    parser.add_argument("--port", type=int, default=3201, help="Port (default: 3201)")
+    parser.add_argument("--port", type=int, default=None, help="Port (default: 3207 in WSL, else 3201)")
     parser.add_argument("--bus-dir", type=str, default=str(BUS_DIR), help="Bus directory path")
     args = parser.parse_args()
     start_server(port=args.port, bus_dir=args.bus_dir)

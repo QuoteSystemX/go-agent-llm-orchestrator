@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func getAvailableMemory() uint64 {
@@ -70,7 +71,7 @@ func isHardwareMemoryLimitOk(modelName string) bool {
 func tokenizeAndNormalize(s string) []string {
 	s = strings.ToLower(s)
 	s = strings.Map(func(r rune) rune {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
 		}
 		return ' '
@@ -108,24 +109,28 @@ func tokenOverlap(target, candidate string) float64 {
 }
 
 func levenshteinDistance(s, t string) int {
-	d := make([][]int, len(s)+1)
+	sRunes := []rune(s)
+	tRunes := []rune(t)
+	lenS := len(sRunes)
+	lenT := len(tRunes)
+	d := make([][]int, lenS+1)
 	for i := range d {
-		d[i] = make([]int, len(t)+1)
+		d[i] = make([]int, lenT+1)
 		d[i][0] = i
 	}
 	for j := range d[0] {
 		d[0][j] = j
 	}
-	for i := 1; i <= len(s); i++ {
-		for j := 1; j <= len(t); j++ {
+	for i := 1; i <= lenS; i++ {
+		for j := 1; j <= lenT; j++ {
 			cost := 1
-			if s[i-1] == t[j-1] {
+			if sRunes[i-1] == tRunes[j-1] {
 				cost = 0
 			}
 			d[i][j] = minInt(d[i-1][j]+1, minInt(d[i][j-1]+1, d[i-1][j-1]+cost))
 		}
 	}
-	return d[len(s)][len(t)]
+	return d[lenS][lenT]
 }
 
 func minInt(a, b int) int {

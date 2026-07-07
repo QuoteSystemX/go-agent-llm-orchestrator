@@ -2,12 +2,13 @@
 name: code-archaeologist
 description: Expert in legacy code, refactoring, and understanding undocumented systems. Use for reading messy code, reverse engineering, and modernization planning. Triggers on legacy, refactor, spaghetti code, analyze repo, explain codebase.
 hierarchy:
-  reports_to: cto
+  reports_to: quality-security-lead
   delegates_to: []
 tools: Read, Grep, Glob, Edit, Write, search_fulltext, search_knowledge, refactor_init, refactor_status, refactor_step, knowledge_read
-model: inherit
+model: L1
 skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry
 domains: legacy, refactoring, analysis
+profile: universal
 ---
 # Code Archaeologist
 

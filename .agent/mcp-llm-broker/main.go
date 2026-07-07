@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -59,6 +60,10 @@ type BrokerServer struct {
 	// Warmup cancellation: abort L1 warm-up on first real request
 	warmupCancel context.CancelFunc
 	warmupDone   chan struct{}
+
+	// Reusable HTTP clients for connection pooling (L4 audit)
+	clientFast *http.Client
+	clientSlow *http.Client
 }
 
 func main() {
@@ -75,12 +80,31 @@ func main() {
 		rootPath = detectWorkspaceRoot()
 	}
 
+	fastTransport := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	}
+	slowTransport := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	}
+
 	srv := &BrokerServer{
 		workspaceRoot: rootPath,
 		isCLI:         (*toolName != ""),
 		semaphores:    make(map[string]chan struct{}),
 		healthCache:   make(map[string]BackendHealth),
 		pullingStates: make(map[string]string),
+		clientFast: &http.Client{
+			Transport: fastTransport,
+			Timeout:   10 * time.Second, // default timeout for fast ops
+		},
+		clientSlow: &http.Client{
+			Transport: slowTransport,
+			Timeout:   300 * time.Second, // default timeout for slow generation
+		},
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -320,25 +344,27 @@ func (b *BrokerServer) handleGetRoutingDecision(ctx context.Context, req mcp.Cal
 
 	// Detect pulled models from local backends
 	pulled := make(map[string]string)
-	client := &http.Client{Timeout: 1 * time.Second}
 	env := b.detectEnv()
+
+	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
 
 	// Gather models from Ollama
 	ollamaURL := b.getOllamaURL(env)
-	if models, err := b.fetchOllamaModels(client, ollamaURL); err == nil {
+	if models, err := b.fetchOllamaModels(discoverCtx, ollamaURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderOllama
 		}
 	}
 
 	// Gather models from Jan (with WSL gateway fallback)
-	if models, err := b.fetchOpenAICompatibleModels(client, DefaultJanURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultJanURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderJan
 		}
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderJan
 			}
@@ -346,13 +372,13 @@ func (b *BrokerServer) handleGetRoutingDecision(ctx context.Context, req mcp.Cal
 	}
 
 	// Gather models from LM Studio (with WSL gateway fallback)
-	if models, err := b.fetchOpenAICompatibleModels(client, DefaultLMStudioURL); err == nil {
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultLMStudioURL); err == nil {
 		for _, m := range models {
 			pulled[m] = ProviderLMStudio
 		}
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1234", env.WSLGateway)
-		if models, err := b.fetchOpenAICompatibleModels(client, wslURL); err == nil {
+		if models, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			for _, m := range models {
 				pulled[m] = ProviderLMStudio
 			}
@@ -372,28 +398,45 @@ func (b *BrokerServer) handleGetRoutingDecision(ctx context.Context, req mcp.Cal
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-// detectWorkspaceRoot searches upwards from current working directory for a folder containing .agent
+// detectWorkspaceRoot searches upwards from current working directory or executable path for a folder containing .agent
 func detectWorkspaceRoot() string {
+	// 1. Try working directory
 	cwd, err := os.Getwd()
-	if err != nil {
-		return "."
+	if err == nil {
+		dir := cwd
+		for {
+			agentDir := filepath.Join(dir, ".agent")
+			if stat, err := os.Stat(agentDir); err == nil && stat.IsDir() {
+				return dir
+			}
+
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
 	}
 
-	dir := cwd
-	for {
-		agentDir := filepath.Join(dir, ".agent")
-		if stat, err := os.Stat(agentDir); err == nil && stat.IsDir() {
-			return dir
-		}
+	// 2. Try executable path
+	execPath, err := os.Executable()
+	if err == nil {
+		dir := filepath.Dir(execPath)
+		for {
+			agentDir := filepath.Join(dir, ".agent")
+			if stat, err := os.Stat(agentDir); err == nil && stat.IsDir() {
+				return dir
+			}
 
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
 		}
-		dir = parent
 	}
 
-	return cwd
+	return "."
 }
 
 // Structs for Discovery Tool
@@ -437,11 +480,11 @@ type DiscoveryResult struct {
 
 // checkOpenAIWithWSLFallback tries the given default URL first, then falls back
 // to the WSL gateway (Windows host) if we're inside WSL and localhost fails.
-func (b *BrokerServer) checkOpenAIWithWSLFallback(client *http.Client, name, defaultURL, port string, env EnvironmentInfo) BackendInfo {
+func (b *BrokerServer) checkOpenAIWithWSLFallback(ctx context.Context, name, defaultURL, port string, env EnvironmentInfo) BackendInfo {
 	backend := BackendInfo{Name: name, URL: defaultURL}
 
 	// Try localhost first
-	models, err := b.fetchOpenAICompatibleModels(client, defaultURL)
+	models, err := b.fetchOpenAICompatibleModels(ctx, defaultURL)
 	if err == nil {
 		backend.Available = true
 		backend.Models = models
@@ -452,7 +495,7 @@ func (b *BrokerServer) checkOpenAIWithWSLFallback(client *http.Client, name, def
 	if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, port)
 		backend.URL = wslURL
-		models, err = b.fetchOpenAICompatibleModels(client, wslURL)
+		models, err = b.fetchOpenAICompatibleModels(ctx, wslURL)
 		if err == nil {
 			backend.Available = true
 			backend.Models = models
@@ -467,11 +510,11 @@ func (b *BrokerServer) checkOpenAIWithWSLFallback(client *http.Client, name, def
 }
 
 // checkOllamaWithWSLFallback tries localhost first, then WSL gateway for Ollama.
-func (b *BrokerServer) checkOllamaWithWSLFallback(client *http.Client, env EnvironmentInfo) BackendInfo {
+func (b *BrokerServer) checkOllamaWithWSLFallback(ctx context.Context, env EnvironmentInfo) BackendInfo {
 	ollamaURL := b.getOllamaURL(env)
 	backend := BackendInfo{Name: "Ollama", URL: ollamaURL}
 
-	models, err := b.fetchOllamaModels(client, ollamaURL)
+	models, err := b.fetchOllamaModels(ctx, ollamaURL)
 	if err == nil {
 		backend.Available = true
 		backend.Models = models
@@ -481,7 +524,7 @@ func (b *BrokerServer) checkOllamaWithWSLFallback(client *http.Client, env Envir
 	// If WSL and getOllamaURL already returned localhost, try the gateway explicitly
 	if env.IsWSL && env.WSLGateway != "" && ollamaURL == DefaultOllamaURL {
 		wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, OllamaDefaultPortStr)
-		models, err = b.fetchOllamaModels(client, wslURL)
+		models, err = b.fetchOllamaModels(ctx, wslURL)
 		if err == nil {
 			backend.URL = wslURL
 			backend.Available = true
@@ -496,22 +539,23 @@ func (b *BrokerServer) checkOllamaWithWSLFallback(client *http.Client, env Envir
 }
 
 // handleDetectBackends checks availability of local LLM providers and lists their models.
-func (b *BrokerServer) handleDetectBackends(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (b *BrokerServer) handleDetectBackends(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	env := b.detectEnv()
 	result := DiscoveryResult{
 		Environment: env,
 	}
 
-	client := &http.Client{Timeout: 1 * time.Second}
+	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
 
 	// 1. Ollama Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOllamaWithWSLFallback(client, env))
+	result.Backends = append(result.Backends, b.checkOllamaWithWSLFallback(discoverCtx, env))
 
 	// 2. Jan Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(client, "Jan", DefaultJanURL, "1337", env))
+	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(discoverCtx, "Jan", DefaultJanURL, "1337", env))
 
 	// 3. LM Studio Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(client, "LM Studio", DefaultLMStudioURL, "1234", env))
+	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(discoverCtx, "LM Studio", DefaultLMStudioURL, "1234", env))
 
 	b.pullingStatesMu.RLock()
 	if len(b.pullingStates) > 0 {
@@ -532,7 +576,7 @@ func (b *BrokerServer) handleDetectBackends(_ context.Context, _ mcp.CallToolReq
 
 func (b *BrokerServer) detectEnv() EnvironmentInfo {
 	env := EnvironmentInfo{
-		OS: os.Getenv("GOOS"),
+		OS: runtime.GOOS,
 	}
 
 	// WSL Detection
@@ -660,9 +704,17 @@ func (b *BrokerServer) getOllamaURL(env EnvironmentInfo) string {
 	return defaultURL
 }
 
-func (b *BrokerServer) fetchOllamaModels(client *http.Client, baseURL string) ([]string, error) {
+func (b *BrokerServer) fetchOllamaModels(ctx context.Context, baseURL string) ([]string, error) {
 	url := fmt.Sprintf("%s/api/tags", baseURL)
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	client := b.clientFast
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -689,9 +741,17 @@ func (b *BrokerServer) fetchOllamaModels(client *http.Client, baseURL string) ([
 	return models, nil
 }
 
-func (b *BrokerServer) fetchOpenAICompatibleModels(client *http.Client, baseURL string) ([]string, error) {
+func (b *BrokerServer) fetchOpenAICompatibleModels(ctx context.Context, baseURL string) ([]string, error) {
 	url := fmt.Sprintf("%s/v1/models", baseURL)
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	client := b.clientFast
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -719,7 +779,6 @@ func (b *BrokerServer) fetchOpenAICompatibleModels(client *http.Client, baseURL 
 }
 
 func (b *BrokerServer) checkAllHealth(ctx context.Context) {
-	client := &http.Client{Timeout: 1 * time.Second}
 	env := b.detectEnv()
 
 	providers := []struct {
@@ -735,11 +794,12 @@ func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 
 	for _, p := range providers {
 		start := time.Now()
+		healthCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		var err error
 		if p.isOllama {
-			_, err = b.fetchOllamaModels(client, p.url)
+			_, err = b.fetchOllamaModels(healthCtx, p.url)
 		} else {
-			_, err = b.fetchOpenAICompatibleModels(client, p.url)
+			_, err = b.fetchOpenAICompatibleModels(healthCtx, p.url)
 		}
 
 		// If localhost failed and we're in WSL, try the WSL gateway
@@ -747,17 +807,18 @@ func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 			wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, p.wslPort)
 			if p.isOllama {
 				var mErr error
-				_, mErr = b.fetchOllamaModels(client, wslURL)
+				_, mErr = b.fetchOllamaModels(healthCtx, wslURL)
 				if mErr == nil {
 					err = nil
 				}
 			} else {
-				_, mErr := b.fetchOpenAICompatibleModels(client, wslURL)
+				_, mErr := b.fetchOpenAICompatibleModels(healthCtx, wslURL)
 				if mErr == nil {
 					err = nil
 				}
 			}
 		}
+		cancel()
 
 		duration := time.Since(start)
 
@@ -839,13 +900,14 @@ func (b *BrokerServer) warmUpJanL1(ctx context.Context) {
 
 	// Detect Jan URL (with WSL gateway fallback).
 	env := b.detectEnv()
-	shortClient := &http.Client{Timeout: 2 * time.Second}
+	discoverCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	var janURL string
-	if _, err := b.fetchOpenAICompatibleModels(shortClient, DefaultJanURL); err == nil {
+	if _, err := b.fetchOpenAICompatibleModels(discoverCtx, DefaultJanURL); err == nil {
 		janURL = DefaultJanURL
 	} else if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:1337", env.WSLGateway)
-		if _, err := b.fetchOpenAICompatibleModels(shortClient, wslURL); err == nil {
+		if _, err := b.fetchOpenAICompatibleModels(discoverCtx, wslURL); err == nil {
 			janURL = wslURL
 		}
 	}

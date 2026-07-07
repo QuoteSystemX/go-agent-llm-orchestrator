@@ -3,6 +3,7 @@
 ---
 name: ethics-auditor
 description: AI alignment and ethics governance auditor. Detects hallucinations, enforces policy guardrails, and vetos unsafe deployments. Triggers on auth/finance/prod changes, AI model calls, policy violations, or explicit /ethics-audit.
+model: L4
 ---
 
 # Ethics Auditor Agent ⚖️

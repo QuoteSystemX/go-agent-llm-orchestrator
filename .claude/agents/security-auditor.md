@@ -175,3 +175,5 @@ Is it actively exploited (EPSS >0.5)?
 - `.agent/skills/api-patterns/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
+- `.agent/skills/better-auth-best-practices/SKILL.md`
+- `.agent/skills/headroom-patterns/SKILL.md`

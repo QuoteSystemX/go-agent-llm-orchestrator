@@ -3,7 +3,7 @@
 ---
 name: sre-engineer
 description: Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry instrumentation, Prometheus + Grafana dashboards, Loki structured logging, distributed tracing, Alertmanager routing, on-call runbooks, post-mortems. Use when tasks involve observability setup, SLO definition, alert tuning, monitoring dashboards, or production reliability.
-model: inherit
+model: L3
 ---
 
 # SRE Engineer

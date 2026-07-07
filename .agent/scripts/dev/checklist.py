@@ -790,6 +790,55 @@ def main() -> None:
         results.append({"name": "Dev Coverage", "passed": False})
         overall_passed = False
 
+    # Custom Check: Squad Orchestrator Coverage
+    print_step("Checking Squad Orchestrator Coverage")
+    squad_scripts = ["squad_orchestrator.py", "squad_schemas.py"]
+    squad_ok = True
+    for s in squad_scripts:
+        test_file = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / f"test_{s}"
+        if not test_file.exists():
+            # squad_schemas is covered by test_squad_orchestrator.py
+            combined = Path(REPO_ROOT) / ".agent" / "scripts" / "tests" / "test_squad_orchestrator.py"
+            if not combined.exists():
+                squad_ok = False
+                print_error(f"Missing test for {s}")
+    if squad_ok:
+        print_success("Squad Orchestrator: tests present.")
+        results.append({"name": "Squad Orchestrator Coverage", "passed": True})
+    else:
+        results.append({"name": "Squad Orchestrator Coverage", "passed": False})
+        overall_passed = False
+
+    # Custom Check: Squad Trace Export
+    print_step("Checking Squad Trace Export (dry-run simulation)")
+    import glob as _glob
+    trace_dir = Path(REPO_ROOT) / ".agent" / "bus" / "outputs"
+    existing_traces = list(trace_dir.glob("squad_trace_*.json")) if trace_dir.exists() else []
+    if existing_traces:
+        print_success(f"Squad Trace: {len(existing_traces)} trace file(s) found in bus/outputs/.")
+        results.append({"name": "Squad Trace Export", "passed": True})
+    else:
+        # Run a quick dry-run simulation to verify trace export works
+        squad_script = Path(REPO_ROOT) / ".agent" / "scripts" / "orchestration" / "squad_orchestrator.py"
+        if squad_script.exists():
+            import subprocess as _sp
+            sim = _sp.run(
+                ["python3", str(squad_script), "--dry-run", "--task", "checklist trace probe"],
+                capture_output=True, text=True, timeout=30,
+                cwd=str(REPO_ROOT),
+            )
+            new_traces = list(trace_dir.glob("squad_trace_*.json")) if trace_dir.exists() else []
+            if new_traces:
+                print_success("Squad Trace: dry-run simulation produced a trace file.")
+                results.append({"name": "Squad Trace Export", "passed": True})
+            else:
+                print_error("Squad Trace: dry-run simulation did NOT produce a trace file.")
+                results.append({"name": "Squad Trace Export", "passed": False})
+                overall_passed = False
+        else:
+            print_warning("Squad Trace: squad_orchestrator.py not found, skipping.")
+            results.append({"name": "Squad Trace Export", "passed": True})
+
     # Core checks execution
     print_header("📋 CORE CHECKS")
     

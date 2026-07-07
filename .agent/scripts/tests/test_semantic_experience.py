@@ -24,8 +24,8 @@ class TestSemanticExperience(unittest.TestCase):
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
         
-        self.wiki_dir = self.test_root / "wiki"
-        self.wiki_dir.mkdir(parents=True)
+        self.rules_dir = self.test_root / ".agent" / "rules"
+        self.rules_dir.mkdir(parents=True)
         
         self.old_cwd = os.getcwd()
         os.chdir(self.test_root)
@@ -44,13 +44,13 @@ class TestSemanticExperience(unittest.TestCase):
         self.assertEqual(result, "No experience base found.")
 
     def test_search_semantic_no_matches(self):
-        (self.wiki_dir / "LESSONS_LEARNED.md").write_text("### Topic\nNothing here.")
+        (self.rules_dir / "LESSONS_LEARNED.md").write_text("### Topic\nNothing here.")
         result = semantic.search_semantic("test query")
         self.assertEqual(result, "No semantic matches for 'test query'.")
 
     def test_search_semantic_matches(self):
         content = "Intro\n### Auth System\nWe built an auth system.\n### Metrics System\nWe built a metrics system for auth."
-        (self.wiki_dir / "LESSONS_LEARNED.md").write_text(content)
+        (self.rules_dir / "LESSONS_LEARNED.md").write_text(content)
         
         # 'auth system' -> 'auth' and 'system'
         # Auth System block: 'built', 'an', 'auth', 'system.' -> 2 matches
@@ -70,7 +70,7 @@ class TestSemanticExperience(unittest.TestCase):
     @patch('sys.argv', ['semantic_experience.py', 'auth', 'system'])
     def test_main_with_args(self):
         content = "### Auth System\nWe built an auth system."
-        (self.wiki_dir / "LESSONS_LEARNED.md").write_text(content)
+        (self.rules_dir / "LESSONS_LEARNED.md").write_text(content)
         with patch('sys.stdout', new=MagicMock()) as mock_out:
             import runpy
             with patch.dict('sys.modules', {'models.semantic_experience': semantic}):

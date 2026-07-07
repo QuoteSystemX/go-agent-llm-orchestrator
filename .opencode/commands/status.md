@@ -41,6 +41,10 @@ Show current project and agent status.
    - Watchdog status (OK/Alert)
    - Stalled tasks report
 
+6. **Core Components & Optimizations**
+   - mcp-llm-broker status and port
+   - Headroom, RTK (Token Killer) savings, and Codebase Memory status
+
 ---
 
 ## Example Output
@@ -78,6 +82,13 @@ Show current project and agent status.
 ✅ backend-specialist → Completed
 🔄 frontend-specialist → Dashboard components (60%)
 ⏳ test-engineer → Waiting
+
+=== Core Components ===
+
+🐹 mcp-llm-broker → Active (v1.0.0, port 11436)
+🛡️ Headroom → Active (v0.26.0)
+🗡️ RTK (Token Killer) → Active (v0.42.4, saved 1.2M tokens / 75.1%)
+🧠 Codebase Memory → Active (v0.8.1, 16.3k nodes, 28.7k edges)
 
 === Preview ===
 

@@ -109,3 +109,44 @@ def discover_ollama_url() -> str:
         pass
 
     return "http://localhost:11434" # Default fallback
+
+
+def discover_broker_url() -> str:
+    """
+    Universally discover MCP LLM Broker URL across environments (Local, WSL, Docker).
+    Chain: BROKER_URL env -> localhost:11436 -> WSL Gateway:11436.
+    """
+    # 1. Check Env Variable
+    env_host = os.environ.get("BROKER_URL") or os.environ.get("BROKER_HOST")
+    if env_host:
+        if "://" not in env_host:
+            env_host = f"http://{env_host}"
+        return env_host.rstrip("/")
+
+    # 2. Try Localhost
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://localhost:11436/healthz", timeout=0.5) as r:
+            if r.status == 200:
+                return "http://localhost:11436"
+    except Exception:
+        pass
+
+    # 3. WSL Gateway Fallback
+    try:
+        if os.path.exists("/proc/version"):
+            with open("/proc/version", "r") as f:
+                if "microsoft" in f.read().lower():
+                    gw = _get_wsl_gateway()
+                    if gw:
+                        test_url = f"http://{gw}:11436/healthz"
+                        try:
+                            with urllib.request.urlopen(test_url, timeout=0.5) as r:
+                                if r.status == 200:
+                                    return f"http://{gw}:11436"
+                        except Exception:
+                            pass
+    except Exception:
+        pass
+
+    return "http://localhost:11436" # Default fallback

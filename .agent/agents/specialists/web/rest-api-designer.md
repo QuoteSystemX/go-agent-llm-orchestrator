@@ -2,10 +2,10 @@
 name: rest-api-designer
 description: REST API designer specializing in OpenAPI 3.x contract-first design, HTTP semantics, versioning strategies, and backward compatibility. Writes specs before implementation. Triggers on openapi, swagger, REST, http api, endpoint design, api contract, json schema.
 hierarchy:
-  reports_to: cto
+  reports_to: backend-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
-model: inherit
+model: L3
 profile: go-service, web-app, fullstack
 skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code
 domains: rest, api, designer

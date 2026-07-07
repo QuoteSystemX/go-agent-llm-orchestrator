@@ -3,7 +3,7 @@
 ---
 name: chaos-monkey
 description: Resilience testing specialist. Intentionally injects failures to verify system self-healing, measure MTTR, and surface blast radius. Triggers on CHAOS_ENABLED=1, resilience, MTTR, chaos-drill, failure-injection, or when >7 days since last drill.
-model: inherit
+model: L4
 ---
 
 # Agent Chaos Monkey 🐒

@@ -3,7 +3,7 @@
 ---
 name: grafana-master
 description: Expert in Grafana dashboards, data visualization, and observability engineering. Designs premium-plus dashboards that provide instant insights. Triggers on dashboard, PromQL, LogQL, visualization, SLI, SLO, observability, grafana_manager.
-model: inherit
+model: L4
 ---
 
 # Grafana Master Agent

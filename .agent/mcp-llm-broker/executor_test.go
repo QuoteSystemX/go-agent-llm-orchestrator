@@ -135,7 +135,7 @@ func TestExecuteLLMCall_Streaming(t *testing.T) {
 
 	// Jan uses Anthropic /messages SSE format (not OpenAI /v1/chat/completions).
 	janServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/messages" {
+		if !strings.HasSuffix(r.URL.Path, "/messages") {
 			http.Error(w, "wrong path: "+r.URL.Path, http.StatusNotFound)
 			return
 		}
@@ -158,7 +158,7 @@ func TestExecuteLLMCall_Streaming(t *testing.T) {
 
 func TestExecuteLLMCall_JanAnthropicNonStreaming(t *testing.T) {
 	janServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/messages" {
+		if !strings.HasSuffix(r.URL.Path, "/messages") {
 			http.Error(w, "wrong path: "+r.URL.Path, http.StatusNotFound)
 			return
 		}
@@ -292,7 +292,7 @@ func TestExecuteLLMCall_LocalRetryFailover(t *testing.T) {
 
 	// Second server (Jan mock) succeeds — Jan uses Anthropic /messages format.
 	serverJan := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/messages" {
+		if !strings.HasSuffix(r.URL.Path, "/messages") {
 			http.Error(w, "wrong path", http.StatusNotFound)
 			return
 		}
@@ -658,7 +658,7 @@ func TestExecuteAgenticLoop_AnthropicFormat(t *testing.T) {
 	// Mock Jan that: iter0 → returns tool_use(call_agent), iter1 → returns final text.
 	iterCount := 0
 	janServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/messages" {
+		if !strings.HasSuffix(r.URL.Path, "/messages") {
 			http.Error(w, "wrong path: "+r.URL.Path, http.StatusNotFound)
 			return
 		}
@@ -701,6 +701,7 @@ func TestExecuteAgenticLoop_AnthropicFormat(t *testing.T) {
 	srv := &BrokerServer{
 		workspaceRoot: "../..",
 		healthCache:   map[string]BackendHealth{"jan": {Available: true}},
+		urlOverrides:  map[string]string{"jan": janServer.URL},
 	}
 
 	resp, err := srv.executeAgenticLoop(context.Background(),
@@ -795,7 +796,7 @@ func TestCompactMessagesHistory_LLMSummarizes(t *testing.T) {
 			_, _ = w.Write([]byte(`{"data":[]}`))
 			return
 		}
-		if r.URL.Path == "/messages" {
+		if strings.HasSuffix(r.URL.Path, "/messages") {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"content":[{"type":"text","text":"Debugger found memory leak in srv.go:42."}],"stop_reason":"end_turn"}`))
 			return
@@ -872,7 +873,7 @@ func TestExecuteAgenticLoop_EmptyBodyReturnsLastText(t *testing.T) {
 	// Mock Jan: iter0 → returns tool_use, iter1 → returns 200 with empty body (overflow).
 	iterCount := 0
 	janServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/messages" {
+		if !strings.HasSuffix(r.URL.Path, "/messages") {
 			http.Error(w, "wrong path", http.StatusNotFound)
 			return
 		}
@@ -1085,6 +1086,134 @@ func TestTrimToFirstInstructionFile(t *testing.T) {
 				t.Errorf("got %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestStripOldRules(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "clean prompt remains unchanged",
+			input: "You are a helpful assistant.\nAnswer in detail.",
+			want:  "You are a helpful assistant.\nAnswer in detail.",
+		},
+		{
+			name: "strips single section",
+			input: "You are a helpful assistant.\n## TIER 0: UNIVERSAL RULES (Always Active)\n- rule 1\n- rule 2\nAlways use rtk <cmd> instead of raw commands.\nAnswer in detail.",
+			want: "You are a helpful assistant.\nAnswer in detail.",
+		},
+		{
+			name: "strips multiple sections and attention headers",
+			input: "🔴 ATTENTION: THIS FILE IS AUTO-GENERATED\n- rule 1\n-->\nNormal instructions\n## TIER 1: CODE RULES (When Writing Code)\n- rule 2\nAlways use `rtk <cmd>` instead of raw commands.\nEnd instructions",
+			want: "Normal instructions\nEnd instructions",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := stripOldRules(tc.input)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFileRuleLoaderAdapter_LoadRules(t *testing.T) {
+	tempDir := t.TempDir()
+	rulesDir := filepath.Join(tempDir, ".agent", "rules", "gemini")
+	if err := os.MkdirAll(rulesDir, 0755); err != nil {
+		t.Fatalf("failed to create temp rules dir: %v", err)
+	}
+
+	// Write dummy rules files
+	// Core
+	err := os.WriteFile(filepath.Join(rulesDir, "00_protocol.md"), []byte("trigger: always_on\n00_protocol content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 00_protocol.md: %v", err)
+	}
+	err = os.WriteFile(filepath.Join(rulesDir, "04_tier0_universal.md"), []byte("trigger: always_on\n04_tier0_universal content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 04_tier0_universal.md: %v", err)
+	}
+	err = os.WriteFile(filepath.Join(rulesDir, "10_rtk.md"), []byte("trigger: always_on\n10_rtk content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 10_rtk.md: %v", err)
+	}
+
+	// Code
+	err = os.WriteFile(filepath.Join(rulesDir, "05_tier1_code.md"), []byte("trigger: always_on\n05_tier1_code content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 05_tier1_code.md: %v", err)
+	}
+	err = os.WriteFile(filepath.Join(rulesDir, "09_go_dependency_management.md"), []byte("trigger: always_on\n09_go_dependency_management content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 09_go_dependency_management.md: %v", err)
+	}
+
+	// Design
+	err = os.WriteFile(filepath.Join(rulesDir, "06_tier2_design.md"), []byte("trigger: always_on\n06_tier2_design content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 06_tier2_design.md: %v", err)
+	}
+
+	// Gateway
+	err = os.WriteFile(filepath.Join(rulesDir, "03_gateway.md"), []byte("trigger: always_on\n03_gateway content"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write 03_gateway.md: %v", err)
+	}
+
+	adapter := NewFileRuleLoaderAdapter(tempDir)
+
+	// Case 1: L1 conversational query (should load only Core rules)
+	res, err := adapter.LoadRules("You are a helpful assistant.", "hello there", "L1")
+	if err != nil {
+		t.Fatalf("LoadRules failed: %v", err)
+	}
+	if !strings.Contains(res, "00_protocol content") || !strings.Contains(res, "04_tier0_universal content") {
+		t.Errorf("Expected core rules in output, got: %s", res)
+	}
+	if strings.Contains(res, "05_tier1_code content") || strings.Contains(res, "06_tier2_design content") {
+		t.Errorf("Unexpected rule loaded for L1 conversational: %s", res)
+	}
+
+	// Case 2: L2 query with code (should load Core + Code rules)
+	res, err = adapter.LoadRules("You are a helpful assistant.", "write a function", "L2")
+	if err != nil {
+		t.Fatalf("LoadRules failed: %v", err)
+	}
+	if !strings.Contains(res, "05_tier1_code content") {
+		t.Errorf("Expected code rules for L2 code query, got: %s", res)
+	}
+
+	// Case 3: L2 query with go (should load Core + Code + Go rules)
+	res, err = adapter.LoadRules("You are a helpful assistant.", "write a function in golang", "L2")
+	if err != nil {
+		t.Fatalf("LoadRules failed: %v", err)
+	}
+	if !strings.Contains(res, "09_go_dependency_management content") {
+		t.Errorf("Expected Go rules for L2 go query, got: %s", res)
+	}
+
+	// Case 4: L3 query with design (should load Core + Code + Design rules)
+	res, err = adapter.LoadRules("You are a helpful assistant.", "style the login button", "L3")
+	if err != nil {
+		t.Fatalf("LoadRules failed: %v", err)
+	}
+	if !strings.Contains(res, "06_tier2_design content") {
+		t.Errorf("Expected design rules for L3 design query, got: %s", res)
+	}
+
+	// Case 5: L4 query (should load Core + Code + Gateway rules)
+	res, err = adapter.LoadRules("You are a helpful assistant.", "verify authentication", "L4")
+	if err != nil {
+		t.Fatalf("LoadRules failed: %v", err)
+	}
+	if !strings.Contains(res, "03_gateway content") {
+		t.Errorf("Expected gateway rules for L4 query, got: %s", res)
 	}
 }
 

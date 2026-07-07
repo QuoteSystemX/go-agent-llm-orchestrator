@@ -246,6 +246,44 @@ When a model is **not found** on any local backend, the broker routes to the clo
 
 ---
 
+## Streaming & Response Cleanup
+
+### Direct Jan Streaming (`tryStreamDirect`)
+
+When `stream: true` is set in a chat request and Jan is the selected backend, the broker
+opens a **direct SSE connection** to Jan instead of buffering the full response. Tokens are
+forwarded to the client as they arrive, with the `thinkFilter` stripping thinking content
+in real-time (see below).
+
+If Jan is unreachable or routing selects a cloud provider, the broker automatically falls
+back to the standard buffered `executePromptLogic` path — the client sees no difference.
+
+### Think Block Filtering
+
+Several local reasoning models (DeepSeek R1, Qwen3, Gemma 3) emit internal reasoning inside
+`<think>...</think>` tags before their visible answer.
+
+- **Streaming responses** — `thinkFilter` strips thinking tokens on-the-fly with a 6-rune
+  lookahead buffer to handle tags that arrive split across chunk boundaries. Multibyte UTF-8
+  characters (e.g. Cyrillic) are never split between output and buffer.
+- **Buffered responses** — `stripThinkBlocks` removes complete and unclosed `<think>` blocks
+  from the final string before returning the result.
+
+### DeepSeek R1 Special Token Cleanup
+
+DeepSeek R1 (and R1-distill) models emit proprietary Unicode tokens used by their native
+tool-call format. When these tokens appear in broker responses (where tool parsing is not
+implemented for this format), `stripThinkBlocks` removes everything from the first marker
+to end-of-string:
+
+```
+<｜tool▁outputs▁begin｜>  <｜tool▁output▁begin｜>  <｜tool▁outputs▁end｜>
+<｜tool▁call▁begin｜>     <｜tool▁call▁end｜>       <｜tool▁sep｜>
+<｜fim▁begin｜>           <｜fim▁hole｜>             <｜fim▁end｜>
+```
+
+---
+
 ## CLI Mode (Direct Execution)
 
 ```bash

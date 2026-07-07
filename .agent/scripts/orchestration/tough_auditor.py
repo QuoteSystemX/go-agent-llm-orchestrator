@@ -28,16 +28,17 @@ from typing import Any, Dict, List, Tuple
 
 try:
     from lib.paths import REPO_ROOT
-    from lib.common import discover_ollama_url
+    from lib.common import discover_ollama_url, discover_broker_url
     import agent_scorer
 except ImportError:
     # Manual fallback just in case
     REPO_ROOT = Path(__file__).resolve().parents[3]
     sys.path.append(str(REPO_ROOT / ".agent" / "scripts"))
-    from lib.common import discover_ollama_url
+    from lib.common import discover_ollama_url, discover_broker_url
     import agent_scorer
 
 OLLAMA_BASE_URL = discover_ollama_url()
+BROKER_URL = discover_broker_url()
 
 def get_git_diff() -> str:
     """Gets both staged and unstaged changes for a full session review."""
@@ -58,13 +59,13 @@ def get_git_diff() -> str:
         return ""
 
 def get_available_models() -> List[str]:
-    """Fetch available models from local Ollama."""
-    url = f"{OLLAMA_BASE_URL}/api/tags"
+    """Fetch available models from the broker."""
+    url = f"{BROKER_URL}/v1/models"
     try:
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=1.0) as resp:
             data = json.loads(resp.read())
-            return [m["name"] for m in data.get("models", [])]
+            return [m.get("id") for m in data.get("data", []) if m.get("id")]
     except Exception:
         return []
 
@@ -92,7 +93,7 @@ def select_model(available_models: List[str]) -> str:
 
 def query_llm_auditor(diff: str, model: str) -> Tuple[float, str, List[str]]:
     """Query the local LLM with the adversarial Red-Team Auditor prompt."""
-    url = f"{OLLAMA_BASE_URL}/api/generate"
+    url = f"{BROKER_URL}/v1/chat/completions"
     
     system_prompt = (
         "You are the Adversarial QA, Security, and Red-Team Code Auditor. "
@@ -123,13 +124,11 @@ def query_llm_auditor(diff: str, model: str) -> Tuple[float, str, List[str]]:
     
     payload = {
         "model": model,
-        "prompt": prompt,
-        "system": system_prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.1,
-            "num_ctx": 16384
-        }
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ],
+        "stream": False
     }
     
     try:
@@ -140,7 +139,10 @@ def query_llm_auditor(diff: str, model: str) -> Tuple[float, str, List[str]]:
         )
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = json.loads(resp.read())
-            response_text = data.get("response", "").strip()
+            choices = data.get("choices", [])
+            response_text = ""
+            if choices:
+                response_text = choices[0].get("message", {}).get("content", "").strip()
             
             # Try to strip markdown fences if any
             if response_text.startswith("```"):

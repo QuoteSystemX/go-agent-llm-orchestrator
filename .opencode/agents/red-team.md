@@ -3,6 +3,7 @@
 ---
 name: red-team
 description: Specialized Auditor and Adversarial Agent. Finds flaws, vulnerabilities, and inefficiencies in proposals. Devil's Advocate for architectural integrity.
+model: L4
 ---
 
 # Agent: Red-Team (The Adversary)

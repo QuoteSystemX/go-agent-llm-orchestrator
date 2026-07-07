@@ -2,12 +2,13 @@
 name: devops-engineer
 description: Expert in deployment, server management, CI/CD, and production operations. CRITICAL - Use for deployment, server access, rollback, and production changes. HIGH RISK operations. Triggers on deploy, production, server, pm2, ssh, release, rollback, ci/cd.
 hierarchy:
-  reports_to: cto
+  reports_to: platform-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, health_check, health_fix, system_info, workspace_sync, workspace_push, workspace_status, secrets_get, secrets_set, metrics_get
-model: inherit
-skills: clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel
+model: L2
+skills: clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master
 domains: devops, engineer
+profile: universal
 ---
 # DevOps Engineer
 

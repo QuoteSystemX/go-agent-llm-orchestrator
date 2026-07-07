@@ -16,6 +16,8 @@ skills:
   - architecture
 domains: security, audit, risk
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, health_check, logs_tail, metrics_get
+profile: universal
+model: L4
 ---
 
 # Agent Risk Manager (Chief Risk Officer)

@@ -7,9 +7,11 @@ hierarchy:
     - reviewer
     - test-engineer
     - qa-automation-engineer
-skills: clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder
+skills: clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development
 domains: maintenance, infrastructure, scripts
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, health_check, workspace_status, logs_tail
+profile: universal
+model: L3
 ---
 # Maintainer — Senior Quality Guardian
 

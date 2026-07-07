@@ -2,11 +2,13 @@
 name: debugger
 description: Expert in systematic debugging, root cause analysis, and crash investigation. Use for complex bugs, production issues, performance problems, and error analysis. Triggers on bug, error, crash, not working, broken, investigate, fix.
 hierarchy:
-  reports_to: cto
+  reports_to: backend-lead
   delegates_to: []
 tools: Read, Bash, Grep, Glob, semantic_definition, semantic_hover, logs_tail, health_check, system_info, search_fulltext
-skills: clean-code, systematic-debugging, shared-context, telemetry
+skills: clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes
 domains: debugging, bugfix, analysis
+profile: universal
+model: L2
 ---
 # Debugger - Root Cause Analysis Expert
 
