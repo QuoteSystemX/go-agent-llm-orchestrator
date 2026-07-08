@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -72,7 +73,7 @@ func TestWorkerPool_Recovery(t *testing.T) {
 	d1 := NewDispatcher(db, 1)
 	d1.Submit(task) // This saves task_data
 	// We don't start d1, just use it to save data, or start and stop immediately
-	
+
 	// 2. Start a NEW dispatcher and check if it picks up the job
 	d2 := NewDispatcher(db, 1)
 	d2.Start()
@@ -124,8 +125,42 @@ func TestWorkerPool_Concurrency(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if !success {
 		t.Errorf("expected 1 running job during execution peak")
 	}
+}
+
+func TestDispatcher_StopDuringRecovery(t *testing.T) {
+	db := newTestDB(t)
+
+	// Seed pending jobs with task_data so recoverJobs has work to do.
+	const n = 50
+	for i := 0; i < n; i++ {
+		jobID := fmt.Sprintf("RECOVER-STOP-%d", i)
+		task := Task{
+			JobID:   jobID,
+			Command: "echo",
+			Args:    []string{"recovered"},
+		}
+		data, err := json.Marshal(task)
+		if err != nil {
+			t.Fatalf("failed to marshal task: %v", err)
+		}
+		_, err = db.conn.Exec(
+			"INSERT INTO jobs (id, status, task_data) VALUES ($1, 'pending', $2)",
+			jobID, string(data),
+		)
+		if err != nil {
+			t.Fatalf("failed to insert pending job: %v", err)
+		}
+	}
+
+	// Start the dispatcher and immediately stop it. Before the fix this
+	// could panic with "send on closed channel" if recoverJobs was still
+	// iterating over pending jobs while Stop closed the job queue.
+	d := NewDispatcher(db, 2)
+	d.Start()
+	time.Sleep(5 * time.Millisecond)
+	d.Stop()
 }

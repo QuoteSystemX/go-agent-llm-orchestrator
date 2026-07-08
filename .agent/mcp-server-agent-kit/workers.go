@@ -24,6 +24,7 @@ type Dispatcher struct {
 	maxWorkers int
 	db         *DB
 	wg         sync.WaitGroup
+	recoverWg  sync.WaitGroup
 	ctx        context.Context
 	cancel     context.CancelFunc
 }
@@ -45,11 +46,16 @@ func (d *Dispatcher) Start() {
 		go d.worker(i)
 	}
 	// Recovery: Resume pending jobs from DB
-	go d.recoverJobs()
+	d.recoverWg.Add(1)
+	go func() {
+		defer d.recoverWg.Done()
+		d.recoverJobs()
+	}()
 }
 
 func (d *Dispatcher) Stop() {
 	d.cancel()
+	d.recoverWg.Wait()
 	close(d.jobQueue)
 	d.wg.Wait()
 }
@@ -60,7 +66,7 @@ func (d *Dispatcher) Submit(t Task) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Update DB with task data
 	_, err = d.db.conn.Exec("UPDATE jobs SET task_data = $1 WHERE id = $2", string(data), t.JobID)
 	if err != nil {
@@ -78,7 +84,7 @@ func (d *Dispatcher) Submit(t Task) error {
 func (d *Dispatcher) worker(id int) {
 	defer d.wg.Done()
 	fmt.Fprintf(os.Stderr, "Worker %d started\n", id)
-	
+
 	for {
 		select {
 		case <-d.ctx.Done():
@@ -113,7 +119,7 @@ func (d *Dispatcher) execute(workerID int, t Task) {
 	} else {
 		cmd.Env = os.Environ()
 	}
-	
+
 	output, err := cmd.CombinedOutput()
 
 	status := "completed"
@@ -146,14 +152,22 @@ func (d *Dispatcher) recoverJobs() {
 		if err := rows.Scan(&id, &taskData); err != nil {
 			continue
 		}
-		
+
 		var t Task
 		if err := json.Unmarshal([]byte(taskData), &t); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to unmarshal task %s: %v\n", id, err)
 			continue
 		}
-		
+
 		fmt.Fprintf(os.Stderr, "Recovering job %s...\n", id)
-		d.jobQueue <- t
+		select {
+		case <-d.ctx.Done():
+			return
+		case d.jobQueue <- t:
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Recovery rows error: %v\n", err)
 	}
 }
