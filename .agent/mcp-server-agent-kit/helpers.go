@@ -17,11 +17,11 @@ import (
 )
 
 func (h *handler) updateJob(id string, progress int, message string) {
-	h.db.conn.Exec("UPDATE jobs SET progress = ?, message = ? WHERE id = ?", progress, message, id)
+	h.db.conn.Exec("UPDATE jobs SET progress = $1, message = $2 WHERE id = $3", progress, message, id)
 }
 
 func (h *handler) finishJob(id string, status string) {
-	h.db.conn.Exec("UPDATE jobs SET status = ?, progress = 100, completed_at = ? WHERE id = ?", status, time.Now(), id)
+	h.db.conn.Exec("UPDATE jobs SET status = $1, progress = 100, completed_at = $2 WHERE id = $3", status, time.Now(), id)
 }
 
 func validatePath(path string) error {

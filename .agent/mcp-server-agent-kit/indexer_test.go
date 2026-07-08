@@ -7,14 +7,8 @@ import (
 )
 
 func setupTestDB(t *testing.T) (*DB, func()) {
-	dbPath := filepath.Join(t.TempDir(), "test.db")
-	db, err := InitDB(dbPath, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return db, func() {
-		db.conn.Close()
-	}
+	db := newTestDB(t)
+	return db, func() {}
 }
 
 func TestIndexer_IndexingAndSearch(t *testing.T) {
@@ -59,12 +53,12 @@ func TestIndexer_IndexingAndSearch(t *testing.T) {
 	}
 
 	if !testing.Short() {
-		// Test porter stemming (security -> secur)
+		// Postgres's english text search config stems words (security -> secur).
 		results, _ = idx.Search("secured")
 		if len(results) == 0 {
-			t.Log("Warning: Porter stemming might not be active in this sqlite build")
+			t.Log("Warning: stemming did not match 'secured' against 'security'")
 		} else {
-			t.Log("Porter stemming confirmed")
+			t.Log("Stemming confirmed")
 		}
 	}
 }
@@ -92,7 +86,7 @@ func TestIndexer_FullScan(t *testing.T) {
 
 	// Verify all 3 files are indexed
 	var count int
-	err = db.conn.QueryRow("SELECT COUNT(*) FROM documents_fts").Scan(&count)
+	err = db.conn.QueryRow("SELECT COUNT(*) FROM documents").Scan(&count)
 	if err != nil {
 		t.Fatal(err)
 	}

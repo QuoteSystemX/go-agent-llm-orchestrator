@@ -62,7 +62,7 @@ func (d *Dispatcher) Submit(t Task) error {
 	}
 	
 	// Update DB with task data
-	_, err = d.db.conn.Exec("UPDATE jobs SET task_data = ? WHERE id = ?", string(data), t.JobID)
+	_, err = d.db.conn.Exec("UPDATE jobs SET task_data = $1 WHERE id = $2", string(data), t.JobID)
 	if err != nil {
 		return err
 	}
@@ -97,13 +97,13 @@ func (d *Dispatcher) execute(workerID int, t Task) {
 	defer func() {
 		if r := recover(); r != nil {
 			panicMsg := "panic: " + fmt.Sprint(r)
-			d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, progress = 100, completed_at = ? WHERE id = ?",
+			d.db.conn.Exec("UPDATE jobs SET status = $1, message = $2, progress = 100, completed_at = $3 WHERE id = $4",
 				"failed", panicMsg, time.Now(), t.JobID)
 			fmt.Fprintf(os.Stderr, "Worker %d recovered from panic for job %s: %v\n", workerID, t.JobID, r)
 		}
 	}()
 	// Update status to running
-	d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, started_at = ? WHERE id = ?",
+	d.db.conn.Exec("UPDATE jobs SET status = $1, message = $2, started_at = $3 WHERE id = $4",
 		"running", "Started by worker "+strconv.Itoa(workerID), time.Now(), t.JobID)
 
 	cmd := exec.CommandContext(d.ctx, t.Command, t.Args...)
@@ -128,7 +128,7 @@ func (d *Dispatcher) execute(workerID int, t Task) {
 		}
 	}
 
-	d.db.conn.Exec("UPDATE jobs SET status = ?, message = ?, progress = 100, completed_at = ? WHERE id = ?", 
+	d.db.conn.Exec("UPDATE jobs SET status = $1, message = $2, progress = 100, completed_at = $3 WHERE id = $4",
 		status, msg, time.Now(), t.JobID)
 }
 

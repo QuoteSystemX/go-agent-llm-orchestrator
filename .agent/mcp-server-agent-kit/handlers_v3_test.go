@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -10,8 +9,7 @@ import (
 )
 
 func TestRBACEnforcement(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "rbac_test.db")
-	db, _ := InitDB(dbPath, "")
+	db := newTestDB(t)
 	h := &handler{db: db}
 	ctx := context.Background()
 
@@ -52,8 +50,7 @@ func TestRBACEnforcement(t *testing.T) {
 }
 
 func TestCouncilWorkflowBoundaries(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "council_test.db")
-	db, _ := InitDB(dbPath, "")
+	db := newTestDB(t)
 	h := &handler{db: db, projectRoot: "/tmp"}
 	ctx := context.Background()
 
@@ -79,8 +76,7 @@ func TestCouncilWorkflowBoundaries(t *testing.T) {
 }
 
 func TestSecretsEdgeCases(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "secrets_test.db")
-	db, _ := InitDB(dbPath, "")
+	db := newTestDB(t)
 	h := &handler{db: db}
 	ctx := context.Background()
 
@@ -102,8 +98,7 @@ func TestSecretsEdgeCases(t *testing.T) {
 }
 
 func TestMetricsRecording(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "metrics_test.db")
-	db, _ := InitDB(dbPath, "")
+	db := newTestDB(t)
 	h := &handler{db: db}
 	
 	// Add a dummy metric

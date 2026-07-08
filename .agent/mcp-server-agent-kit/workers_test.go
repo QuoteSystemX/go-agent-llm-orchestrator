@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
 	"testing"
 	"time"
 )
 
 func TestWorkerPool_Execution(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "workers_exec.db")
-	db, _ := InitDB(dbPath, "")
+	db := newTestDB(t)
 	d := NewDispatcher(db, 2)
 	d.Start()
 	defer d.Stop()
@@ -39,7 +37,7 @@ func TestWorkerPool_Execution(t *testing.T) {
 		case <-timeout:
 			t.Fatal("timed out waiting for job completion")
 		case <-tick:
-			rows, _ := db.conn.Query("SELECT status, message FROM jobs WHERE id = ?", jobID)
+			rows, _ := db.conn.Query("SELECT status, message FROM jobs WHERE id = $1", jobID)
 			if rows.Next() {
 				var status, msg string
 				rows.Scan(&status, &msg)
@@ -58,9 +56,8 @@ func TestWorkerPool_Execution(t *testing.T) {
 }
 
 func TestWorkerPool_Recovery(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "workers_recovery.db")
-	db, _ := InitDB(dbPath, "")
-	
+	db := newTestDB(t)
+
 	// 1. Prepare a pending job in DB
 	jobID := "RECOVER-ME"
 	task := Task{
@@ -89,7 +86,7 @@ func TestWorkerPool_Recovery(t *testing.T) {
 			t.Fatal("timed out waiting for job recovery")
 		case <-tick:
 			var status string
-			db.conn.QueryRow("SELECT status FROM jobs WHERE id = ?", jobID).Scan(&status)
+			db.conn.QueryRow("SELECT status FROM jobs WHERE id = $1", jobID).Scan(&status)
 			if status == "completed" {
 				return
 			}
@@ -98,9 +95,8 @@ func TestWorkerPool_Recovery(t *testing.T) {
 }
 
 func TestWorkerPool_Concurrency(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "workers_concurrency.db")
-	db, _ := InitDB(dbPath, "")
-	
+	db := newTestDB(t)
+
 	// Only 1 worker
 	d := NewDispatcher(db, 1)
 	d.Start()

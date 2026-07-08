@@ -86,8 +86,11 @@ func (h *handler) loadAgent(_ context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	// Recursive search through category subfolders
 	agentsRoot := filepath.Join(h.projectRoot, ".agent", "agents")
 	var found string
-	_ = filepath.WalkDir(agentsRoot, func(path string, d fs.DirEntry, _ error) error {
-		if !d.IsDir() && d.Name() == name+".md" {
+	_ = filepath.WalkDir(agentsRoot, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		if d.Name() == name+".md" {
 			found = path
 			return fs.SkipAll
 		}

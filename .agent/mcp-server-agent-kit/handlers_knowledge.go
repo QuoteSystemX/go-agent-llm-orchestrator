@@ -21,8 +21,11 @@ func (h *handler) loadItem(path string) (*mcp.CallToolResult, error) {
 		return mcp.NewToolResultError("access denied: path outside project root"), nil
 	}
 
-	// Trigger on_read hooks
-	h.indexer.TriggerHooks(rel, "on_read", clean, "READ-HOOK")
+	// Trigger on_read hooks. indexer can be nil if NewIndexer failed to
+	// start its fsnotify watcher (e.g. inotify watch limit reached).
+	if h.indexer != nil {
+		h.indexer.TriggerHooks(rel, "on_read", clean, "READ-HOOK")
+	}
 
 	data, err := os.ReadFile(clean)
 	if err != nil {
