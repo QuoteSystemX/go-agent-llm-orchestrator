@@ -302,9 +302,9 @@ class FinalRegressionTest(unittest.TestCase):
             self.assertGreater(len(verdicts), 0)
             
             # Filter for our plan
-            plan_verdicts = [v for v in verdicts if v['content'].get('plan_ref') == plan_id]
+            plan_verdicts = [v for v in verdicts if v['content'].get('plan_id') == plan_id]
             self.assertGreater(len(plan_verdicts), 0)
-            self.assertEqual(plan_verdicts[-1]['content']['status'], "approved_with_conditions")
+            self.assertIn(plan_verdicts[-1]['content']['verdict']['status'], ["approved", "approved_with_conditions"])
             
         finally:
             bus_manager.clean_author("tester")

@@ -346,7 +346,7 @@ func (b *BrokerServer) handleGetRoutingDecision(ctx context.Context, req mcp.Cal
 	pulled := make(map[string]string)
 	env := b.detectEnv()
 
-	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	discoverCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	// Gather models from Ollama
@@ -545,7 +545,7 @@ func (b *BrokerServer) handleDetectBackends(ctx context.Context, _ mcp.CallToolR
 		Environment: env,
 	}
 
-	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	discoverCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	// 1. Ollama Check (with WSL gateway fallback)
@@ -687,7 +687,7 @@ func (b *BrokerServer) getOllamaURL(env EnvironmentInfo) string {
 	defaultURL := DefaultOllamaURL
 
 	if env.IsWSL && env.WSLGateway != "" {
-		client := &http.Client{Timeout: 300 * time.Millisecond}
+		client := &http.Client{Timeout: 1500 * time.Millisecond}
 		resp, err := client.Get(DefaultOllamaURL + "/api/tags")
 		if err == nil {
 			resp.Body.Close()

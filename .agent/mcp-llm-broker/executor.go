@@ -87,7 +87,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	}
 
 	env := b.detectEnv()
-	discoverCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	discoverCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	// Detect pulled models
@@ -668,9 +668,13 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		}
 		// JSON Schema enforcement for Ollama
 		if jsonSchema != "" {
-			var formatObj interface{}
-			if err := json.Unmarshal([]byte(jsonSchema), &formatObj); err == nil {
-				payload["format"] = formatObj
+			if jsonSchema == "{}" {
+				payload["format"] = "json"
+			} else {
+				var formatObj interface{}
+				if err := json.Unmarshal([]byte(jsonSchema), &formatObj); err == nil {
+					payload["format"] = formatObj
+				}
 			}
 		}
 
@@ -909,11 +913,17 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 	}
 	// JSON Schema enforcement for OpenAI-compatible
 	if jsonSchema != "" {
-		var schemaObj interface{}
-		if err := json.Unmarshal([]byte(jsonSchema), &schemaObj); err == nil {
+		if jsonSchema == "{}" {
 			payload["response_format"] = map[string]interface{}{
-				"type":   "json_schema",
-				"schema": schemaObj,
+				"type": "json_object",
+			}
+		} else {
+			var schemaObj interface{}
+			if err := json.Unmarshal([]byte(jsonSchema), &schemaObj); err == nil {
+				payload["response_format"] = map[string]interface{}{
+					"type":   "json_schema",
+					"schema": schemaObj,
+				}
 			}
 		}
 	}

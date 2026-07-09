@@ -100,7 +100,7 @@ def _commit_fix(branch: str, incident_id: str) -> bool:
         print("ℹ️  Nothing staged — skipping commit.")
         return False
 
-    msg = f"[AUTO-FIXED] Incident {incident_id} resolved on {branch}"
+    msg = f"fix: incident {incident_id} resolved on {branch}"
     subprocess.run(
         ["git", "commit", "-m", msg, "--no-verify"],
         cwd=REPO_ROOT, check=True,
@@ -185,6 +185,7 @@ def manage_war_room(incident_id: str) -> None:
         "incident_ref": incident_id,
         "branch_name": f"fix/inc-{incident_id}",
         "auto_commit": True,
+        "status": "ready_to_apply",
     }
     bus_manager.push(
         f"fix_{incident_id}", "proposed_fix", "war_room_manager",

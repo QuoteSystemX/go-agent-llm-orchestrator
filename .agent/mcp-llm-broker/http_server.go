@@ -43,13 +43,18 @@ type ToolCallFunction struct {
 	Arguments string `json:"arguments"` // JSON string
 }
 
+type ResponseFormatSettings struct {
+	Type string `json:"type"` // "json_object" or "text"
+}
+
 type ChatCompletionRequest struct {
-	Model       string        `json:"model"`
-	Messages    []ChatMessage `json:"messages"`
-	Stream      bool          `json:"stream,omitempty"`
-	Temperature *float64      `json:"temperature,omitempty"`
-	Tools       []Tool        `json:"tools,omitempty"`
-	ToolChoice  interface{}   `json:"tool_choice,omitempty"`
+	Model          string                  `json:"model"`
+	Messages       []ChatMessage           `json:"messages"`
+	Stream         bool                    `json:"stream,omitempty"`
+	Temperature    *float64                `json:"temperature,omitempty"`
+	Tools          []Tool                  `json:"tools,omitempty"`
+	ToolChoice     interface{}             `json:"tool_choice,omitempty"`
+	ResponseFormat *ResponseFormatSettings `json:"response_format,omitempty"`
 }
 
 // ChatMessage supports string content, array-of-parts, and tool_calls.
@@ -257,6 +262,9 @@ func (b *BrokerServer) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 
 	// Derive jsonSchema from response_format if present (simplified)
 	var jsonSchema string
+	if req.ResponseFormat != nil && req.ResponseFormat.Type == "json_object" {
+		jsonSchema = "{}"
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 300*time.Second)
 	defer cancel()

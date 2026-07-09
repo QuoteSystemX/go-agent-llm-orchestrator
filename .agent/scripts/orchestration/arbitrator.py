@@ -90,9 +90,34 @@ CritiqueList, VerdictList = _load_schemas()
 
 def _extract_json_block(text: str) -> str:
     import re
-    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
-    if match:
-        return match.group(0)
+    # Strip <think>...</think> block if present
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    try:
+        start = text.index('{')
+    except ValueError:
+        try:
+            start = text.index('[')
+        except ValueError:
+            return text
+            
+    brace_count = 0
+    in_quote = False
+    escaped = False
+    for i in range(start, len(text)):
+        char = text[i]
+        if char == '"' and not escaped:
+            in_quote = not in_quote
+        elif char == '\\' and not escaped:
+            escaped = True
+            continue
+        elif not in_quote:
+            if char in ('{', '['):
+                brace_count += 1
+            elif char in ('}', ']'):
+                brace_count -= 1
+                if brace_count == 0:
+                    return text[start:i+1]
+        escaped = False
     return text
 
 
@@ -360,17 +385,15 @@ def _load_plan(plan_id: str) -> str:
 
 
 def _parse_verdict(text: str, plan_id: str) -> dict:
-    import re
-    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
-    if match:
-        try:
-            v = json.loads(match.group(0))
-            if "status" in v and "confidence" in v:
-                v["confidence"] = max(0.0, min(1.0, float(v["confidence"])))
-                v["plan_ref"] = plan_id
-                return v
-        except Exception as e:
-            logger.warning("Failed to parse Arbitrator JSON verdict — using fallback: %s", e)
+    json_str = _extract_json_block(text)
+    try:
+        v = json.loads(json_str)
+        if "status" in v and "confidence" in v:
+            v["confidence"] = max(0.0, min(1.0, float(v["confidence"])))
+            v["plan_ref"] = plan_id
+            return v
+    except Exception as e:
+        logger.warning("Failed to parse Arbitrator JSON verdict — using fallback: %s", e)
     return {
         "plan_ref": plan_id,
         "status": "conditional",
