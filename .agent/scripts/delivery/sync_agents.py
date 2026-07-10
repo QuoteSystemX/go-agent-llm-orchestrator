@@ -176,7 +176,6 @@ AGENT_SKILL_EXTRAS: dict[str, list[str]] = {
     "analyst":                ["scientific-problem-selection", "headroom-patterns"],
     "debugger":               ["headroom-patterns"],
     "performance-optimizer":  ["headroom-patterns"],
-    "security-auditor":       ["headroom-patterns"],
     "code-archaeologist":     ["headroom-patterns"],
 }
 
