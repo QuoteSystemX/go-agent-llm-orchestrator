@@ -79,7 +79,7 @@ def detect_test_framework(project_path: Path) -> dict:
         import os
         go_found = False
         for root, dirs, files in os.walk(project_path):
-            if ".agent" in root or ".git" in root or "node_modules" in root: continue
+            if ".agent" in root or ".git" in root or "node_modules" in root or "scratch" in root: continue
             if any(f.endswith(".go") for f in files):
                 go_found = True
                 break

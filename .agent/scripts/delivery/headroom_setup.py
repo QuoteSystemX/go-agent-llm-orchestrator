@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-headroom_setup.py — Идемпотентный провижнер Headroom для target-репо.
+headroom_setup.py — Idempotent Headroom provisioner for target repos.
 
-Запускается из distribute-agentic-kit.yml после rsync агентов.
+Runs from distribute-agentic-kit.yml after rsync of agents.
 
-Использование:
+Usage:
     python3 .agent/scripts/delivery/headroom_setup.py --root /path/to/target --profile go-service
     python3 .agent/scripts/delivery/headroom_setup.py --root /path/to/target --tier 2
     python3 .agent/scripts/delivery/headroom_setup.py --root . --dry-run
@@ -122,7 +122,7 @@ def _inject_mcp_entry(mcp_path: Path, dry_run: bool) -> bool:
         return False
 
     if "headroom-mcp" in mcp.get("mcpServers", {}):
-        print("  ⏭️  headroom-mcp уже в .mcp.json")
+        print("  ⏭️  headroom-mcp already in .mcp.json")
         return False
 
     mcp.setdefault("mcpServers", {})["headroom-mcp"] = {
@@ -135,7 +135,7 @@ def _inject_mcp_entry(mcp_path: Path, dry_run: bool) -> bool:
     }
     if not dry_run:
         mcp_path.write_text(json.dumps(mcp, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print("  ✅ Добавлен headroom-mcp в .mcp.json")
+    print("  ✅ Added headroom-mcp to .mcp.json")
     return True
 
 
@@ -148,7 +148,7 @@ def _inject_gitignore(gitignore: Path, dry_run: bool) -> bool:
     if not dry_run:
         with open(gitignore, "a", encoding="utf-8") as f:
             f.write(addition)
-    print("  ✅ Обновлён .gitignore (headroom entries)")
+    print("  ✅ Updated .gitignore (headroom entries)")
     return True
 
 
@@ -159,7 +159,7 @@ def _is_config_outdated(config: Path, template: Path) -> bool:
 
 
 def provision_tier1(root: Path, profile: str, dry_run: bool):
-    """Tier 1: MCP Server + SQLite CCR — минимум зависимостей."""
+    """Tier 1: MCP Server + SQLite CCR — minimum dependencies."""
     headroom_dir = root / ".headroom"
     if not dry_run:
         headroom_dir.mkdir(exist_ok=True)
@@ -172,9 +172,9 @@ def provision_tier1(root: Path, profile: str, dry_run: bool):
     if _is_config_outdated(config_dst, template):
         if not dry_run:
             shutil.copy(template, config_dst)
-        print(f"  ✅ Сгенерирован .headroom/config.yaml (profile={profile})")
+        print(f"  ✅ Generated .headroom/config.yaml (profile={profile})")
     else:
-        print("  ⏭️  .headroom/config.yaml актуален")
+        print("  ⏭️  .headroom/config.yaml is up-to-date")
 
     headroom_gi = headroom_dir / ".gitignore"
     if not headroom_gi.exists() and not dry_run:
@@ -195,11 +195,11 @@ def provision_tier1(root: Path, profile: str, dry_run: bool):
             # Preserve cached latest if lock is fresh; otherwise set latest=installed
             cached_latest = lock_data.get("latest") if lock_data else None
             _write_version_lock(headroom_dir, installed, cached_latest)
-            print(f"  ✅ Обновлён .headroom/version.lock (installed={installed})")
+            print(f"  ✅ Updated .headroom/version.lock (installed={installed})")
 
 
 def provision_tier2(root: Path, profile: str, dry_run: bool):
-    """Tier 2: Proxy mode + Redis + Qdrant (opt-in, production стек)."""
+    """Tier 2: Proxy mode + Redis + Qdrant (opt-in, production stack)."""
     provision_tier1(root, profile, dry_run)
 
     compose_src = HEADROOM_CONFIG_SRC / "docker-compose.headroom.yml"
@@ -207,16 +207,16 @@ def provision_tier2(root: Path, profile: str, dry_run: bool):
     if compose_src.exists() and not compose_dst.exists():
         if not dry_run:
             shutil.copy(compose_src, compose_dst)
-        print("  ✅ Добавлен docker-compose.headroom.yml (Tier 2)")
+        print("  ✅ Added docker-compose.headroom.yml (Tier 2)")
     elif compose_dst.exists():
-        print("  ⏭️  docker-compose.headroom.yml уже существует")
+        print("  ⏭️  docker-compose.headroom.yml already exists")
 
     env_example_src = HEADROOM_CONFIG_SRC / "docker-compose.headroom.env.example"
     env_example_dst = root / "docker-compose.headroom.env.example"
     if env_example_src.exists() and not env_example_dst.exists():
         if not dry_run:
             shutil.copy(env_example_src, env_example_dst)
-        print("  ✅ Добавлен docker-compose.headroom.env.example")
+        print("  ✅ Added docker-compose.headroom.env.example")
 
 
 def _do_upgrade(root: Path) -> bool:

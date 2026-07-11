@@ -1,0 +1,104 @@
+# Capability Matrix — STORY-4 (replaces flat-file whitelist)
+#
+# Default-deny: session-agent has no capabilities. Any operation must be
+# explicitly granted via the matrix below.
+#
+# Roles:
+#   infra-agent:   daemon + orchestrator + maintenance scripts
+#   squad-agent:   full squad orchestrator (execution, MCP, sandbox)
+#   session-agent: ephemeral worker (most 49 specialists)
+#   human:         operator (read-only, no system writes)
+#
+# Capabilities (alphabetical):
+#   modify-bus          write to .agent/bus/*
+#   read-bus            read from .agent/bus/*
+#   execute-cli-low     run short, well-known CLI commands (git, ls, etc.)
+#   execute-cli-high    run arbitrary CLIs (e.g., bash with args)
+#   modify-infra        write to .agent/, Makefile, *.yml hooks
+#   read-infra          read .agent/, KNOWNLEDGE.md, agent files
+#   start-daemon        invoke daemon/daemon/server.py start
+#   stop-daemon         invoke bin/stop (STORY-3.3)
+#   trigger-distill     invoke memory-pressure distill (STORY-1)
+#   modify-tasks        write to tasks/* (story cards)
+#   read-tasks          read tasks/*
+#   modify-config       write to .agent/config/*
+#   harness-run         invoke harness_run MCP tool (STORY-5)
+#
+# Scope:
+#   global: applies everywhere
+#   repo:NAME: applies only in repo NAME
+#   task:ID: applies only in task ID
+
+version: "1.0.0"
+description: "STORY-4 capability matrix. Default-deny."
+
+roles:
+  infra-agent:
+    description: "Daemon + maintenance scripts. Highest trust."
+    capabilities:
+      - { cap: modify-bus,    scope: global }
+      - { cap: read-bus,      scope: global }
+      - { cap: execute-cli-low,  scope: global }
+      - { cap: execute-cli-high, scope: global, constraint: "no_shell_injection" }
+      - { cap: modify-infra,  scope: global }
+      - { cap: read-infra,    scope: global }
+      - { cap: start-daemon,  scope: global }
+      - { cap: stop-daemon,   scope: global }
+      - { cap: trigger-distill, scope: global }
+      - { cap: modify-tasks,  scope: global }
+      - { cap: read-tasks,    scope: global }
+      - { cap: modify-config, scope: global }
+      - { cap: harness-run,   scope: global, constraint: "manifest_required" }
+
+  squad-agent:
+    description: "Squad orchestrator. Can run agents but not modify infra."
+    capabilities:
+      - { cap: modify-bus,    scope: global }
+      - { cap: read-bus,      scope: global }
+      - { cap: execute-cli-low,  scope: global }
+      - { cap: read-infra,    scope: global }
+      - { cap: trigger-distill, scope: global }
+      - { cap: modify-tasks,  scope: task:"*" }  # any task
+      - { cap: read-tasks,    scope: global }
+      - { cap: harness-run,   scope: global, constraint: "manifest_required" }
+
+  session-agent:
+    description: "Ephemeral worker. Default-deny: no capabilities unless explicit."
+    capabilities:
+      # INTENTIONALLY EMPTY — session-agents must request every capability
+      # explicitly. The capability_check.py will REFUSE any operation
+      # not in this list.
+      - []
+
+  human:
+    description: "Operator. Read-only on infra; can modify tasks."
+    capabilities:
+      - { cap: read-bus,      scope: global }
+      - { cap: read-infra,    scope: global }
+      - { cap: read-tasks,    scope: global }
+      - { cap: modify-tasks,  scope: global }
+      - { cap: stop-daemon,   scope: global }
+      - { cap: trigger-distill, scope: global }
+      # Humans CANNOT modify infra, config, or run arbitrary CLIs.
+      # Those require explicit infra-agent role.
+
+# Operation → required capability mapping.
+# This is the lookup table that capability_check.py uses to decide
+# whether a given operation is allowed.
+operations:
+  bus_write:       modify-bus
+  bus_read:        read-bus
+  cli_low:         execute-cli-low
+  cli_high:        execute-cli-high
+  infra_write:     modify-infra
+  infra_read:      read-infra
+  daemon_start:    start-daemon
+  daemon_stop:     stop-daemon
+  distill:         trigger-distill
+  task_write:      modify-tasks
+  task_read:       read-tasks
+  config_write:    modify-config
+  harness_run:     harness-run
+
+# Mandatory: session-agent is default-deny.
+# Any operation not listed for a role returns DENY.

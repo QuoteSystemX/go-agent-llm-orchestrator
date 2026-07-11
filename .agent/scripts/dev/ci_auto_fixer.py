@@ -72,7 +72,10 @@ def run_auto_fix():
 
     if not changed_files:
         print("ℹ️ No changed Python files detected. Falling back to full scan.")
-        changed_files = sorted(Path(".agent/scripts").rglob("*.py"))[:20]
+        # Use REPO_ROOT-anchored path so this works regardless of cwd
+        # (e.g., when run from a CI scratch dir).
+        scripts_dir = REPO_ROOT / ".agent" / "scripts"
+        changed_files = sorted(scripts_dir.rglob("*.py"))[:20] if scripts_dir.exists() else []
 
     issues_found = 0
     auto_fixes = 0

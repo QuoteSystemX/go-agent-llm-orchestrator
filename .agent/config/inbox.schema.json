@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://antigravity.kit/inbox.schema.json",
+  "title": "INBOX.md Entry (STORY-2 v2)",
+  "description": "Structured human-to-agent communication entry. Replaces free-form markdown INBOX.md to prevent prompt injection. See tasks/2026-07-11-epic-integration-anima-sdk-v2-a27f5a.md for context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "ts", "author", "intent", "body"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^inb_[0-9]{8}_[0-9]{6}_[a-f0-9]{6}$",
+      "description": "Unique entry ID: inb_YYYYMMDD_HHMMSS_<6hex>"
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of creation"
+    },
+    "author": {
+      "type": "string",
+      "enum": ["human", "agent"],
+      "description": "Who created this entry. The orchestrator's normal flow expects 'human'."
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["redirect", "clarify", "abort", "context", "ack"],
+      "description": "Why this entry exists. redirect/abort halt or change agent course; clarify asks for more info; context adds knowledge; ack acknowledges."
+    },
+    "target": {
+      "type": ["string", "null"],
+      "description": "Optional agent name or task_id this entry is directed at. If null, applies to the most recent active task."
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "description": "Plain text body. NO markdown, NO HTML, NO code. Sanitized before injection into system prompt."
+    },
+    "knowledge_anchor": {
+      "type": ["string", "null"],
+      "pattern": "^#?[A-Za-z0-9_-]+(#[A-Za-z0-9_-]+)?$",
+      "description": "Required when intent in {redirect, context}: must reference a section in KNOWLEDGE.md. Format: '#section-name' or 'section-name'."
+    },
+    "ack_required": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, the agent must emit a corresponding bus event with type=inbox_ack before proceeding."
+    }
+  },
+  "allOf": [
+    {
+      "description": "When intent is 'redirect' or 'context', knowledge_anchor is required.",
+      "if": {
+        "properties": {
+          "intent": {"enum": ["redirect", "context"]}
+        }
+      },
+      "then": {
+        "required": ["knowledge_anchor"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+# Harnesses manifest — STORY-5 v2 (REWORK of VETO 3.5)
+#
+# Each entry declares the capability requirements, sandbox policy, and
+# environment constraints for a single executable. See HARNESS_CONTRACT.md
+# for the full schema.
+#
+# v2 has only 2 starter entries: claude + free_code. Adding codex/deepagents
+# requires explicit security review (red-team + security-auditor pass).
+#
+# Default-deny: any capability NOT listed here is unavailable.
+
+version: "2.0.0"
+description: "STORY-5 harness manifest. Default-deny. All entries sandboxed."
+
+# Schema for each entry (informative — not enforced by YAML):
+#   name:                unique harness name (string)
+#   binary:              absolute path or PATH-relative (string)
+#   description:         one-line purpose (string)
+#   capabilities_required:  list of caps the CALLER must have (list of strings)
+#   capabilities_granted:   list of caps the harness has within its sandbox (list of strings)
+#   sandbox:             object with required/network/filesystem/env_passthrough/timeout_s
+#   model_default:       optional default model
+#   args:                optional list of default args
+
+harnesses:
+  - name: claude
+    binary: claude
+    description: "Anthropic Claude Code CLI (autonomous agent)"
+    capabilities_required:
+      - harness-run
+    capabilities_granted:
+      - execute-cli-high
+      - read-bus
+      - modify-bus
+    sandbox:
+      required: true
+      network: deny
+      filesystem:
+        read_only:
+          - "./"
+          - ".agent/"
+        write:
+          - "./scratch/"
+      env_passthrough:
+        - PATH
+        - HOME
+        - USER
+        - LANG
+        - PWD
+      timeout_s: 600
+    model_default: ""
+    args:
+      - "--print"
+      - "--output-format"
+      - "stream-json"
+      - "--include-partial-messages"
+
+  - name: free_code
+    binary: free-code
+    description: "Local free-code CLI (no network)"
+    capabilities_required:
+      - harness-run
+    capabilities_granted:
+      - execute-cli-low
+      - read-bus
+    sandbox:
+      required: true
+      network: deny
+      filesystem:
+        read_only:
+          - "./"
+          - ".agent/"
+        write:
+          - "./scratch/"
+      env_passthrough:
+        - PATH
+        - HOME
+        - USER
+        - LANG
+        - PWD
+      timeout_s: 600
+    model_default: ""
+    args:
+      - "--print"
+      - "--output-format"
+      - "stream-json"
+      - "--include-partial-messages"
+      - "--think-tool"
+
+  # === Future entries (require security review before activation) ===
+  #
+  # - name: codex
+  #   binary: codex
+  #   description: "OpenAI Codex CLI"
+  #   capabilities_required: [harness-run]
+  #   capabilities_granted: [execute-cli-high, read-bus, modify-bus]
+  #   sandbox: { required: true, network: deny, filesystem: { write: ["./scratch/"] }, env_passthrough: [PATH, HOME, USER], timeout_s: 600 }
+  #   model_default: ""
+  #
+  # - name: deepagents
+  #   binary: deepagents
+  #   description: "Deep Agents Code"
+  #   capabilities_required: [harness-run]
+  #   capabilities_granted: [execute-cli-high, read-bus, modify-bus]
+  #   sandbox: { required: true, network: deny, filesystem: { write: ["./scratch/"] }, env_passthrough: [PATH, HOME, USER], timeout_s: 1200 }
+  #   model_default: ""

@@ -300,6 +300,73 @@ def consolidate_lessons() -> str:
     return f"Consolidation complete: merged {consolidated_total} duplicate entries."
 
 
+def distill_failures() -> str:
+    """Analyze failed_repair.json, generate a lesson learned using LLM, and append it to LESSONS_LEARNED.md."""
+    from lib.paths import BUS_DIR
+    failed_repair_file = BUS_DIR / "failed_repair.json"
+    if not failed_repair_file.exists():
+        return "No failed_repair.json found in bus directory."
+
+    try:
+        data = load_json_safe(failed_repair_file)
+        if not data:
+            return "failed_repair.json is empty or invalid."
+            
+        command = data.get("command", "")
+        exit_code = data.get("exit_code", -1)
+        stderr = data.get("stderr", "")
+        timestamp_str = data.get("timestamp", datetime.now().strftime("%Y-%m-%d"))[:10]
+        
+        prompt = (
+            "You are the Experience Distillation Engine.\n"
+            "Review the following command execution failure details:\n"
+            f"Command: {command}\n"
+            f"Exit Code: {exit_code}\n"
+            f"Error Output: {stderr}\n\n"
+            "Synthesize a clear technical lesson learned in Russian matching precisely the following Markdown format:\n"
+            f"### [{timestamp_str}] [FIX] [tag] <Short summary in Russian>\n\n"
+            "- **Context**: <Brief Russian description of the command and failure>\n"
+            "- **Root Cause**: <Brief Russian description of the root cause>\n"
+            "- **Prevention**: <Brief Russian description of how to prevent this>\n\n"
+            "Reply ONLY with the Markdown content block."
+        )
+        
+        from lib.llm_client import query_llm_safe
+        resp, src, _ = query_llm_safe(
+            prompt=prompt,
+            system_prompt="You are a senior systems engineer. Respond only with Markdown."
+        )
+        
+        if "⚠️ [LLM Unavailable]" in resp or src == "stub":
+            return "Failed to distill: LLM is unavailable."
+            
+        # Append to LESSONS_LEARNED.md
+        if LESSONS_PATH.exists():
+            content = LESSONS_PATH.read_text(encoding="utf-8")
+            # We want to insert it after '## 🏛 Active Lessons'
+            split_marker = "## 🏛 Active Lessons"
+            if split_marker in content:
+                parts = content.split(split_marker, 1)
+                new_content = parts[0] + split_marker + "\n\n" + resp.strip() + "\n\n" + parts[1].strip() + "\n"
+            else:
+                new_content = content.strip() + "\n\n" + resp.strip() + "\n"
+                
+            LESSONS_PATH.write_text(new_content, encoding="utf-8")
+            
+            # Remove the failed_repair.json so we don't process it again
+            try:
+                failed_repair_file.unlink()
+            except OSError:
+                pass
+                
+            return f"Successfully distilled failure into a lesson and appended to LESSONS_LEARNED.md:\n\n{resp}"
+            
+    except Exception as e:
+        return f"Error distilling failure: {e}"
+        
+    return "Skipped."
+
+
 def main():
     if "--skill" in sys.argv:
         idx = sys.argv.index("--skill")
@@ -319,8 +386,11 @@ def main():
         print(list_skill_tags())
     elif "--consolidate" in sys.argv:
         print(consolidate_lessons())
+    elif "--distill-failures" in sys.argv:
+        print(distill_failures())
     else:
         print(distill_lessons())
+
 
 if __name__ == "__main__":
     main()

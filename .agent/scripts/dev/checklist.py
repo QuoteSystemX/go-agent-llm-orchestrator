@@ -905,10 +905,10 @@ def main() -> None:
         if not _headroom_config.exists():
             _missing.append(".headroom/config.yaml (run headroom_setup.py)")
         if not _mcp_has_headroom:
-            _missing.append("headroom-mcp в mcp_config.json")
+            _missing.append("headroom-mcp in mcp_config.json")
         if not _headroom_skill.exists():
             _missing.append("skills/headroom-patterns/SKILL.md")
-        print_warning(f"Headroom: не настроен — {', '.join(_missing)}")
+        print_warning(f"Headroom: not configured — {', '.join(_missing)}")
         results.append({"name": "Headroom Setup", "passed": False})
 
     print_header("🏁 FINAL STATUS")

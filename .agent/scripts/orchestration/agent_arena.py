@@ -128,7 +128,7 @@ def conduct_debate(session_id: str, role: str, candidates: list, subtask: str) -
     )
 
     if overall_source == "stub":
-        print("🚨 [OFFLINE] Ни одна LLM не доступна! Арена работает в автономном режиме заглушек.")
+        print("🚨 [OFFLINE] No LLM is available! Arena running in stub autonomous mode.")
 
     return {
         "session_id": session_id,

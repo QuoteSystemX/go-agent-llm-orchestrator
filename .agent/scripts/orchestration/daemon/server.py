@@ -5,13 +5,15 @@ Listens on a Unix Domain Socket, executes tasks, and manages states.
 """
 
 import asyncio
+import datetime
 import json
 import logging
 import os
 import signal
 import sys
+import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts"))
@@ -25,6 +27,13 @@ logger = logging.getLogger("orchestrator.daemon")
 
 SOCKET_PATH = REPO_ROOT / ".agent" / "bus" / "orchestrator.sock"
 LOCK_NAME = "workspace"
+
+# STORY-1: Memory-pressure trigger threshold for distillation.
+# When headroom_memory.db exceeds this size (MB), the daemon runs
+# agent_squeeze + experience_distiller to prevent OOM during long sprints.
+# Override via env: DAEMON_MEMORY_PRESSURE_MB
+HEADROOM_DB = REPO_ROOT / "headroom_memory.db"
+DEFAULT_MEMORY_PRESSURE_MB = float(os.environ.get("DAEMON_MEMORY_PRESSURE_MB", "5.0"))
 
 
 class OrchestratorDaemon:
@@ -109,6 +118,19 @@ class OrchestratorDaemon:
                 response = self.action_status(task_id)
             elif action == "scan_graph":
                 response = self.action_scan_graph()
+            elif action == "daemon_status":
+                response = self.action_daemon_status()
+            elif action == "stop":
+                response = await self.action_stop(request.get("reason", "no reason provided"))
+            elif action == "trigger_distill":
+                # STORY-1: Manual trigger of the memory-pressure distill pipeline.
+                # Useful from CI or pre-commit hooks. The actual work runs
+                # synchronously in this handler thread, so the caller gets the
+                # full result before the next request is processed.
+                loop = asyncio.get_running_loop()
+                response = await loop.run_in_executor(
+                    None, self.trigger_pressure_distill, request.get("reason", "manual")
+                )
             elif action == "attach":
                 keep_open = True
                 await self.action_attach(task_id, reader, writer)
@@ -178,6 +200,33 @@ class OrchestratorDaemon:
         """Locks the workspace, schedules execution in the background, and returns execution status."""
         if not task_id or not task_desc:
             return {"status": "error", "message": "Missing task_id or task description."}
+
+        # STORY-3.3: Refuse new tasks when daemon is draining (graceful shutdown).
+        # The stop is acknowledged by the daemon BEFORE new requests are processed,
+        # so any client that received a stop ACK is guaranteed to see this gate.
+        if self.shutting_down:
+            return {
+                "status": "error",
+                "message": "Daemon is draining (graceful shutdown in progress). New tasks refused.",
+                "code": "DAEMON_DRAINING",
+            }
+
+        # STORY-2: Inject sanitized INBOX fragments into the task description.
+        # The daemon reads the human's INBOX.md at task start and prepends a
+        # sanitized fragment to the task description. The strip_for_prompt()
+        # function removes dangerous markup (defense-in-depth) before injection.
+        inbox_fragment = self._build_inbox_fragment(target=task_id)
+        if inbox_fragment:
+            task_desc = f"{inbox_fragment}\n\n---\n\n{task_desc}"
+
+        # STORY-6: Inject distilled lessons (knowledge compounding).
+        # After archivist_trigger runs, fresh lessons are registered for
+        # re-injection. The daemon prepending them here closes the loop:
+        # distillation is no longer "write-only" — agents immediately see
+        # what was learned.
+        knowledge_fragment = self._build_knowledge_fragment(scope="global")
+        if knowledge_fragment:
+            task_desc = f"{knowledge_fragment}\n\n---\n\n{task_desc}"
 
         # Try to acquire workspace lock (Idempotency and concurrency safety)
         # Holder is the task_id
@@ -287,12 +336,211 @@ class OrchestratorDaemon:
         mermaid = builder.to_mermaid(self.graph)
         return {"status": "success", "mermaid": mermaid}
 
-    async def shutdown(self, sig: signal.Signals) -> None:
-        """Gracefully close sockets and terminate background tasks."""
+    def action_daemon_status(self) -> Dict[str, Any]:
+        """Return current daemon state (STORY-3.3 SIGTERM channel).
+
+        State machine:
+            - running:   accepting new tasks, normal operation
+            - draining:  shutting down, refuses new tasks, in-flight finishing
+            - stopped:   fully shut down (after shutdown() completes)
+        """
         if self.shutting_down:
-            return
+            state = "draining"
+        else:
+            state = "running"
+        mem_mb = self._get_headroom_db_mb()
+        return {
+            "status": "success",
+            "state": state,
+            "active_tasks": list(self.active_tasks.keys()),
+            "socket_path": str(self.socket_path),
+            "memory": {
+                "headroom_db_mb": mem_mb,
+                "pressure_threshold_mb": DEFAULT_MEMORY_PRESSURE_MB,
+                "under_pressure": mem_mb is not None and mem_mb > DEFAULT_MEMORY_PRESSURE_MB,
+            },
+        }
+
+    @staticmethod
+    def _get_headroom_db_mb() -> float | None:
+        """Return current size of headroom_memory.db in MB, or None if missing."""
+        if not HEADROOM_DB.exists():
+            return None
+        return HEADROOM_DB.stat().st_size / (1024 * 1024)
+
+    def check_memory_pressure(self) -> bool:
+        """STORY-1: Return True if headroom_memory.db exceeds the pressure threshold.
+
+        Called after each task completion. When True, the caller should invoke
+        `_trigger_pressure_distill()` to prevent OOM during long sprints.
+        """
+        mem_mb = self._get_headroom_db_mb()
+        if mem_mb is None:
+            return False
+        return mem_mb > DEFAULT_MEMORY_PRESSURE_MB
+
+    def _build_inbox_fragment(self, target: Optional[str] = None, max_chars: int = 4000) -> str:
+        """STORY-2: Build a sanitized INBOX fragment for system-prompt injection.
+
+        Reads entries from tasks/INBOX.md, filters by target (if given), and
+        returns a strip_for_prompt() formatted string. Returns empty string if
+        the inbox is empty or the communication module is unavailable.
+        """
+        try:
+            sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "communication"))
+            from inbox import read_entries, strip_for_prompt  # type: ignore
+        except Exception as e:
+            logger.debug("INBOX module unavailable: %s", e)
+            return ""
+        try:
+            entries = read_entries(target=target, include_acked=False)
+            if not entries:
+                return ""
+            fragment = strip_for_prompt(entries, max_chars=max_chars)
+            if fragment:
+                logger.info("Injected %d INBOX entries into task %s", len(entries), target or "(global)")
+            return fragment
+        except Exception as e:
+            logger.warning("Failed to build INBOX fragment: %s", e)
+            return ""
+
+    def _build_knowledge_fragment(self, scope: str = "global", max_chars: int = 4000) -> str:
+        """STORY-6: Build a fragment of distilled lessons for prompt injection.
+
+        Closes the distillation loop: lessons extracted by archivist_trigger
+        are registered in the injection index, then re-injected into the
+        next session's task description. The fragment is plain text (no
+        markup); sanitization is automatic since the source is markdown
+        with a strict format.
+
+        Returns empty string if no active injections or module unavailable.
+        """
+        try:
+            sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "communication"))
+            from knowledge_inject import build_knowledge_fragment  # type: ignore
+        except Exception as e:
+            logger.debug("knowledge_inject module unavailable: %s", e)
+            return ""
+        try:
+            fragment = build_knowledge_fragment(scope=scope, max_chars=max_chars)
+            if fragment:
+                logger.info("Injected knowledge fragment (scope=%s, %d chars)", scope, len(fragment))
+            return fragment
+        except Exception as e:
+            logger.warning("Failed to build knowledge fragment: %s", e)
+            return ""
+
+    def trigger_pressure_distill(self, reason: str = "manual") -> Dict[str, Any]:
+        """STORY-1: Run agent_squeeze + experience_distiller synchronously.
+
+        Returns a structured result with which steps ran, durations, and any
+        errors. Designed to be safe to call from a thread executor AND from
+        a synchronous context (no event loop required).
+        """
+        started = time.time()
+        result: Dict[str, Any] = {
+            "status": "success",
+            "reason": reason,
+            "started_ts": datetime.datetime.utcnow().isoformat() + "Z",
+            "steps": [],
+        }
+
+        # Step 1: agent_squeeze (compresses in-memory state to LESSONS)
+        step_start = time.time()
+        try:
+            from knowledge import agent_squeeze  # type: ignore
+            agent_squeeze.main()
+            result["steps"].append({"name": "agent_squeeze", "status": "ok", "duration_s": round(time.time() - step_start, 3)})
+        except Exception as e:
+            logger.exception("agent_squeeze failed during pressure distill")
+            result["steps"].append({"name": "agent_squeeze", "status": "error", "error": str(e)})
+            result["status"] = "partial"
+
+        # Step 2: experience_distiller (archives old lessons)
+        try:
+            step_start = time.time()
+            from knowledge import experience_distiller  # type: ignore
+            distill_result = experience_distiller.distill_lessons()
+            result["steps"].append({"name": "experience_distiller", "status": "ok", "summary": distill_result, "duration_s": round(time.time() - step_start, 3)})
+        except Exception as e:
+            logger.exception("experience_distiller failed during pressure distill")
+            result["steps"].append({"name": "experience_distiller", "status": "error", "error": str(e)})
+            result["status"] = "partial"
+
+        # Step 3: report new memory size
+        result["headroom_db_mb_after"] = self._get_headroom_db_mb()
+        return result
+
+    async def action_stop(self, reason: str) -> Dict[str, Any]:
+        """Initiate graceful shutdown via IPC (STORY-3.3 SIGTERM channel).
+
+        Unlike SIGTERM/SIGINT, this:
+          - Returns synchronous ACK to the caller with current state
+          - Persists the reason to context bus for audit
+          - Marks the daemon as draining (refuses new tasks)
+          - Triggers full graceful shutdown
+
+        Atomic guarantee: the caller receives the ACK only after the daemon
+        has flipped its state to draining (action_run_task will now refuse).
+        """
+        if self.shutting_down:
+            return {
+                "status": "success",
+                "state": "draining",
+                "message": "Daemon already shutting down",
+                "reason": reason,
+            }
+
+        logger.info("Stop requested via IPC. Reason: %s", reason)
         self.shutting_down = True
-        logger.info("Received signal %s. Initiating graceful shutdown...", sig.name)
+
+        # Persist stop event to context bus for audit trail
+        try:
+            bus_dir = REPO_ROOT / ".agent" / "bus"
+            bus_dir.mkdir(parents=True, exist_ok=True)
+            import datetime
+            stop_event = {
+                "id": f"stop_{int(datetime.datetime.utcnow().timestamp())}",
+                "type": "daemon_stop",
+                "author": "daemon.action_stop",
+                "reason": reason,
+                "active_tasks_at_stop": list(self.active_tasks.keys()),
+                "ts": datetime.datetime.utcnow().isoformat() + "Z",
+            }
+            bus_file = bus_dir / "daemon_stop.jsonl"
+            with open(bus_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(stop_event) + "\n")
+        except Exception as e:
+            logger.warning("Could not persist stop event to bus: %s", e)
+
+        # Schedule actual shutdown in the background so the caller gets ACK first.
+        # We use asyncio.create_task to ensure the response is sent before
+        # the server.close() in shutdown() interrupts the connection.
+        loop = asyncio.get_running_loop()
+        sig = signal.SIGTERM  # Reuse the existing shutdown path
+        loop.create_task(self.shutdown(sig))
+
+        return {
+            "status": "success",
+            "state": "draining",
+            "message": "Daemon acknowledged stop; in-flight tasks will finish, new tasks refused",
+            "reason": reason,
+            "active_tasks_in_flight": list(self.active_tasks.keys()),
+        }
+
+    async def shutdown(self, sig: signal.Signals) -> None:
+        """Gracefully close sockets and terminate background tasks.
+
+        Idempotent: can be called from a system signal handler OR from the IPC
+        action_stop handler. First call wins; subsequent calls only do the
+        cleanup that wasn't already done.
+        """
+        first_call = not self.shutting_down
+        self.shutting_down = True
+        if first_call:
+            logger.info("Received signal %s. Initiating graceful shutdown...", sig.name)
+        else:
+            logger.info("Shutdown re-entered (via IPC). Continuing cleanup...")
 
         if self.server:
             self.server.close()

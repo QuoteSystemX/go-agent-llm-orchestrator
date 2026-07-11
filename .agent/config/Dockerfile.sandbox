@@ -1,0 +1,21 @@
+# Docker Sandbox environment for running agent tests and lints
+FROM golang:1.26-bookworm
+
+# Install Python 3, pip, and clean up cache
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies for checklist validation
+RUN pip3 install --no-cache-dir --break-system-packages pyyaml jsonschema
+
+WORKDIR /workspace
+
+# Copy workspace
+COPY . .
+
+# Run default verification check
+CMD ["go", "test", "-race", "./..."]

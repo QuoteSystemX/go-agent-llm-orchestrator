@@ -62,7 +62,7 @@ class TestExperienceInjector(unittest.TestCase):
         
         # Test query matching
         result = injector.query_lessons("codebase-memory-mcp", top_n=1)
-        self.assertIn("Релевантный исторический опыт", result)
+        self.assertIn("Relevant Historical Experience", result)
         self.assertIn("codebase-memory-mcp", result)
 
     def test_inject_to_file(self):

@@ -216,9 +216,10 @@ class ExecutionEngine:
     up to MAX_SELF_HEAL_RETRIES times.
     """
 
-    def __init__(self, graph: HierarchyGraph, dry_run: bool = False) -> None:
+    def __init__(self, graph: HierarchyGraph, dry_run: bool = False, sandbox: bool = False) -> None:
         self.graph = graph
         self.dry_run = dry_run
+        self.sandbox = sandbox
         self._session_id = uuid.uuid4().hex[:12]
         self._start_time = time()
         self._trace: Dict[str, Any] = {
@@ -595,15 +596,35 @@ class ExecutionEngine:
         if self.dry_run:
             return True, None
 
-        clean_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
-        clean_env["GOPRIVATE"] = "github.com/QuoteSystemX/*"
-        result = subprocess.run(
-            ["go", "test", "-race", "./..."],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-            env=clean_env,
-        )
+        if getattr(self, "sandbox", False):
+            logger.info("[Engine] Running tests inside Docker sandbox...")
+            # Ensure Docker image is built
+            build_res = subprocess.run(
+                ["docker", "build", "-f", ".agent/config/Dockerfile.sandbox", "-t", "agent-sandbox", "."],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+            )
+            if build_res.returncode != 0:
+                logger.error("[Engine] Docker sandbox build failed:\n%s", build_res.stderr)
+                return False, f"Docker sandbox build failed:\n{build_res.stderr[:1000]}"
+
+            result = subprocess.run(
+                ["docker", "run", "--rm", "agent-sandbox"],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+            )
+        else:
+            clean_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+            clean_env["GOPRIVATE"] = "github.com/QuoteSystemX/*"
+            result = subprocess.run(
+                ["go", "test", "-race", "./..."],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+                env=clean_env,
+            )
         if result.returncode == 0:
             return True, None
         return False, (result.stderr + result.stdout)[:4096]
@@ -656,7 +677,7 @@ class ExecutionEngine:
                     combined.append(clean_c)
                     
             if combined:
-                lessons_block = "\n> [!IMPORTANT]\n> ### 🧠 Релевантный исторический опыт (FOXY method)\n"
+                lessons_block = "\n> [!IMPORTANT]\n> ### 🧠 Relevant Historical Experience (FOXY method)\n"
                 for lesson in combined[:2]:
                     lines = lesson.splitlines()
                     if lines:
@@ -723,6 +744,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--task", type=str, default="",
         help="Task description to execute through the agent graph",
     )
+    p.add_argument(
+        "--sandbox", action="store_true",
+        help="Run tests and validation commands inside a Docker sandbox",
+    )
     return p
 
 
@@ -752,7 +777,7 @@ def main() -> None:
     task = args.task.strip() or "Implement a feature (no task specified)"
     state = TaskState(issue_description=task)
 
-    engine = ExecutionEngine(graph, dry_run=args.dry_run)
+    engine = ExecutionEngine(graph, dry_run=args.dry_run, sandbox=args.sandbox)
     final = engine.run(state)
 
     print(f"\n=== STATUS: {final.status.upper()} ===")

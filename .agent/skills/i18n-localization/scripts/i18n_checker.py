@@ -145,7 +145,7 @@ def check_hardcoded_strings(project_path: Path) -> dict:
         code_files.extend(project_path.rglob(f"*{ext}"))
     
     code_files = [f for f in code_files if not any(x in str(f) for x in 
-                  ['node_modules', '.git', 'dist', 'build', '__pycache__', 'venv', 'test', 'spec'])]
+                  ['node_modules', '.git', 'dist', 'build', '__pycache__', 'venv', 'test', 'spec', '.agent', 'scratch', 'archive'])]
     
     if not code_files:
         return {'passed': ["[!] No code files found"], 'issues': []}

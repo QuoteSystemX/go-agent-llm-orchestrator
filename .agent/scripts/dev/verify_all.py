@@ -74,7 +74,16 @@ def print_error(text: str):
 
 # Complete verification suite
 VERIFICATION_SUITE = [
-    # P0: Security (CRITICAL)
+    # P0: Agent & Skill Quality Gates (CRITICAL — blocks stubs/weak definitions)
+    {
+        "category": "Agent & Skill Quality",
+        "checks": [
+            ("Agent Quality Gate",  ".agent/scripts/benchmarks/scan_weak_agents.py", True),
+            ("Skill Quality Gate",  ".agent/scripts/benchmarks/scan_weak_skills.py", True),
+        ]
+    },
+
+    # P1: Security (CRITICAL)
     {
         "category": "Security",
         "checks": [
@@ -171,8 +180,10 @@ def run_script(name: str, script_path: Path, project_path: str, url: Optional[st
     print_step(f"Running: {name}")
     start_time = datetime.now()
     
-    # Build command
+    # Build command — gate scripts get --gate flag so they return exit 1 on violations
     cmd = ["python3", str(script_path), project_path]
+    if "scan_weak_agents" in script_path.name or "scan_weak_skills" in script_path.name:
+        cmd.append("--gate")
     if url and ("lighthouse" in script_path.name.lower() or "playwright" in script_path.name.lower()):
         cmd.append(url)
     

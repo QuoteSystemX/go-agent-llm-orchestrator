@@ -8,8 +8,8 @@
 
 Unified Agent Kit is a modular system consisting of:
 
-- **49 Specialist Agents** - Role-based AI personas
-- **114 Skills** - Domain-specific knowledge modules
+- **54 Specialist Agents** - Role-based AI personas
+- **118 Skills** - Domain-specific knowledge modules
 - **24 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
@@ -153,7 +153,7 @@ graph TD
 - `python3 .agent/scripts/misc/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
-## 🤖 Agents (43)
+## 🤖 Agents (48)
 
 Specialist AI personas for different domains.
 
@@ -199,10 +199,15 @@ Specialist AI personas for different domains.
 | `prompt-specialist`   | LLM Optimization & QA     | prompt-engineering, clean-code, telemetry, bmad-lifecycle        |
 | `python-specialist`   | Python Ecosystem Expert   | python-patterns, python-expert-advanced, python-ecosystem-mastery |
 | `meta-architect`      | Agentic Evolution Strategist | agentic-evolution, intelligent-routing, architecture |
+| `prompt-red-teamer`      | Adversarial prompt auditing | vulnerability-scanner, red-team-tactics, clean-code |
+| `prompt-benchmarker`     | Prompt metrics & benchmarking | performance-profiling, webapp-testing |
+| `mcp-protocol-engineer`  | MCP integration & schemas   | api-development, go-patterns, typescript-expert |
+| `local-model-optimizer`  | Local LLM settings & VRAM   | performance-profiling, observability-patterns |
+| `prompt-localizer`       | Prompt i18n & token size    | i18n-localization, prompt-engineering |
 
 ---
 
-## 🧩 Skills (63)
+## 🧩 Skills (67)
 
 Modular knowledge domains that agents can load on-demand. based on task context.
 
@@ -227,6 +232,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `rust-pro`              | Rust patterns, systems                                      |
 | `typescript-expert`     | Strict-mode TS, OpenAPI→TS generation, SDK type design, Zod |
 | `prompt-engineering`   | Chain-of-Thought, Few-shot, ReAct, A/B Testing |
+| `mcp-integration-standards` | MCP server schemas, transport, and JSON-RPC compliance |
 
 ### Database
 
@@ -243,6 +249,11 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `terraform-patterns`     | HCL modules, state management, plan/apply safety, checkov, terratest  |
 | `observability-patterns` | OTel, Prometheus, Grafana, Loki, Jaeger, SLO/SLI, Alertmanager       |
 
+## 🛠 Scripts
+
+- [ralph_loop.py](file:///home/amudrykh/go/project/prompt-library/.agent/scripts/orchestration/ralph_loop.py): Background script for atomic, autonomous work on linter and test errors (Ralph Loop).
+| `local-llm-tuning`      | Ollama Modelfile tuning, GGUF quantization, and VRAM optimization |
+
 ### Testing & Quality
 
 | Skill                   | Description              |
@@ -252,6 +263,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | `tdd-workflow`          | Test-driven development  |
 | `code-review-checklist` | Code review standards    |
 | `lint-and-validate`     | Linting, validation      |
+| `llm-regression-testing`  | Prompt quality benchmarking, cost/token metrics, and regression suites |
 
 ### Security
 
@@ -259,6 +271,7 @@ Modular knowledge domains that agents can load on-demand. based on task context.
 | ----------------------- | ------------------------ |
 | `vulnerability-scanner` | Security auditing, OWASP — includes `entropy_scanner.py` (Shannon entropy secrets detection, multiprocessing) |
 | `red-team-tactics`      | Offensive security       |
+| `adversarial-prompt-testing` | Hardening prompts against injections, jailbreaks, and leakage |
 
 ### Architecture & Planning
 
@@ -438,6 +451,11 @@ Master validation scripts that orchestrate skill-level scripts.
 | `knowledge_miner.py`  | Retroactive Knowledge Archeologist    | Maintenance              |
 | `promote_proposals.py` | Finalizes documentation proposals    | Maintenance              |
 | `generate_inventory.py` | Full codebase documentation generator | Maintenance              |
+| `git_pre_commit_distill.py` | STORY-1 forcing function — refuses done-stories without fresh distillation (sentinel check) | Pre-commit hook |
+| `inbox.py` (communication/) | STORY-2 structured human→agent channel — JSON schema validation + sanitization | Daemon prompt injection |
+| `capability_check.py` (permissions/) | STORY-4 default-deny capability matrix — gates every privileged op | Every daemon action, harness_run |
+| `knowledge_inject.py` (communication/) | STORY-6 re-injection — distilled lessons reapplied in next session | Daemon prompt injection |
+| `harness_run.py` (harness/) | STORY-5 capability-driven subprocess — manifest + sandbox + OTel | bin/harness_run |
 | `walkthrough_assembler.py` | Auto-documentation assembler   | Maintenance              |
 | `task_sync.py`        | Task status synchronizer        | Maintenance              |
 

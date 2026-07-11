@@ -73,7 +73,7 @@ def query_lessons(query: str, top_n: int = 3) -> str:
         
     output = []
     output.append("> [!IMPORTANT]")
-    output.append("> ### 🧠 Релевантный исторический опыт (FOXY method)")
+    output.append("> ### 🧠 Relevant Historical Experience (FOXY method)")
     for lesson in combined[:top_n]:
         lines = lesson.splitlines()
         if lines:
@@ -90,7 +90,7 @@ def inject_to_file(file_path: Path, lesson_block: str):
         return
         
     content = file_path.read_text(encoding="utf-8")
-    if "Релевантный исторический опыт" in content:
+    if "Relevant Historical Experience" in content:
         # Already injected, skip or replace
         return
         

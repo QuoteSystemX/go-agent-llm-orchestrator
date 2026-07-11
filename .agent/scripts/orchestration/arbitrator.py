@@ -227,9 +227,9 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
     
     is_offline = (src_chal == "stub") and ("LLM Unavailable" in resp_chal or not _extract_json_block(resp_chal).strip().startswith("{"))
     if is_offline:
-        print("\n🚨 [OFFLINE] Ни одна LLM не доступна! Выполняется локальный синтаксический анализ изменений...")
+        print("\n🚨 [OFFLINE] No LLM is available! Running local syntax analysis of changes...")
         passed, errors = _check_syntax_offline()
-        
+
         if not passed:
             verdict = {
                 "plan_ref": plan_id,
@@ -237,7 +237,7 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
                 "conditions": ["Fix compilation and syntax errors before proceeding."],
                 "confidence": 1.0,
                 "risk_areas": errors,
-                "summary": "🚨 [OFFLINE] Авто-вето: обнаружены критические ошибки синтаксиса/компиляции при недоступности LLM.",
+                "summary": "🚨 [OFFLINE] Auto-veto: critical syntax/compilation errors detected while LLM is unavailable.",
             }
         else:
             verdict = {
@@ -245,8 +245,8 @@ def run_consensus(plan_id: str, plan_text: str = "") -> dict:
                 "status": "approved",
                 "conditions": [],
                 "confidence": 0.8,
-                "risk_areas": ["⚠️ Ни одна LLM не доступна (Offline). Вердикт вынесен локально на основе синтаксического анализа."],
-                "summary": "✅ [OFFLINE] Одобрено: все измененные файлы прошли локальную синтаксическую валидацию при недоступности LLM.",
+                "risk_areas": ["⚠️ No LLM is available (Offline). Verdict issued locally based on syntax analysis."],
+                "summary": "✅ [OFFLINE] Approved: all changed files passed local syntax validation while LLM is unavailable.",
             }
             
         _push_verdict(plan_id, verdict, CritiqueList(critiques=[]), VerdictList(resolutions=[]), plan_text)

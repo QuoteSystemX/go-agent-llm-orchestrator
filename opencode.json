@@ -317,7 +317,7 @@
       "mode": "subagent",
       "permission": {
         "read": "allow",
-        "edit": "allow",
+        "bash": "allow",
         "glob": "allow",
         "grep": "allow"
       },
@@ -526,6 +526,30 @@
       "model": "mcp-llm-broker/L2",
       "hidden": true
     },
+    "prompt-benchmarker": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Measures prompt performance metrics, token usage, latency, and consistency across multiple model backends.",
+      "model": "mcp-llm-broker/L2",
+      "hidden": true
+    },
+    "prompt-red-teamer": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection, and LLM security audits.",
+      "model": "mcp-llm-broker/L3",
+      "hidden": true
+    },
     "qa-automation-engineer": {
       "mode": "subagent",
       "permission": {
@@ -651,7 +675,7 @@
         "glob": "allow",
         "grep": "allow"
       },
-      "description": "Glue agent that bridges Go engineering and Crypto/TON domain expertise. Designs systems where crypto logic maps onto Go implementation \u2014 exchange pipelines, TON indexers, HFT engines, on-chain executors. Triggers when BOTH Go (golang, grpc, gin, fiber, xsync) AND Crypto (ton, crypto, exchange, trading, blockchain, dex) signals are present, OR on architecture/pipeline/design/system-design tasks in a crypto-go context.",
+      "description": "Designs and audits cryptographic systems in Go. Covers key management, TLS/mTLS configuration, secure hashing, token signing, ECDSA/Ed25519, and Go crypto library best practices. Use for crypto code review, key lifecycle design, and algorithm selection. Triggers on crypto, encryption, hashing, jwt, tls, ecdsa, aes, hmac.",
       "model": "mcp-llm-broker/L3",
       "hidden": true
     },
@@ -690,7 +714,7 @@
         "glob": "allow",
         "grep": "allow"
       },
-      "description": "Multi-cloud infrastructure specialist \u2014 AWS/GCP/Azure provisioning, IAM least-privilege, VPC/VNet networking, cost optimization (spot/reserved/CUDs), KMS secrets rotation, CDN/edge configuration, container registries, multi-cloud abstraction patterns. Use when tasks involve cloud infrastructure, IAM policies, networking design, cost reduction, or secrets management across AWS/GCP/Azure.",
+      "description": "Designs, provisions, and maintains cloud infrastructure on AWS/GCP/Azure using Infrastructure-as-Code (Terraform, Pulumi). Enforces cost controls, HA patterns, and security-by-default configurations. Use for cloud architecture, IaC, cost optimization, DR planning, and security hardening. Triggers on cloud, aws, gcp, azure, terraform, iac, infra.",
       "model": "mcp-llm-broker/L3",
       "hidden": true
     },
@@ -733,6 +757,45 @@
       "model": "mcp-llm-broker/L3",
       "hidden": true
     },
+    "local-model-optimizer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Optimizes local models (Ollama, Jan), configures weights, adjusts GGUF quantization settings, context sizes, and maximizes TPS. Use for local LLM performance tuning, VRAM management, Modelfile configuration, and quantization selection. Triggers on ollama, gguf, quantization, tps, vram, local-llm, modelfile.",
+      "model": "mcp-llm-broker/L3",
+      "hidden": true
+    },
+    "mcp-protocol-engineer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specialized in Model Context Protocol (MCP) schema compliance, tool definitions, transport protocol issues, and server orchestration. Use for MCP server development, JSON-RPC schema design, SSE/Stdio transport debugging, and broker integration. Triggers on mcp, json-rpc, tool-schema, sse, transport, broker.",
+      "model": "mcp-llm-broker/L2",
+      "hidden": true
+    },
+    "prompt-localizer": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Adapts and localizes prompts to multiple target languages (e.g. RU/EN) ensuring instruction strength and token efficiency. Use for multilingual prompt translation, instruction drift repair, and token budget optimization across language variants. Triggers on localization, translation, ru, multilingual, i18n, token-budget.",
+      "model": "mcp-llm-broker/L4",
+      "hidden": true
+    },
     "python-specialist": {
       "mode": "subagent",
       "permission": {
@@ -768,7 +831,7 @@
         "glob": "allow",
         "grep": "allow"
       },
-      "description": "Expert in offensive security, penetration testing, red team operations, and vulnerability exploitation. Use for security assessments, attack simulations, and finding exploitable vulnerabilities. Triggers on pentest, exploit, attack, hack, breach, pwn, redteam, offensive.",
+      "description": "Conducts systematic penetration tests, identifies attack surfaces, exploits vulnerabilities in controlled environments, and produces actionable remediation reports. Use for pre-release security audits, auth flow testing, OWASP Top 10 coverage, and red-team engagements. Triggers on pentest, exploit, vulnerability, owasp, red-team, attack-surface.",
       "model": "mcp-llm-broker/L3",
       "hidden": true
     },

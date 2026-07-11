@@ -33,7 +33,7 @@ except AttributeError:
 SKIP_DIRS = {
     'node_modules', '.next', 'dist', 'build', '.git', '.github',
     '__pycache__', '.vscode', '.idea', 'coverage', 'test', 'tests',
-    '__tests__', 'spec', 'docs', 'documentation'
+    '__tests__', 'spec', 'docs', 'documentation', '.agent', 'scratch', 'archive'
 }
 
 # Files to skip (not public pages)

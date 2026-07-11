@@ -268,7 +268,7 @@ def execute_task(node: TaskNode, run_dir: Path, active_models: set[str], model_n
     # 4. Construct prompt
     prompt = node.body
     if inputs_content:
-        prompt = f"{prompt}\n\n## Входные артефакты от предыдущих шагов (Автоматический импорт):{inputs_content}"
+        prompt = f"{prompt}\n\n## Input artifacts from previous steps (Auto-import):{inputs_content}"
 
     # 5. Query LLM via Broker
     tier = node.model_override or agent_fm.get("model", "L2")
@@ -354,7 +354,7 @@ def execute_task(node: TaskNode, run_dir: Path, active_models: set[str], model_n
         node.status = status
         
         # Append Execution Log
-        log_text = f"\n## Результат выполнения\n{llm_response}\n\n## Лог выполнения\n"
+        log_text = f"\n## Execution Result\n{llm_response}\n\n## Execution Log\n"
         log_text += f"- **Status**: {status}\n"
         log_text += f"- **Run ID**: {run_dir.name}\n"
         log_text += f"- **Duration**: {duration:.2f}s\n"
@@ -369,8 +369,8 @@ def execute_task(node: TaskNode, run_dir: Path, active_models: set[str], model_n
             else:
                 log_text += "\n✓ No validation checks defined.\n"
                 
-        # Split body around original ## Результат выполнения or append
-        res_idx = node.body.find("## Результат выполнения")
+        # Split body around original ## Execution Result or append
+        res_idx = node.body.find("## Execution Result")
         if res_idx != -1:
             node.body = node.body[:res_idx] + log_text
         else:

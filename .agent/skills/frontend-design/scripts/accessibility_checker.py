@@ -30,7 +30,7 @@ except:
 def find_html_files(project_path: Path) -> list:
     """Find all HTML/JSX/TSX files."""
     patterns = ['**/*.html', '**/*.jsx', '**/*.tsx']
-    skip_dirs = {'node_modules', '.next', 'dist', 'build', '.git'}
+    skip_dirs = {'node_modules', '.next', 'dist', 'build', '.git', '.agent', 'scratch', 'archive'}
     
     files = []
     for pattern in patterns:

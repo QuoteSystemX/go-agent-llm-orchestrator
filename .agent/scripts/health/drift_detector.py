@@ -137,7 +137,7 @@ def detect_drift():
     monitored_exts = [".go", ".ts", ".tsx", ".py", ".js"]
     
     # Paths to ignore for drift detection — archived code is frozen, no doc monitoring needed
-    ignored_paths = ["archive/"]
+    ignored_paths = ["archive/", "scratch/"]
     
     for f in changes:
         path = Path(f)

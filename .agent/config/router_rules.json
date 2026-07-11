@@ -16,13 +16,37 @@
       "L4": 13
     },
     "weights": {
+      "_comment": "Scoring weights for routing keywords. Both English and Russian variants map to the same numeric weight. To add a new keyword: pick the weight that matches the complexity you want it to imply, then add it in both languages.",
       "security": 7,
+      "безопасност": 7,
       "architecture": 9,
+      "архитектур": 9,
       "audit": 6,
+      "аудит": 6,
       "refactor": 5,
+      "рефактор": 5,
       "implement": 4,
+      "реализуй": 4,
+      "реализовать": 4,
       "fix": 3,
+      "исправ": 3,
+      "сделай": 3,
       "add": 3,
+      "создай": 3,
+      "создать": 3,
+      "check": 3,
+      "проверь": 3,
+      "analyze": 5,
+      "анализ": 5,
+      "debug": 5,
+      "отладка": 5,
+      "дебаг": 5,
+      "bug": 3,
+      "баг": 3,
+      "error": 3,
+      "ошибк": 3,
+      "migrate": 6,
+      "мигра": 6,
       "lint": -2,
       "typo": -5,
       "readme": -5,
@@ -30,23 +54,8 @@
       "drift": 8,
       "sync": 5,
       "deployment": 5,
-      "анализ": 5,
-      "отладка": 5,
-      "дебаг": 5,
-      "реализуй": 4,
-      "реализовать": 4,
-      "сделай": 3,
-      "исправ": 3,
-      "проверь": 3,
-      "создай": 3,
-      "создать": 3,
-      "рефактор": 5,
-      "ошибк": 3,
-      "баг": 3,
-      "архитектур": 9,
-      "безопасност": 7,
       "деплой": 5,
-      "мигра": 6
+      "deploy": 5
     }
   },
   "domain_affinity": {
@@ -61,7 +70,12 @@
         "auth security",
         "zero-day",
         "system refactor",
-        "migration plan"
+        "migration plan",
+        "критический аудит",
+        "аутентификация безопасность",
+        "нулевой день",
+        "рефакторинг системы",
+        "план миграции"
       ],
       "skills": [
         "security-auditor",
@@ -77,7 +91,14 @@
         "architecture",
         "design",
         "refactor",
-        "optimization"
+        "optimization",
+        "отладка",
+        "аудит",
+        "безопасность",
+        "архитектура",
+        "дизайн",
+        "рефакторинг",
+        "оптимизация"
       ],
       "skills": [
         "penetration-tester",
@@ -91,7 +112,12 @@
         "add feature",
         "create",
         "test",
-        "fix"
+        "fix",
+        "реализовать",
+        "добавить фичу",
+        "создать",
+        "тест",
+        "исправить"
       ],
       "skills": [
         "backend-specialist",
@@ -109,7 +135,14 @@
         "readme",
         "comment",
         "list files",
-        "check status"
+        "check status",
+        "опечатка",
+        "проверка орфографии",
+        "форматирование",
+        "документация",
+        "комментарий",
+        "список файлов",
+        "проверить статус"
       ],
       "skills": [
         "explorer-agent"

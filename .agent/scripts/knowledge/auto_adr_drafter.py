@@ -69,7 +69,7 @@ Return only the markdown content of the ADR, with no extra explanations or comme
     
     # 3. Fallback check
     if source == "stub" or "LLM Unavailable" in content or not content.strip():
-        print("🚨 [OFFLINE] Ни одна LLM не доступна! Используется локальный генератор заглушек.")
+        print("🚨 [OFFLINE] No LLM is available! Using local stub generator.")
         
         # Extract files from conflict_desc
         changed_files = []
@@ -112,7 +112,7 @@ Date: {datetime.date.today()}
 Status: Proposed (Autonomous)
 
 > [!WARNING]
-> **Ни одна LLM не доступна (Offline)**: Этот документ сгенерирован автоматически локальным генератором заглушек, так как все LLM-эндпоинты недоступны.
+> **No LLM is available (Offline)**: This document was generated automatically by the local stub generator, as all LLM endpoints are unavailable.
 
 ## Context
 A structural change was detected in the following codebase components:

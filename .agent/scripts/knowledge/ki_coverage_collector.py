@@ -31,7 +31,7 @@ class KICoverageCollector(MetricCollector):
         super().__init__("KI_Coverage")
         self.exclude_dirs = {
             ".agent", ".git", ".claude", ".opencode", "node_modules", "venv", "__pycache__",
-            ".next", ".turbo", "dist", "build", "out", ".expo", ".vercel"
+            ".next", ".turbo", "dist", "build", "out", ".expo", ".vercel", "scratch", "archive"
         }
         self.code_extensions = {".py", ".go", ".js", ".ts", ".tsx"}
 

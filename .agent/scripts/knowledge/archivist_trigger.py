@@ -66,4 +66,38 @@ def run_trigger():
     return {"status": status, "results": results, "failed": failed}
 
 if __name__ == "__main__":
-    print(json.dumps(run_trigger(), indent=2))
+    result = run_trigger()
+    # STORY-1: Write distillation sentinel so pre-commit hook can verify
+    # freshness. The sentinel's mtime is compared to done-story mtimes.
+    try:
+        from lib.paths import REPO_ROOT
+        from datetime import datetime, timezone
+        sentinel_dir = REPO_ROOT / ".agent" / "bus"
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
+        sentinel = sentinel_dir / ".distill_sentinel"
+        sentinel.write_text(
+            json.dumps({
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "trigger_status": result.get("status"),
+                "failed": result.get("failed", 0),
+            }) + "\n",
+            encoding="utf-8",
+        )
+    except Exception as e:
+        print(f"⚠️  Could not write distill sentinel: {e}", file=__import__("sys").stderr)
+
+    # STORY-6: Register fresh lessons for re-injection (closes the loop).
+    # We re-register any lessons added/modified in this session so the next
+    # agent run sees them in its prompt.
+    if result.get("status") in ("completed", "partial"):
+        try:
+            from lib.paths import REPO_ROOT
+            sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "communication"))
+            from knowledge_inject import register_lesson  # type: ignore
+            from datetime import datetime, timezone
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            register_lesson(today, scope="global", ttl_days=30)
+        except Exception as e:
+            print(f"⚠️  Could not register today's lessons for re-injection: {e}", file=__import__("sys").stderr)
+
+    print(json.dumps(result, indent=2))

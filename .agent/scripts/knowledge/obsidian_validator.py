@@ -442,7 +442,7 @@ def _generate_intelligent_stub(clean_target: str, source_file: str) -> str:
     markdown = f"""# {clean_target}
 
 > [!NOTE]
-> **Автогенерация (Семантическая заглушка)**: Этот файл был сгенерирован автоматически на основе структуры кодовой базы проекта для замены битой вики-ссылки.
+> **Autogeneration (Semantic Stub)**: This file was generated automatically from the project codebase structure to replace a broken wiki link.
 
 ## Metadata
 - **Type**: {item_type}
