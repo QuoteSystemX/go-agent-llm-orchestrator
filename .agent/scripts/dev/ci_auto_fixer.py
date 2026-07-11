@@ -1,25 +1,38 @@
 #!/usr/bin/env python3
+"""
+ci_auto_fixer.py — auto-applies ruff fixes when CI fails linting.
 
-# Antigravity Domain-Aware Import Logic
+Robust against:
+  - Direct invocation (not via pytest): sys.path may not include lib/,
+    so we always set it up before importing.
+  - Shallow git clones: `git diff HEAD~1` fails if there's only one
+    commit. We fall back to `git diff --cached` (staged files) and then
+    to scanning the whole .agent/scripts/ tree.
+"""
+
+# Path setup BEFORE any imports that need lib.paths
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
+    d_path = str(SCRIPTS_DIR / domain)
+    if d_path not in sys.path:
+        sys.path.insert(0, d_path)
+
+# Antigravity Domain-Aware Import Logic (with explicit fallback)
 try:
     from lib.paths import REPO_ROOT
 except ImportError:
-    import sys
-    from pathlib import Path
-    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.append(str(SCRIPTS_DIR))
-    for domain in ["health", "context", "delivery", "orchestration", "analysis", "models", "knowledge", "dev"]:
-        d_path = str(SCRIPTS_DIR / domain)
-        if d_path not in sys.path:
-            sys.path.append(d_path)
+    # lib.paths not on path — fall back to file-relative resolution
+    REPO_ROOT = Path(__file__).resolve().parents[3]
 
 import os
-import sys
 import subprocess
 import logging
 import re
-from pathlib import Path
 from lib.suppress import suppress
 
 logger = logging.getLogger(__name__)
@@ -58,17 +71,47 @@ def _apply_auto_fix(path: str) -> bool:
     return False
 
 
+def _discover_changed_files() -> list[str]:
+    """Discover Python files that were recently changed.
+
+    Tries multiple strategies in order of preference:
+      1. `git diff HEAD~1 --name-only` — most recent commit vs parent
+      2. `git diff --cached --name-only` — staged files (for pre-commit runs)
+      3. `git ls-files -m` — modified but unstaged files
+      4. Empty list (caller falls back to full scan)
+
+    Each strategy is wrapped in try/except so a failure (e.g., shallow
+    clone without HEAD~1) falls through to the next.
+    """
+    strategies = [
+        (["git", "diff", "--name-only", "HEAD~1"], "diff vs HEAD~1"),
+        (["git", "diff", "--cached", "--name-only"], "staged files"),
+        (["git", "ls-files", "-m"], "modified files"),
+    ]
+    for cmd, label in strategies:
+        try:
+            out = subprocess.check_output(
+                cmd,
+                cwd=Path.cwd(),
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+            files = [f for f in out.splitlines() if f.endswith(".py")]
+            if files:
+                print(f"   (using {label}: {len(files)} files)")
+                return files
+        except (subprocess.CalledProcessError, subprocess.SubprocessError, FileNotFoundError) as e:
+            with suppress("ci_auto_fixer.git_diff", level=logging.DEBUG):
+                logger.debug("Strategy %s failed: %s", label, e)
+            continue
+    return []
+
+
 def run_auto_fix():
     print("🚑 CI Failure detected. Starting Autonomous Healing...")
 
-    # Discover changed Python files
-    changed_files = []
-    with suppress("ci_auto_fixer.git_diff", level=logging.DEBUG):
-        changed_files = subprocess.check_output(
-            ["git", "diff", "--name-only", "HEAD~1"],
-            cwd=Path.cwd(), text=True,
-        ).splitlines()
-        changed_files = [f for f in changed_files if f.endswith(".py")]
+    # Discover changed Python files (multi-strategy for shallow clones)
+    changed_files = _discover_changed_files()
 
     if not changed_files:
         print("ℹ️ No changed Python files detected. Falling back to full scan.")

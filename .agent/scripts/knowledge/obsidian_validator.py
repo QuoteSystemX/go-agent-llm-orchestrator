@@ -260,8 +260,14 @@ class Validator:
                 target_exists = target in file_stems or target in file_path_stems
                 if not target_exists:
                     result.broken_links.append((str(file_path.name), target_raw))
+                # Remove from orphans if linked by stem OR by path-stem
                 if target in orphans:
                     orphans.remove(target)
+                if target in file_path_stems and target != target.split("/")[-1]:
+                    # Path-based link like [[archive/foo]] pointing to archive/foo.md
+                    stem = target.split("/")[-1]
+                    if stem in orphans:
+                        orphans.discard(stem)
 
         result.orphans = orphans
 
