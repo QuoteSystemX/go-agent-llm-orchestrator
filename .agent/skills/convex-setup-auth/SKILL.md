@@ -160,6 +160,12 @@ after setup is done. If the environment has browser automation tools, you can
 use them. If it does not, give the user a short manual validation checklist
 instead.
 
+## ❌ Anti-Patterns & Pitfalls to Avoid
+
+- **Anti-Pattern (Hardcoding Secrets)**: Avoid hardcoding JWT secrets or API keys in source files. Never commit environment configs containing credentials.
+- **Anti-Pattern (Assuming Provider)**: Don't assume the authentication provider without verifying the repository's dependencies first.
+- **Anti-Pattern (Outdated Docs)**: Never use recalled auth CLI commands. Always check the official docs to avoid version conflicts.
+
 ## Reference Files
 
 ### Provider References

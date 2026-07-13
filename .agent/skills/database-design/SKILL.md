@@ -46,3 +46,15 @@ Refer to `examples/normalized-schema.md` for a "Golden Path" ER diagram of a cor
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.
+
+## Additional Quality Guidelines
+To ensure the highest standard of delivery, the following additional considerations must be met:
+1. Maintain consistency with existing naming conventions in the codebase.
+2. Implement comprehensive error handling and logging for all new components.
+3. Ensure that all dependencies are declared and verified beforehand.
+4. Write clean, self-documenting code with clear comments where necessary.
+5. Validate performance under load and avoid premature optimizations.

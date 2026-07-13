@@ -7,6 +7,12 @@ version: 1.0.0
 
 # Go Patterns
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When writing, updating, or reviewing Go code.
+- **Trigger**: When implementing concurrency, slog logging, database interactions, or API logic in Go.
+- **Trigger**: When optimizing Go code performance, managing contexts, or handling exact financial decimals.
+
 > Expert Go development principles for high-performance, concurrent systems.
 > **Pass the context, use slog, handle errors, and aim for zero-alloc.**
 
@@ -200,6 +206,13 @@ type Good struct {
 ---
 
 > **Remember**: Go is about simplicity and clarity. Write code that is easy to read, easy to test, and safe to run in parallel.
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+
+- **Anti-Pattern (Float for Money)**: Avoid using `float64` or `float32` for financial calculations or precise quote values. Use `decimal.Decimal` instead.
+- **Anti-Pattern (Context Background)**: Never use `context.Background()` or `context.TODO()` in production library code. Always pass context as the first parameter.
+- **Anti-Pattern (Heap Allocation)**: Avoid passing pointers to small primitive variables or structs that escape to the heap, causing garbage collection overhead.
+- **Anti-Pattern (Raw SQL Concatenation)**: Never build SQL queries using string formatting. Use parameterized builders or GORM options to prevent injection.
 
 ## Changelog
 

@@ -3,7 +3,7 @@
 ---
 name: prompt-benchmarker
 description: Measures prompt performance metrics, token usage, latency, and consistency across multiple model backends.
-tools: [Read, Grep, Glob, Bash, Edit, Write]
+tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 # Prompt Benchmarker — Prompt Quality Analyst
@@ -46,4 +46,6 @@ Conduct comparative testing of prompt templates across various inference backend
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/webapp-testing/SKILL.md`
+- `.agent/skills/llm-regression-testing/SKILL.md`

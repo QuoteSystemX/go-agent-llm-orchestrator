@@ -47,6 +47,50 @@ Use 2-3 query angles:
 For ML/NLP literature, use English academic queries with words such as
 `paper`, `arxiv`, or `survey`; include one original-language query when useful.
 
+## Instructions
+
+1. **Verify eligibility first** — check the node's status, score, and
+   comparison to trunk/baseline. Skip nodes that don't pass the gate.
+2. **Run SearchAgent in background** — search is async, so don't
+   block the main merge decision on it.
+3. **Read the annotation** when SearchAgent finishes, and decide
+   whether to merge, defer, or reject based on novelty + related
+   work.
+4. **Use `SearchIdeaContextParallel`** for sibling winners from a
+   parallel run, so each gets its own search annotation.
+5. **Don't merge a node without an annotation** if it improves over
+   trunk — the annotation is the audit trail.
+
+### How to run a search
+
+```bash
+# Via the SearchAgent MCP tool (preferred)
+search_idea_context(
+    node_id="...",
+    status="done",
+    include_papers=True,
+    include_implementations=True
+)
+```
+
+The agent returns a JSON envelope with `summary`, `related_papers`,
+`related_implementations`, and `novelty` fields.
+
+## Anti-Patterns
+
+- **Don't search trivial parameter tweaks** — they're noise, not
+  novelty. The search agent should focus on algorithmic or
+  architectural changes.
+- **Don't skip the eligibility gate** — searching pending or
+  below-trunk nodes wastes tokens and dilutes the search pool.
+- **Don't merge on incomplete search** — if SearchAgent is still
+  running, defer the merge decision.
+- **Don't use this skill for internal codebase search** — use
+  `Grep`, `Glob`, or `Read` tools instead. This skill is for
+  external prior-art.
+- **Don't trust SearchAgent output blindly** — it's a survey, not
+  a verdict. A human reviewer must still sign off.
+
 ## Hard Caps
 
 - At most 2 search rounds.

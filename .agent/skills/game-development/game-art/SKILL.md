@@ -183,3 +183,7 @@ assets/
 ---
 
 > **Remember:** Art serves gameplay. If it doesn't help the player, it's decoration.
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

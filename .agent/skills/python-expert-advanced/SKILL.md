@@ -116,6 +116,42 @@ Integrate with `Ollama` or `vLLM` using specialized async clients.
 - **Scenario**: 10GB+ RAM Usage -> Use **Shared Memory / Slots**.
 - **Scenario**: Complex Plugin System -> Use **Metaprogramming**.
 
+## When to Use
+
+- **Optimizing slow Python code** — profile first, then
+  optimize. Never guess.
+- **Implementing concurrency** — asyncio for I/O-bound, threading
+  for I/O-bound (with GIL), multiprocessing for CPU-bound.
+- **Designing decorators, metaclasses, or descriptors** — for
+  frameworks and libraries.
+- **Type hints with mypy/pyright strict mode** — gradual typing
+  for legacy codebases.
+- **Memory profiling** — find leaks, optimize allocations.
+- **Packaging complex libraries** — multi-package repos, C
+  extensions, platform-specific wheels.
+
+Avoid using this skill for:
+- Simple scripts (just write them).
+- Web development (use `@python-patterns` for idiomatic Python).
+- Data analysis (use `@data-engineer`).
+
+## Anti-Patterns
+
+- **Don't use `asyncio` for CPU-bound work** — it serializes
+  the work. Use `multiprocessing` or `concurrent.futures.ProcessPoolExecutor`.
+- **Don't ignore the GIL** — threading is NOT parallelism for
+  CPU work. Profile first.
+- **Don't use mutable default arguments** — `def foo(x=[])` is
+  a classic bug. Use `def foo(x=None): x = x or []`.
+- **Don't mix `asyncio` and blocking I/O** — sync I/O in an async
+  function blocks the event loop. Use `asyncio.to_thread`.
+- **Don't skip type hints** — they catch bugs at static analysis
+  time, before runtime. Use `mypy --strict`.
+- **Don't catch bare `except:`** — it catches SystemExit and
+  KeyboardInterrupt. Catch `Exception` instead.
+- **Don't use `__slots__` everywhere** — it complicates
+  inheritance. Use it only for memory-critical classes.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

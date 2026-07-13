@@ -22,9 +22,55 @@ Before running, verify:
    - If no → STOP.
    - If yes → proceed (forced close).
 
+### Pre-Condition 0: Infrastructure Health Gates (STORY-1 + STORY-4)
+
+Before any sprint close, verify the infrastructure that supports the sprint
+is healthy. These gates ensure that the new tools (SIGTERM channel, INBOX,
+distill sentinel, capability matrix) are not broken.
+
+1. // turbo
+   Run command: `python3 .agent/scripts/dev/pr_audit.py`
+   - Expected: 🎉 ALL PR AUDIT CHECKS PASSED! If failed → STOP and fix first.
+2. // turbo
+   Run command: `python3 .agent/scripts/dev/capability_audit.py`
+   - Expected: Status: ✅ PASS. If failed → STOP and fix first.
+3. // turbo
+   Run command: `python3 .agent/scripts/knowledge/obsidian_validator.py check --json`
+   - Expected: `"is_clean": true`. If false → STOP and fix orphans/frontmatter.
+4. // turbo
+   Run command: `python3 .agent/scripts/dev/sync_agents.py --target claude --check`
+   - Expected: no DRIFT output. If drift → run `sync_agents.py --target claude`.
+5. // turbo
+   Run command: `git status --short`
+   - If `integration_report.json` or `server_boot.log` appear → remove them
+     (`git rm --cached` and update `.gitignore` if needed).
+
+If any of these gates fails, log the failure and **STOP**. Do not proceed
+to Step 1 until all gates pass. The sprint cannot be safely closed with
+broken infrastructure.
+
 ---
 
 ## Steps
+
+### Step 0.5: Audit INBOX Distill (STORY-1 + STORY-2 + STORY-6)
+
+Before closing, ensure the distill + INBOX loop has run cleanly.
+
+1. // turbo
+   Run command: `python3 .agent/scripts/knowledge/archivist_trigger.py`
+   - This forces a fresh distillation run. Output: JSON with `status` field.
+   - If `status == "completed"` or `"partial"` → log success.
+   - If `status == "failed"` → log error and STOP.
+2. // turbo
+   Run command: `python3 -c "from .agent.scripts.communication.knowledge_inject import prune_stale_lessons; print(f'Pruned: {prune_stale_lessons()}')"`
+   - This removes stale lessons (applied_count=0 AND TTL expired).
+3. // turbo
+   Run command: `python3 -m pytest .agent/scripts/tests/test_knowledge_inject.py -q --tb=line`
+   - Verify the knowledge loop regression suite passes.
+4. // turbo
+   Run command: `python3 -m pytest .agent/scripts/tests/test_inbox.py -q --tb=line`
+   - Verify the INBOX schema validation suite passes.
 
 ### Step 1: Inventory
 
@@ -36,6 +82,30 @@ Before running, verify:
    ⏳ tasks/2024-01-15-story-bar.md — PENDING (file still exists)
    ```
 
+### Step 1.5: Stop any running daemon (STORY-3.3)
+
+If the orchestrator daemon is running, stop it cleanly before archiving.
+
+1. // turbo
+   Run command: `python3 -agent/scripts/orchestration/daemon/client.py --status 2>/dev/null || echo 'daemon not running'`
+   - If daemon is running:
+     // turbo
+     Run command: `bin/stop "Sprint NN close — analyst @close-sprint"`
+     - Expected: `✅ Stop acknowledged by daemon. State: draining`
+2. // turbo
+   Run command: `rm -f .agent/STOP` (remove fallback STOP file if it exists)
+
+### Step 1.7: Cancel any pending INBOX tasks (STORY-2)
+
+If there are unacked INBOX entries, send a final notification.
+
+1. // turbo
+   Run command: `python3 -c "from .agent.scripts.communication.inbox import read_entries; e = read_entries(include_acked=False); print(f'Unacked: {len(e)}')"`
+   - If `Unacked: N > 0`:
+     // turbo
+     Run command: `bin/inbox send context "Sprint NN closed — all pending inbox items auto-resolved" --anchor "#sprint-close"`
+     - Log: "Notified N pending INBOX items of sprint close."
+
 ### Step 2: Close Sprint
 
 1. Update `wiki/sprints/sprint-NN.md`:
@@ -46,6 +116,8 @@ Before running, verify:
      ## Retrospective
      [auto-generated] Sprint closed via /close-sprint on YYYY-MM-DD.
      Completed: N stories. Remaining: M stories carried to next sprint.
+     Infrastructure: PR audit ✅, capability audit ✅, obsidian ✅
+     Distill: status, INBOX unacked at close: N
      ```
 
 ### Step 3: Archive BMAD Artifacts (only if backlog is fully empty)
@@ -76,6 +148,16 @@ Run the experience distiller to archive old lessons and ensure the experience ba
    Run command: `python3 .agent/scripts/knowledge/wiki_sync.py`
 4. Log the output of the semantic loop execution.
 
+### Step 4.5: Final Regression Run (STORY-1 forcing function)
+
+Before the final summary, run the full regression suite to make sure
+nothing is broken. This is the **last line of defense** before declaring
+sprint complete.
+
+1. // turbo
+   Run command: `python3 -m pytest .agent/scripts/tests/ -q -k "router or daemon or inbox or harness or knowledge_inject or capability" --tb=line`
+   - Expected: 100% pass. If failed → log the failure names and STOP.
+
 ### Step 5: Summary
 
 Print a closing summary:
@@ -87,6 +169,14 @@ Sprint NN:
   - Status:    CLOSED
   - Delivered: N stories
   - Remaining: M stories in backlog
+
+Infrastructure:
+  - pr_audit:        ✅
+  - capability_audit: ✅
+  - obsidian:         ✅
+  - sync_agents:      ✅
+  - distill:          ✅ (status: status)
+  - INBOX unacked:    N at close
 
 BMAD artifacts:
   - wiki/BRIEF.md    → [archived / still active]
@@ -105,4 +195,5 @@ Next steps:
 - NEVER delete ARCHITECTURE.md — only append to it.
 - NEVER force-close without user confirmation if tasks are incomplete.
 - ALWAYS archive with date suffix (`BRIEF-YYYY-MM-DD.md`) — never overwrite existing archives.
+- ALWAYS run Pre-Condition 0 gates before any other step. If a gate fails → STOP.
 - This workflow is idempotent: running it on an already-CLOSED sprint is safe (it will report the sprint is already closed and STOP).

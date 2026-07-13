@@ -161,3 +161,15 @@ Every CTO response must include:
 ✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
 ✅ **ALWAYS** ensure all 5 mandatory sections are present.
 ✅ **NEVER** deliver a response that fails gateway validation.
+
+
+---
+
+> **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/bmad-lifecycle/SKILL.md`
+- `.agent/skills/architecture/SKILL.md`
+- `.agent/skills/intelligent-routing/SKILL.md`
+- `.agent/skills/documentation-templates/SKILL.md`
+- `.agent/skills/brainstorming/SKILL.md`
+- `.agent/skills/observability-patterns/SKILL.md`

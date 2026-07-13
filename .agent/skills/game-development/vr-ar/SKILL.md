@@ -121,3 +121,39 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 > **Remember:** Comfort is not optional. Sick players don't play.
+
+
+## When to Use
+
+- **Building a VR or AR experience** — choose a platform
+  (Quest, Vision Pro, ARKit, ARCore).
+- **Setting up comfort settings** — snap turning, vignette,
+  teleport locomotion to avoid motion sickness.
+- **Hand tracking** — use the platform's SDK (Meta XR, etc.),
+  not raw camera input.
+- **Performance targets** — VR needs 90 FPS minimum; 72 FPS
+  is acceptable for casual content.
+- **Spatial UI** — use world-space UI, not screen-space, where
+  possible.
+
+Avoid using this skill for:
+- 2D-only games (use `@2d-games`).
+- 3D non-VR (use `@3d-games`).
+- Multiplayer VR (use `@multiplayer` + this skill).
+
+## Anti-Patterns
+
+- **Don't force artificial locomotion** — many users get
+  motion sick. Use teleport by default; smooth as opt-in.
+- **Don't use dark backgrounds** — low contrast = eye strain in
+  headset.
+- **Don't put text at fixed distance** — text should be at
+  comfortable reading distance (1-3m) and large enough.
+- **Don't skip the comfort vignette** — fade-to-black during
+  movement is essential for susceptible users.
+- **Don't use 2D UI in 3D space without depth** — flat UI at
+  fixed Z causes eye strain.
+- **Don't ship without testing on actual hardware** — emulator
+  performance is not headset performance.
+- **Don't ignore controller battery** — many VR users forget to
+  charge. Show a battery warning on launch.

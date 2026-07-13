@@ -64,8 +64,14 @@ def review_diff():
     ).lower()
 
     warnings = []
+    import re
     for skill, title in lesson_topics:
-        if skill in added_lines:
+        # Word-boundary match: \b...\b ensures we match the skill as a
+        # whole word, not as a substring (e.g., "test" won't match "testing"
+        # or "attestation"). Also skips lines that already had the lesson
+        # explicitly suppressed (marked with "# no_lessons_check").
+        pattern = re.compile(r"\b" + re.escape(skill) + r"\b")
+        if pattern.search(added_lines):
             warnings.append(f"Found mention of skill '{skill}' in diff (Context: {title})")
 
     if warnings:

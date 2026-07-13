@@ -73,6 +73,8 @@ graph TD
   handlers_discovery --> fs
   handlers_discovery --> json
   handlers_discovery --> mcp
+  handlers_discovery_test --> filepath
+  handlers_discovery_test --> mcp
   handlers_gov --> filepath
   handlers_gov --> mcp
   handlers_hooks --> mcp
@@ -85,7 +87,6 @@ graph TD
   handlers_knowledge --> exec
   handlers_knowledge --> filepath
   handlers_knowledge --> mcp
-  handlers_v3_test --> filepath
   handlers_v3_test --> mcp
   helpers --> aws
   helpers --> config
@@ -127,9 +128,12 @@ graph TD
   run --> slog
   test_factory --> ast
   test_factory --> importlib
+  testutil_test --> sql
+  testutil_test --> stdlib
+  testutil_test --> url
   workers --> exec
   workers --> json
-  workers_test --> filepath
+  workers_test --> json
 ```
 <!-- DEPENDENCY_GRAPH_END -->
 
@@ -636,6 +640,36 @@ Lightweight SSE server for live dashboard updates.
 Adversarial LLM-powered Git Diff Auditor & Gatekeeper.
 
 - `python3 .agent/scripts/orchestration/tough_auditor.py` - Evaluates code changes with extreme criticism and severity, logs agent quality scores, and warns/blocks if the quality is suboptimal.
+
+### `benchmark_critic.py`
+
+Benchmark result evaluator for model responses.
+
+- `python3 .agent/scripts/benchmarks/benchmark_critic.py` - Evaluates benchmark metrics and checks model consistency.
+
+### `scan_weak_agents.py`
+
+Identifies agents with suboptimal performance metrics.
+
+- `python3 .agent/scripts/benchmarks/scan_weak_agents.py` - Scans execution logs to identify weak agents.
+
+### `scan_weak_skills.py`
+
+Identifies skills with suboptimal success rates.
+
+- `python3 .agent/scripts/benchmarks/scan_weak_skills.py` - Scans execution logs to identify weak skills.
+
+### `dry_run_distribute.py`
+
+Simulates distributed task execution.
+
+- `python3 .agent/scripts/dev/dry_run_distribute.py` - Performs a dry-run check of distributed agent tasks.
+
+### `telemetry_aggregator.py`
+
+Aggregates telemetry event logs.
+
+- `python3 .agent/scripts/observability/telemetry_aggregator.py` - Aggregates granular latency and token metrics from metrics.jsonl.
 
 ---
 

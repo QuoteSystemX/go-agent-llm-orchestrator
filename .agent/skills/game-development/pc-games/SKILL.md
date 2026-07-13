@@ -142,3 +142,38 @@ Map ACTIONS, not buttons:
 ---
 
 > **Remember:** Engine is a tool. Master the principles, then adapt to any engine.
+
+
+## When to Use
+
+- **Building a desktop game** — Unity, Unreal, or Godot for
+  3D; Unity 2D or Godot for 2D.
+- **Setting up version control** — Git LFS for binary assets
+  (textures, models, audio).
+- **Build pipeline** — CI builds the game for each target
+  platform on every PR.
+- **Distribution** — Steam, itch.io, Epic Games Store, or
+  self-hosted (for early access).
+- **Modding support** — expose a clean scripting API if you want
+  community mods.
+
+Avoid using this skill for:
+- Web games (use `@web-games`).
+- Mobile-only (use mobile skills).
+- Server-side multiplayer (use `@multiplayer`).
+
+## Anti-Patterns
+
+- **Don't commit binary assets to Git** — use Git LFS
+  or DVC. Otherwise repo size explodes.
+- **Don't use `Time.deltaTime` in Update for game logic** — use
+  `Time.fixedDeltaTime` for physics, normalized `Time.deltaTime`
+  for visuals.
+- **Don't ship a debug build** — always ship `Release` with
+  `Development Build` off.
+- **Don't ignore the Profiler** — if you can't see where frames
+  are spent, you can't optimize.
+- **Don't use `Find` in Update** — cache references in `Awake`.
+- **Don't ship without a crash reporter** — Sentry, Backtrace,
+  or your own. You need to know what crashes in production.
+- **Don't hardcode paths** — use `Application.persistentDataPath`.

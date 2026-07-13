@@ -51,3 +51,7 @@ npx @better-auth/cli@latest migrate
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

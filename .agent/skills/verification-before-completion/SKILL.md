@@ -6,6 +6,12 @@ version: 1.0.0
 
 # Verification Before Completion
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When about to complete a task, fix a bug, or declare that an issue is resolved.
+- **Trigger**: Before committing changes, creating pull requests, or merging.
+- **Trigger**: When verifying tests, lint checks, builds, or executing validation scripts.
+
 ## Overview
 
 Claiming work is complete without verification is dishonesty, not efficiency.

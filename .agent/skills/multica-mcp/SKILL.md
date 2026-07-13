@@ -1,41 +1,84 @@
 ---
 name: multica-mcp
-description: "Global Model Context Protocol (MCP) skills for Multica Core Platform (Issues/Tasks) and Lean-Ctx (Token/Context optimization)."
-version: 1.0.0
+description: "Router skill for Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. Resolves dynamic endpoints and delegates to specific sub-skills."
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+version: 1.2.0
 ---
 
-# Multica Global MCP Skill
+# Multica Global MCP Router Skill
 
-This skill documents and guides agents on utilizing global Model Context Protocol (MCP) servers available in the Multica Kubernetes cluster:
-1. **Core Platform (`multica` and `agent-kit`)**: Issue and task management tools, logging progress, and task lifecycle operations.
-2. **Context Manager (`lean-ctx`)**: Real-time token budget monitoring, request compression, and context reduction.
+> Router and discovery coordinator for Model Context Protocol (MCP) servers running in the `multica` Kubernetes cluster namespace.
 
----
+## 🎯 When to Use This Skill
 
-## 🛠️ CORE PLATFORM (ISSUES & TASKS)
-
-The `multica` and `agent-kit` MCP servers provide tools to coordinate agent tasks and track issue tickets.
-
-### When to use
-- To log the start/end of a sub-task.
-- To create, update, or query issue status in the workspace tracking system.
-- To sync task progress with the platform.
-
-### Standard Operations
-- Use the issue management tools when creating sub-tasks for parallel execution.
-- Ensure task descriptions are concise and well-structured.
+- **Trigger**: When resolving active MCP server endpoints in the `multica` namespace.
+- **Trigger**: When determining which specialized MCP skills (`mcp-agent-kit`, `mcp-browser`, `mcp-codebase-memory`, `mcp-kubernetes`, `mcp-lean-ctx`) to load dynamically based on service availability.
+- **Trigger**: When calling the `multica` discovery server (`http://multica-multica-mcp:3201/mcp`) to retrieve endpoints list.
 
 ---
 
-## 🗜️ LEAN-CTX (TOKEN & CONTEXT OPTIMIZATION)
+## 🧭 Dynamic Service Mapping & Delegation
 
-The `lean-ctx` MCP server provides 14 tools to monitor context windows and compress payloads.
+Instead of using static endpoints, this skill coordinates routing to online services. Ensure you reference the appropriate sub-skills:
 
-### When to use
-- When the context budget is high or approaching workspace limits.
-- Before reading large files or grep outputs (use lean-ctx search or compression tools).
-- To measure current request token usage.
+- For core task control and schedules, delegate to [mcp-agent-kit](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-agent-kit/SKILL.md).
+- For headless browser tests, delegate to [mcp-browser](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-browser/SKILL.md).
+- For code symbol searches, delegate to [mcp-codebase-memory](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-codebase-memory/SKILL.md).
+- For Kubernetes pods and resources, delegate to [mcp-kubernetes](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-kubernetes/SKILL.md).
+- For payload compression and token limits, delegate to [mcp-lean-ctx](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-lean-ctx/SKILL.md).
 
-### Best Practices
-- **Compress outputs**: If a tool output exceeds 200 tokens, use `lean-ctx` compression.
-- **Filter aggressively**: Prefer semantic search/filtering tools over dumping raw files to context.
+---
+
+## 📋 Routing Guidelines & Rules
+
+### 1. Dynamic Endpoint Verification
+- **Rule 1**: Always query the `multica` discovery tool `get_mcp_endpoints()` before attempting connection to any sub-service.
+- **Rule 2**: If a service (e.g. `lean-ctx`) is marked `offline` in the discovery response, the agent **must** fallback to local mock implementations and skip loading that skill.
+- **Rule 3**: Cache the endpoints response in `.agent/bus/mcp_endpoints.json` for 5 minutes.
+
+### 2. Namespace Routing
+- **Rule 4**: Verify namespace DNS context (default: `multica`) before building target URLs.
+
+---
+
+## 💻 Code Examples & Connection Patterns
+
+### Querying Discovery Endpoint
+
+```json
+// Example payload to get all active endpoints in the namespace
+{
+  "serverName": "multica",
+  "toolName": "get_mcp_endpoints",
+  "arguments": {
+    "namespace": "multica"
+  }
+}
+```
+
+### Discovery Response Structure
+
+| Property | Type | Description |
+|---|---|---|
+| `browser.status` | String | Status of browser server (`online`/`offline`) |
+| `lean-ctx.status` | String | Status of lean-ctx server (`online`/`offline`) |
+| `kubernetes.url` | String | Endpoint URL in the cluster |
+
+---
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+
+- **Anti-Pattern (Hardcoded Endpoints)**: Avoid hardcoding URL endpoints in code or configuration. Always use dynamic discovery via the `multica` endpoint.
+- **Anti-Pattern (Ignoring Offline Status)**: Never attempt to call tools on an MCP server that is reported as `offline`. Always implement fallback logic.
+- **Anti-Pattern (Polling Discovery)**: Don't poll the discovery API on every single step. Use the local cache `.agent/bus/mcp_endpoints.json`.
+- **Anti-Pattern (Missing Namespace)**: Avoid querying the discovery API without specifying the namespace, as it can return wrong endpoints.
+
+---
+
+## Additional Quality Guidelines
+To ensure the highest standard of delivery, the following additional considerations must be met:
+1. Maintain consistency with existing naming conventions in the codebase.
+2. Implement comprehensive error handling and logging for all new components.
+3. Ensure that all dependencies are declared and verified beforehand.
+4. Write clean, self-documenting code with clear comments where necessary.
+5. Validate performance under load and avoid premature optimizations.

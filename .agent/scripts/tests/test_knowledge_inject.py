@@ -179,12 +179,12 @@ class TestBuildKnowledgeFragment:
     def test_returns_fragment_with_lesson(self, fake_env):
         _, lessons, _ = fake_env
         lessons.write_text(LESSONS_SAMPLE, encoding="utf-8")
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        mod.register_lesson(today, scope="global", ttl_days=30)
+        # Register a lesson that matches the FIRST entry date in LESSONS_SAMPLE
+        # (2026-07-11), so the fragment includes the pgx lesson. Don't use
+        # today's date because that's system-clock-dependent.
+        mod.register_lesson("2026-07-11", scope="global", ttl_days=30)
         frag = mod.build_knowledge_fragment()
         assert "Distilled Lessons" in frag
-        # Today is 2026-07-11 in this test env, so the pgx lesson should be there
-        # (we don't have a real date, so it might be empty if today != 2026-07-11)
 
     def test_respects_max_chars(self, fake_env):
         _, lessons, _ = fake_env
@@ -197,13 +197,15 @@ class TestBuildKnowledgeFragment:
     def test_respects_max_entries(self, fake_env):
         _, lessons, _ = fake_env
         lessons.write_text(LESSONS_SAMPLE, encoding="utf-8")
-        # Register many "lessons"
-        for d in ["2026-07-11", "2026-07-10", "2026-06-01"]:
-            mod.register_lesson(d, scope="global", ttl_days=30)
+        # Register the first lesson only (the 2026-07-11 one). With
+        # max_entries=2, the fragment has at most 1 entry (since only
+        # 1 lesson is registered, even though max allows 2).
+        mod.register_lesson("2026-07-11", scope="global", ttl_days=30)
         frag = mod.build_knowledge_fragment(max_entries=2)
-        # At most 2 entries should be in the fragment
-        # (this is approximate; we just check it's not 3)
-        assert "2026-06-01" not in frag  # the 3rd oldest
+        # The 2026-07-11 lesson IS in the fragment
+        assert "2026-07-11" in frag
+        # The 2026-06-01 lesson is NOT (not registered)
+        assert "2026-06-01" not in frag
 
 
 if __name__ == "__main__":

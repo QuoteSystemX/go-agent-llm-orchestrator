@@ -15,8 +15,8 @@
       "L3": 10,
       "L4": 13
     },
+    "_weights_comment": "Scoring weights for routing keywords. Both English and Russian variants map to the same numeric weight. To add a new keyword: pick the weight that matches the complexity you want it to imply, then add it in both languages.",
     "weights": {
-      "_comment": "Scoring weights for routing keywords. Both English and Russian variants map to the same numeric weight. To add a new keyword: pick the weight that matches the complexity you want it to imply, then add it in both languages.",
       "security": 7,
       "безопасност": 7,
       "architecture": 9,

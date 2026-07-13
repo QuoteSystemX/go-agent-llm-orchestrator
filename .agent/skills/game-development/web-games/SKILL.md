@@ -148,3 +148,38 @@ What type of game?
 ---
 
 > **Remember:** Browser is the most accessible platform. Respect its constraints.
+
+
+## When to Use
+
+- **Building a browser-based game** — pick a framework:
+  vanilla Canvas, Phaser, PixiJS, or Three.js for 3D.
+- **Asset loading** — use a manifest (JSON or Kha-based) and
+  preload critical assets.
+- **Input handling** — mouse, keyboard, touch, gamepad. Use
+  abstraction layer for cross-platform.
+- **Game loop** — requestAnimationFrame for 60 FPS, fixed
+  timestep for physics.
+- **Performance** — profile in browser devtools, watch for GC
+  pauses, use object pooling.
+
+Avoid using this skill for:
+- Native mobile games (use specific mobile skills).
+- Console/PC games (use `@pc-games`).
+- Single-player text games (use `@game-design`).
+
+## Anti-Patterns
+
+- **Don't load assets synchronously** — always use
+  `loadImage()` / `loadSound()` async. Block the loading screen
+  with a spinner, not a freeze.
+- **Don't use `setInterval` for the game loop** — use
+  `requestAnimationFrame` for proper frame pacing.
+- **Don't store game state in closures** — use a central state
+  object that's debuggable in devtools.
+- **Don't use `localStorage` for save data without versioning** —
+  schema changes will break old saves. Add a version field.
+- **Don't skip mobile testing** — even desktop web games are
+  often played on tablets.
+- **Don't use heavy frameworks for simple games** — vanilla
+  Canvas + 200 lines of JS is enough for many game types.

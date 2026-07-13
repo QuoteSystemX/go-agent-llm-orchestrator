@@ -108,3 +108,40 @@ Use Grafana's internal transformation engine to:
 ## Changelog
 
 - **1.0.0** (2026-05-07): Initial version
+
+## When to Use
+
+- **Designing a new dashboard** for a service or resource — start
+  with RED (Rate, Errors, Duration) for services, USE (Utilization,
+  Saturation, Errors) for resources.
+- **Optimizing slow dashboards** — check for unfiltered series,
+  high-cardinality labels, missing time ranges.
+- **API-driven deployment** — use `grafana_manager.py` to push
+  dashboards as code (version-controlled, reviewable).
+- **Alert design** — pair dashboards with companion alert rules.
+- **Template variables** — use `label_values(...)` to make
+  dashboards interactive without hardcoding.
+
+Avoid using this skill for:
+- Simple one-off charts (use `quickchart` or a notebook).
+- Non-Prometheus datasources (this skill is PromQL/LogQL-focused).
+- Backend logic (Grafana is a viewer, not a compute engine).
+
+## Anti-Patterns
+
+- **Don't use `*` in queries** — it pulls all series. Always use a
+  specific label matcher (`{service="auth"}`).
+- **Don't put a 30-day range on a high-cardinality panel** — the
+  browser will hang. Use 1h or 6h for detailed panels.
+- **Don't use `instant: true` for cumulative metrics** — you get
+  a misleading flat line. Use `rate()` or `increase()`.
+- **Don't hardcode datasource UIDs** — they change between
+  environments. Use template variables.
+- **Don't use `$__interval` in alert queries** — alerts need
+  fixed intervals for consistency. Use `5m` or `1h` directly.
+- **Don't mix timezones in panel titles** — show the timezone
+  explicitly to avoid confusion.
+- **Don't use gauges for "current value" without context** — a
+  number without a sparkline or trend is meaningless.
+- **Don't use Stat panels for trends** — they show current value
+  only. Use Time series with sparkline.

@@ -75,3 +75,41 @@ Every PRD must answer:
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version
+
+## When to Use
+
+- **Turning a vague idea into a structured PRD** — use the
+  `requirement_expander.py` script to find missing context.
+- **Decomposing a feature into atomic stories** — run
+  `story_decomposer.py` on a PRD section to generate `tasks/*.md`
+  cards that the squad orchestrator can pick up.
+- **Validating an existing PRD** — run `prd_validator.py` to check
+  it has all 5 mandatory sections (Intent Map, User Journey,
+  Edge Cases, Data Schema, API Specs).
+- **Adversarial review** — use the "Red Team" edge case audit to
+  find failure modes before implementation.
+- **Cross-team alignment** — share the PRD as a Mermaid flowchart
+  + Gherkin scenarios for unambiguous discussion.
+
+Avoid using this skill for:
+- Bug fixes (use `@debugger`).
+- Documentation (use `@documentation-writer`).
+- Architecture decisions (use `@architect`).
+- Simple tasks that don't need a full PRD.
+
+## Anti-Patterns
+
+- **Don't write PRDs that are too vague to code** — if an LLM can't
+  code from the PRD, a human can't either. Be specific.
+- **Don't skip the Edge Case Audit** — it catches the 20% of cases
+  that consume 80% of engineering time.
+- **Don't use "happy path only" Gherkin** — always include at least
+  2-3 negative cases per scenario.
+- **Don't decompose stories too granularly** — atomic means "one
+  feature, one test", not "one line, one test". A 200-line story
+  is fine; 5-line stories create coordination overhead.
+- **Don't skip the Schema section** — if the feature touches data,
+  include the schema. Mismatched schemas are the #1 cause of
+  integration bugs.
+- **Don't write PRDs in isolation** — share with the squad
+  orchestrator and let agents flag ambiguities early.

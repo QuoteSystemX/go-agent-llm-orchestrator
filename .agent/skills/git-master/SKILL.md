@@ -189,4 +189,47 @@ git branch -d recovery/<timestamp>  # delete recovery branch if all good
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version
+
+## When to Use
+
+- **Complex merges, rebases, cherry-picks** — follow the Safety
+  Protocol (stash → recovery branch → verify) BEFORE any operation.
+- **Resolving merge conflicts** — use the Conflict Resolution
+  Protocol (discovery → categorization → per-type strategy).
+- **History archaeology** — `git log`, `git blame`, `git log -S`
+  for finding when a line was added.
+- **Recovering from a botched operation** — `git reflog`,
+  `git fsck --lost-found`, `git cherry-pick` from reflog.
+- **Complex rebases** — `git rebase -i`, `git rebase --onto`,
+  `git rebase --autosquash`.
+- **Branch archaeology** — finding when a feature was merged,
+  who authored a line, what changed between tags.
+
+Avoid using this skill for:
+- Simple add/commit/push (use `bash-linux` or git CLI directly).
+- Initial repo setup (use the README and `git init`).
+- Routine PRs (no special git expertise needed).
+
+## Anti-Patterns
+
+- **Don't skip the Safety Protocol** — stashing + recovery branch
+  before destructive ops is not optional. Always.
+- **Don't force-push to shared branches** — `git push --force` to
+  `main` / `master` / any branch others use is destructive. Use
+  `--force-with-lease` only on your own feature branch.
+- **Don't rewrite public history** — squashing/rewriting commits
+  that are already on `main` breaks everyone else.
+- **Don't merge without a clean working tree** — `git status` must
+  be empty (or have only intended changes) before merging.
+- **Don't use `git reset --hard` blindly** — it discards uncommitted
+  changes. Use `git stash` first or use `--soft` / `--mixed`.
+- **Don't ignore merge conflict markers** — `<<<<<<<`, `=======`,
+  `>>>>>>>` in code means the merge is incomplete. Always resolve
+  before committing.
+- **Don't rebase commits you've already pushed** (unless you know
+  no one else is using them).
+- **Don't use `git push --no-verify` to skip hooks** — hooks exist
+  for a reason. Fix the underlying issue.
+- **Don't commit without reviewing the diff** — `git diff --staged`
+  before `git commit` catches mistakes early.
 <!-- EMBED_END -->

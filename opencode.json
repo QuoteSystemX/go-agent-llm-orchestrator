@@ -529,6 +529,7 @@
     "prompt-benchmarker": {
       "mode": "subagent",
       "permission": {
+        "read": "allow",
         "edit": "allow",
         "bash": "allow",
         "glob": "allow",
@@ -541,6 +542,7 @@
     "prompt-red-teamer": {
       "mode": "subagent",
       "permission": {
+        "read": "allow",
         "edit": "allow",
         "bash": "allow",
         "glob": "allow",
@@ -807,6 +809,58 @@
       },
       "description": "Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-safe architecture. Triggers on python, .py files, FastAPI, Django, asyncio, pydantic, pytest, data-pipeline, or when CTO delegates a Python-domain task.",
       "model": "mcp-llm-broker/L2",
+      "hidden": true
+    },
+    "harness-runner": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run manifest. Replaces ad-hoc subprocess invocation with default-deny execution, sandbox enforcement, and OTel-traced invocation. Triggers on tasks involving external LLM CLI, model evaluation, or when bin/harness_run is referenced.",
+      "model": "mcp-llm-broker/L3",
+      "hidden": true
+    },
+    "inbox-attendant": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). Reads pending entries, decides whether to ack/escalate/act, and emits lesson_applied events when the agent acts on an inbox entry. Triggers when a new INBOX entry appears, when user mentions \"inbox\" or sends a redirect via /inbox, and on every task start to consume pending entries.",
+      "model": "mcp-llm-broker/L2",
+      "hidden": true
+    },
+    "knowledge-curator": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "\"Closes the distillation loop introduced in STORY-6. Owns the lifecycle of distilled lessons: registers fresh lessons for re-injection, prunes stale ones (applied_count=0 + TTL expired), monitors the lesson_applied bus events, and tunes TTL/registry policy. Triggers after archivist_trigger runs, on knowledge re-injection issues, and on /distill slash command.\"",
+      "model": "mcp-llm-broker/L3",
+      "hidden": true
+    },
+    "permission-guard": {
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Owns the capabilities matrix at .agent/config/capabilities.yaml. Wires new operations into the matrix, ensures default-deny invariants (session-agent has no caps), runs capability_audit before deploys, and investigates CAPABILITY_DENIED errors. Triggers on capability changes, daemon wiring questions, and pre-deploy audit requests.",
+      "model": "mcp-llm-broker/L3",
       "hidden": true
     },
     "crypto-specialist": {

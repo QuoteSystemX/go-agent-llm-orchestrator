@@ -67,6 +67,39 @@ Refer to `examples/swap-execution.ts` for a "Golden Path" implementation using t
 ---
 > **Note**: This skill ensures that Paperclip's DeFi integrations on TON are efficient and secure.
 
+## When to Use
+
+- **Building a TON DEX** — use the official TON libraries
+  (ton-core, ton-crypto) and follow STON.fi reference patterns.
+- **Smart contract integration** — use Tact or FunC for new
+  contracts, audit before deploy.
+- **AMM logic** — constant-product (Uniswap V2) or concentrated
+  liquidity (Uniswap V3) — match to the project's liquidity model.
+- **Price oracles** — use multiple sources (TON, Chainlink,
+  RedStone) to avoid manipulation.
+- **MEV protection** — use commit-reveal or private mempools
+  for high-value swaps.
+
+Avoid using this skill for:
+- Non-TON chains (use chain-specific skills).
+- CeFi (use `@backend-specialist` for backend integration).
+- Token design (use `@crypto-go-architect`).
+
+## Anti-Patterns
+
+- **Don't use a single price oracle** — always combine
+  multiple sources. Single oracle = single point of failure.
+- **Don't skip smart contract audits** — even small AMM changes
+  need a third-party audit before mainnet.
+- **Don't store private keys in the frontend** — use a backend
+  signer or wallet abstraction.
+- **Don't allow unlimited slippage** — cap it at a sensible
+  default (0.5% for liquid pairs, 2% for illiquid).
+- **Don't ignore the reentrancy guard** — use Checks-Effects-
+  Interactions pattern.
+- **Don't launch without emergency pause** — every contract
+  needs a kill switch.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

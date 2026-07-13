@@ -129,3 +129,7 @@ Conflicts: <none - attacks an unexplored axis, OR pruned [<id>] said <X>; this c
 
 Do not include the scratch declaration, probe, self-check, or long rationale
 inside the tool call.
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

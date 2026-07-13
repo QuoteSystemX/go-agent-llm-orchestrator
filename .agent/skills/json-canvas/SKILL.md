@@ -6,6 +6,12 @@ version: 1.0.0
 
 # JSON Canvas Skill
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When creating, updating, or editing JSON Canvas (`.canvas`) files.
+- **Trigger**: When the user requests mind maps, flowcharts, visual relationship diagrams, or canvases.
+- **Trigger**: When editing canvas nodes, edges, groups, or connections.
+
 ## File Structure
 
 A canvas file (`.canvas`) contains two top-level arrays following the [JSON Canvas Spec 1.0](https://jsoncanvas.org/spec/1.0/):

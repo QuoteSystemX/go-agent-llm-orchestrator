@@ -6,6 +6,12 @@ version: 1.0.0
 
 # Wiki-Writing Skill (Karpathy Method)
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When writing or updating documentation in the `wiki/` directory.
+- **Trigger**: Before implementing a new component or system feature, to write its Mental Model first.
+- **Trigger**: When detecting documentation drift, writing ADRs (Architecture Decision Records), or structuring evergreen knowledge.
+
 The primary source of truth for any system is its **wiki** — not the code, not the comments, not the PR descriptions. This skill teaches how to write wiki documents that transfer deep understanding, not just facts.
 
 > "If you can't explain it simply, you don't understand it well enough." — Feynman
@@ -371,6 +377,12 @@ python3 .agent/scripts/knowledge/obsidian_validator.py check
 ```
 
 ---
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+
+- **Anti-Pattern (Stale Wiki)**: Avoid letting code modifications drift from the wiki documentation. Never leave the wiki outdated after changing behavioral logic.
+- **Anti-Pattern (Auto-Doc Default)**: Don't assume auto-generated API specifications replace custom mental model explanations.
+- **Anti-Pattern (No Invariants)**: Avoid writing code first without specifying invariants and system constraints in the wiki.
 
 ## Changelog
 

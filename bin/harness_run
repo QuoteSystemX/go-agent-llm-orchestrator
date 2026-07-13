@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+"""
+bin/harness_run — STORY-5 thin CLI wrapper.
+
+Forwards to .agent/scripts/harness/harness_run.py with the same args.
+"""
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "harness"))
+
+import harness_run  # type: ignore
+
+if __name__ == "__main__":
+    sys.exit(harness_run.main())

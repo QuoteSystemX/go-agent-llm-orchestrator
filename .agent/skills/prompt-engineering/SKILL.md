@@ -59,6 +59,41 @@ version: 1.0.0
 
 > **Principle:** A prompt is code. It must be versioned, tested, and optimized like any other software component.
 
+## When to Use
+
+- **Designing a new LLM prompt** — start with the task,
+  then add structure, examples, and constraints.
+- **Improving an existing prompt** — iterate based on failure
+  modes, not vibes.
+- **Evaluating prompt changes** — use a fixed eval set, measure
+  before/after.
+- **A/B testing prompts in production** — shadow mode, then
+  gradual rollout.
+- **Prompt libraries for common patterns** — summarization,
+  extraction, classification, etc.
+
+Avoid using this skill for:
+- Building RAG or agents (use `@ai-engineer`).
+- Fine-tuning (use `@ai-engineer` or external tools).
+- Production deployment of LLMs (use `@devops-engineer`).
+
+## Anti-Patterns
+
+- **Don't use vague instructions** — "summarize this" is
+  bad; "summarize in 3 bullets, max 100 chars" is good.
+- **Don't skip few-shot examples** — they dramatically improve
+  quality, especially for structured output.
+- **Don't put critical info in the middle** — LLMs attend more
+  to the beginning and end of context.
+- **Don't mix multiple tasks in one prompt** — split them.
+  "Translate AND summarize" is two prompts.
+- **Don't use temperature 0 for creative tasks** — 0.7-0.9
+  is better for diversity. Use 0 only for deterministic output.
+- **Don't trust zero-shot eval** — always test on a held-out
+  set. What works on 5 examples may fail on 50.
+- **Don't ignore token cost** — long prompts are slow and
+  expensive. Be concise where possible.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

@@ -103,6 +103,38 @@ You: [Fix progress indicators]
 
 See template at: requesting-code-review/code-reviewer.md
 
+## When to Use
+
+- **Before merging a PR** — open the PR, request reviews from
+  code owners, wait for approval.
+- **When you want feedback on design choices** — reviewers can
+  flag issues that aren't obvious from the diff alone.
+- **When crossing team boundaries** — frontend/backend, platform/
+  app, etc.
+- **For risky changes** — security, data migration, public API.
+- **Pair-reviewing with a junior** — both learn from the
+  exchange.
+
+Avoid using this skill for:
+- Self-review of trivial changes (typos, comment fixes).
+- When you've already got 2+ approvals and just need to merge.
+- Hotfixes that bypass review (with post-hoc review).
+
+## Anti-Patterns
+
+- **Don't request review before CI passes** — reviewers
+  waste time on broken code.
+- **Don't add 10 reviewers to a 5-line PR** — pick the 1-2 who
+  own the affected code.
+- **Don't use "LGTM" reviews** — leave a comment with what you
+  checked. Future archeologists will thank you.
+- **Don't review for hours without responding** — if you're
+  blocked, say so. Async doesn't mean silent.
+- **Don't request review without context** — fill the PR
+  description: what, why, how to test, screenshots.
+- **Don't ignore review feedback** — even if you disagree, explain
+  why. Don't just re-push.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

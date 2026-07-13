@@ -148,6 +148,7 @@ python3 .agent/scripts/health/drift_detector.py
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/knowledge-distillation/SKILL.md`
 - `.agent/skills/systemic-thinking/SKILL.md`
 - `.agent/skills/wiki-writing/SKILL.md`
 - `.agent/skills/architecture-governance/SKILL.md`
@@ -155,6 +156,7 @@ python3 .agent/scripts/health/drift_detector.py
 - `.agent/skills/wiki-obsidian-bridge/SKILL.md`
 - `.agent/skills/obsidian-cli/SKILL.md`
 - `.agent/skills/obsidian-markdown/SKILL.md`
+- `.agent/skills/obsidian-validator/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

@@ -117,3 +117,38 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 > **Remember:** 2D is about clarity. Every pixel should communicate.
+
+
+## When to Use
+
+- **Building a 2D game** — choose a framework (Phaser, PixiJS,
+  Godot, Unity 2D) based on your team's skills.
+- **Setting up a sprite system** — atlas + JSON metadata is the
+  standard pattern.
+- **Implementing physics** — start with arcade physics, upgrade
+  to AABB or full rigid-body only if needed.
+- **Adding UI** — separate UI from gameplay (UI scene).
+- **Performance optimization** — batch draw calls, object pool
+  bullets/enemies, cull off-screen.
+
+Avoid using this skill for:
+- 3D games (use `@3d-games`).
+- VR games (use `@vr-ar`).
+- Web-only interactions (use `@frontend-specialist`).
+
+## Anti-Patterns
+
+- **Don't create GameObjects in update()** — pre-allocate
+  and pool them. `Instantiate` is expensive.
+- **Don't use Find or FindObjectOfType in hot paths** — cache
+  references in `Awake`/`Start`.
+- **Don't put physics in Update()** — use `FixedUpdate` for
+  consistent simulation.
+- **Don't use string-based Animator parameters** — use hashes
+  (`Animator.StringToHash`) for performance.
+- **Don't skip the camera culling** — off-screen objects still
+  cost CPU. Use culling masks.
+- **Don't ship without a framerate target** — design for 60 FPS
+  from day 1, optimize later if needed.
+- **Don't use `Time.deltaTime` inconsistently** — always normalize
+  your game logic to it, or use `Time.fixedDeltaTime` in physics.

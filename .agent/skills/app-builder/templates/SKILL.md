@@ -37,3 +37,36 @@ allowed-tools: Read, Glob, Grep
 2. Match to appropriate template
 3. Read ONLY that template's TEMPLATE.md
 4. Follow its tech stack and structure
+
+
+## When to Use
+
+- **Creating a new project template** — use this skill's
+  patterns as a starting point.
+- **Choosing between templates** — Cookiecutter, Cookiecutter-
+  Ghosen, Cruft, Copier, Yeoman, or a custom shell script.
+- **Customizing templates** — fork, then keep in sync with
+  upstream periodically.
+- **Distributing templates** — git repo, package manager, or
+  CLI (like `pipx`, `brew`).
+
+Avoid using this skill for:
+- App-specific code generation (use AI code generation skills).
+- Pure documentation (use `@documentation-templates`).
+- DevOps templates (use `@app-builder`).
+
+## Anti-Patterns
+
+- **Don't use a template without reading the output first** —
+  some templates ask interactive questions, others overwrite
+  files silently.
+- **Don't use templates with no version** — pin to a tag or commit
+  for reproducibility.
+- **Don't fork without tracking upstream** — periodic `git fetch
+  upstream && git merge` keeps you current with bug fixes.
+- **Don't put secrets in templates** — use `.env.example` with
+  placeholders, not real keys.
+- **Don't ignore template validation** — most templates have
+  `--validate` or `make test` to check the output.
+- **Don't create one-off templates** — generalize first, then
+  template once you see the pattern 3+ times.

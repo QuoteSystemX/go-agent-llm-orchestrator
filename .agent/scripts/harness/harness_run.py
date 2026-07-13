@@ -182,9 +182,13 @@ def _apply_sandbox(sandbox_cfg: dict, scratch: Path) -> tuple[list[str], dict, i
 
 # ----- OTel-style span (minimal, no SDK dep) -----
 
-def _emit_span(name: str, attributes: dict) -> None:
+def _emit_span(name: str, attributes: dict, persist_path: Optional[Path] = None) -> None:
     """Emit a span as JSON to stderr. Compatible with OTel collector
-    if OTEL_EXPORTER_OTLP_ENDPOINT is set (we use a stderr bridge)."""
+    if OTEL_EXPORTER_OTLP_ENDPOINT is set (we use a stderr bridge).
+
+    If persist_path is provided (B5 telemetry), also append to that file
+    in JSONL format for the telemetry_aggregator to consume.
+    """
     span = {
         "name": name,
         "ts": time.time(),
@@ -192,6 +196,12 @@ def _emit_span(name: str, attributes: dict) -> None:
     }
     sys.stderr.write(f"[OTEL-SPAN] {json.dumps(span, ensure_ascii=False)}\n")
     sys.stderr.flush()
+    if persist_path is not None:
+        try:
+            with open(persist_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(span, ensure_ascii=False) + "\n")
+        except Exception as e:
+            sys.stderr.write(f"⚠️  Could not persist OTel span: {e}\n")
 
 
 # ----- Core run function -----
@@ -233,6 +243,10 @@ def run(
       5. Spawn subprocess
       6. Emit OTel span
     """
+    # B5: harness_run emits OTel spans to stderr (default). To persist
+    # them to .agent/bus/otel_spans.jsonl for the telemetry_aggregator,
+    # wrap the call: e.g., `bin/harness_run ... 2>>.agent/bus/otel_spans.jsonl`
+    # or use HARNESS_OTEL_LOG=1 (future enhancement).
     started = time.time()
     manifest = load_manifest()
     entry = get_manifest_entry(name, manifest)
@@ -284,6 +298,7 @@ def run(
 
     # 5. Emit pre-spawn OTel span
     _emit_span("harness.invoke.start", {
+
         "harness.name": name,
         "harness.binary": str(binary),
         "prompt.size_bytes": len(prompt_text),

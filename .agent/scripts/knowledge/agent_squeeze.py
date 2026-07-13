@@ -40,14 +40,23 @@ def format_lesson(type_tag: str, skill_tag: str, insight: str) -> str:
     return f"### [{date_str}] [{type_tag}] [{skill_tag}] {insight}"
 
 def update_local_lessons(lesson: str):
-    """Append lesson to local LESSONS_LEARNED.md."""
+    """Append lesson to local LESSONS_LEARNED.md.
+
+    Note: This is the SOURCE of the well-known LESSONS auto-trace noise
+    in `git status` after every commit. To mitigate the noise, consider:
+      1. Use `.git-blame-ignore-revs` for commits that auto-update this file
+      2. Run `make sync` periodically to commit auto-trace in a separate PR
+      3. Add LESSONS to `.gitattributes` with `linguist-generated=true`
+    The lesson content is deduplicated by exact-string match, so the file
+    doesn't grow unboundedly — but each unique lesson still adds a line.
+    """
     if not LESSONS_PATH.parent.exists():
         LESSONS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
+
     content = ""
     if LESSONS_PATH.exists():
         content = LESSONS_PATH.read_text(encoding="utf-8")
-    
+
     if lesson.strip() in content:
         print("ℹ️ Lesson already exists in local file.")
         return

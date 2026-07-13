@@ -55,13 +55,47 @@ class TestPreCommitReview(unittest.TestCase):
     @patch('dev.pre_commit_review.get_staged_diff', return_value="+ Added code-archaeologist")
     def test_review_diff_with_warnings(self, mock_diff):
         self.lessons_path.write_text("### [2026-05-13] [agent] [code-archaeologist] Use specific tools")
-        
+
         # Mock health and conflict resolver to pass
-        with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}), 
+        with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}),
                                         'conflict_resolver': MagicMock(resolve_conflicts=lambda: None),
                                         'task_tracer': MagicMock()}):
             ok, msg = reviewer.review_diff()
-            
+
+        self.assertFalse(ok)
+        self.assertIn("Review finished with warnings", msg)
+
+    @patch('dev.pre_commit_review.get_staged_diff', return_value="+ test_inbox_module_loaded")
+    def test_review_diff_substring_match_no_false_positive(self, mock_diff):
+        """C1: substring match like 'test' would match 'testing', 'attestation', etc.
+        This test ensures word-boundary regex is used (no false positives).
+        """
+        # Lesson has skill 'test' which is a common substring
+        self.lessons_path.write_text("### [2026-05-13] [INFO] [test] Tests for module")
+
+        with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}),
+                                        'conflict_resolver': MagicMock(resolve_conflicts=lambda: None),
+                                        'task_tracer': MagicMock()}):
+            ok, msg = reviewer.review_diff()
+
+        # With substring match (old behavior), this would FAIL
+        # because 'test' substring is in 'test_inbox_module_loaded'.
+        # With word-boundary match (new), it should PASS because
+        # 'test' is not a whole word in the diff.
+        self.assertTrue(ok)
+        self.assertIn("Diff looks clean", msg)
+
+    @patch('dev.pre_commit_review.get_staged_diff', return_value="+ Add test for new feature")
+    def test_review_diff_word_boundary_match(self, mock_diff):
+        """C1: real word match should still trigger warning."""
+        self.lessons_path.write_text("### [2026-05-13] [INFO] [test] Always run tests")
+
+        with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}),
+                                        'conflict_resolver': MagicMock(resolve_conflicts=lambda: None),
+                                        'task_tracer': MagicMock()}):
+            ok, msg = reviewer.review_diff()
+
+        # 'test' appears as a whole word, should trigger warning
         self.assertFalse(ok)
         self.assertIn("Review finished with warnings", msg)
 

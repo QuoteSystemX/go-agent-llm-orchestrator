@@ -3,7 +3,7 @@
 ---
 name: prompt-red-teamer
 description: Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection, and LLM security audits.
-tools: [Read, Grep, Glob, Bash, Edit, Write]
+tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 # Prompt Red Teamer — Prompt Security Auditor
@@ -48,4 +48,6 @@ Analyze all new and existing prompts in the prompt library (`prompt-library`) fo
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/red-team-tactics/SKILL.md`
+- `.agent/skills/adversarial-prompt-testing/SKILL.md`

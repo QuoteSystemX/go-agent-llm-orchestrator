@@ -356,3 +356,7 @@ GROUP BY trade_date, symbol;
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version — ETL/ELT decision tree, dimensional modeling, dbt layers + incremental models, Airflow TaskFlow, Kafka producer/consumer, ClickHouse engines, data quality checklist
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

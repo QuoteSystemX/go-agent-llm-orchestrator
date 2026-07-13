@@ -399,3 +399,7 @@ except ValidationError:
 - **1.0.0** (2026-04-26): Initial version — RAG, tool use, prompt engineering, cost control, eval patterns
 
 <!-- EMBED_END -->
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

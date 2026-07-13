@@ -64,6 +64,43 @@ Each rule file contains:
 - https://supabase.com/docs/guides/database/overview
 - https://supabase.com/docs/guides/auth/row-level-security
 
+## When to Use
+
+- **Designing a Supabase schema** — use RLS for multi-tenant
+  security, indexes for hot queries, and views for complex reads.
+- **Setting up Auth + RLS** — enable RLS on every table by default;
+  use `auth.uid()` for row ownership.
+- **Migrating from another DB** — use `pg_dump`/`pg_restore` for
+  schema, then `supabase db push` for migrations.
+- **Adding realtime subscriptions** — use `postgres_changes` filter
+  for narrow payloads, not full table.
+- **Performance tuning** — `EXPLAIN ANALYZE` is your friend; check
+  `pg_stat_statements` for slow queries.
+
+Avoid using this skill for:
+- Pure Postgres without Supabase (use `@postgres-best-practices`).
+- Non-RLS multi-tenancy (Supabase assumes RLS).
+- Simple CRUD apps (Supabase is overkill).
+
+## Anti-Patterns
+
+- **Don't disable RLS "for testing"** — RLS off = public
+  data. Always test with RLS on using a test user.
+- **Don't store PII in plain text** — use `pgcrypto` for sensitive
+  fields, even when RLS is in place.
+- **Don't use `select *`** — fetch only the columns you need.
+  Realtime subscriptions especially suffer from wide rows.
+- **Don't skip the index on foreign keys** — Supabase RLS uses
+  `auth.uid()` which joins on `id`. Without index, RLS check is
+  slow.
+- **Don't use `service_role` key in client code** — it's a server
+  key, never expose to the browser.
+- **Don't ignore RLS recursion** — a policy on `comments` that
+  queries `posts` triggers RLS on `posts` too, which can
+  cause infinite recursion. Use SECURITY DEFINER functions.
+- **Don't put business logic in RLS policies** — keep policies
+  simple (column = auth.uid()), put logic in views or functions.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

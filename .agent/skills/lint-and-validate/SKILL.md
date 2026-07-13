@@ -48,3 +48,15 @@ python3 .agent/scripts/self_heal.py .
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+- **Anti-Pattern**: Avoid implementing features without checking requirements first.
+- **Anti-Pattern**: Never skip validation steps.
+
+## Additional Quality Guidelines
+To ensure the highest standard of delivery, the following additional considerations must be met:
+1. Maintain consistency with existing naming conventions in the codebase.
+2. Implement comprehensive error handling and logging for all new components.
+3. Ensure that all dependencies are declared and verified beforehand.
+4. Write clean, self-documenting code with clear comments where necessary.
+5. Validate performance under load and avoid premature optimizations.

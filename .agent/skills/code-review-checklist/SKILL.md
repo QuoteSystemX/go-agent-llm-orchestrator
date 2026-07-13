@@ -109,6 +109,37 @@ const data: UserData = ...
 ❓ QUESTION: What happens if user is null here?
 ```
 
+## When to Use
+
+- **Reviewing a PR** — use this checklist to ensure you
+  cover all the bases.
+- **Training junior reviewers** — share this checklist.
+- **Self-review** — apply this to your own PR before requesting
+  review.
+- **Setting team review standards** — adapt this for your team.
+
+Avoid using this skill for:
+- Architectural reviews (use `@architecture-governance`).
+- Security reviews (use `@security-auditor`).
+- One-line typo fixes (skip the checklist).
+
+## Anti-Patterns
+
+- **Don't use the checklist as a substitute for
+  understanding the code** — a 100% checklist pass doesn't mean
+  the code is good.
+- **Don't review only the diff** — read the surrounding code
+  for context.
+- **Don't approve PRs you don't fully understand** — ask
+  questions instead.
+- **Don't bikeshed style** — automation (linters, formatters)
+  should handle style. Save human review for logic, design, and
+  edge cases.
+- **Don't review when tired or rushed** — push back the review or
+  ask another reviewer to step in.
+- **Don't skip security review** — every PR that touches
+  auth, data, or external input needs a security review.
+
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version

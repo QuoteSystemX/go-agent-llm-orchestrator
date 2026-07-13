@@ -83,3 +83,38 @@ The validator runs automatically via:
 ## Changelog
 
 - **1.0.0** (2026-05-22): Initial version
+
+## When to Use
+
+- **After editing wiki files** — run `obsidian_validator.py check` before
+  committing to catch broken links and missing frontmatter.
+- **Before merge to main** — add `make obsidian` (or
+  `obsidian_validator.py check --json`) to pre-deploy checks.
+- **Setting up a new vault** — use `init` to scaffold `.obsidian/`
+  config and an `_index.md` Map of Content.
+- **Migrating legacy docs** — use `migrate` to convert plain Markdown
+  to OFM-compliant files (with `--dry-run` first).
+- **Investigating obsidian errors** — use `status` to get a diagnostic
+  report (vault location, file count, OFM %).
+
+Avoid using this skill for:
+- Validating non-Obsidian Markdown (e.g., GitHub README files).
+- Real-time editing validation (this is a batch tool, not an LSP).
+- Generating content (use `@wiki-architect` for that).
+
+## Anti-Patterns
+
+- **Don't ignore obsidian errors** — they indicate real broken links
+  or missing frontmatter. Block the PR until fixed.
+- **Don't use `--fix` blindly in production** — `--fix` modifies the
+  vault in place. Run `--dry-run` first to preview changes.
+- **Don't skip the `IGNORE_DIRS`** — they exist to keep runtime
+  data (e.g., `bus/`, `data/`) out of the validation. If you
+  remove them, the validator will flag artifacts.
+- **Don't commit without running `check`** — the validator is the
+  gatekeeper. A clean `check` is a prerequisite for `git push`.
+- **Don't use `init` over an existing vault** — it will overwrite
+  `.obsidian/` config. Backup first if you must.
+- **Don't use the validator as a linter for prose** — it only
+  checks structural integrity (links, frontmatter, callouts),
+  not grammar or content quality.

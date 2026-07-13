@@ -121,3 +121,7 @@ scientific anti-tweak filter. Still require:
 - cost awareness;
 - no duplicate siblings;
 - clear observable on B_dev.
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+- **Anti-Pattern**: Avoid implementing features without checking requirements first.
+- **Anti-Pattern**: Never skip validation steps.

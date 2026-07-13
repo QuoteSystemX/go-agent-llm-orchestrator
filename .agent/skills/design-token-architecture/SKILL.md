@@ -100,6 +100,39 @@ Before building UI, verify your token map:
 
 > **Rule:** Never hardcode a hex/rgb value in a component. If it's used more than once, it's a token.
 
+## When to Use
+
+- **Designing a new design system** — start with primitives
+  (colors, spacing, typography) before components.
+- **Migrating from hardcoded values to tokens** — use a one-time
+  pass to replace `color: #fff` with `color: var(--surface-primary)`.
+- **Documenting a design system for engineers** — generate
+  `tokens.json` from Figma/Sketch and import into code.
+- **Theming / dark mode** — tokens enable runtime theming with
+  zero code changes.
+- **Cross-platform consistency** — web, iOS, Android all consume
+  the same tokens from a single source of truth.
+
+Avoid using this skill for:
+- One-off component styling (use `@frontend-design` or `@ui-ux-pro-max`).
+- Brand identity work (use `@visual-explainer`).
+- Marketing assets (use `@design-tooling`).
+
+## Anti-Patterns
+
+- **Don't hardcode hex values in components** — always use
+  tokens. `color: #3b82f6` is a maintenance nightmare.
+- **Don't create single-use tokens** — if a token is used in only
+  one place, it should be a constant, not a token.
+- **Don't mix token systems (Material, Tailwind, custom)** — pick
+  one. Mixing causes inconsistency.
+- **Don't skip semantic naming** — `--color-blue-500` is a primitive;
+  `--color-action-primary` is semantic. Use the latter.
+- **Don't tokenize animations or shadows** ad-hoc — group them
+  (e.g., `--shadow-elevation-1`, `--shadow-elevation-2`).
+- **Don't ignore accessibility** — pair color tokens with WCAG
+  contrast ratios. Document AA/AAA compliance per pair.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

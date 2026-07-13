@@ -48,8 +48,20 @@ def bootstrap_daemon() -> bool:
         return False
 
 
-def send_ipc_request(payload: dict) -> dict:
-    """Connect to UDS socket, send JSON request, and read JSON response."""
+def send_ipc_request(payload: dict, caller_role: str = "human") -> dict:
+    """Connect to UDS socket, send JSON request, and read JSON response.
+
+    Args:
+        payload: Action-specific fields (action, task_id, task, etc.)
+        caller_role: STORY-4 — defaults to "human" for backward compat.
+            Set to "infra-agent" or "squad-agent" for programmatic callers
+            (bin/harness_run, bin/orchestrate, CI scripts).
+    """
+    # STORY-4: Always include caller_role in the IPC payload. The daemon
+    # uses this to enforce default-deny capability checks on privileged
+    # actions (run_task, stop, trigger_distill).
+    payload = {**payload, "caller_role": caller_role}
+
     if not SOCKET_PATH.exists():
         if not bootstrap_daemon():
             print("❌ Error: failed to start the orchestrator daemon.")
@@ -73,12 +85,12 @@ def send_ipc_request(payload: dict) -> dict:
     try:
         req_data = json.dumps(payload).encode("utf-8") + b"\n"
         s.sendall(req_data)
-        
+
         # Read response line by line
         resp_data = s.recv(65536)
         if not resp_data:
             return {"status": "error", "message": "Empty response from daemon."}
-        
+
         return json.loads(resp_data.decode("utf-8").strip())
     except Exception as e:
         return {"status": "error", "message": f"IPC Communication error: {e}"}
@@ -142,6 +154,9 @@ def main() -> None:
     parser.add_argument("--status", type=str, help="Check task status by its ID")
     parser.add_argument("--attach", type=str, help="Attach to active task session monitoring")
     parser.add_argument("--task-id", type=str, help="Specify custom task ID (optional)")
+    parser.add_argument("--caller-role", type=str, default="infra-agent",
+                        help="STORY-4: role for capability check (default: infra-agent). "
+                             "Options: infra-agent, squad-agent, session-agent, human.")
 
     # OS compatibility check for os module inside bootstrap
     global os
@@ -168,12 +183,18 @@ def main() -> None:
 
     if args.task:
         task_id = args.task_id or f"task_{uuid.uuid4().hex[:8]}"
-        res = send_ipc_request({
-            "action": "run_task",
-            "task_id": task_id,
-            "task": args.task,
-            "dry_run": args.dry_run
-        })
+        # STORY-4: bin/orchestrate is a programmatic caller (default
+        # role: infra-agent). Override with --caller-role if needed.
+        caller_role = getattr(args, "caller_role", None) or "infra-agent"
+        res = send_ipc_request(
+            {
+                "action": "run_task",
+                "task_id": task_id,
+                "task": args.task,
+                "dry_run": args.dry_run,
+            },
+            caller_role=caller_role,
+        )
 
         if res.get("status") == "error":
             print(f"❌ Launch error: {res.get('message')}")

@@ -226,3 +226,41 @@ Always use the shared Resilience library:
 
 - **1.1.0** (2026-05-01): Added WSL Survival Guide (Networking).
 - **1.0.0** (2026-04-26): Initial version
+
+## When to Use
+
+- **Working on Linux/macOS systems** — file ops, process management,
+  text processing, piping.
+- **Writing shell scripts** — use `set -e` + `set -u` for safety,
+  always quote your variables.
+- **WSL networking issues** — use the WSL patterns (localhost on
+  Windows ≠ localhost on WSL).
+- **Quick one-off file inspection** — `cat`, `head`, `tail`, `grep`
+  are usually faster than opening an editor.
+- **System administration** — `ps`, `df`, `du`, `top` for resource
+  inspection.
+
+Avoid using this skill for:
+- Cross-platform scripting (use `python-patterns` for Python).
+- Complex automation (use `make` or a real task runner).
+- macOS-specific quirks (use platform-specific docs).
+- Production deployment scripts (use `deployment-procedures`).
+
+## Anti-Patterns
+
+- **Don't use unquoted variables** — `"$var"` not `$var`. Unquoted
+  breaks on spaces, glob characters, and empty values.
+- **Don't use `set -e` without `set -u`** — `set -e` exits on
+  error but allows undefined variables. Always pair them.
+- **Don't `rm -rf` in scripts** — use `rm -rf "${TARGET:?}"` so
+  the script fails if `TARGET` is empty/unset.
+- **Don't use `cd` in piped commands** — the subshell loses the
+  working directory. Use `cd dir && cmd` or `(cd dir && cmd)`.
+- **Don't parse `ls` output** — filenames with spaces break
+  parsing. Use `find ... -print0 | xargs -0 ...`.
+- **Don't use `[` for tests in modern bash** — use `[[ ]]`
+  (no word splitting, no pathname expansion).
+- **Don't forget `set -euo pipefail`** at the top of every
+  serious script — this catches 90% of common bash bugs.
+- **Don't use `cat file | grep` when `grep file` works** — Useless
+  Use Of Cat (UUOC) is wasteful.

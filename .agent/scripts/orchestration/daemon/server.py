@@ -98,6 +98,15 @@ class OrchestratorDaemon:
         async with self.server:
             await self.server.serve_forever()
 
+    # STORY-4: Map action → required capability for capability_check.
+    # Each privileged action must be authorized by the caller's role.
+    # Read-only actions (status, daemon_status) are public — no check.
+    ACTION_CAPABILITY_MAP = {
+        "run_task": "modify-tasks",
+        "stop": "stop-daemon",
+        "trigger_distill": "trigger-distill",
+    }
+
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """Handle incoming IPC messages from CLI/IDE clients."""
         keep_open = False
@@ -109,8 +118,30 @@ class OrchestratorDaemon:
             request = json.loads(data.decode("utf-8").strip())
             action = request.get("action")
             task_id = request.get("task_id")
+            # STORY-4: caller_role is required for privileged actions. Default
+            # is "human" (backward compatible with existing CLI tools like
+            # bin/stop). For non-human callers, the payload must include
+            # caller_role explicitly. bin/harness_run and bin/orchestrate
+            # should pass "infra-agent" or "squad-agent".
+            caller_role = request.get("caller_role", "human")
+            scope = request.get("scope", "global")
 
-            logger.debug("Received request: action=%s, task_id=%s", action, task_id)
+            logger.debug("Received request: action=%s, task_id=%s, caller=%s",
+                         action, task_id, caller_role)
+
+            # STORY-4: Capability check (default-deny). For privileged
+            # actions, verify the caller's role is allowed in the matrix.
+            if action in self.ACTION_CAPABILITY_MAP:
+                cap = self.ACTION_CAPABILITY_MAP[action]
+                denial = self._check_capability(caller_role, cap, scope)
+                if denial:
+                    logger.warning("Capability denied: %s denied %s on %s", caller_role, cap, scope)
+                    # B5: emit capability_denied bus event for telemetry
+                    self._emit_capability_denied(action, caller_role, cap, scope)
+                    response = denial
+                    writer.write(json.dumps(response).encode("utf-8") + b"\n")
+                    await writer.drain()
+                    return
 
             if action == "run_task":
                 response = await self.action_run_task(task_id, request.get("task"), request.get("dry_run", False))
@@ -307,8 +338,8 @@ class OrchestratorDaemon:
         
         # Safe thread-safe broadcast execution
         loop = asyncio.get_event_loop()
-        
-        async def _write(w):
+
+        async def _write(w: asyncio.StreamWriter) -> None:
             try:
                 w.write(data)
                 await w.drain()
@@ -367,6 +398,83 @@ class OrchestratorDaemon:
         if not HEADROOM_DB.exists():
             return None
         return HEADROOM_DB.stat().st_size / (1024 * 1024)
+
+    def _check_capability(self, role: str, capability: str, scope: str = "global"):
+        """STORY-4: Default-deny capability check for privileged IPC actions.
+
+        Takes a capability NAME (e.g., "modify-tasks") and checks if the
+        role's capability list in the matrix contains it. Returns None
+        if allowed, or a denial response dict if denied.
+
+        Note: This is different from capability_check.check() which takes
+        an OPERATION key and looks up the cap name via the operations table.
+        The daemon uses cap names directly (mapped from action via
+        ACTION_CAPABILITY_MAP) so we iterate role capabilities directly.
+
+        Fail-open behavior: if the capability matrix is unavailable
+        (e.g., not deployed), this returns None (allow). This matches
+        the pre-capability-matrix behavior. The capability_audit.py
+        script (separate) should detect and flag missing matrices.
+        """
+        try:
+            sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "permissions"))
+            from capability_check import load_matrix  # type: ignore
+            matrix = load_matrix()
+        except Exception as e:
+            logger.debug("Capability matrix unavailable, fail-open: %s", e)
+            return None
+
+        role_data = matrix.get("roles", {}).get(role)
+        if not role_data:
+            return self._deny(role, capability, scope, "unknown role")
+        caps = role_data.get("capabilities", [])
+        target_scope = scope or "global"
+        for cap_entry in caps:
+            if not isinstance(cap_entry, dict):
+                continue
+            if cap_entry.get("cap") != capability:
+                continue
+            # Scope match (reuse the matrix's scope matching semantics)
+            cap_scope = cap_entry.get("scope", "global")
+            if cap_scope == "global" or cap_scope == target_scope:
+                return None  # allowed
+            if cap_scope.endswith(":*") and target_scope.startswith(cap_scope[:-1]):
+                return None
+        return self._deny(role, capability, scope, "not in role's capability list")
+
+    def _deny(self, role: str, capability: str, scope: str, reason: str):
+        return {
+            "status": "error",
+            "code": "CAPABILITY_DENIED",
+            "message": (
+                f"Capability denied: role='{role}' capability='{capability}' "
+                f"scope='{scope}' reason='{reason}'. See .agent/config/capabilities.yaml."
+            ),
+            "required_capability": capability,
+            "caller_role": role,
+            "scope": scope,
+        }
+
+    def _emit_capability_denied(self, action: str, role: str, capability: str, scope: str) -> None:
+        """B5: emit a bus event for telemetry when a capability check fails.
+
+        Writes to .agent/bus/capability_denied.jsonl (best-effort).
+        """
+        try:
+            bus_dir = REPO_ROOT / ".agent" / "bus"
+            bus_dir.mkdir(parents=True, exist_ok=True)
+            event = {
+                "type": "capability_denied",
+                "action": action,
+                "caller_role": role,
+                "required_capability": capability,
+                "scope": scope,
+                "ts": datetime.datetime.utcnow().isoformat() + "Z",
+            }
+            with open(bus_dir / "capability_denied.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps(event) + "\n")
+        except Exception as e:
+            logger.debug("Could not emit capability_denied event: %s", e)
 
     def check_memory_pressure(self) -> bool:
         """STORY-1: Return True if headroom_memory.db exceeds the pressure threshold.

@@ -51,6 +51,42 @@ Refer to `examples/adr-001-template.md` for a "Golden Path" of ADR documentation
 ---
 > **Note**: This skill ensures that Paperclip's evolution is deliberate, documented, and durable.
 
+
+## When to Use
+
+- **Designing a new system** — start with the 4-quadrant view
+  (C4 model: Context, Container, Component, Code).
+- **Documenting an existing system** — capture current state
+  before refactoring.
+- **Communicating architecture to non-technical stakeholders** —
+  use the C4 diagrams (auto-rendered from Mermaid).
+- **Comparing architecture options** — write ADR-001, ADR-002, etc.
+  with diagrams, tradeoffs, and decision rationale.
+- **Onboarding new team members** — `ARCHITECTURE.md` is the entry
+  point for understanding "how this thing works".
+
+Avoid using this skill for:
+- One-off code changes (use `@backend-specialist` or similar).
+- Bug fixes (use `@debugger`).
+- Feature planning (use `@product-manager`).
+
+## Anti-Patterns
+
+- **Don't create diagrams that lie** — auto-generated C4 from
+  code is more trustworthy than hand-drawn diagrams that go stale.
+- **Don't document "what" without "why"** — every box on the
+  diagram needs context (why does it exist, who uses it).
+- **Don't use 10+ levels of nesting** — keep diagrams to 2-3 levels
+  (System → Container → Component). Deeper = harder to read.
+- **Don't duplicate info between code and docs** — if the code says
+  X, the docs shouldn't say Y. Either update the code or remove
+  the doc.
+- **Don't use "Architecture" as a single document** — split into
+  per-component docs (auth.md, db.md, api.md) with a top-level
+  index.
+- **Don't skip the "Rationale" section in ADRs** — "we chose X
+  because Y" is the most-valuable part. Future readers will thank you.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

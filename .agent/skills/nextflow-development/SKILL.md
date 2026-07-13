@@ -293,3 +293,7 @@ When publishing results, cite the appropriate pipeline. Citations are available 
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+- **Anti-Pattern**: Avoid implementing features without checking requirements first.
+- **Anti-Pattern**: Never skip validation steps.

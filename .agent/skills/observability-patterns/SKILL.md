@@ -6,6 +6,12 @@ version: 1.0.0
 
 # Observability Patterns Skill
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When instrumenting applications with OpenTelemetry (metrics, logs, traces).
+- **Trigger**: When setting up service monitors, alerting rules, or Prometheus + Grafana dashboards.
+- **Trigger**: When defining SLOs, SLIs, SLAs, error budgets, or handling on-call runbooks.
+
 > You cannot fix what you cannot see.
 > **Observability = Metrics + Logs + Traces, always correlated.**
 

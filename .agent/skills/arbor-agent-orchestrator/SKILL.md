@@ -150,3 +150,7 @@ Use this skeleton when no native `arbor` runtime is available:
   reset the decision basis to B_dev.
 - If reports contain deltas only, convert tree scores to absolute metric
   values.
+
+## ❌ Anti-Patterns & Pitfalls to Avoid
+- **Anti-Pattern**: Avoid implementing features without checking requirements first.
+- **Anti-Pattern**: Never skip validation steps.

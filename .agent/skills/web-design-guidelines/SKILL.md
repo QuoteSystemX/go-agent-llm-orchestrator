@@ -57,6 +57,38 @@ If no files specified, ask the user which files to review.
 4. FIX      → Address findings from audit
 ```
 
+## When to Use
+
+- **Designing a new web app** — start with information
+  architecture, then visual hierarchy, then interaction design.
+- **Establishing a design system** — define tokens (colors,
+  spacing, typography) before components.
+- **Reviewing UI work** — use the design checklist (contrast,
+  spacing, focus states, mobile, dark mode).
+- **A/B testing** — use real users, not opinions.
+- **Accessibility audit** — axe-core, Lighthouse, manual keyboard
+  testing.
+
+Avoid using this skill for:
+- Pure code architecture (use `@architecture`).
+- Backend (use `@backend-specialist`).
+- Brand identity work (use `@visual-explainer`).
+
+## Anti-Patterns
+
+- **Don't use color alone to convey information** —
+  always pair with icon, text, or pattern (color-blind users).
+- **Don't use more than 2 typefaces** — one for headings, one for
+  body. More = visual chaos.
+- **Don't use pure black (#000) or pure white (#FFF)** — they're
+  harsh. Use off-black/white (e.g., #0a0a0a) for less eye strain.
+- **Don't ignore focus states** — keyboard users need them.
+  Default browser focus is often invisible.
+- **Don't use `cursor: pointer` on non-interactive elements** —
+  it's misleading and breaks accessibility.
+- **Don't ship without testing on real devices** — emulators
+  miss real-world rendering quirks.
+
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version

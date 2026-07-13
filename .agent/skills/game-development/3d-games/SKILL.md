@@ -133,3 +133,35 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 > **Remember:** 3D is about illusion. Create the impression of detail, not the detail itself.
+
+
+## When to Use
+
+- **Building a 3D game** — Unity, Unreal, or Godot.
+- **Setting up the render pipeline** — URP/HDRP (Unity),
+  Blueprint/ Niagara (UE), or Godot's Vulkan renderer.
+- **Asset pipeline** — import FBX/glTF, set up LODs, configure
+  texture compression.
+- **Lighting** — baked vs real-time, lightmaps, probes.
+- **Performance** — draw call batching, occlusion culling,
+  GPU instancing.
+
+Avoid using this skill for:
+- 2D games (use `@2d-games`).
+- VR/AR (use `@vr-ar`).
+- Multiplayer (use `@multiplayer`).
+
+## Anti-Patterns
+
+- **Don't use uncompressed textures** — use ASTC (mobile),
+  BCn (desktop), or KTX2 with basis compression.
+- **Don't render objects outside the camera frustum** — use
+  occlusion culling, especially for dense scenes.
+- **Don't use real-time lighting for static scenes** — bake
+  lightmaps. Real-time lights are expensive.
+- **Don't use high-poly models in mobile builds** — use LODs
+  aggressively; mobile can drop 80% of geometry and look the same.
+- **Don't forget to test on target hardware** — dev machine
+  performance is not shipping performance.
+- **Don't use forward rendering when deferred is appropriate** —
+  match the renderer to your lighting scenario.

@@ -68,3 +68,37 @@ On 2026-05-23, we simulated a total MCP port block to test orchestrator failover
 - **Exponential Backoff**: When reconnecting to databases or message brokers, use exponential backoff:
   $$T_{retry} = 2^{attempt} \times 100\text{ms} + \text{jitter}$$
 - **Degraded Fallbacks**: If a search service fails, degrade gracefully by returning cached local database results instead of throwing a generic `500 Server Error`.
+
+
+## When to Use
+
+- **Validating system resilience** — inject failures to verify
+  the system handles them gracefully.
+- **Testing failover and recovery** — kill instances, simulate
+  network partitions, exhaust disk.
+- **Validating circuit breakers and retries** — verify they
+  actually trip and recover.
+- **Validating SLOs under load** — sustained traffic + failure
+  = realistic SLO test.
+- **Game day exercises** — scheduled chaos to train the on-call
+  team.
+
+Avoid using this skill for:
+- Production debugging (use `@debugger`).
+- Performance benchmarking (use `@performance-optimizer`).
+- Initial development (use after launch).
+
+## Anti-Patterns
+
+- **Don't run chaos in production without a rollback plan** —
+  every experiment needs a way out.
+- **Don't skip the blast radius calculation** — if you don't know
+  the blast radius, you don't know the experiment.
+- **Don't use chaos as a substitute for testing** — unit tests
+  catch bugs; chaos catches missing error handling.
+- **Don't run unmonitored experiments** — watch the dashboards
+  in real time, not after the fact.
+- **Don't ignore the on-call team** — they need to know chaos
+  is running.
+- **Don't use chaos to prove a point** — it's a learning tool, not
+  a weapon. Use it to learn, not to blame.

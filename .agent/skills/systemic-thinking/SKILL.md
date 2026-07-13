@@ -64,3 +64,37 @@ When a repository change affects an upstream service or a neighboring repository
    - Example lock payload: `{"lock": "schema_migration", "active_file": "pkg/db/schemas/user.go", "expires": "2026-05-23T22:00:00Z"}`
 3. **Release Gate**:
    - Release the lock only after all dependent tests (unit and E2E) return green.
+
+## When to Use
+
+- **Before editing shared models** (Go structs, TypeScript interfaces,
+  DB schemas, API contracts) — they have many consumers.
+- **Cross-repo changes** that affect APIs shared with another service.
+- **Investigating regressions** — "why did feature X break?" often
+  requires tracing the dependency graph.
+- **Refactoring** — before renaming or moving a function, find all
+  callers with `visualize_deps.py`.
+- **Architecture reviews** — use the Impact Matrix template in
+  PRs that touch shared code.
+
+Avoid using this skill for:
+- One-off bug fixes in a single file (use `@debugger`).
+- Adding a new isolated function with no callers yet.
+- Documentation-only changes.
+
+## Anti-Patterns
+
+- **Don't edit shared models without tracing first** — even a
+  small change (renaming a field) can break 20+ consumers.
+- **Don't skip the lock acquisition** when working in parallel —
+  other agents may be reading stale schemas.
+- **Don't release the lock before all dependent tests pass** —
+  this leads to "works on my machine" failures.
+- **Don't implement service handlers before the contract** —
+  always update `.proto` / OpenAPI specs FIRST.
+- **Don't trust grep alone for impact analysis** — use
+  `visualize_deps.py` for structural understanding. Plain grep
+  misses dynamic dispatch and reflection.
+- **Don't skip documentation of the impact matrix** — even
+  a 2-line "I changed X, affects Y" comment in the PR helps
+  future archaeologists.

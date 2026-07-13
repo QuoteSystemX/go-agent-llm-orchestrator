@@ -75,6 +75,37 @@ App Builder Process:
 6. Start preview
 ```
 
+## When to Use
+
+- **Scaffolding a new fullstack app** — frontend + backend
+  + DB + auth, with sensible defaults.
+- **Choosing a stack** — match the team's skills + project
+  requirements, not the trendiest framework.
+- **Setting up CI/CD** — test, build, deploy on every PR.
+- **Wiring auth and RBAC** — use a proven library (NextAuth,
+  Auth.js, Clerk); don't roll your own.
+- **Adding observability** — logs, metrics, traces from day 1.
+
+Avoid using this skill for:
+- Frontend-only apps (use `@frontend-design`).
+- Backend-only services (use `@backend-specialist`).
+- Pure mobile apps (use mobile skills).
+
+## Anti-Patterns
+
+- **Don't pick a stack based on hype** — pick based on team
+  familiarity, hiring pool, and project requirements.
+- **Don't skip auth in the MVP** — retrofitting auth is 10x harder
+  than building it from day 1.
+- **Don't hardcode secrets in `.env`** — use a secrets manager
+  (Vault, AWS Secrets Manager, Doppler).
+- **Don't deploy without CI/CD** — manual deploys lead to drift
+  between dev and prod.
+- **Don't use `latest` tags in production** — pin to specific
+  versions for reproducibility.
+- **Don't skip the database migration plan** — schema changes
+  need a forward and backward migration path.
+
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version

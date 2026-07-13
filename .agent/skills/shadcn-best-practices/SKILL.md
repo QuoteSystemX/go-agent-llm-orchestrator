@@ -42,6 +42,40 @@ Refer to `examples/custom-component.tsx` for a "Golden Path" implementation of a
 ---
 > **Note**: This skill ensures that the Paperclip interface remains premium, accessible, and easy to theme.
 
+## When to Use
+
+- **Adding a new shadcn/ui component** — use `npx
+  shadcn@latest add <component>`, never copy-paste from docs.
+- **Customizing shadcn components** — they're meant to be owned
+  by you; modify the file in `components/ui/`.
+- **Theming** — use CSS variables in `globals.css`; change
+  `--primary` etc. for theme variants.
+- **Form components** — combine shadcn with `react-hook-form`
+  + `zod` for type-safe forms.
+- **Dark mode** — shadcn supports it out of the box via
+  `next-themes`.
+
+Avoid using this skill for:
+- Building components from scratch (use `@frontend-design`).
+- Styling without shadcn (use Tailwind docs).
+- Form validation (use `@typescript-patterns`).
+
+## Anti-Patterns
+
+- **Don't import directly from `@radix-ui`** — shadcn wraps
+  Radix; importing the wrapper gives you theming and accessibility
+  for free.
+- **Don't put shadcn components in node_modules** — they live
+  in your repo (`components/ui/`) so you can modify them.
+- **Don't use Tailwind classes directly on shadcn components** —
+  extend via the `cn()` utility and `cva` for variants.
+- **Don't skip the `cn()` utility** — it handles conditional
+  class merging correctly. Manual class strings are error-prone.
+- **Don't use the default shadcn theme colors verbatim** — they're
+  a starting point, not a final design.
+- **Don't forget to update the registry** when adding custom
+  components — `components.json` drives the CLI.
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

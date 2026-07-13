@@ -7,6 +7,12 @@ version: 1.0.0
 
 # TON Blockchain Skill (2026)
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When building or auditing smart contracts in Tact or FunC.
+- **Trigger**: When interacting with the TON blockchain using TypeScript SDKs (e.g. `ton`, `ton-core`, `ton-crypto`).
+- **Trigger**: When designing Jetton (token) or NFT contracts, or working with cells, slices, builders, and BOCs.
+
 > Mastery of the Open Network: Async-first, Cell-based, high-performance blockchain engineering.
 
 ---

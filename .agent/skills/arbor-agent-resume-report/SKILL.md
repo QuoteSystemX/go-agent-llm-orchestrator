@@ -101,6 +101,12 @@ Include:
 Reports must tolerate partial data. Missing stats, events, or tree fields
 should produce a partial report, not a crash.
 
+## ❌ Anti-Patterns & Pitfalls to Avoid
+
+- **Anti-Pattern (Pretending Resume)**: Avoid pretending resume is possible if the state tree is corrupt. Start a fresh run instead.
+- **Anti-Pattern (Infinite Loop)**: Never keep polishing reports or launching extra checks after `REPORT.md` is written and validated.
+- **Anti-Pattern (Reporting Crash)**: Avoid crashing when compiling reports with missing stats or events; always tolerate partial data.
+
 ## Manual Report Generation
 
 Native:

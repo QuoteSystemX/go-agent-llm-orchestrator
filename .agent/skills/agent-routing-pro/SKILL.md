@@ -100,6 +100,38 @@ Every response MUST start with the Flow plaque:
 - Step 4: Final hardening pass.
 - **Mandatory**: Include `## 🧠 Internal Discussion Log` section with Red Team insights and `⚔️ Conflicts`.
 
+## When to Use
+
+- **Choosing a model for a task** — use `@model_router` to
+  pick the right model by complexity.
+- **Setting up routing rules** — `.agent/config/router_rules.json`
+  with bilingual weights (EN + RU) for keyword matching.
+- **Optimizing routing** — train via `archivist_trigger.py`
+  + `experience_distiller.py` + `router_trainer.py`.
+- **Debugging routing decisions** — inspect the OTel spans from
+  `harness_run.py`.
+
+Avoid using this skill for:
+- One-off model selection (just use the best available).
+- Cloud LLM tuning (different skill).
+- Prompt engineering (use `@prompt-engineering`).
+
+## Anti-Patterns
+
+- **Don't hardcode model names** — use the routing matrix,
+  not specific models. The matrix is the source of truth.
+- **Don't train the router without enough data** — at least 30+
+  lessons with `applied_count` for meaningful adjustments.
+- **Don't ignore the bilingual weights** — if a user writes in
+  Russian, the router must still match keywords. Test both
+  languages.
+- **Don't skip the audit** — `capability_audit.py` is the gate
+  for matrix changes. If it fails, fix the audit or the matrix.
+- **Don't break the default-deny invariant** — `session-agent`
+  MUST remain empty. Any addition is a security regression.
+- **Don't use wildcards like `*` or `*:*`** — they're too broad.
+  Use `task:*` or `repo:NAME` instead.
+
 ## Changelog
 
 - **1.0.0** (2026-05-07): Initial version

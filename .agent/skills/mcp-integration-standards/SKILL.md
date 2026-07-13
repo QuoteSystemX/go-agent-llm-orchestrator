@@ -50,3 +50,35 @@ Every MCP tool must be fully described with a JSON-Schema. Never rely on the LLM
 ### B. SSE Transport Protocol
 *   Validate endpoint configuration and keep connections persistent.
 *   Implement proper heartbeats and retry policies to maintain connectivity.
+
+
+## When to Use
+
+- **Building a new MCP server** — start with the official
+  SDK (Python, Go, TypeScript, Rust).
+- **Defining tool schemas** — keep parameters flat, use clear
+  descriptions (the AI reads them).
+- **Setting up authentication** — OAuth 2.1 for production,
+  API keys for dev.
+- **Testing MCP servers** — use the inspector + automated tests.
+- **Publishing** — npm/PyPI/go module + clear docs.
+
+Avoid using this skill for:
+- MCP tool design (use `@mcp-builder`).
+- MCP protocol internals (use `@mcp-protocol-engineer`).
+- Single-purpose servers (use platform-specific skills).
+
+## Anti-Patterns
+
+- **Don't use OAuth 1.0** — use OAuth 2.1 or API keys. OAuth
+  1.0 is deprecated.
+- **Don't put credentials in tool descriptions** — they're for
+  documentation, not secrets.
+- **Don't return large objects in tool responses** — paginate or
+  filter. Large responses break context windows.
+- **Don't use `error` as a string field** — use a structured
+  error object (code, message, details).
+- **Don't skip tool versioning** — once an agent depends on a
+  tool, breaking changes are painful. Add `version` to outputs.
+- **Don't ignore MCP error codes** — use the standard error codes
+  (-32600 to -32603) so clients can handle them.

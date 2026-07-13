@@ -179,3 +179,43 @@ my-mcp-server/
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version
+
+## When to Use
+
+- **Adding a new MCP tool to a server** — define the JSON schema,
+  add to the server's tool list, document in `mcp_config.json`.
+- **Designing tool schemas** — keep parameters flat, use clear
+  descriptions (the AI reads them).
+- **Testing MCP tools** — use the `mcp-llm-broker` test mode
+  with `--dry-run` to verify schemas parse correctly.
+- **Migrating from REST APIs to MCP** — wrap each endpoint as
+  a tool with a structured input/output schema.
+- **Building domain-specific MCP servers** — e.g., a database
+  query tool, a file search tool, a CI trigger tool.
+
+Avoid using this skill for:
+- Building regular APIs (use `api-patterns`).
+- Simple shell scripts (use `bash-linux`).
+- One-off tools that won't be reused.
+
+## Anti-Patterns
+
+- **Don't create too many tools in one server** — agents get
+  overwhelmed. Group related tools (e.g., a `db` server with
+  query, schema, and migrate, not 20 separate servers).
+- **Don't use vague descriptions** — the AI uses descriptions to
+  decide which tool to call. "queries the database" is bad;
+  "queries users by name and returns id, email, role" is good.
+- **Don't expose internal-only state as a tool parameter** — if
+  the agent doesn't need to know, don't make it set it.
+- **Don't return unstructured text** — return JSON. Agents parse
+  JSON reliably; prose is harder.
+- **Don't use complex nested schemas** — keep parameters flat.
+  If you have nested config, take a config object as a single
+  string field instead.
+- **Don't skip the `required` field** — every required parameter
+  must be in the `required` array. Optional params go OUT of
+  `required`.
+- **Don't name tools with verbs that overlap** — `search` vs
+  `find` vs `query` confuses the agent. Use consistent naming
+  per server.

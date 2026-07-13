@@ -213,3 +213,40 @@ python3 .agent/scripts/knowledge/obsidian_validator.py check --path <file>
 ## Changelog
 
 - **1.0.0** (2026-05-22): Initial version
+
+## When to Use
+
+- **Creating a new Obsidian note** — start with frontmatter (title,
+  tags, aliases), use wikilinks for cross-references.
+- **Editing existing vault files** — preserve the OFM syntax
+  (callouts, properties, embeds) when modifying.
+- **Converting plain Markdown to OFM** — add frontmatter, replace
+  external links with wikilinks where appropriate.
+- **Documenting cross-references** — use `[[Note Name]]` so
+  Obsidian tracks renames automatically.
+- **Highlighting important information** — use callouts
+  (`> [!type]`) for warnings, tips, notes.
+
+Avoid using this skill for:
+- Files in `docs/`, `README.md`, `CONTRIBUTING.md` (NOT in vault).
+- Non-Markdown formats (use specific format skills).
+- One-off README updates.
+
+## Anti-Patterns
+
+- **Don't use OFM syntax in non-vault files** — `wiki/` is the
+  vault; other Markdown files (README, docs) shouldn't have
+  wikilinks, callouts, or `[[...]]` syntax.
+- **Don't skip the frontmatter** — every vault file should have
+  `title`, `tags`, `status` (validated by `obsidian-validator`).
+- **Don't use external links for vault-internal references** —
+  use `[[wikilinks]]` so Obsidian tracks renames.
+- **Don't mix embed syntax with regular links** — `![[embed]]` is
+  for embedding content; `[[link]]` is for navigation.
+- **Don't use callouts for non-highlighted content** — if it's
+  regular text, use a heading or paragraph, not a callout.
+- **Don't use Markdown inside wikilink aliases** that break
+  display — `[[Note|### Display]]` renders weirdly. Keep aliases
+  plain text.
+- **Don't nest callouts beyond 2 levels** — deeply nested
+  callouts are hard to read.

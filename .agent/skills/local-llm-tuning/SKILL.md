@@ -49,3 +49,37 @@ You are a clean-code Go developer. Output strictly compile-ready Go.
 *   **VRAM Allocation (`num_gpu`)**: Ensure the model layers are offloaded to the GPU. Keep 1-2GB of VRAM free for operating system UI rendering.
 *   **Flash Attention**: Enable flash attention in settings if supported by the model and runner backend to reduce KV cache memory footprints.
 *   **Thread Allocation**: Match CPU threads to the physical cores count (not virtual hyperthreads) if running purely on CPU.
+
+## When to Use
+
+- **Configuring Ollama Modelfiles** for a new local model — choose the
+  right quantization, set `num_ctx`, configure `PARAMETER` blocks.
+- **Diagnosing slow generation** — check VRAM allocation (`num_gpu`),
+  flash attention, and CPU thread count.
+- **Migrating between models** (e.g., `qwen2.5-coder:14b` →
+  `qwen3-coder:30b`) — understand the quantization tradeoffs.
+- **Tuning for deterministic outputs** (coding, structured data) —
+  set `temperature: 0.0` and `top_p: 0.9`.
+
+Avoid using this skill for:
+- Cloud LLM tuning (use cloud-specific skills).
+- Fine-tuning model weights (use a different skill).
+- Non-LLM workloads (Python, Go, etc.).
+
+## Anti-Patterns
+
+- **Don't use FP16 on consumer GPUs** — it needs 2x VRAM and
+  rarely improves quality over Q8_0.
+- **Don't use Q4 or lower for coding tasks** — quality degrades
+  noticeably. Q4_K_M is the minimum acceptable for production.
+- **Don't set `num_ctx` higher than your model supports** — many
+  models advertise 32k but train on 4k, so high `num_ctx` wastes
+  memory without quality benefit. Check the model card.
+- **Don't leave temperature at default 0.7 for code** — it produces
+  non-deterministic, sometimes broken code. Set `temperature: 0.0`
+  for code generation.
+- **Don't ignore `num_gpu` on a GPU machine** — without it, Ollama
+  runs purely on CPU, which is 10-100x slower.
+- **Don't use IQ3_XXS for any task requiring accuracy** — it breaks
+  on coding rules, math, and complex logic. Reserve for trivial
+  summarization only.

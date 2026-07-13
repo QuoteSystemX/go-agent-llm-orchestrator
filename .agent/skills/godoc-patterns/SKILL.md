@@ -6,6 +6,12 @@ version: 1.0.0
 
 # GoDoc Patterns Skill
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When writing, updating, or reviewing Go documentation (doc-comments, package docs, `doc.go` files).
+- **Trigger**: When designing APIs, writing Example tests, or specifying public types, interfaces, and methods in Go.
+- **Trigger**: When generating documentation using the `godoc` tool or preparing code for pkg.go.dev.
+
 GoDoc is Go's built-in documentation system. Doc-comments are rendered on [pkg.go.dev](https://pkg.go.dev) and surfaced by `go doc`, IDEs, and `godoc -http`. A well-documented package is self-explanatory without a README.
 
 > "GoDoc comments are API contracts written in prose." — Go team

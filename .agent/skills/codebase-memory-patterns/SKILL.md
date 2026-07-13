@@ -56,3 +56,40 @@ The `codebase-memory` MCP server exposes tools to interact with the local Tree-s
 When a graph query returns large outputs:
 - The `Headroom` middleware will automatically intercept and compress the output if it exceeds 500 tokens.
 - Keep queries specific (e.g. limit by file extension or path) to avoid overloading the memory registry.
+
+## When to Use
+
+- **Investigating "who calls this function?"** — use `get_callers`
+  instead of grepping for the function name.
+- **Understanding a class hierarchy** — use `get_symbol_definitions`
+  to find definitions and parent classes.
+- **Tracing import dependencies** — use `get_dependencies`
+  before refactoring shared modules.
+- **Following HTTP call chains** — use `get_http_routes` for
+  service-to-service traces.
+- **Ad-hoc pattern queries** — use `execute_graph_query` with
+  a Cypher-like syntax for complex relationship questions.
+- **Before any refactor** — explore the impact graph first.
+
+Avoid using this skill for:
+- Simple text searches (use `Grep` tool directly).
+- Reading documentation (use `Read` tool).
+- Looking at runtime behavior (use logging/metrics).
+
+## Anti-Patterns
+
+- **Don't grep the entire workspace for symbol references** —
+  use `get_callers` / `get_callees`. Grep returns text; the
+  graph returns structured relationships.
+- **Don't read multiple source files sequentially to map a
+  call graph** — that's exactly what `get_callers` is for.
+- **Don't use `execute_graph_query` for simple lookups** — use the
+  specific tool (e.g., `get_symbol_definitions`) for clarity and
+  performance.
+- **Don't ignore the Headroom compression signal** — if a query
+  returns compressed output, the query is too broad. Narrow it.
+- **Don't query the graph for runtime state** — it's a static
+  code graph, not a runtime profiler. Use metrics/traces for that.
+- **Don't skip the index build** — if the graph returns no
+  results, the index may be stale. Rebuild with
+  `codebase-memory-mcp build-index`.

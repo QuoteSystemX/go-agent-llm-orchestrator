@@ -130,3 +130,36 @@ Server: Validate → did projectile actually hit?
 ---
 
 > **Remember:** Never trust the client. The server is the source of truth.
+
+
+## When to Use
+
+- **Designing a multiplayer game** — authoritative server
+  vs P2P, lobby system, matchmaking.
+- **Implementing netcode** — rollback (GGPO), lockstep, or
+  snapshot interpolation. Match to game type.
+- **State replication** — what to send, when, and to whom. Use
+  interest management for open worlds.
+- **Anti-cheat** — server-side validation; never trust the
+  client.
+- **Matchmaking** — ELO/MMR, latency-based, or skill-based.
+
+Avoid using this skill for:
+- Single-player games (use `@game-design`).
+- WebRTC (use specific skills).
+- General networking (use `@backend-specialist`).
+
+## Anti-Patterns
+
+- **Don't trust the client** — always validate on the server.
+  The client can lie, replay packets, or send malformed data.
+- **Don't use lockstep for fast-paced action** — it requires too
+  many round-trips. Use rollback or snapshot.
+- **Don't send every entity every tick** — use interest
+  management to send only what each client can see.
+- **Don't skip latency compensation** — even 100ms feels laggy.
+  Interpolate positions, predict movement.
+- **Don't ship without a load test** — simulate 2x expected
+  peak users before launch.
+- **Don't use NAT punchthrough as a primary strategy** — use a
+  relay server as fallback. Most home networks have NAT.

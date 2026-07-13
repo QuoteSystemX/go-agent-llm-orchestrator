@@ -49,3 +49,38 @@ Prompt Update or Model Upgrade
 *   **Caching**: Always use a local cache (e.g., SQLite or JSON cache) during prompt engineering to avoid executing identical remote LLM queries.
 *   **Batching**: Distribute evaluations concurrently using worker pools to save execution time.
 *   **Statistical Significance**: Run evaluations with temperature > 0 at least 3-5 times to collect average metrics and identify variances.
+
+
+## When to Use
+
+- **Setting up a regression suite for an LLM app** —
+  start with a small "golden set" (5-20 cases) and grow.
+- **Detecting prompt drift** — run the suite on every PR to catch
+  silent prompt regressions.
+- **Comparing models** — A/B test by running the same eval on
+  two model versions.
+- **Validating system prompts** — every change should be backed
+  by eval results.
+- **Catching hallucinations** — include fact-checking tests in
+  your suite.
+
+Avoid using this skill for:
+- Unit tests (use `@testing-patterns`).
+- Performance benchmarks (use `@performance-optimizer`).
+- One-off model selection (use `@model_router`).
+
+## Anti-Patterns
+
+- **Don't test on examples that are in the training data** —
+  the model will ace them. Use held-out sets the model has never
+  seen.
+- **Don't trust a single eval run** — LLMs are stochastic. Run
+  3+ times and take the median.
+- **Don't ignore flaky tests** — fix them. A flaky test is a
+  useless test.
+- **Don't use a single metric** — combine accuracy, latency, cost,
+  and qualitative review.
+- **Don't ship without a regression test for the bug you just
+  fixed** — otherwise the bug will come back.
+- **Don't skip adversarial tests** — add prompts designed to
+  elicit bad behavior (jailbreaks, prompt injection, off-topic).

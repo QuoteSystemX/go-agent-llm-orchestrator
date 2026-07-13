@@ -66,6 +66,37 @@ log_event(
 )
 ```
 
+## When to Use
+
+- **Setting up telemetry for a new service** — start with
+  the 3 pillars: logs, metrics, traces.
+- **Choosing an observability stack** — OpenTelemetry + a backend
+  (Grafana, Datadog, Honeycomb, etc.).
+- **Adding custom metrics** — RED method (Rate, Errors, Duration)
+  for services, USE for resources.
+- **Setting up alerts** — error budgets, SLOs, not just thresholds.
+- **Debugging with traces** — span the request path end-to-end.
+
+Avoid using this skill for:
+- Logging libraries (use `@python-patterns` or `@go-patterns`).
+- Dashboard design (use `@grafana-dashboard-master`).
+- Application performance (use `@performance-optimizer`).
+
+## Anti-Patterns
+
+- **Don't log PII without scrubbing** — use a logger
+  filter to redact emails, SSNs, etc.
+- **Don't use high-cardinality labels in metrics** — they explode
+  the time-series database. Use bounded labels.
+- **Don't alert on every error** — alert on trends (error rate,
+  not absolute count).
+- **Don't use `print()` for production logging** — use a structured
+  logger (JSON output).
+- **Don't skip trace context propagation** — without it, traces
+  are broken across services.
+- **Don't log sensitive data (passwords, tokens) at any level** —
+  not even at DEBUG.
+
 ## Changelog
 
 - **1.1.0** (2026-05-12): Added `log_event.py` script and CLI interface.

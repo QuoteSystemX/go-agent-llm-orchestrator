@@ -55,6 +55,40 @@ session = ResilientSession(host="http://my-service.local")
 ---
 > **Note**: This skill ensures that development in WSL is as fast and stable as native Linux.
 
+## When to Use
+
+- **Working between WSL and Windows** — share files via
+  `\wsl$\<distro>\home\...` from Windows or `/mnt/c/...` from
+  WSL.
+- **Networking between WSL and Windows** — WSL2 uses a virtual
+  network; use `localhost` from Windows to access WSL services
+  (with WSL's automatic port forwarding).
+- **GUI apps from WSL** — use WSLg (Windows 11) for native GUI
+  support.
+- **PATH differences** — Windows and WSL PATHs are separate;
+  use `wslview` for opening files in Windows apps.
+
+Avoid using this skill for:
+- Pure Linux development (use `@bash-linux`).
+- Pure Windows development (use `@powershell-windows`).
+- Container work (use `@docker-patterns`).
+
+## Anti-Patterns
+
+- **Don't use `/mnt/c/` paths in shell scripts** — they
+  cause permission issues. Use `\wsl$\<distro>\...` from Windows
+  or symlinks.
+- **Don't bind to `0.0.0.0` in WSL** — bind to a specific
+  interface or use `localhost` (with WSL's port forwarding).
+- **Don't mix Windows and Unix line endings** — set your editor
+  to LF, not CRLF.
+- **Don't run heavy file I/O across the WSL boundary** — it's
+  slow. Copy files into WSL for processing.
+- **Don't ignore Windows Defender** — it scans `/mnt/c/` and slows
+  WSL. Add exclusions for build directories.
+- **Don't run systemd services manually in older WSL** — WSL2
+  supports systemd but needs explicit config (`/etc/wsl.conf`).
+
 ## Changelog
 
 - **1.0.0** (2026-05-13): Initial version

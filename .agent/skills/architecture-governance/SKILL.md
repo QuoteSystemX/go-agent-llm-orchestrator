@@ -82,3 +82,38 @@ Approved (Supersedes ADR-0004)
 - [ ] **Dependency Cycle Check**: Run `visualize_deps.py` to ensure no recursive imports.
 - [ ] **Archived References**: When removing a skill or replacing a module, move the old directories to `.agent/skills/archive/` instead of deleting them outright to preserve learning history.
 - [ ] **LSP Gateway Probe**: Always probe semantic references using `semantic_hover` before renaming shared variables or structural types.
+
+
+## When to Use
+
+- **Reviewing a proposed architectural change** — does it
+  fit the existing patterns? Does it introduce new tech?
+- **Setting up ADRs** — capture decisions, not just outcomes.
+- **Running an architecture review board** — formal process
+  for major changes.
+- **Auditing existing architecture** — does the code match the
+  documented architecture? Drift is normal; document it.
+- **Onboarding engineers to architecture decisions** — share
+  ADRs, run walkthroughs, write `ARCHITECTURE.md`.
+
+Avoid using this skill for:
+- Quick code reviews (use `@code-review-checklist`).
+- Architectural design from scratch (use `@architecture`).
+- Documentation (use `@documentation-writer`).
+
+## Anti-Patterns
+
+- **Don't skip the ADR for "small" changes** — small
+  changes accumulate. "We just swapped the JSON parser" is
+  often wrong 6 months later.
+- **Don't use architecture review as a gate** — it should be a
+  conversation, not a blocker. Async reviews are fine.
+- **Don't ignore the cost of new tech** — every new dependency
+  has maintenance, security, and onboarding costs.
+- **Don't enforce patterns that don't fit** — if every new
+  service needs to fight the platform, the platform is wrong.
+- **Don't document aspirational architecture** — document what
+  IS, then plan the gap to what SHOULD BE.
+- **Don't centralize all decisions** — distribute decisions to
+  the teams that own the code. Reserve central review for
+  cross-cutting concerns only.

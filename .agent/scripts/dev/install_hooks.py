@@ -28,6 +28,10 @@ except ImportError:
     from lib.paths import REPO_ROOT
 
 PRE_COMMIT_CONTENT = """#!/bin/bash
+# Fix locale warnings when host lacks en_US.UTF-8
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 # STORY-1 Forcing Function: chain of pre-commit checks.
 # 1. pre_commit_review.py: scan staged diff against LESSONS_LEARNED.md
 # 2. git_pre_commit_distill.py: refuse done-stories without fresh distillation
@@ -39,8 +43,8 @@ echo "🔍 [1/2] Lesson review..."
 python3 "$REPO_ROOT/.agent/scripts/dev/pre_commit_review.py"
 
 echo "🔍 [2/2] Distill freshness check..."
-python3 "$REPO_ROOT/.agent/scripts/dev/git_pre_commit_distill.py"
-DISTILL_STATUS=$?
+DISTILL_STATUS=0
+python3 "$REPO_ROOT/.agent/scripts/dev/git_pre_commit_distill.py" || DISTILL_STATUS=$?
 if [ $DISTILL_STATUS -eq 1 ]; then
     # Only exit 1 means "distill overdue" (refusal). 0=ok, 2=no relevant files.
     echo "❌ Distill check refused the commit (see errors above)."

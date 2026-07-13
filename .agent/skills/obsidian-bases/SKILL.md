@@ -6,6 +6,12 @@ version: 1.0.0
 
 # Obsidian Bases Skill
 
+## 🎯 When to Use This Skill
+
+- **Trigger**: When creating, updating, or managing Obsidian Base (`.base`) files.
+- **Trigger**: When user mentions table views, cards views, list views, or database-like features in Obsidian.
+- **Trigger**: When editing YAML properties, filters, or formula expressions inside `.base` files.
+
 ## Workflow
 
 1. **Create the file**: Create a `.base` file in the vault with valid YAML content

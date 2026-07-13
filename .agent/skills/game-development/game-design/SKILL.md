@@ -127,3 +127,41 @@ Just Right → Flow → Engagement
 ---
 
 > **Remember:** Fun is discovered through iteration, not designed on paper.
+
+
+## When to Use
+
+- **Designing a new game** — start with the core loop
+  (player action → feedback → consequence).
+- **Writing a game design document (GDD)** — capture mechanics,
+  not just story.
+- **Balancing** — economy, combat, progression curves. Use
+  spreadsheets or tools like Machinations.
+- **Playtesting** — get external playtesters early; observe, don't
+  explain.
+- **Monetization design** — for F2P: whales vs dolphins, ad
+  frequency, IAP balance.
+
+Avoid using this skill for:
+- Implementing code (use `@2d-games`, `@3d-games`, etc.).
+- Writing story/narrative (use `@documentation-writer`).
+- Pure art direction (use specific art skills).
+
+## Anti-Patterns
+
+- **Don't design in a vacuum** — playtest from day 1, even
+  with paper prototypes.
+- **Don't make the core loop boring** — every other system
+  (progression, monetization) is built on top of the core loop.
+  If the loop is boring, no amount of content saves it.
+- **Don't ship without onboarding** — first 5 minutes determine
+  retention. Tutorial > figure-it-out-yourself.
+- **Don't tune numbers in isolation** — game economies are
+  systems; changing one variable affects others. Test in context.
+- **Don't ignore negative feedback** — if playtesters are confused,
+  the design is unclear, not the playtesters.
+- **Don't copy successful games wholesale** — copy mechanics,
+  not content. The same genre can have wildly different
+  successful designs.
+- **Don't ship a game without a clear win condition** — even
+  sandbox games need a sense of progress.

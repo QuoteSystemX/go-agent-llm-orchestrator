@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""
+bin/inbox — STORY-2 INBOX v2 CLI for the agent kit.
+
+Manages structured human-to-agent messages in tasks/INBOX.md (JSONL).
+
+Usage:
+    bin/inbox send <intent> <body>  [--target AGENT_OR_TASK]
+                                    [--anchor KNOWLEDGE_SECTION]
+                                    [--ack-required]
+    bin/inbox list                  [--intent X] [--target Y] [--since ISO]
+    bin/inbox ack <entry_id>
+    bin/inbox schema                # print the JSON schema
+    bin/inbox --help
+
+Intents: redirect, clarify, abort, context, ack
+  - redirect/context require --anchor
+
+Examples:
+    bin/inbox send redirect "use pgx" --anchor "#postgres"
+    bin/inbox send clarify "what is X?" --target backend-specialist
+    bin/inbox send context "see policy" --anchor "#auth"
+    bin/inbox list --intent redirect
+    bin/inbox ack inb_20260711_120000_abcdef
+
+Exit codes:
+    0  success
+    1  validation error (entry rejected)
+    2  invalid usage
+    3  not found
+"""
+import argparse
+import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "communication"))
+
+import inbox  # type: ignore
+
+ANSI = {
+    "GREEN": "\033[92m",
+    "YELLOW": "\033[93m",
+    "RED": "\033[91m",
+    "BLUE": "\033[94m",
+    "RESET": "\033[0m",
+    "BOLD": "\033[1m",
+}
+
+
+def _c(color: str, text: str) -> str:
+    if not sys.stdout.isatty():
+        return text
+    return f"{ANSI[color]}{text}{ANSI['RESET']}"
+
+
+def cmd_send(args) -> int:
+    try:
+        entry = inbox.append_entry(
+            intent=args.intent,
+            body=args.body,
+            target=args.target,
+            knowledge_anchor=args.anchor,
+            ack_required=args.ack_required,
+            author="human",
+        )
+    except ValueError as e:
+        print(_c("RED", f"❌ Validation failed: {e}"), file=sys.stderr)
+        return 1
+    print(_c("GREEN", "✅ Entry appended"))
+    print(f"   ID:     {entry.id}")
+    print(f"   Intent: {entry.intent}")
+    print(f"   Body:   {entry.body[:80]}{'...' if len(entry.body) > 80 else ''}")
+    if entry.knowledge_anchor:
+        print(f"   Anchor: {entry.knowledge_anchor}")
+    if entry.target:
+        print(f"   Target: {entry.target}")
+    if entry.ack_required:
+        print(_c("YELLOW", "   ⚠️  Agent must ack before proceeding"))
+    return 0
+
+
+def cmd_list(args) -> int:
+    from datetime import datetime
+    since = None
+    if args.since:
+        try:
+            since = datetime.fromisoformat(args.since.replace("Z", "+00:00"))
+        except ValueError:
+            print(_c("RED", f"❌ Bad --since format (use ISO 8601): {args.since}"), file=sys.stderr)
+            return 2
+    entries = inbox.read_entries(intent=args.intent, target=args.target, since=since)
+    if not entries:
+        print(_c("YELLOW", "📭 Inbox is empty (or no matching entries)."))
+        return 0
+    print(_c("BOLD", f"📬 {len(entries)} entries"))
+    for e in entries:
+        acked = "✓" if e.acked_ts else " "
+        print(f"  [{acked}] {e.id}  {e.intent:8s}  {e.ts}")
+        if e.target:
+            print(f"      target: {e.target}")
+        if e.knowledge_anchor:
+            print(f"      anchor: {e.knowledge_anchor}")
+        body_preview = e.body[:100] + ("..." if len(e.body) > 100 else "")
+        print(f"      body: {body_preview}")
+    return 0
+
+
+def cmd_ack(args) -> int:
+    ok = inbox.ack_entry(args.entry_id, acked_by="human")
+    if not ok:
+        print(_c("RED", f"❌ Entry not found or already acked: {args.entry_id}"), file=sys.stderr)
+        return 3
+    print(_c("GREEN", f"✅ Acked: {args.entry_id}"))
+    return 0
+
+
+def cmd_schema(args) -> int:
+    schema_path = REPO_ROOT / ".agent" / "config" / "inbox.schema.json"
+    if not schema_path.exists():
+        print(_c("RED", f"❌ Schema not found: {schema_path}"), file=sys.stderr)
+        return 1
+    print(schema_path.read_text(encoding="utf-8"))
+    return 0
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(
+        prog="bin/inbox",
+        description="STORY-2 INBOX v2: structured human-to-agent channel.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    p_send = sub.add_parser("send", help="Append a new entry")
+    p_send.add_argument("intent", choices=sorted(inbox.ALLOWED_INTENTS))
+    p_send.add_argument("body")
+    p_send.add_argument("--target", help="Target agent or task_id")
+    p_send.add_argument("--anchor", help="KNOWLEDGE.md anchor (required for redirect/context)")
+    p_send.add_argument("--ack-required", action="store_true", help="Agent must ack")
+    p_send.set_defaults(func=cmd_send)
+
+    p_list = sub.add_parser("list", help="List entries")
+    p_list.add_argument("--intent", choices=sorted(inbox.ALLOWED_INTENTS))
+    p_list.add_argument("--target")
+    p_list.add_argument("--since", help="ISO 8601 timestamp")
+    p_list.set_defaults(func=cmd_list)
+
+    p_ack = sub.add_parser("ack", help="Mark an entry as acked")
+    p_ack.add_argument("entry_id")
+    p_ack.set_defaults(func=cmd_ack)
+
+    p_schema = sub.add_parser("schema", help="Print the JSON schema")
+    p_schema.set_defaults(func=cmd_schema)
+
+    args = p.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

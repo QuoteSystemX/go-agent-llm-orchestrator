@@ -194,6 +194,38 @@ For RAG indexing:
 
 > **Remember:** Templates are starting points. Adapt to your project's needs.
 
+## When to Use
+
+- **Creating a new README, ADRs, or runbook** — use a
+  template as a starting point, not a straitjacket.
+- **Standardizing docs across the team** — templates ensure
+  consistency without enforcing identical content.
+- **Onboarding new contributors** — share the templates so
+  everyone uses the same structure.
+- **Auditing existing docs** — check they follow the templates
+  (or have a good reason to deviate).
+
+Avoid using this skill for:
+- One-off documentation (just write the doc).
+- User-facing documentation (use `@documentation-writer`).
+- API reference (use auto-generated docs).
+
+## Anti-Patterns
+
+- **Don't make templates so rigid they discourage
+  contribution** — empty fields are fine; required structure
+  is good.
+- **Don't enforce templates for trivial docs** — a 5-line bug
+  fix doesn't need a full template.
+- **Don't have too many templates** — keep it to 3-5
+  (README, ADR, runbook, design doc, postmortem).
+- **Don't lock templates in stone** — they should evolve with
+  the team's needs.
+- **Don't use templates as a substitute for thinking** — a
+  template is a starting point, not the final answer.
+- **Don't put PII or secrets in templates** — they get copied
+  to many places. Use placeholders.
+
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version

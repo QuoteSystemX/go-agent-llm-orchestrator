@@ -243,11 +243,14 @@ def build_knowledge_fragment(
     parts: list[str] = []
     total = 0
     for inj in active:
-        # The injection's registered_ts may not match the lesson date exactly,
-        # so we look up by lesson_id (date format) or by closest date.
-        # For simplicity, we use the injection's "registered_ts" date prefix.
-        reg_date = inj["registered_ts"][:10]  # YYYY-MM-DD
-        lesson = by_date.get(reg_date)
+        # Look up by lesson_id (which is the date or any unique ID
+        # passed to register_lesson). Fall back to registered_ts date
+        # for backwards compatibility with older indexes.
+        lesson_id = inj.get("lesson_id", "")
+        lesson = by_date.get(lesson_id)
+        if not lesson:
+            reg_date = inj["registered_ts"][:10]  # YYYY-MM-DD fallback
+            lesson = by_date.get(reg_date)
         if not lesson:
             continue
         snippet = f"[{lesson['date']}] {lesson.get('tag', 'INFO')}: {lesson['title']}\n  {lesson['body'][:300]}"

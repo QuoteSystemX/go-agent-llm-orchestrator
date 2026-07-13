@@ -122,7 +122,7 @@ def mask_secrets(text: str) -> str:
     masked_text = _SECRET_PATTERNS[1].sub("[MASKED PRIVATE KEY]", masked_text)
 
     # 2. Mask key-value secrets
-    def _mask_kv(match):
+    def _mask_kv(match: "re.Match[str]") -> str:
         key = match.group(1)
         val = match.group(2)
         # Keep first/last 2 chars for debugging if long enough

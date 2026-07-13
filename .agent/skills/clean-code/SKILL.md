@@ -202,3 +202,7 @@ File to edit: UserService.ts
 ## Changelog
 
 - **2.0** (2026-04-26): Initial version
+
+## 🎯 When to Use This Skill
+- **Trigger**: When working in this domain.
+- **Trigger**: When applicable to the tasks specified.

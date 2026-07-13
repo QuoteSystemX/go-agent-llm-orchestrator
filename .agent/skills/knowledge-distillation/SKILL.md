@@ -95,3 +95,38 @@ When chat history or context memory grows too large (slowing down reasoning or h
 }
 ```
 *Action:* Instruct the next agent or sub-agent: *"Context has been distilled. Pull state snapshot `snap_20260523_api_auth` from the Context Bus to resume."*
+
+
+## When to Use
+
+- **After a long agent session** — capture the lessons
+  before context is lost.
+- **After a post-mortem** — turn root causes into lessons.
+- **After a successful feature** — capture what worked, so the
+  next agent doesn't rediscover it.
+- **Periodic audit** — `archivist_trigger.py` runs the distillation
+  pipeline automatically.
+
+Avoid using this skill for:
+- One-off debugging (use `@debugger`).
+- One-line fixes (no distillation needed).
+- Documentation (use `@documentation-writer`).
+
+## Anti-Patterns
+
+- **Don't write generic lessons** — "be careful with X" is
+  useless. Be specific: "When calling Y with Z>10, set W first
+  because V fails silently."
+- **Don't skip the format** — use the standard
+  `### [date] [tag] [skill] title` format so the lesson is
+  findable.
+- **Don't write lessons that won't apply elsewhere** — if it's
+  a one-off bug, write a test, not a lesson.
+- **Don't ignore the TTL** — `applied_count=0` after 30 days =
+  prune. Stale lessons pollute search.
+- **Don't conflate lessons with code** — lessons are knowledge,
+  code is implementation. Update the code; don't just write a
+  lesson about the bug.
+- **Don't write lessons without verifying** — only distill
+  after the lesson has been confirmed (code merged, postmortem
+  signed off, etc.).

@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""
+bin/stop — STORY-3.3 SIGTERM channel CLI for the orchestrator daemon.
+
+Sends a graceful-stop request to the running daemon over its UDS socket.
+The daemon acknowledges, flips to draining state, refuses new tasks,
+lets the in-flight task finish, then exits.
+
+Usage:
+    bin/stop "reason"          # graceful stop with reason
+    bin/stop --status          # show daemon state (running/draining/stopped)
+    bin/stop --kill "reason"   # fallback file-based kill switch (G1: ADR-007 §6.3)
+    bin/stop --help
+
+Exit codes:
+    0  stop acknowledged (daemon draining) OR --status reported
+    1  error communicating with daemon
+    2  invalid usage
+"""
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / ".agent" / "scripts" / "orchestration" / "daemon"))
+
+# Reuse the existing client IPC plumbing.
+from client import send_ipc_request, SOCKET_PATH  # type: ignore
+
+FALLBACK_STOP_FILE = REPO_ROOT / ".agent" / "STOP"
+ANSI = {
+    "RED": "\033[91m",
+    "GREEN": "\033[92m",
+    "YELLOW": "\033[93m",
+    "BLUE": "\033[94m",
+    "RESET": "\033[0m",
+    "BOLD": "\033[1m",
+}
+
+
+def _c(color: str, text: str) -> str:
+    if not sys.stdout.isatty():
+        return text
+    return f"{ANSI[color]}{text}{ANSI['RESET']}"
+
+
+def cmd_status() -> int:
+    """Query the daemon's current state via IPC."""
+    if not SOCKET_PATH.exists():
+        print(_c("YELLOW", "⚠️  Daemon is not running (no UDS socket)."))
+        # Also report fallback file presence
+        if FALLBACK_STOP_FILE.exists():
+            print(_c("RED", f"💀 Fallback STOP file present: {FALLBACK_STOP_FILE}"))
+        return 0
+
+    # STORY-4: bin/stop is a maintenance tool, equivalent to "infra-agent"
+    # permission level. Pass it explicitly so the daemon doesn't deny.
+    res = send_ipc_request({"action": "daemon_status"}, caller_role="infra-agent")
+    if res.get("status") != "success":
+        print(_c("RED", f"❌ Error querying daemon: {res.get('message')}"))
+        return 1
+
+    state = res.get("state", "unknown")
+    active = res.get("active_tasks", [])
+    state_color = {
+        "running": "GREEN",
+        "draining": "YELLOW",
+        "stopped": "RED",
+    }.get(state, "BLUE")
+
+    print(_c("BOLD", "🔍 Daemon Status"))
+    print(f"   State:        {_c(state_color, state)}")
+    print(f"   Socket:       {res.get('socket_path')}")
+    print(f"   Active tasks: {len(active)}")
+    if active:
+        for tid in active:
+            print(f"     - {tid}")
+    return 0
+
+
+def cmd_stop(reason: str) -> int:
+    """Send graceful stop via IPC. Falls back to file if daemon is unreachable."""
+    if not SOCKET_PATH.exists():
+        print(_c("YELLOW", "⚠️  Daemon UDS not found; writing fallback STOP file."))
+        return cmd_kill(reason)
+
+    res = send_ipc_request({"action": "stop", "reason": reason}, caller_role="infra-agent")
+    if res.get("status") != "success":
+        # IPC failed — try the file-based fallback so the user is never stuck.
+        print(_c("YELLOW", f"⚠️  IPC stop failed ({res.get('message')}); writing fallback STOP file."))
+        return cmd_kill(reason)
+
+    state = res.get("state", "?")
+    state_color = "YELLOW" if state == "draining" else "GREEN"
+    print(_c("GREEN", "✅ Stop acknowledged by daemon."))
+    print(f"   State:   {_c(state_color, state)}")
+    print(f"   Reason:  {reason}")
+    in_flight = res.get("active_tasks_in_flight", [])
+    if in_flight:
+        print(f"   In-flight ({len(in_flight)}): will finish before exit")
+        for tid in in_flight:
+            print(f"     - {tid}")
+    else:
+        print("   In-flight: (none)")
+    return 0
+
+
+def cmd_kill(reason: str) -> int:
+    """G1 fallback: file-based STOP signal. ADR-007 §6.3.
+
+    The daemon's signal handler polls this file as a last-resort kill switch
+    in case the broker IPC is dead. Prefer `bin/stop` for the normal path.
+    """
+    FALLBACK_STOP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    FALLBACK_STOP_FILE.write_text(
+        f"STOP requested by bin/stop --kill\nReason: {reason}\n"
+        f"Created: {os.environ.get('USER', 'unknown')} @ {__import__('datetime').datetime.utcnow().isoformat()}Z\n",
+        encoding="utf-8",
+    )
+    print(_c("YELLOW", f"💀 Fallback STOP file written: {FALLBACK_STOP_FILE}"))
+    print("   The daemon's SIGTERM handler will pick this up on the next 5s tick.")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="bin/stop",
+        description="STORY-3.3 SIGTERM channel CLI for the orchestrator daemon.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("reason", nargs="?", default="user requested", help="Reason for stopping the daemon")
+    parser.add_argument("--status", action="store_true", help="Show daemon state and exit")
+    parser.add_argument("--kill", action="store_true", help="Use file-based fallback STOP (last resort)")
+    args = parser.parse_args()
+
+    if args.status:
+        return cmd_status()
+    if args.kill:
+        return cmd_kill(args.reason)
+    return cmd_stop(args.reason)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

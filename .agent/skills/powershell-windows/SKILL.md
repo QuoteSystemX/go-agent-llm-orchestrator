@@ -170,3 +170,41 @@ catch {
 ## Changelog
 
 - **1.0.0** (2026-04-26): Initial version
+
+## When to Use
+
+- **Working on Windows or WSL** — use PowerShell for Windows native
+  tasks, bash for WSL/Linux.
+- **Administering Windows systems** — service management, registry
+  edits, file system operations via cmdlets.
+- **Cross-platform scripting** — PowerShell 7+ runs on Linux/macOS too,
+  so you can use the same scripts across environments.
+- **Remote management** — `Invoke-Command`, `Enter-PSSession`,
+  WinRM for managing remote Windows machines.
+- **Pipeline-heavy data processing** — PowerShell's object pipeline
+  (`Get-Process | Where-Object | Sort-Object`) is powerful for
+  ETL-style scripts.
+
+Avoid using this skill for:
+- Linux/macOS administration (use `bash-linux` instead).
+- Complex automation (use `python-patterns` for cross-platform).
+- GUI scripts (PowerShell + WinForms is brittle; use Python).
+
+## Anti-Patterns
+
+- **Don't use `Invoke-Expression`** — it executes arbitrary strings,
+  a classic injection vector. Use direct cmdlet calls instead.
+- **Don't use `cmd /c` from PowerShell** — you're in a richer shell;
+  use the native PowerShell equivalent.
+- **Don't pipe to `Format-Table` and pipe the output again** — Format-*
+  cmdlets produce formatting objects, not data. Use `Select-Object`
+  first.
+- **Don't use `Get-Content | ForEach`** for large files** — use
+  `[System.IO.File]::ReadLines()` for streaming.
+- **Don't use `Write-Host` for output** — use `Write-Output` (or
+  just put the value). `Write-Host` bypasses the pipeline and
+  can't be captured.
+- **Don't quote `$_` in script blocks** — `$_` is a magic
+  variable in the pipeline, not a regular parameter.
+- **Don't mix Windows and Unix line endings** in scripts — set
+  your editor to use `\n` only, or use `Format-Hex` to verify.

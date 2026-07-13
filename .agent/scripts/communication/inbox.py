@@ -206,7 +206,11 @@ def read_entries(
             )
             if intent and entry.intent != intent:
                 continue
-            if target and entry.target != target:
+            # Target filter: include entries that match the target OR
+            # have no target (global entries, visible to all tasks).
+            # This way, target='task_xyz' shows entries targeting
+            # task_xyz PLUS global entries (target=None).
+            if target and entry.target is not None and entry.target != target:
                 continue
             if not include_acked and entry.acked_ts:
                 continue
