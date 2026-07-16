@@ -74,3 +74,4 @@ Deliver optimal generation throughput (TPS) and VRAM management while maintainin
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
 - `.agent/skills/local-llm-tuning/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

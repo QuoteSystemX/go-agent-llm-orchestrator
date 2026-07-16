@@ -66,8 +66,23 @@ def run_in_sandbox(source):
                 capture_output=True,
                 text=True,
                 timeout=5,
-                env={"PYTHONPATH": os.getcwd()} # Allow local imports but restrict others
+                # Copy parent env but strip secrets to ensure the interpreter can start
+                # (needs LD_LIBRARY_PATH, virtualenv vars, etc. on some CI runners)
+                # while keeping credentials out of reach of sandboxed code.
+                env={
+                    **{
+                        k: v for k, v in os.environ.items()
+                        if not any(secret_keyword in k.upper() for secret_keyword in [
+                            "TOKEN", "SECRET", "PASSWORD", "PASSWD", "KEY", "AUTH", "CRED",
+                            "JWT", "SIGNATURE", "PRIVATE", "SSH", "API", "GH_", "GITHUB_"
+                        ])
+                    },
+                    "PYTHONPATH": os.getcwd(),
+                    "LANG": os.environ.get("LANG", "C.UTF-8"),
+                    "LC_ALL": os.environ.get("LC_ALL", "C.UTF-8"),
+                },
             )
+
             print("--- STDOUT ---")
             print(result.stdout)
             if result.stderr:

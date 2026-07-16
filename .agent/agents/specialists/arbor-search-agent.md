@@ -4,7 +4,7 @@ description: Arbor Search Agent. Responsible for literature search, prior art ch
 hierarchy:
   reports_to: arbor-coordinator
   delegates_to: []
-skills: arbor-agent-search, semantic-search, multica-mcp
+skills: arbor-agent-search, semantic-search, multica-mcp, clean-code
 domains: research, search, web-search, literature-review
 tools: Read, Grep, Glob, Bash, search_web
 profile: universal

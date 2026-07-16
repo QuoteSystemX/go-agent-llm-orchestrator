@@ -113,3 +113,4 @@ signal:
 - `.agent/skills/knowledge-distillation/SKILL.md`
 - `.agent/skills/communication/SKILL.md`
 - `.agent/skills/triage/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

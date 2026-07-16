@@ -4,7 +4,7 @@ description: Arbor Critic Agent. Responsible for quality assurance, B_test execu
 hierarchy:
   reports_to: arbor-coordinator
   delegates_to: []
-skills: arbor-agent-merge-eval, code-review-checklist, multica-mcp, llm-regression-testing
+skills: arbor-agent-merge-eval, code-review-checklist, multica-mcp, llm-regression-testing, clean-code
 domains: qa, testing, auditing, merge-gates, benchmarking, regression
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

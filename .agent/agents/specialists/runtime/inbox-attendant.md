@@ -5,7 +5,7 @@ description: Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). Rea
 hierarchy:
   reports_to: analyst
   delegates_to: [archivist, harness-runner]
-skills: inbox-patterns, knowledge-distillation, communication, triage
+skills: inbox-patterns, knowledge-distillation, communication, triage, clean-code
 domains: communication, triage, knowledge
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal

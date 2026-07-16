@@ -5,7 +5,7 @@ description: Measures prompt performance metrics, token usage, latency, and cons
 hierarchy:
   reports_to: quality-security-lead
   delegates_to: []
-skills: performance-profiling, webapp-testing, llm-regression-testing
+skills: performance-profiling, webapp-testing, llm-regression-testing, clean-code
 domains: benchmarking, quality, latency, token-economics
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

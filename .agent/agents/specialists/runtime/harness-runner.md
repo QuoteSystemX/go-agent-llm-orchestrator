@@ -4,7 +4,7 @@ role: Capability-Gated Subprocess Executor
 description: Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run manifest. Replaces ad-hoc subprocess invocation with default-deny execution, sandbox enforcement, and OTel-traced invocation. Triggers on tasks involving external LLM CLI, model evaluation, or when bin/harness_run is referenced.
 hierarchy:
   reports_to: cto
-  delegates_to: [permission-guard]
+  delegates_to: []
 skills: harness-development, capability-authoring, security-audit, clean-code
 domains: infra, runtime, security
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge

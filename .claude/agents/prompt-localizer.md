@@ -61,3 +61,4 @@ Ensure identical instruction strength (Instruction Compliance) across multiple t
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/i18n-localization/SKILL.md`
 - `.agent/skills/prompt-engineering/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

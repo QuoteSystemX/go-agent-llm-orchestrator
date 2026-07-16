@@ -49,3 +49,4 @@ Conduct comparative testing of prompt templates across various inference backend
 - `.agent/skills/performance-profiling/SKILL.md`
 - `.agent/skills/webapp-testing/SKILL.md`
 - `.agent/skills/llm-regression-testing/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

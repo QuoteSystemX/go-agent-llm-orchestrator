@@ -4,7 +4,7 @@ description: Specialized in Model Context Protocol (MCP) schema compliance, tool
 hierarchy:
   reports_to: platform-lead
   delegates_to: []
-skills: api-development, go-patterns, typescript-expert, mcp-integration-standards
+skills: api-development, go-patterns, typescript-expert, mcp-integration-standards, clean-code
 domains: mcp, api, integration, protocol
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

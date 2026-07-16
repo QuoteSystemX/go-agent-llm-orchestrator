@@ -51,3 +51,4 @@ Analyze all new and existing prompts in the prompt library (`prompt-library`) fo
 - `.agent/skills/vulnerability-scanner/SKILL.md`
 - `.agent/skills/red-team-tactics/SKILL.md`
 - `.agent/skills/adversarial-prompt-testing/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

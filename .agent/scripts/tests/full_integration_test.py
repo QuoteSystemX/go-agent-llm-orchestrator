@@ -127,9 +127,16 @@ class FullIntegrationTest(unittest.TestCase):
         with open(LESSONS_PATH, "a", encoding="utf-8") as f:
             f.write("\n### [2026-01-01] [INFO] [test] The magic word is xyzzy\n")
         
-        res = experience_distiller.search_lessons("magic xyzzy")
-        self.assertIn("xyzzy", res)
-        self.assertIn("Local Matches", res)
+        try:
+            res = experience_distiller.search_lessons("magic xyzzy")
+            self.assertIn("xyzzy", res)
+            self.assertIn("Local Matches", res)
+        finally:
+            with open(LESSONS_PATH, "r", encoding="utf-8") as f:
+                content = f.read()
+            content = content.replace("\n### [2026-01-01] [INFO] [test] The magic word is xyzzy\n", "")
+            with open(LESSONS_PATH, "w", encoding="utf-8") as f:
+                f.write(content)
 
     def test_08_adr_generation(self):
         print("Testing ADR Generation...")

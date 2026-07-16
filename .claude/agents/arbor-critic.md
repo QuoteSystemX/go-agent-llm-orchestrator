@@ -207,3 +207,4 @@ Before stopping the session:
 - `.agent/skills/code-review-checklist/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/llm-regression-testing/SKILL.md`
+- `.agent/skills/clean-code/SKILL.md`

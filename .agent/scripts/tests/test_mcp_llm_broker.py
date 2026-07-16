@@ -38,23 +38,29 @@ class TestMCPLlmBroker(unittest.TestCase):
         self.assertEqual(res["source"], "ollama")
         self.assertEqual(res["model"], "qwen2.5-coder:14b")
 
+    @patch('lib.llm_client.is_http_broker_alive', return_value=False)
     @patch('lib.llm_client.call_mcp_broker')
-    def test_query_llm_safe_success(self, mock_call):
+    def test_query_llm_safe_success(self, mock_call, mock_alive):
+        # is_http_broker_alive must be mocked False — otherwise this test is
+        # environment-dependent: whenever a real broker is reachable on
+        # localhost:11436, query_llm_safe takes the HTTP path and bypasses
+        # call_mcp_broker entirely, hitting a live LLM instead of the mock.
         mock_call.return_value = {
             "response": "Success!",
             "source": "antigravity",
             "model": "gemini-3-flash",
             "stats": {"cached": True}
         }
-        
+
         text, source, stats = query_llm_safe("test prompt")
         self.assertEqual(text, "Success!")
         self.assertEqual(source, "antigravity")
         self.assertEqual(stats["model"], "gemini-3-flash")
         self.assertTrue(stats["cached"])
 
+    @patch('lib.llm_client.is_http_broker_alive', return_value=False)
     @patch('lib.llm_client.call_mcp_broker', side_effect=Exception("binary error"))
-    def test_query_llm_safe_fallback_to_stub(self, mock_call):
+    def test_query_llm_safe_fallback_to_stub(self, mock_call, mock_alive):
         text, source, stats = query_llm_safe("test prompt", default_model="stub-model")
         self.assertTrue(text.startswith("⚠️ [LLM Unavailable]"))
         self.assertEqual(source, "stub")

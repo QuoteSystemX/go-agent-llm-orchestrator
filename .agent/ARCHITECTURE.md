@@ -924,6 +924,12 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 
 | File | Description |
 | --- | --- |
+| `.agent/scripts/autopilot/autopilot.py` | Arbor Squad Daily Autopilot — main orchestrator for the OBSERVE→IDEATE→SELECT→DISPATCH→DECIDE cycle. |
+| `.agent/scripts/autopilot/observation.py` | Autopilot Phase 1 (OBSERVE) — collects health, telemetry, guardrail, and drift metrics into `.agent/autopilot/observation.json`. |
+| `.agent/scripts/autopilot/ideate.py` | Autopilot Phase 2 (IDEATE) — generates candidate actions (regression/drift/stalled/optimization/noop) from observation data. |
+| `.agent/scripts/autopilot/select_candidates.py` | Autopilot Phase 3 (SELECT) — scores and ranks candidates by impact/urgency/effort/confidence. |
+| `.agent/scripts/autopilot/dispatch.py` | Autopilot Phase 4 (DISPATCH) — creates a `tasks/` card for the selected candidate and optionally notifies Slack. |
+| `.agent/scripts/autopilot/decide.py` | Autopilot Phase 5 (DECIDE) — records cycle outcome to `.agent/autopilot/cycle-log.jsonl` and feeds back into future SELECT scoring. |
 | `.agent/scripts/misc/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
 | `.agent/scripts/health/headroom_benchmark.py` | Headroom Compression Benchmark — tests compression ratios on realistic agent conversation histories. |
 | `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |

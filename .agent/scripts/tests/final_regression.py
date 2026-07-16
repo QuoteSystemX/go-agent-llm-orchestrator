@@ -101,13 +101,20 @@ class FinalRegressionTest(unittest.TestCase):
         with open(LESSONS_PATH, "a", encoding="utf-8") as f:
             f.write("\n### [2026-05-01] [INFO] [regression] Regression secret word: quack\n")
             
-        # Global search
-        res = experience_distiller.filter_by_skill("regression")
-        self.assertIn("quack", res)
-        
-        # Weighted search
-        res_query = experience_distiller.search_lessons("secret quack")
-        self.assertIn("quack", res_query)
+        try:
+            # Global search
+            res = experience_distiller.filter_by_skill("regression")
+            self.assertIn("quack", res)
+            
+            # Weighted search
+            res_query = experience_distiller.search_lessons("secret quack")
+            self.assertIn("quack", res_query)
+        finally:
+            with open(LESSONS_PATH, "r", encoding="utf-8") as f:
+                content = f.read()
+            content = content.replace("\n### [2026-05-01] [INFO] [regression] Regression secret word: quack\n", "")
+            with open(LESSONS_PATH, "w", encoding="utf-8") as f:
+                f.write(content)
 
     def test_04_bus_manager(self):
         print("[REGRESSION] 04: Bus Manager (Push/Wait/Alerts)")

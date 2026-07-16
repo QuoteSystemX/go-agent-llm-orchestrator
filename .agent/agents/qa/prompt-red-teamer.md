@@ -5,7 +5,7 @@ description: Expert in prompt vulnerability assessment, jailbreak prevention, sy
 hierarchy:
   reports_to: quality-security-lead
   delegates_to: []
-skills: vulnerability-scanner, red-team-tactics, adversarial-prompt-testing
+skills: vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code
 domains: security, auditing, vulnerability, prompts
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
