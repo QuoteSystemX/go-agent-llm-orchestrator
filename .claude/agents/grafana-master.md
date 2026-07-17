@@ -145,3 +145,4 @@ python3 .agent/scripts/misc/grafana_manager.py deploy --file <json> --env stagin
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

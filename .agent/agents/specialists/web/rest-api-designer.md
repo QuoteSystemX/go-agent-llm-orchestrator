@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
 model: L3
 profile: go-service, web-app, fullstack
-skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code, typed-service-contracts, multica-mcp
+skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code, typed-service-contracts, multica-mcp, multica-cli
 domains: rest, api, designer
 ---
 # REST API Designer

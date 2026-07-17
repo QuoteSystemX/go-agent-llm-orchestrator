@@ -134,3 +134,4 @@ Systematically enumerate attack surfaces, exploit vulnerabilities in authorized 
 - `.agent/skills/better-auth-best-practices/SKILL.md`
 - `.agent/skills/adversarial-prompt-testing/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

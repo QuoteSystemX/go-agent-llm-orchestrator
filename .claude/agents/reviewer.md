@@ -207,4 +207,5 @@ After writing all task cards, produce a summary:
 - `.agent/skills/verification-before-completion/SKILL.md`
 - `.agent/skills/requesting-code-review/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

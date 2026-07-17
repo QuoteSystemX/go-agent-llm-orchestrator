@@ -31,3 +31,4 @@ You are the Arbor Executor. Your mission is to implement a specific hypothesis o
 - `.agent/skills/arbor-agent-ideate/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

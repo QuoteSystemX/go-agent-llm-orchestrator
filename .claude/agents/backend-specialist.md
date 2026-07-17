@@ -309,4 +309,5 @@ After editing any file:
 - `.agent/skills/convex-setup-auth/SKILL.md`
 - `.agent/skills/typed-service-contracts/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

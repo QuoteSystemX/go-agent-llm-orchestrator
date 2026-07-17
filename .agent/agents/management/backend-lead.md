@@ -11,7 +11,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, system_info, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel, api-development, multica-mcp
+skills: clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel, api-development, multica-mcp, multica-cli
 domains: backend, lead, go, api, database
 profile: universal
 ---

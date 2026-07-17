@@ -115,5 +115,6 @@ Before declaring a service "Production Ready", you **MUST**:
 - `.agent/skills/grafana-dashboard-master/SKILL.md`
 - `.agent/skills/sentry-cli-expert/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/kubernetes-mcp/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

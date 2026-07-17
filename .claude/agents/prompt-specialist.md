@@ -153,5 +153,6 @@ NEVER write application code — only wiki artifacts and task cards.
 - `.agent/skills/command-development/SKILL.md`
 - `.agent/skills/prompts-best-practices/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/skill-creator/SKILL.md`
 - `.agent/skills/agent-development/SKILL.md`

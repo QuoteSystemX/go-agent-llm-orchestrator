@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, workspace_status, health_check, logs_tail
 model: L3
-skills: webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp
+skills: webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli
 domains: e2e, playwright, cypress, automation, smoke-tests
 profile: universal
 ---

@@ -50,7 +50,7 @@ def _generate_argument(
 
     try:
         from lib.llm_client import query_llm_safe  # type: ignore
-        response, source, _ = query_llm_safe(prompt, default_model="qwen2.5-coder:14b")
+        response, source, _ = query_llm_safe(prompt, default_model="auto")
         text = response.strip() if response else ""
         if text:
             return text, source
@@ -85,7 +85,7 @@ def _judge_debate(role: str, subtask: str, rounds: list, candidates: list) -> st
 
     try:
         from lib.llm_client import query_llm_safe  # type: ignore
-        response, _, _ = query_llm_safe(prompt, default_model="qwen2.5-coder:14b")
+        response, _, _ = query_llm_safe(prompt, default_model="auto")
         winner = response.strip().split("\n")[0].strip()
         if winner in candidates:
             return winner

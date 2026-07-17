@@ -142,3 +142,4 @@ You have **Veto Power** in these domains:
 - `.agent/skills/red-team-tactics/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

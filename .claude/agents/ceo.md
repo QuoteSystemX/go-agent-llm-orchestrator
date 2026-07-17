@@ -131,6 +131,7 @@ A strategic task is done when:
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/bmad-lifecycle/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/plan-writing/SKILL.md`

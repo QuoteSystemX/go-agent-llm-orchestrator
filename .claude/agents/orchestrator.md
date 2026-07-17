@@ -885,3 +885,4 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

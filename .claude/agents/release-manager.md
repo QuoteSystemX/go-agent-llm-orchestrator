@@ -191,3 +191,4 @@ For critical production bugs requiring immediate fix:
 - `.agent/skills/testing-patterns/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

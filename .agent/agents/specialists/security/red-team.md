@@ -4,7 +4,7 @@ description: Specialized Auditor and Adversarial Agent. Finds flaws, vulnerabili
 hierarchy:
   reports_to: quality-security-lead
   delegates_to: []
-skills: vulnerability-scanner, red-team-tactics, performance-profiling, clean-code, shared-context, better-auth-best-practices, multica-mcp
+skills: vulnerability-scanner, red-team-tactics, performance-profiling, clean-code, shared-context, better-auth-best-practices, multica-mcp, multica-cli
 domains: red, team
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, metrics_get, health_check, logs_tail
 profile: universal

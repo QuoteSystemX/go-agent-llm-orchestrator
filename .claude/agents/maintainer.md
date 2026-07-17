@@ -143,3 +143,4 @@ Final decision: ✅ Approve / ⚠️ Request Changes / 🚫 Block
 - `.agent/skills/hook-development/SKILL.md`
 - `.agent/skills/mcp-integration/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

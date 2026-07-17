@@ -5,7 +5,7 @@ hierarchy:
   reports_to: frontend-lead
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Write, Edit, knowledge_read, search_knowledge, skills_load, status_summary
-skills: frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp
+skills: frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli
 domains: visual, designer
 profile: universal
 model: L2

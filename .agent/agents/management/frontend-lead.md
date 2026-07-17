@@ -10,7 +10,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary
 model: L2
-skills: clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel, multica-mcp
+skills: clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli
 domains: frontend, lead, react, nextjs, ui, ux, design
 profile: universal
 ---

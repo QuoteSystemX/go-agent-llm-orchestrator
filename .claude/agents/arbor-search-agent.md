@@ -77,4 +77,5 @@ You are the Arbor Search Agent. Your mission is to perform literature searches a
 - `.agent/skills/arbor-agent-search/SKILL.md`
 - `.agent/skills/semantic-search/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`

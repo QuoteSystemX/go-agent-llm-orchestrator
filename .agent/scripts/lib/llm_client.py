@@ -112,7 +112,7 @@ def query_llm_safe(
     prompt: str,
     model: Optional[str] = None,
     system_prompt: Optional[str] = None,
-    default_model: str = "qwen2.5-coder:14b",
+    default_model: str = "auto",
     format_json: bool = False,
 ) -> Tuple[str, str, Dict[str, Any]]:
     """Query LLM with Go mcp-llm-broker, fallback, caching, and token-saving."""

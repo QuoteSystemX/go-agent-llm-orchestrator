@@ -153,3 +153,4 @@ For every design or audit, produce:
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

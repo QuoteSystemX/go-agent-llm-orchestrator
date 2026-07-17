@@ -613,6 +613,7 @@ After editing any file:
 - `.agent/skills/shadcn-best-practices/SKILL.md`
 - `.agent/skills/convex-setup-auth/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/browser-use/SKILL.md`
 - `.agent/skills/playwright-best-practices/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

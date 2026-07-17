@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, knowledge_read, system_info, secrets_get, council_list
 model: L4
-skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp
+skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli
 domains: security, audit, vulnerabilities
 profile: universal
 ---

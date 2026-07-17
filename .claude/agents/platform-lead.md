@@ -237,4 +237,5 @@ A platform task is complete when ALL of the following are true:
 - `.agent/skills/github-actions-expert/SKILL.md`
 - `.agent/skills/sentry-cli-expert/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/kubernetes-mcp/SKILL.md`

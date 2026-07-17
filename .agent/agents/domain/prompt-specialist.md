@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit
 model: L4
-skills: prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp
+skills: prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli
 domains: prompts, ai, engineering
 profile: universal
 ---

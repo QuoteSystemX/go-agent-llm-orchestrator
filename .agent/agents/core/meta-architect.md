@@ -11,7 +11,7 @@ domains:
   - agent-evolution
   - intelligent-routing
   - architecture
-skills: clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, headroom-patterns, multica-mcp
+skills: clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, headroom-patterns, multica-mcp, multica-cli
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, knowledge_read, agents_list, agents_load, skills_list, skills_load
 profile: universal
 model: L3

@@ -7,7 +7,7 @@ hierarchy:
     - reviewer
     - test-engineer
     - qa-automation-engineer
-skills: clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, hook-development, mcp-integration, multica-mcp
+skills: clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, hook-development, mcp-integration, multica-mcp, multica-cli
 domains: maintenance, infrastructure, scripts
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, health_check, workspace_status, logs_tail
 profile: universal

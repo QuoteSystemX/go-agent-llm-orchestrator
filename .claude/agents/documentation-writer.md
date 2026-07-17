@@ -161,3 +161,4 @@ What needs documenting?
 - `.agent/skills/obsidian-validator/SKILL.md`
 - `.agent/skills/visual-explainer/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

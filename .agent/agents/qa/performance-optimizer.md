@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, metrics_get, system_info, health_check, logs_tail, search_knowledge
 model: L2
-skills: clean-code, performance-profiling, shared-context, telemetry, multica-mcp
+skills: clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli
 domains: performance, profiling, optimization
 profile: universal
 ---

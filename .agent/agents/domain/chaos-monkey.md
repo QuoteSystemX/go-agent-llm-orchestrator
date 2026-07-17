@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, health_check, health_fix, system_info, metrics_get, workspace_status
 model: L4
 domains: chaos, resilience, testing, infrastructure, sre, mcp, degradation
-skills: chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp
+skills: chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp, multica-cli
 profile: universal
 ---
 # Agent Chaos Monkey 🐒

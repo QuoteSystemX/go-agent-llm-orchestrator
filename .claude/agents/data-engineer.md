@@ -169,4 +169,5 @@ Transformation complexity?
 - `.agent/skills/postgres-best-practices/SKILL.md`
 - `.agent/skills/nextflow-development/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

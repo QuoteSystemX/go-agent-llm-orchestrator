@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, skills_load, knowledge_read
 model: L3
 profile: go-service
-skills: ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp
+skills: ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli
 domains: crypto, specialist
 ---
 # Crypto Specialist

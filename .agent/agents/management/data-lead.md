@@ -12,7 +12,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp
+skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli
 domains: data, market-feeds, ohlcv, kafka, clickhouse, dbt, pipeline, backtesting, ingestion, analytics
 profile: universal
 ---

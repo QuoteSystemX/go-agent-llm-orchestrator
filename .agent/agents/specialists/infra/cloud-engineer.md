@@ -4,7 +4,7 @@ description: Designs, provisions, and maintains cloud infrastructure on AWS/GCP/
 hierarchy:
   reports_to: platform-lead
   delegates_to: []
-skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp
+skills: cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli
 domains: cloud, infrastructure, aws, gcp, azure, terraform, iac
 tools: Read, Write, Edit, Grep, Glob, Bash, health_check, system_info, workspace_sync, workspace_status, project_list, secrets_get
 profile: universal

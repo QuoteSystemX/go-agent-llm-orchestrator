@@ -201,4 +201,5 @@ Cloud provider?
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/scope-sentinel/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/kubernetes-mcp/SKILL.md`

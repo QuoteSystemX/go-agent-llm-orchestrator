@@ -9,7 +9,7 @@ hierarchy:
     - product-manager
     - product-owner
     - release-manager
-skills: clean-code, multica-mcp, bmad-lifecycle, brainstorming, plan-writing
+skills: clean-code, multica-mcp, multica-cli, bmad-lifecycle, brainstorming, plan-writing
 domains: strategy, business, leadership
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, bmad_status
 profile: universal

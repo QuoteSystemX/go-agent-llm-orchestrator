@@ -161,4 +161,5 @@ Create `ui-specification.md` for the component/page:
 - `.agent/skills/ui-ux-pro-max/SKILL.md`
 - `.agent/skills/shadcn-best-practices/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/visual-explainer/SKILL.md`

@@ -9,7 +9,7 @@ hierarchy:
     - wiki-architect
 tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, bmad_decompose, knowledge_read, tasks_submit
 model: L2
-skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp
+skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli
 domains: requirements, stories, personas, feature-scoping
 profile: universal
 ---

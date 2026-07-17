@@ -4,7 +4,7 @@ description: Arbor Executor Agent. Responsible for implementing selected Idea Tr
 hierarchy:
   reports_to: arbor-coordinator
   delegates_to: []
-skills: arbor-agent-executor, arbor-agent-ideate, clean-code, multica-mcp
+skills: arbor-agent-executor, arbor-agent-ideate, clean-code, multica-mcp, multica-cli
 domains: coding, testing, experimentation, benchmarking
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

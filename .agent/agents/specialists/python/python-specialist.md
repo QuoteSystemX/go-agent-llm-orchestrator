@@ -5,7 +5,7 @@ hierarchy:
   reports_to: ml-lead
   delegates_to: []
 tools: Read, Write, Edit, Bash, Grep, Glob, semantic_definition, semantic_hover, search_knowledge, search_fulltext, skills_load
-skills: python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling, multica-mcp
+skills: python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling, multica-mcp, multica-cli
 domains: python, specialist
 profile: universal
 model: L2

@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Edit, Write, search_fulltext, search_knowledge, refactor_init, refactor_status, refactor_step, knowledge_read
 model: L1
-skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp
+skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli
 domains: legacy, refactoring, analysis
 profile: universal
 ---

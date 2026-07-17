@@ -206,5 +206,6 @@ Before stopping the session:
 - `.agent/skills/arbor-agent-merge-eval/SKILL.md`
 - `.agent/skills/code-review-checklist/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/llm-regression-testing/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`

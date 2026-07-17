@@ -4,7 +4,7 @@ description: Conducts systematic penetration tests, identifies attack surfaces, 
 hierarchy:
   reports_to: quality-security-lead
   delegates_to: []
-skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp
+skills: clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp, multica-cli
 domains: security, pentesting, red-team, exploitation, web-security
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, system_info, secrets_get, council_list, knowledge_read
 model: L3

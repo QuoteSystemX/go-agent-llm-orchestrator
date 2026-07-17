@@ -13,7 +13,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp
+skills: clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp, multica-cli
 domains: trading, crypto, defi, ton, hft, exchange, order-execution, risk, blockchain
 profile: universal
 ---

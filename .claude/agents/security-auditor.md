@@ -177,3 +177,4 @@ Is it actively exploited (EPSS >0.5)?
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/better-auth-best-practices/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

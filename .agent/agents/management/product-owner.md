@@ -9,7 +9,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Write, Edit, bmad_status, knowledge_read, tasks_submit, status_summary
 model: L2
-skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp
+skills: plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli
 domains: product, backlog, strategy
 profile: universal
 ---

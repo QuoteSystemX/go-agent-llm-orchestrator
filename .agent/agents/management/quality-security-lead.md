@@ -13,7 +13,7 @@ hierarchy:
     - reviewer
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, skills_list, skills_load
 model: L2
-skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp
+skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli
 domains: quality, security, testing, audit, compliance, pentest, e2e, static-analysis, vulnerability
 profile: universal
 ---

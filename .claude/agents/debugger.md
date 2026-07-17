@@ -248,4 +248,5 @@ After finding the bug:
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/behavioral-modes/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`
