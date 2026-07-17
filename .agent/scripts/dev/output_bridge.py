@@ -282,7 +282,7 @@ def run_contrastive_validation(content):
         # Use gemini-3-flash for high speed and low cost
         resp, src, _ = query_llm_safe(
             prompt=prompt,
-            model="gemini-3-flash",
+            model="auto",
             system_prompt="You are a strict, precise code reviewer. Output only JSON.",
             format_json=True
         )

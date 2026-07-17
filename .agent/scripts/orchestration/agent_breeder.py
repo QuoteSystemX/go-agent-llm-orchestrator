@@ -17,7 +17,7 @@ AGENTS_DIR = REPO_ROOT / ".agent" / "agents"
 LESSONS_PATH = REPO_ROOT / ".agent" / "rules" / "LESSONS_LEARNED.md"
 TASKS_DIR = REPO_ROOT / "tasks"
 
-BREEDER_MODEL = "qwen3-coder:30b"
+BREEDER_MODEL = "auto"
 
 def run_breeding():
     """Analyzes history and tasks to propose new specialist agents."""
@@ -103,6 +103,65 @@ OUTPUT FORMAT (JSON ONLY):
         print(f"❌ Failed to parse breeding proposal: {e}")
         print("Raw Response:", response)
 
+def enrich_agent_profile(proposal) -> str:
+    """Enriches the proposed agent profile using the Prompt Specialist rules."""
+    name = proposal["agent_name"]
+    description = proposal["description"]
+    domains = proposal["domains"]
+    skills = proposal["skills"]
+    initial_instructions = proposal.get("initial_instructions", "")
+
+    print("🎭 Running Prompt Specialist Enrichment Phase...")
+    
+    prompt = f"""You are the Lead Prompt Specialist (@prompt-specialist).
+Your task is to take a proposed new agent configuration and write its complete, premium system prompt file in Markdown format.
+
+AGENT DETAILS:
+Name: {name}
+Description: {description}
+Domains: {', '.join(domains)}
+Skills: {', '.join(skills)}
+Initial Instructions Context: {initial_instructions}
+
+Follow these guidelines to make the prompt extremely precise, robust, and secure:
+1. Include frontmatter with:
+   - name: {name}
+   - description: {description}
+   - domains: (list of domains)
+   - skills: (list of skills, including clean-code, systematic-debugging, multica-mcp, multica-cli)
+   - hierarchy: (reports_to: backend-lead, delegates_to: [])
+   - tools: (Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit)
+   - model: L2
+   - profile: universal
+2. Structure the body with:
+   - Header with a professional description of the role.
+   - 🚨 TRIGGER CONDITIONS: A markdown table detailing the exact signals and triggers for activation.
+   - 🛠 Operational Protocol: Phase-by-phase execution instructions (Phase 1: Audit/Reproduce, Phase 2: Design/Isolate, Phase 3: Validation/Verify).
+   - ⚖️ Boundaries & Rules: What they do and what they MUST NOT do (explicit boundaries).
+   - 🛡️ System Prompt Protection (Red-Teaming): Delimiters, anti-bypass rules, and execution isolation rules to prevent prompt injections.
+   - 📊 Measured Quality Metrics: Key metrics table (latency, compliant rates, parity).
+   - 📤 Output Protocol: The mandatory output-bridge checklist rules.
+
+Provide ONLY the raw markdown content. Do NOT wrap it in markdown code blocks (e.g. do not put ```markdown at the start/end).
+"""
+
+    try:
+        response, stats = query_llm(prompt, BREEDER_MODEL, system_prompt="You are a senior Prompt Engineer. Output only the raw markdown content.")
+        if response and not response.startswith("❌"):
+            # Strip markdown block wraps if model generated them anyway
+            content = response.strip()
+            if content.startswith("```markdown"):
+                content = content[11:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            return content.strip()
+    except Exception as e:
+        print(f"⚠️ Enrichment failed: {e}. Using baseline template.")
+    
+    return ""
+
 def create_agent_proposal(proposal):
     """Creates a new agent file based on the proposal."""
     name = proposal["agent_name"]
@@ -112,7 +171,12 @@ def create_agent_proposal(proposal):
         print(f"⚠️ Agent '{name}' already exists. Skipping.")
         return
         
-    content = f"""---
+    # Attempt to enrich via Prompt Specialist
+    content = enrich_agent_profile(proposal)
+    
+    if not content:
+        print("  ⚠️ Using fallback baseline template...")
+        content = f"""---
 name: {name}
 description: {proposal['description']}
 domains:
@@ -141,6 +205,19 @@ skills:
         
     print(f"🎉 New agent bred: {file_path}")
     print(f"  Reason: {proposal['reasoning']}")
+
+    # Run the intelligence quality benchmark suite to verify no regression occurred
+    print("🚀 Running Intelligence Quality Benchmark to verify the system's compliance...")
+    try:
+        import subprocess
+        bench_script = REPO_ROOT / ".agent" / "scripts" / "qa" / "intelligence_benchmark.py"
+        if bench_script.exists():
+            subprocess.run([sys.executable, str(bench_script)], check=True)
+            print("✅ Intelligence Quality Benchmark passed successfully!")
+        else:
+            print("⚠️ Intelligence benchmark script not found.")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Intelligence Quality Benchmark failed: {e}")
 
 if __name__ == "__main__":
     run_breeding()

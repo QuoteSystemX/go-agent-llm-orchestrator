@@ -483,8 +483,10 @@ type DiscoveryResult struct {
 func (b *BrokerServer) checkOpenAIWithWSLFallback(ctx context.Context, name, defaultURL, port string, env EnvironmentInfo) BackendInfo {
 	backend := BackendInfo{Name: name, URL: defaultURL}
 
-	// Try localhost first
-	models, err := b.fetchOpenAICompatibleModels(ctx, defaultURL)
+	// Try localhost first with a short timeout
+	localCtx, localCancel := context.WithTimeout(ctx, 800*time.Millisecond)
+	models, err := b.fetchOpenAICompatibleModels(localCtx, defaultURL)
+	localCancel()
 	if err == nil {
 		backend.Available = true
 		backend.Models = models
@@ -495,7 +497,9 @@ func (b *BrokerServer) checkOpenAIWithWSLFallback(ctx context.Context, name, def
 	if env.IsWSL && env.WSLGateway != "" {
 		wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, port)
 		backend.URL = wslURL
-		models, err = b.fetchOpenAICompatibleModels(ctx, wslURL)
+		wslCtx, wslCancel := context.WithTimeout(ctx, 1200*time.Millisecond)
+		models, err = b.fetchOpenAICompatibleModels(wslCtx, wslURL)
+		wslCancel()
 		if err == nil {
 			backend.Available = true
 			backend.Models = models
@@ -514,7 +518,9 @@ func (b *BrokerServer) checkOllamaWithWSLFallback(ctx context.Context, env Envir
 	ollamaURL := b.getOllamaURL(env)
 	backend := BackendInfo{Name: "Ollama", URL: ollamaURL}
 
-	models, err := b.fetchOllamaModels(ctx, ollamaURL)
+	localCtx, localCancel := context.WithTimeout(ctx, 800*time.Millisecond)
+	models, err := b.fetchOllamaModels(localCtx, ollamaURL)
+	localCancel()
 	if err == nil {
 		backend.Available = true
 		backend.Models = models
@@ -524,7 +530,9 @@ func (b *BrokerServer) checkOllamaWithWSLFallback(ctx context.Context, env Envir
 	// If WSL and getOllamaURL already returned localhost, try the gateway explicitly
 	if env.IsWSL && env.WSLGateway != "" && ollamaURL == DefaultOllamaURL {
 		wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, OllamaDefaultPortStr)
-		models, err = b.fetchOllamaModels(ctx, wslURL)
+		wslCtx, wslCancel := context.WithTimeout(ctx, 1200*time.Millisecond)
+		models, err = b.fetchOllamaModels(wslCtx, wslURL)
+		wslCancel()
 		if err == nil {
 			backend.URL = wslURL
 			backend.Available = true
@@ -545,17 +553,20 @@ func (b *BrokerServer) handleDetectBackends(ctx context.Context, _ mcp.CallToolR
 		Environment: env,
 	}
 
-	discoverCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
+	// 1. Ollama Check (with WSL gateway fallback) - use fresh context with dedicated timeout
+	ollamaCtx, ollamaCancel := context.WithTimeout(ctx, 2*time.Second)
+	result.Backends = append(result.Backends, b.checkOllamaWithWSLFallback(ollamaCtx, env))
+	ollamaCancel()
 
-	// 1. Ollama Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOllamaWithWSLFallback(discoverCtx, env))
+	// 2. Jan Check (with WSL gateway fallback) - use fresh context with dedicated timeout
+	janCtx, janCancel := context.WithTimeout(ctx, 2*time.Second)
+	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(janCtx, "Jan", DefaultJanURL, "1337", env))
+	janCancel()
 
-	// 2. Jan Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(discoverCtx, "Jan", DefaultJanURL, "1337", env))
-
-	// 3. LM Studio Check (with WSL gateway fallback)
-	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(discoverCtx, "LM Studio", DefaultLMStudioURL, "1234", env))
+	// 3. LM Studio Check (with WSL gateway fallback) - use fresh context with dedicated timeout
+	lmsCtx, lmsCancel := context.WithTimeout(ctx, 2*time.Second)
+	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(lmsCtx, "LM Studio", DefaultLMStudioURL, "1234", env))
+	lmsCancel()
 
 	b.pullingStatesMu.RLock()
 	if len(b.pullingStates) > 0 {
@@ -794,31 +805,35 @@ func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 
 	for _, p := range providers {
 		start := time.Now()
-		healthCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		var err error
-		if p.isOllama {
-			_, err = b.fetchOllamaModels(healthCtx, p.url)
-		} else {
-			_, err = b.fetchOpenAICompatibleModels(healthCtx, p.url)
-		}
 
-		// If localhost failed and we're in WSL, try the WSL gateway
+		// Try localhost first with a dedicated 800ms timeout context
+		localCtx, localCancel := context.WithTimeout(ctx, 800*time.Millisecond)
+		if p.isOllama {
+			_, err = b.fetchOllamaModels(localCtx, p.url)
+		} else {
+			_, err = b.fetchOpenAICompatibleModels(localCtx, p.url)
+		}
+		localCancel()
+
+		// If localhost failed and we're in WSL, try the WSL gateway with a fresh timeout context
 		if err != nil && env.IsWSL && env.WSLGateway != "" {
 			wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, p.wslPort)
+			wslCtx, wslCancel := context.WithTimeout(ctx, 1200*time.Millisecond)
 			if p.isOllama {
 				var mErr error
-				_, mErr = b.fetchOllamaModels(healthCtx, wslURL)
+				_, mErr = b.fetchOllamaModels(wslCtx, wslURL)
 				if mErr == nil {
 					err = nil
 				}
 			} else {
-				_, mErr := b.fetchOpenAICompatibleModels(healthCtx, wslURL)
+				_, mErr := b.fetchOpenAICompatibleModels(wslCtx, wslURL)
 				if mErr == nil {
 					err = nil
 				}
 			}
+			wslCancel()
 		}
-		cancel()
 
 		duration := time.Since(start)
 

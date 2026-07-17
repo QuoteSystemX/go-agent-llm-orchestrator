@@ -64,7 +64,7 @@ Return only the markdown content of the ADR, with no extra explanations or comme
     content, source, stats = query_llm_safe(
         prompt=prompt,
         system_prompt=system_prompt,
-        model="qwen2.5-coder:14b"
+        model="auto"
     )
     
     # 3. Fallback check

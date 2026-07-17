@@ -31,7 +31,7 @@ except ImportError:
 logger = logging.getLogger("anthropic_safety")
 
 _API_URL = f"{discover_broker_url()}/v1/chat/completions"
-_MODEL = "claude-haiku-4-5-20251001"
+_MODEL = "auto"
 _TIMEOUT = 5
 
 _SYSTEM_PROMPT = (

@@ -108,6 +108,18 @@
   },
   "default_agent": "orchestrator",
   "agent": {
+    "agent-toolchain-integrator": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      },
+      "description": "Specializes in hardening and integrating local AI agent runtimes. Manages MCP configuration sync, cross-platform environment compatibility (WSL/Linux/macOS), placeholder resolution, local model routing fallbacks, and automated drift detection between source code, utility scripts, and documentation.",
+      "model": "mcp-llm-broker/L3",
+      "hidden": true
+    },
     "arbor-coordinator": {
       "mode": "subagent",
       "permission": {

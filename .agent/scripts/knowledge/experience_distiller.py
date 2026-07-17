@@ -258,7 +258,7 @@ def consolidate_lessons() -> str:
 
             resp, src, _ = query_llm_safe(
                 prompt=prompt,
-                model="gemini-3-flash",
+                model="auto",
                 system_prompt="You are a precise technical editor. Output only JSON.",
                 format_json=True
             )

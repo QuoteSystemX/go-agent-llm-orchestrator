@@ -76,7 +76,7 @@ def run_polish(dry_run: bool = True):
         with suppress("code_polisher.llm_analysis", level=logging.ERROR):
             suggestion, src, _ = query_llm_safe(
                 prompt=POLISH_PROMPT.format(code=code),
-                model="codestral:22b",
+                model="auto",
                 system_prompt="You are a senior Python code reviewer.",
                 format_json=False,
             )
