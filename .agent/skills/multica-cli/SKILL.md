@@ -192,7 +192,7 @@ multica user profile [--output json]
 **If you are implementing a `[FEAT]`/`[BUG]`/`[STORY]` task that is tracked as a Multica issue, opening a PR does NOT move the issue's status by itself.** There is exactly one hard-coded, backend-automatic status transition in the whole system — everything else is your explicit responsibility.
 
 ### What the backend actually automates (and only this)
-* `PR merged` **+** the PR title/body contains an explicit closing keyword (`Closes`, `Fixes`, `Resolves <ISSUE-ID>`) → issue auto-transitions to `done`.
+* `PR merged` **+** the PR title/body contains an explicit closing keyword (`Closes`, `Fixes`, `Resolves <ISSUE-ID>`) → issue auto-transitions to `done`. This works identically whether the workspace's GitHub integration uses **webhooks** or **pull-mode polling** — don't second-guess it or duplicate it with a manual `multica issue status <id> done` "just in case" on a pull-mode workspace.
 * Merely mentioning the issue ID in a PR links the PR to the issue but **never** triggers a status change.
 * **Opening** a PR has **no backend trigger at all**. Nothing watches for `pull_request.opened` or `ready_for_review`.
 
