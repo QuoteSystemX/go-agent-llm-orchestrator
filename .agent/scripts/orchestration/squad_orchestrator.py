@@ -115,13 +115,15 @@ class AgentScanner:
         hierarchy = fm.get("hierarchy", {}) or {}
 
         tools_raw = fm.get("tools", "") or ""
-        tools = [t.strip() for t in str(tools_raw).split(",") if t.strip()]
+        tools_clean = str(tools_raw).strip().strip("[]").strip()
+        tools = [t.strip().strip('"').strip("'") for t in tools_clean.split(",") if t.strip()]
 
         domains_raw = fm.get("domains", "") or ""
         if isinstance(domains_raw, list):
             domains = [str(d) for d in domains_raw]
         else:
-            domains = [d.strip() for d in str(domains_raw).split(",") if d.strip()]
+            domains_clean = str(domains_raw).strip().strip("[]").strip()
+            domains = [d.strip().strip('"').strip("'") for d in domains_clean.split(",") if d.strip()]
 
         delegates_raw = hierarchy.get("delegates_to", []) or []
         delegates = [d for d in delegates_raw if isinstance(d, str)]

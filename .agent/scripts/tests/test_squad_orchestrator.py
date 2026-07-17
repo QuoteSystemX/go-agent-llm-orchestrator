@@ -73,6 +73,28 @@ class TestAgentScanner(unittest.TestCase):
         self.assertIn("go", alpha.domains)
         self.assertEqual(alpha.delegates_to, ["beta"])
 
+    def test_bracket_stripping(self):
+        self._write("gamma.md", """---
+name: gamma
+description: Bracket test agent
+hierarchy:
+  reports_to: null
+  delegates_to: []
+domains: [backend, database, k8s]
+tools: [Read, Grep, Edit]
+---
+
+# gamma
+Body text.
+""")
+        scanner = AgentScanner()
+        nodes = scanner.scan(agents_dir=self.agents_dir)
+        self.assertEqual(len(nodes), 1)
+        gamma = nodes[0]
+        self.assertEqual(gamma.domains, ["backend", "database", "k8s"])
+        self.assertEqual(gamma.tools, ["Read", "Grep", "Edit"])
+
+
     def test_skips_files_without_frontmatter(self):
         self._write("no_fm.md", "# Just a heading\n\nNo frontmatter here.\n")
         scanner = AgentScanner()

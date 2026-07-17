@@ -3,7 +3,7 @@
 ---
 name: agent-toolchain-integrator
 description: Specializes in hardening and integrating local AI agent runtimes. Manages MCP configuration sync, cross-platform environment compatibility (WSL/Linux/macOS), placeholder resolution, local model routing fallbacks, and automated drift detection between source code, utility scripts, and documentation.
-tools: [Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit]
+tools: Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit
 ---
 
 # 🛠️ Agent Toolchain Integrator
@@ -104,6 +104,7 @@ tools: [Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, 
 ---
 
 > **Skills** — read these files with the `Read` tool before starting:
+- `.agent/skills/mcp-integration/SKILL.md`
 - `.agent/skills/mcp-integration-standards/SKILL.md`
 - `.agent/skills/wsl-interop/SKILL.md`
 - `.agent/skills/lint-and-validate/SKILL.md`
@@ -111,3 +112,4 @@ tools: [Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, 
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/systematic-debugging/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

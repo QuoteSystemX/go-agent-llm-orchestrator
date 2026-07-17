@@ -1,12 +1,12 @@
 ---
 name: agent-toolchain-integrator
 description: Specializes in hardening and integrating local AI agent runtimes. Manages MCP configuration sync, cross-platform environment compatibility (WSL/Linux/macOS), placeholder resolution, local model routing fallbacks, and automated drift detection between source code, utility scripts, and documentation.
-domains: [Local AI Runtime Compatibility, MCP Configuration & Sync, Cross-Platform Environment Hardening, Agent Toolchain Drift Management, Cross-Language Bridge Reliability]
-skills: [mcp-integration, mcp-integration-standards, wsl-interop, lint-and-validate, intelligent-routing, clean-code, systematic-debugging, multica-mcp, multica-cli]
+domains: Local AI Runtime Compatibility, MCP Configuration & Sync, Cross-Platform Environment Hardening, Agent Toolchain Drift Management, Cross-Language Bridge Reliability
+skills: mcp-integration, mcp-integration-standards, wsl-interop, lint-and-validate, intelligent-routing, clean-code, systematic-debugging, multica-mcp, multica-cli
 hierarchy:
   reports_to: backend-lead
   delegates_to: []
-tools: [Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit]
+tools: Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit
 model: L2
 profile: universal
 ---

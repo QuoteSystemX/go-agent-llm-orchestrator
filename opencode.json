@@ -111,6 +111,7 @@
     "agent-toolchain-integrator": {
       "mode": "subagent",
       "permission": {
+        "read": "allow",
         "edit": "allow",
         "bash": "allow",
         "glob": "allow",

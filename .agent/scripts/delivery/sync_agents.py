@@ -284,7 +284,9 @@ def build_agent_file(src_path: Path, target: str, is_workflow: bool = False, no_
     raw = src_path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(raw)
     agent_name = src_path.stem
-    skills = [s.strip() for s in fm.get("skills", "").split(",") if s.strip()]
+    skills_raw = fm.get("skills", "") or ""
+    skills_clean = str(skills_raw).strip().strip("[]").strip()
+    skills = [s.strip() for s in skills_clean.split(",") if s.strip()]
 
     clean_fm: dict = {}
     clean_fm["name"] = fm.get("name", agent_name)
@@ -926,7 +928,8 @@ def _build_agent_section() -> dict:
 
         # Parse tools to derive permissions
         tools_str = fm.get("tools") or AGENT_DEFAULT_TOOLS.get(agent_name, "")
-        tools = [t.strip() for t in tools_str.split(",") if t.strip()]
+        tools_clean = str(tools_str).strip().strip("[]").strip()
+        tools = [t.strip().strip('"').strip("'") for t in tools_clean.split(",") if t.strip()]
 
         permissions = {}
         tool_to_perm = {

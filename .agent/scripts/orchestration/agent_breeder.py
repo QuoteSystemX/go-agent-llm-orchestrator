@@ -127,10 +127,10 @@ Follow these guidelines to make the prompt extremely precise, robust, and secure
 1. Include frontmatter with:
    - name: {name}
    - description: {description}
-   - domains: (list of domains)
-   - skills: (list of skills, including clean-code, systematic-debugging, multica-mcp, multica-cli)
+   - domains: (comma-separated list of domains, without square brackets)
+   - skills: (comma-separated list of skills, without square brackets, including clean-code, systematic-debugging, multica-mcp, multica-cli)
    - hierarchy: (reports_to: backend-lead, delegates_to: [])
-   - tools: (Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit)
+   - tools: (comma-separated list of tools, without square brackets, e.g., Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit)
    - model: L2
    - profile: universal
 2. Structure the body with:
@@ -179,10 +179,8 @@ def create_agent_proposal(proposal):
         content = f"""---
 name: {name}
 description: {proposal['description']}
-domains:
-{chr(10).join([f"  - {d}" for d in proposal['domains']])}
-skills:
-{chr(10).join([f"  - {s}" for s in proposal['skills']])}
+domains: {', '.join(proposal['domains'])}
+skills: {', '.join(proposal['skills'])}
 ---
 
 # {name.replace('-', ' ').title()} (@{name})

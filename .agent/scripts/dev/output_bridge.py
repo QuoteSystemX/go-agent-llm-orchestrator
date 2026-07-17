@@ -247,12 +247,13 @@ def run_contrastive_validation(content):
         
     print("⚖️ Running Contrastive Verification Loop (Option C)...")
     
-    # 1. Fetch git diff
+    # 1. Fetch git diff (excluding HTML, JSON, SVGs, and images to prevent diff truncation)
+    exclude_specs = ["--", ":!*.html", ":!*.json", ":!*.png", ":!*.jpg", ":!*.svg"]
     try:
-        git_diff = subprocess.check_output(["git", "diff", "HEAD"], stderr=subprocess.STDOUT).decode()
+        git_diff = subprocess.check_output(["git", "diff", "HEAD"] + exclude_specs, stderr=subprocess.STDOUT).decode()
         if not git_diff.strip():
             # Try staged diff if unstaged is empty
-            git_diff = subprocess.check_output(["git", "diff", "--cached"], stderr=subprocess.STDOUT).decode()
+            git_diff = subprocess.check_output(["git", "diff", "--cached"] + exclude_specs, stderr=subprocess.STDOUT).decode()
     except Exception as e:
         print(f"  ⚠️ Failed to retrieve git diff: {e}")
         git_diff = ""
