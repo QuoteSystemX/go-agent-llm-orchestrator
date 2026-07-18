@@ -203,21 +203,48 @@ func (b *BrokerServer) startWithHTTP(ctx context.Context, s *server.MCPServer, p
 	}
 
 	if !tryHTTP() {
-		// Port in use — kill stale instance and retry once
-		fmt.Fprintf(os.Stderr, "mcp-llm-broker: port %d in use — evicting stale instance\n", port)
-		killProcessOnPort(port)
-		time.Sleep(300 * time.Millisecond)
+		// Port in use. This machine can have several independent
+		// mcp-llm-broker processes wanting the same hardcoded port at once
+		// (one per Claude Code / opencode session) — the occupant is far
+		// more likely to be another session's live instance than a truly
+		// stale one. Only evict if it fails a liveness check; otherwise
+		// leave it running and degrade to stdio-only, same as the "still in
+		// use after eviction" path below. Killing a live occupant used to
+		// sever whatever MCP session depended on it with no warning.
+		if isBrokerAlive(port) {
+			fmt.Fprintf(os.Stderr, "mcp-llm-broker: port %d in use by a healthy instance — not evicting, stdio-only\n", port)
+		} else {
+			fmt.Fprintf(os.Stderr, "mcp-llm-broker: port %d in use by an unresponsive instance — evicting\n", port)
+			killProcessOnPort(port)
+			time.Sleep(300 * time.Millisecond)
 
-		if !tryHTTP() {
-			// Still in use — degrade to stdio-only so opencode at least gets MCP tools
-			fmt.Fprintf(os.Stderr, "mcp-llm-broker: port %d still in use after eviction — stdio-only\n", port)
+			if !tryHTTP() {
+				// Still in use — degrade to stdio-only so opencode at least gets MCP tools
+				fmt.Fprintf(os.Stderr, "mcp-llm-broker: port %d still in use after eviction — stdio-only\n", port)
+			}
 		}
 	}
 	// Reached only in the stdio-only fallback path
 	server.ServeStdio(s)
 }
 
-// killProcessOnPort sends SIGTERM to whatever process holds the given TCP port.
+// isBrokerAlive reports whether a healthy mcp-llm-broker instance is already
+// answering on port — a fast /healthz probe, not just "is the port open".
+// A short timeout keeps this from stalling startup: an occupant that can't
+// answer within it is treated the same as one that isn't there at all.
+func isBrokerAlive(port int) bool {
+	client := http.Client{Timeout: 500 * time.Millisecond}
+	resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/healthz", port))
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
+// killProcessOnPort sends SIGTERM to whatever process holds the given TCP
+// port. Only called after isBrokerAlive has already returned false — see
+// startWithHTTP.
 func killProcessOnPort(port int) {
 	// Try fuser first (available on most Linux/WSL systems)
 	if err := exec.Command("fuser", "-k", fmt.Sprintf("%d/tcp", port)).Run(); err == nil {
