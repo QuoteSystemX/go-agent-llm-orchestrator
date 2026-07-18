@@ -1,7 +1,7 @@
 ---
 name: multica-cli
-description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.1.0
+description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
+version: 1.2.0
 ---
 
 # Multica CLI Reference
@@ -170,7 +170,28 @@ multica autopilot trigger-update <autopilot-id> <trigger-id> --enabled=false
 multica autopilot trigger-delete <autopilot-id> <trigger-id>
 ```
 
-### 7. Core Config & Miscellaneous
+### 7. Workflows (`workflow`)
+Run and operate agent/squad graph automations (multi-step processes built in the Workflow canvas). Graph authoring (nodes/edges) is visual-only — this CLI covers the operational surface: list, inspect, run, watch history, manage triggers, and basic lifecycle.
+
+```bash
+multica workflow list [--status <draft|active|archived>] [--output json]
+multica workflow get <id> --output json          # includes nodes/edges (read-only)
+multica workflow create --name "..." [--description "..."] [--project <id|name>]
+multica workflow update <id> [--name "..."] [--description "..."] [--status <draft|active>] [--agent-triggerable] [--project <id|name>]
+multica workflow delete <id>  # archives — does not hard-delete
+multica workflow run <id> [--payload '<json>']  # manual trigger
+multica workflow runs <id> [--limit N] [--offset N] --output json
+
+# Triggers (schedule or webhook — same contract as autopilot triggers)
+multica workflow trigger-add <workflow-id> --kind <schedule|webhook> [--cron "..."] [--timezone "..."] [--label "..."]
+multica workflow trigger-update <workflow-id> <trigger-id> [--enabled=false] [--cron "..."] [--timezone "..."] [--label "..."]
+multica workflow trigger-delete <workflow-id> <trigger-id>
+multica workflow trigger-rotate-url <workflow-id> <trigger-id> [--yes]  # invalidates the current webhook URL immediately
+```
+
+`--status active` runs full graph validation server-side (e.g. every condition node needs ≥2 outgoing edges) — a failed activation returns the validation error as-is, don't try to pre-validate client-side.
+
+### 8. Core Config & Miscellaneous
 ```bash
 # Setup
 multica setup [self-host] [--port <p>] [--frontend-port <p>] [--server-url <url>] [--app-url <url>]
