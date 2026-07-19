@@ -98,6 +98,7 @@ def main() -> None:
     
     pipeline = [
         ("Modular Rules Compilation", scripts_root / "dev" / "compile_rules.py", []),
+        ("MCP Config Provisioning", scripts_root / "delivery" / "mcp_config_setup.py", []),
         ("Claude Target Agent Parity Sync", scripts_root / "delivery" / "sync_agents.py", ["--target", "claude"]),
         ("OpenCode Target Agent Parity Sync", scripts_root / "delivery" / "sync_agents.py", ["--target", "opencode"]),
         ("Parity Metric Verification", scripts_root / "delivery" / "sync_parity_collector.py", []),
