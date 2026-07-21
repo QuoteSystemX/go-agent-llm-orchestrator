@@ -5,6 +5,7 @@ const (
 	ProviderOllama      = "ollama"
 	ProviderJan         = "jan"
 	ProviderLMStudio    = "lm-studio"
+	ProviderLlamaCpp    = "llamacpp"
 	ProviderAntigravity = "antigravity"
 )
 
@@ -13,10 +14,21 @@ const (
 	DefaultOllamaURL   = "http://localhost:11434"
 	DefaultJanURL      = "http://localhost:1337"
 	DefaultLMStudioURL = "http://localhost:1234"
+	// DefaultLlamaCppURL is a fallback only — a standalone llama-server is typically
+	// started with a random/user-chosen port, so the real address should be set via
+	// RouterRules.LlamaCppBaseURL (router_rules.json "llamacpp_base_url") and is
+	// re-read on every call, no broker restart needed after changing the port.
+	DefaultLlamaCppURL = "http://localhost:8080"
 
 	OllamaDefaultPortStr = "11434"
 	HeadroomPortStr      = "8787"
 )
+
+// llamaCppDefaultSourceRef pins the llama.cpp release tag the provisioner builds
+// from source when RouterRules.LlamaCppSourceRef is unset. Bump via
+// router_rules.json "llamacpp_source_ref" to build a newer release without a
+// broker code change.
+const llamaCppDefaultSourceRef = "b10069"
 
 // Latency balancing constants
 const (
@@ -34,6 +46,7 @@ var DefaultProviderPrices = map[string]ProviderPricing{
 	ProviderOllama:      {InputPricePer1K: 0.0, OutputPricePer1K: 0.0}, // local = free
 	ProviderJan:         {InputPricePer1K: 0.0, OutputPricePer1K: 0.0},
 	ProviderLMStudio:    {InputPricePer1K: 0.0, OutputPricePer1K: 0.0},
+	ProviderLlamaCpp:    {InputPricePer1K: 0.0, OutputPricePer1K: 0.0},
 }
 
 // Circuit breaker states

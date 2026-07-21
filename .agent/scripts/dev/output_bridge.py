@@ -54,7 +54,34 @@ def validate_sections(content):
     return missing
 
 def validate_identity_header(content):
-    """Deep validation of the Identity Header against system config."""
+    """Deep validation of the Identity Header against system config.
+
+    03_gateway.md no longer asks agents to self-report Model/TPS/Tokens — those
+    are either stamped by mcp-llm-broker outside the response text, or written as
+    the literal string "unknown" when no real value is available. So the tier
+    marker is mandatory, but a "🧠 **Model**:" mention is optional; when present,
+    it is checked against router_rules.json UNLESS it is "unknown", which is
+    always accepted — an honest "unknown" is never a hallucination.
+    """
+    flow_pattern = r"🤖 Flow: \*\*\[(L[1-4])\]\*\*"
+    flow_match = re.search(flow_pattern, content)
+
+    if not flow_match:
+        return ["Identity Header is missing or formatted incorrectly. Expected: 🤖 Flow: **[L<N>]** | ..."]
+
+    tier = flow_match.group(1)
+
+    model_pattern = r"🧠 \*\*Model\*\*: (.*?)(?:[ \n\|]|$)"
+    model_match = re.search(model_pattern, content)
+    if not model_match:
+        # No self-reported model to validate — this is now the expected shape
+        # for responses routed through mcp-llm-broker's call_agent.
+        return []
+
+    model = model_match.group(1).strip().lower().replace("**", "")
+    if model == "unknown":
+        return []
+
     rules_path = SCRIPTS_ROOT.parent / "config" / "router_rules.json"
     try:
         with open(rules_path, 'r') as f:
@@ -63,16 +90,6 @@ def validate_identity_header(content):
         print(f"  ⚠️  Warning: Could not load router_rules.json for deep validation: {e}")
         return []
 
-    # Regex for Identity Header: 🤖 Flow: **[L<N>]** ... 🧠 **Model**: <model>
-    header_pattern = r"🤖 Flow: \*\*\[(L[1-4])\]\*\*(?:.*?)🧠 \*\*Model\*\*: (.*?)(?:[ \n\|]|$)"
-    match = re.search(header_pattern, content)
-    
-    if not match:
-        return ["Identity Header is missing or formatted incorrectly. Expected: 🤖 Flow: **[L<N>]** | ... | 🧠 **Model**: <model> | ..."]
-
-    tier = match.group(1)
-    model = match.group(2).strip().lower().replace("**", "")
-    
     # Check Mappings
     ollama_map = rules.get("models", {}).get("ollama", {})
     cloud_map = rules.get("models", {}).get("antigravity", {})

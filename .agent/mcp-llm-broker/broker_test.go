@@ -406,3 +406,158 @@ func TestUpdateTelemetryAfterCall(t *testing.T) {
 		t.Errorf("Expected antigravity, got %s", telemetry.Calls[0].Provider)
 	}
 }
+
+// -------- Self-Reported Identity Header Stripping Tests --------
+//
+// Local agent personas are instructed (03_gateway.md) to self-report a
+// "🤖 Flow: ... 🧠 Model: ..." header, but they have no access to the broker's
+// real routing decision. Observed behavior: some models copy the static
+// benchmark example verbatim, others fabricate a plausible-but-wrong value.
+// handleCallAgent must never trust this text — it strips it and stamps the
+// verified model_used/provider fields from ExecutionResult instead.
+
+func TestStripSelfReportedIdentityHeader_FullBanner(t *testing.T) {
+	input := "🤖 Flow: **[L4]** | 📈 **TPS**: 129 | 🪙 **Tokens**: 2048/512 | 🧠 **Model**: qwen3-coder:30b | 🔄 **Process**: CoAT → Audit → Verdict\n" +
+		"🧠 Team Consensus: **Migration requires deterministic guards** | 👤 Agent: **@red-team** | 📈 Health: **94%** | 🛡️ **Sentinel**: **ACTIVE**\n" +
+		"\n" +
+		"### 🔴 Red-Team Critique\nActual content here."
+
+	got, removed := stripSelfReportedIdentityHeader(input)
+	if !removed {
+		t.Fatal("Expected header to be detected and removed")
+	}
+	if strings.Contains(got, "Flow:") || strings.Contains(got, "Team Consensus") {
+		t.Errorf("Header lines leaked into cleaned output: %q", got)
+	}
+	if !strings.Contains(got, "Actual content here.") {
+		t.Errorf("Real content was dropped along with the header: %q", got)
+	}
+}
+
+func TestStripSelfReportedIdentityHeader_PlaceholderBanner(t *testing.T) {
+	// Observed variant: model leaves unknown fields as "-" instead of fabricating values.
+	input := "🤖 Flow: **[L3]** | 📈 **TPS**: - | 🪙 **Tokens**: - | 🧠 **Model**: - | 🔄 **Process**: Red-Team Audit\n" +
+		"🧠 Team Consensus: **Parser guards required** | 👤 Agent: **@red-team** | 📈 Health: **-** | 🛡️ **Sentinel**: **ACTIVE**\n" +
+		"Body text."
+
+	got, removed := stripSelfReportedIdentityHeader(input)
+	if !removed {
+		t.Fatal("Expected placeholder-style header to be detected and removed")
+	}
+	if strings.TrimSpace(got) != "Body text." {
+		t.Errorf("Expected only body text to remain, got %q", got)
+	}
+}
+
+func TestStripSelfReportedIdentityHeader_FlowLineWithoutConsensusLine(t *testing.T) {
+	// The Team Consensus line is optional in the spec — must not eat unrelated content.
+	input := "🤖 Flow: **[L2]**\nSome other line that is not a header.\nBody text."
+
+	got, removed := stripSelfReportedIdentityHeader(input)
+	if !removed {
+		t.Fatal("Expected Flow line to be detected and removed")
+	}
+	if !strings.Contains(got, "Some other line that is not a header.") {
+		t.Errorf("Unrelated line following Flow was incorrectly stripped: %q", got)
+	}
+}
+
+func TestStripSelfReportedIdentityHeader_NoHeaderPresent(t *testing.T) {
+	input := "Just a plain response with no identity header at all."
+
+	got, removed := stripSelfReportedIdentityHeader(input)
+	if removed {
+		t.Error("Expected no header to be detected")
+	}
+	if got != input {
+		t.Errorf("Response without a header must be returned unchanged, got %q", got)
+	}
+}
+
+func TestStripSelfReportedIdentityHeader_LeadingWhitespaceOnFlowLine(t *testing.T) {
+	input := "  🤖 Flow: **[L1]** | 🧠 **Model**: gemma-4-12B\nBody."
+
+	got, removed := stripSelfReportedIdentityHeader(input)
+	if !removed {
+		t.Fatal("Expected indented Flow line to still be detected")
+	}
+	if !strings.Contains(got, "Body.") {
+		t.Errorf("Body content was lost: %q", got)
+	}
+}
+
+// -------- Standalone llama-server (ProviderLlamaCpp) Tests --------
+
+func TestGetExecutionURL_LlamaCpp_UsesConfiguredURL(t *testing.T) {
+	srv := &BrokerServer{}
+	ctx := context.Background()
+	env := EnvironmentInfo{OS: "linux"}
+	rules := &RouterRules{LlamaCppBaseURL: "http://172.31.0.1:54321"}
+
+	got := srv.getExecutionURL(ctx, ProviderLlamaCpp, env, rules)
+	if got != "http://172.31.0.1:54321" {
+		t.Errorf("Expected configured llamacpp_base_url to be used verbatim, got %q", got)
+	}
+}
+
+func TestGetExecutionURL_LlamaCpp_FallsBackToDefaultWhenUnconfigured(t *testing.T) {
+	srv := &BrokerServer{}
+	ctx := context.Background()
+	env := EnvironmentInfo{OS: "linux"}
+	rules := &RouterRules{} // LlamaCppBaseURL left empty
+
+	got := srv.getExecutionURL(ctx, ProviderLlamaCpp, env, rules)
+	if got != DefaultLlamaCppURL {
+		t.Errorf("Expected fallback to DefaultLlamaCppURL when unconfigured, got %q", got)
+	}
+}
+
+// -------- checkAllHealth Merge-Not-Overwrite Tests --------
+//
+// checkAllHealth runs every 20s and used to replace the whole BackendHealth entry
+// with a fresh struct literal, silently wiping CircuitState/ConsecutiveFailures set
+// moments earlier by a real completion failure (recordProviderFailure). This meant
+// an OPEN circuit for a flaky provider (e.g. Jan returning EOF on /v1/messages while
+// still answering /v1/models) would self-heal back to Closed on the very next health
+// tick, even though nothing about the real failure was fixed.
+
+func TestMergeHealthCheckResult_PreservesCircuitStateOnFailureProbe(t *testing.T) {
+	existing := BackendHealth{
+		CircuitState:        CircuitOpen,
+		ConsecutiveFailures: 5,
+	}
+
+	got := mergeHealthCheckResult(existing, false, 50*time.Millisecond)
+
+	if got.CircuitState != CircuitOpen {
+		t.Errorf("Expected CircuitState to remain OPEN after a periodic health probe, got %v", got.CircuitState)
+	}
+	if got.ConsecutiveFailures != 5 {
+		t.Errorf("Expected ConsecutiveFailures to survive the merge, got %d", got.ConsecutiveFailures)
+	}
+	if got.Available {
+		t.Error("Expected Available=false to be recorded from the failed probe")
+	}
+}
+
+func TestMergeHealthCheckResult_PreservesCircuitStateOnSuccessProbe(t *testing.T) {
+	// Even a successful lightweight /v1/models probe must not silently reset a
+	// circuit that a real completion failure opened — only recordProviderSuccess
+	// (driven by an actual successful completion) is allowed to close it.
+	existing := BackendHealth{
+		CircuitState:        CircuitOpen,
+		ConsecutiveFailures: 3,
+	}
+
+	got := mergeHealthCheckResult(existing, true, 10*time.Millisecond)
+
+	if got.CircuitState != CircuitOpen {
+		t.Errorf("Expected CircuitState to remain OPEN — only real request success should close it, got %v", got.CircuitState)
+	}
+	if !got.Available {
+		t.Error("Expected Available=true to be recorded from the successful probe")
+	}
+	if got.Latency != 10*time.Millisecond {
+		t.Errorf("Expected Latency to be updated, got %v", got.Latency)
+	}
+}

@@ -191,6 +191,25 @@
         "gemma-4-26B-A4B-it-UD-IQ4_XS"
       ]
     },
+    "llamacpp": {
+      "_comment": "Standalone llama-server, independent of the Jan app — added as a fallback for when Jan's own HTTP bridge is unresponsive (EOF on completion) even though the underlying engine/model files are fine. Mirrors the \"jan\" tier mapping 1:1 on the assumption that llama-server is pointed at the same .gguf files Jan already manages. If llama-server reports a different exact model name via /v1/models (e.g. filename or --alias), the existing fuzzy matcher (modelNameMatches) reconciles it against these entries — no exact match is required.",
+      "L1": "Jan-v3.5-4B-Q4_K_XL",
+      "L1_alt": [
+        "gemma-4-12B-it-abliterated-uncensored_i1-IQ4_XS"
+      ],
+      "L2": "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS",
+      "L2_alt": [
+        "gemma-4-12B-it-abliterated-uncensored_i1-IQ4_XS"
+      ],
+      "L3": "Qwen3_6-27B-IQ4_XS",
+      "L3_alt": [
+        "gemma-4-26B-A4B-it-UD-IQ4_XS"
+      ],
+      "L4": "Qwen3_6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS",
+      "L4_alt": [
+        "gemma-4-26B-A4B-it-UD-IQ4_XS"
+      ]
+    },
     "antigravity": {
       "L1": "gemini-3-flash",
       "L2": "gemini-3.1-pro-low",
@@ -341,6 +360,8 @@
     "cloud_on_tiers": [],
     "comment": "L1-L4 go to local Ollama by default. If Ollama is unreachable, all tiers fall back to cloud. Set jan_base_url or JAN_BASE_URL env var to override Jan auto-detection (useful in WSL)."
   },
+  "_llamacpp_base_url_comment": "Set llamacpp_base_url below to the ACTUAL address printed by llama-server on startup (its port is random/user-chosen, not a fixed default). Re-read on every request — edit this value after each llama-server restart, no broker restart needed.",
+  "llamacpp_base_url": "http://localhost:8080",
   "headroom_proxy": {
     "enabled": true,
     "port": 8787,
@@ -355,6 +376,7 @@
     "ollama": 2,
     "jan": 1,
     "lm-studio": 1,
+    "llamacpp": 1,
     "default": 4
   },
   "semantic_cache": {

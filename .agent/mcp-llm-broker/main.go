@@ -64,6 +64,12 @@ type BrokerServer struct {
 	// Reusable HTTP clients for connection pooling (L4 audit)
 	clientFast *http.Client
 	clientSlow *http.Client
+
+	// Standalone llama-server process managed by this broker (see
+	// llamacpp_provisioner.go). nil when no build has been launched yet.
+	llamaCppCmd                 *exec.Cmd
+	llamaCppCmdMu               sync.Mutex
+	llamaCppLastRelaunchAttempt time.Time
 }
 
 func main() {
@@ -149,6 +155,17 @@ func main() {
 		mcp.WithString("task", mcp.Required(), mcp.Description("The task or question to send to the agent")),
 		mcp.WithString("tier", mcp.Description("Optional tier override: L1, L2, L3, L4")),
 	), srv.handleCallAgent)
+
+	s.AddTool(mcp.NewTool(
+		"provision_llamacpp",
+		mcp.WithDescription("Build (if not already built) and launch a standalone llama-server "+
+			"instance managed by this broker, auto-selecting one of Jan's already-downloaded "+
+			".gguf models for the given tier and self-writing the resolved URL into "+
+			"router_rules.json. The first build compiles llama.cpp from source (several minutes "+
+			"of CPU time) — call this explicitly; it is not triggered automatically. Once built, "+
+			"the health-check loop auto-relaunches the same binary if the process later dies."),
+		mcp.WithString("tier", mcp.Description("Model tier to launch: L1, L2, L3, or L4. Defaults to L3 if omitted.")),
+	), srv.handleProvisionLlamaCpp)
 
 	if *toolName == "" {
 		go srv.startHealthCheckLoop(ctx)
@@ -340,6 +357,10 @@ func (b *BrokerServer) runCLIMode(ctx context.Context, tool string, argsJSON str
 		res, err = b.handleGetRoutingDecision(ctx, req)
 	case "execute_prompt":
 		res, err = b.handleExecutePrompt(ctx, req)
+	case "call_agent":
+		res, err = b.handleCallAgent(ctx, req)
+	case "provision_llamacpp":
+		res, err = b.handleProvisionLlamaCpp(ctx, req)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown tool: %s\n", tool)
 		os.Exit(1)
@@ -409,6 +430,18 @@ func (b *BrokerServer) handleGetRoutingDecision(ctx context.Context, req mcp.Cal
 			for _, m := range models {
 				pulled[m] = ProviderLMStudio
 			}
+		}
+	}
+
+	// Gather models from a standalone llama-server — URL is user-configured
+	// (random port), not guessed via WSL-gateway fallback like the providers above.
+	llamaCppURL := DefaultLlamaCppURL
+	if rules, err := b.loadRules(); err == nil && rules.LlamaCppBaseURL != "" {
+		llamaCppURL = rules.LlamaCppBaseURL
+	}
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, llamaCppURL); err == nil {
+		for _, m := range models {
+			pulled[m] = ProviderLlamaCpp
 		}
 	}
 
@@ -594,6 +627,25 @@ func (b *BrokerServer) handleDetectBackends(ctx context.Context, _ mcp.CallToolR
 	lmsCtx, lmsCancel := context.WithTimeout(ctx, 2*time.Second)
 	result.Backends = append(result.Backends, b.checkOpenAIWithWSLFallback(lmsCtx, "LM Studio", DefaultLMStudioURL, "1234", env))
 	lmsCancel()
+
+	// 4. Standalone llama-server check — no WSL-gateway fallback: the configured
+	// URL is already the fully-resolved address the user set after starting
+	// llama-server on its (random) port, so there is no fixed port to guess from.
+	llamaCppURL := DefaultLlamaCppURL
+	if rules, err := b.loadRules(); err == nil && rules.LlamaCppBaseURL != "" {
+		llamaCppURL = rules.LlamaCppBaseURL
+	}
+	llamaCppCtx, llamaCppCancel := context.WithTimeout(ctx, 2*time.Second)
+	llamaCppBackend := BackendInfo{Name: "llama.cpp", URL: llamaCppURL}
+	if models, err := b.fetchOpenAICompatibleModels(llamaCppCtx, llamaCppURL); err == nil {
+		llamaCppBackend.Available = true
+		llamaCppBackend.Models = models
+	} else {
+		llamaCppBackend.Available = false
+		llamaCppBackend.Error = err.Error()
+	}
+	llamaCppCancel()
+	result.Backends = append(result.Backends, llamaCppBackend)
 
 	b.pullingStatesMu.RLock()
 	if len(b.pullingStates) > 0 {
@@ -819,15 +871,24 @@ func (b *BrokerServer) fetchOpenAICompatibleModels(ctx context.Context, baseURL 
 func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 	env := b.detectEnv()
 
+	llamaCppURL := DefaultLlamaCppURL
+	if rules, err := b.loadRules(); err == nil && rules.LlamaCppBaseURL != "" {
+		llamaCppURL = rules.LlamaCppBaseURL
+	}
+
 	providers := []struct {
 		name     string
 		url      string
 		isOllama bool
-		wslPort  string
+		wslPort  string // empty means "no WSL-gateway fallback for this provider"
 	}{
 		{ProviderOllama, b.getOllamaURL(env), true, OllamaDefaultPortStr},
 		{ProviderJan, DefaultJanURL, false, "1337"},
 		{ProviderLMStudio, DefaultLMStudioURL, false, "1234"},
+		// llama-server's URL is already the fully-resolved, user-configured address
+		// (random port) — there is no fixed default port to guess a WSL-gateway
+		// fallback from, so wslPort is intentionally left empty.
+		{ProviderLlamaCpp, llamaCppURL, false, ""},
 	}
 
 	for _, p := range providers {
@@ -844,7 +905,7 @@ func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 		localCancel()
 
 		// If localhost failed and we're in WSL, try the WSL gateway with a fresh timeout context
-		if err != nil && env.IsWSL && env.WSLGateway != "" {
+		if err != nil && p.wslPort != "" && env.IsWSL && env.WSLGateway != "" {
 			wslURL := fmt.Sprintf("http://%s:%s", env.WSLGateway, p.wslPort)
 			wslCtx, wslCancel := context.WithTimeout(ctx, 1200*time.Millisecond)
 			if p.isOllama {
@@ -865,13 +926,29 @@ func (b *BrokerServer) checkAllHealth(ctx context.Context) {
 		duration := time.Since(start)
 
 		b.healthCacheMu.Lock()
-		b.healthCache[p.name] = BackendHealth{
-			Available: (err == nil),
-			Latency:   duration,
-			LastCheck: time.Now(),
-		}
+		b.healthCache[p.name] = mergeHealthCheckResult(b.healthCache[p.name], err == nil, duration)
 		b.healthCacheMu.Unlock()
+
+		if p.name == ProviderLlamaCpp && err != nil {
+			// Only relaunches an already-built binary (rate-limited); never
+			// triggers the first, heavy source build automatically.
+			b.maybeAutoRelaunchLlamaCpp(ctx)
+		}
 	}
+}
+
+// mergeHealthCheckResult applies a periodic health-probe result on top of the
+// existing BackendHealth entry, preserving fields that only real request outcomes
+// should update (CircuitState, ConsecutiveFailures, LastFailureTime, EMA latency
+// stats). A full-struct overwrite here would silently reset an OPEN circuit breaker
+// back to Closed on the next health tick, even though the periodic probe only ever
+// checks a lightweight metadata endpoint (e.g. /v1/models) — never the actual
+// completion path that recordProviderFailure/recordProviderSuccess react to.
+func mergeHealthCheckResult(existing BackendHealth, available bool, latency time.Duration) BackendHealth {
+	existing.Available = available
+	existing.Latency = latency
+	existing.LastCheck = time.Now()
+	return existing
 }
 
 func (b *BrokerServer) startHealthCheckLoop(ctx context.Context) {
@@ -1059,15 +1136,15 @@ func (b *BrokerServer) buildCallAgentDescription() string {
 
 // invokeAgent loads a specialist agent's system prompt and executes a task with it.
 // Shared by handleCallAgent (MCP tool) and the internal agentic loop.
-func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOverride string) (string, error) {
+func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOverride string) (*ExecutionResult, error) {
 	if agentName == "" {
-		return "", fmt.Errorf("agent_name is required")
+		return nil, fmt.Errorf("agent_name is required")
 	}
 	if task == "" {
-		return "", fmt.Errorf("task is required")
+		return nil, fmt.Errorf("task is required")
 	}
 	if agentName == "orchestrator" {
-		return "", fmt.Errorf("cannot call orchestrator recursively")
+		return nil, fmt.Errorf("cannot call orchestrator recursively")
 	}
 
 	// Validate against the live agent list from ARCHITECTURE.md.
@@ -1082,7 +1159,7 @@ func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOve
 			}
 		}
 		if !found {
-			return "", fmt.Errorf("unknown agent %q. Available: %s", agentName, strings.Join(names, ", "))
+			return nil, fmt.Errorf("unknown agent %q. Available: %s", agentName, strings.Join(names, ", "))
 		}
 	}
 
@@ -1104,12 +1181,12 @@ func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOve
 		})
 	}
 	if agentFile == "" {
-		return "", fmt.Errorf("agent %q not found in .claude/agents/ or .agent/agents/", agentName)
+		return nil, fmt.Errorf("agent %q not found in .claude/agents/ or .agent/agents/", agentName)
 	}
 
 	raw, err := os.ReadFile(agentFile)
 	if err != nil {
-		return "", fmt.Errorf("cannot read agent file: %v", err)
+		return nil, fmt.Errorf("cannot read agent file: %v", err)
 	}
 
 	body := string(raw)
@@ -1138,9 +1215,9 @@ func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOve
 	// fallback path in executePromptLogic so delegated work can never escape to cloud.
 	result, err := b.executePromptLogic(withLocalOnly(ctx), task, systemPrompt, task, "", tierOverride, false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return result.Response, nil
+	return result, nil
 }
 
 // handleCallAgent is the MCP tool wrapper for invokeAgent.
@@ -1153,15 +1230,85 @@ func (b *BrokerServer) handleCallAgent(ctx context.Context, req mcp.CallToolRequ
 		return mcp.NewToolResultError("task is required"), nil
 	}
 
-	response, err := b.invokeAgent(ctx, agentName, task, tierOverride)
+	result, err := b.invokeAgent(ctx, agentName, task, tierOverride)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("call_agent failed: %v", err)), nil
 	}
 
-	out := map[string]string{
-		"agent":    agentName,
-		"response": response,
+	// The agent persona may still self-report an Identity Header (03_gateway.md
+	// instructs it to, and some fine-tuned local models do it even when that rule
+	// wasn't injected). That self-report is unverified — it has no access to
+	// result.Model/result.Source — so it is stripped rather than trusted, and the
+	// broker-verified values below are what callers should read instead.
+	cleanResponse, hadSelfReport := stripSelfReportedIdentityHeader(result.Response)
+	if hadSelfReport {
+		fmt.Fprintf(os.Stderr, "[WARN] handleCallAgent: agent %q self-reported an Identity Header; stripped it — verified model is %s/%s\n",
+			agentName, result.Source, result.Model)
 	}
+
+	isCloud := false
+	if rules, rErr := b.loadRules(); rErr == nil {
+		isCloud = result.Source == rules.HybridRouting.CloudFallbackProvider
+	}
+
+	out := map[string]any{
+		"agent":      agentName,
+		"response":   cleanResponse,
+		"model_used": result.Model,
+		"provider":   result.Source,
+		"is_cloud":   isCloud,
+	}
+	jsonData, _ := json.MarshalIndent(out, "", "  ")
+	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
+// stripSelfReportedIdentityHeader removes the two-line "Identity Header" banner
+// (03_gateway.md's IDENTITY HEADER PROTOCOL: a "🤖 Flow: ..." line optionally
+// followed by a "🧠 Team Consensus: ..." line) that an agent persona may have
+// self-reported. That banner is never trustworthy here — it is unverified prose
+// generated by the model itself, not data read from the broker's own routing
+// decision — so callers must rely on the model_used/provider fields that
+// handleCallAgent stamps from ExecutionResult instead. Returns the cleaned text
+// and whether a header was actually found and removed.
+func stripSelfReportedIdentityHeader(response string) (string, bool) {
+	lines := strings.Split(response, "\n")
+	out := make([]string, 0, len(lines))
+	removed := false
+
+	for i := 0; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(trimmed, "🤖 Flow:") {
+			removed = true
+			// The Team Consensus line, if present, is part of the same header block.
+			if i+1 < len(lines) && strings.HasPrefix(strings.TrimSpace(lines[i+1]), "🧠 Team Consensus:") {
+				i++
+			}
+			continue
+		}
+		out = append(out, lines[i])
+	}
+
+	if !removed {
+		return response, false
+	}
+	// Drop leading blank lines left behind by the removed header.
+	cleaned := strings.Join(out, "\n")
+	return strings.TrimLeft(cleaned, "\n"), true
+}
+
+// handleProvisionLlamaCpp is the MCP tool wrapper for ensureLlamaCppRunning.
+func (b *BrokerServer) handleProvisionLlamaCpp(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	tier := b.getStringArg(req.Params.Arguments, "tier")
+	if tier == "" {
+		tier = "L3"
+	}
+
+	url, err := b.ensureLlamaCppRunning(ctx, tier)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("provision_llamacpp failed: %v", err)), nil
+	}
+
+	out := map[string]string{"status": "running", "url": url, "tier": tier}
 	jsonData, _ := json.MarshalIndent(out, "", "  ")
 	return mcp.NewToolResultText(string(jsonData)), nil
 }

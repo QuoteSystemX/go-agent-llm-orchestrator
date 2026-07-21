@@ -131,6 +131,19 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 			}
 		}
 	}
+	// Standalone llama-server — URL is user-configured (random port), not guessed.
+	llamaCppURL := rules.LlamaCppBaseURL
+	if llamaCppURL == "" {
+		llamaCppURL = DefaultLlamaCppURL
+	}
+	if models, err := b.fetchOpenAICompatibleModels(discoverCtx, llamaCppURL); err == nil {
+		for _, m := range models {
+			pulled[m] = ProviderLlamaCpp
+		}
+		fmt.Fprintf(os.Stderr, "[DEBUG] executor: llama.cpp models found (%s): %v\n", llamaCppURL, models)
+	} else {
+		fmt.Fprintf(os.Stderr, "[DEBUG] executor: llama.cpp not available at %s: %v\n", llamaCppURL, err)
+	}
 
 	fmt.Fprintf(os.Stderr, "[DEBUG] executor: pulled models count=%d: %v\n", len(pulled), pulled)
 
@@ -590,6 +603,15 @@ func (b *BrokerServer) getExecutionURL(ctx context.Context, provider string, env
 			cancel()
 		}
 		return DefaultLMStudioURL
+	}
+	if provider == ProviderLlamaCpp {
+		// No WSL-gateway guessing here: a standalone llama-server's port is not a
+		// fixed default, so the configured URL must already be the correct, fully
+		// reachable address (WSL gateway IP included, if that's what's needed).
+		if rules.LlamaCppBaseURL != "" {
+			return rules.LlamaCppBaseURL
+		}
+		return DefaultLlamaCppURL
 	}
 
 	// Unknown provider — default to Ollama
@@ -1516,7 +1538,8 @@ func (b *BrokerServer) executeAgenticLoop(
 							onToken(fmt.Sprintf("> ⚠ %s: %v\n\n", agentName, agentErr))
 						}
 					} else {
-						resultText = agentResp
+						cleanResp, _ := stripSelfReportedIdentityHeader(agentResp.Response)
+						resultText = cleanResp
 						if onToken != nil && resultText != "" {
 							preview := strings.TrimSpace(resultText)
 							if len([]rune(preview)) > 600 {

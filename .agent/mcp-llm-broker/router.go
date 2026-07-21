@@ -11,18 +11,30 @@ import (
 )
 
 type RouterRules struct {
-	Scoring          ScoringConfig                      `json:"scoring"`
-	Models           map[string]ModelTiers              `json:"models"`
-	ModelRankings    map[string]json.RawMessage         `json:"model_rankings"`
-	HybridRouting    HybridRoutingConfig                `json:"hybrid_routing"`
-	HeadroomProxy    HeadroomProxyConfig                `json:"headroom_proxy"`
-	Concurrency      map[string]int                     `json:"concurrency,omitempty"`
-	SemanticCache    SemanticCacheConfig                `json:"semantic_cache,omitempty"`
-	ProviderSettings map[string]ProviderContextConfig   `json:"provider_settings,omitempty"`
-	AgentTiers       map[string]string                  `json:"agent_tiers,omitempty"`
-	DomainTiers      map[string]string                  `json:"domain_tiers,omitempty"`
-	CircuitBreaker   *CircuitBreakerConfig              `json:"circuit_breaker,omitempty"`
-	Timeouts         TimeoutsConfig                     `json:"timeouts,omitempty"`
+	Scoring          ScoringConfig                    `json:"scoring"`
+	Models           map[string]ModelTiers            `json:"models"`
+	ModelRankings    map[string]json.RawMessage       `json:"model_rankings"`
+	HybridRouting    HybridRoutingConfig              `json:"hybrid_routing"`
+	HeadroomProxy    HeadroomProxyConfig              `json:"headroom_proxy"`
+	Concurrency      map[string]int                   `json:"concurrency,omitempty"`
+	SemanticCache    SemanticCacheConfig              `json:"semantic_cache,omitempty"`
+	ProviderSettings map[string]ProviderContextConfig `json:"provider_settings,omitempty"`
+	AgentTiers       map[string]string                `json:"agent_tiers,omitempty"`
+	DomainTiers      map[string]string                `json:"domain_tiers,omitempty"`
+	CircuitBreaker   *CircuitBreakerConfig            `json:"circuit_breaker,omitempty"`
+	Timeouts         TimeoutsConfig                   `json:"timeouts,omitempty"`
+	// LlamaCppBaseURL is the base URL of a standalone llama-server instance.
+	// Unlike Ollama/Jan/LM Studio, its port is not a fixed default — a standalone
+	// llama-server is commonly started on a random/user-chosen port — so it must be
+	// configured here rather than guessed. Re-read on every loadRules() call, so
+	// updating this value takes effect immediately without restarting the broker.
+	// The broker's own provisioner (llamacpp_provisioner.go) writes this field back
+	// automatically once it launches its own llama-server instance.
+	LlamaCppBaseURL string `json:"llamacpp_base_url,omitempty"`
+	// LlamaCppSourceRef pins the llama.cpp git tag/ref the provisioner builds from
+	// source. Defaults to llamaCppDefaultSourceRef (constants.go) when empty — bump
+	// this to build a newer llama.cpp without changing broker code.
+	LlamaCppSourceRef string `json:"llamacpp_source_ref,omitempty"`
 }
 
 type TimeoutsConfig struct {
@@ -561,7 +573,7 @@ type LocalCandidate struct {
 func (b *BrokerServer) getLocalCandidates(tier string, rules *RouterRules, pulledModels map[string]string) []LocalCandidate {
 	// Collect configured model names for this tier from ALL local provider sections.
 	// This allows router_rules.json to list Jan/LM Studio model names alongside Ollama names.
-	localProviders := []string{ProviderOllama, ProviderJan, ProviderLMStudio}
+	localProviders := []string{ProviderOllama, ProviderJan, ProviderLMStudio, ProviderLlamaCpp}
 	var allConfigModels []string
 	seenConfig := make(map[string]bool)
 	for _, provKey := range localProviders {
@@ -764,7 +776,7 @@ func (b *BrokerServer) getStringSlice(val interface{}) []string {
 }
 
 func (b *BrokerServer) getConfiguredLocalModels(tier string, rules *RouterRules) []string {
-	localProviders := []string{ProviderOllama, ProviderJan, ProviderLMStudio}
+	localProviders := []string{ProviderOllama, ProviderJan, ProviderLMStudio, ProviderLlamaCpp}
 	seen := make(map[string]bool)
 	var raw []string
 	for _, provKey := range localProviders {

@@ -41,10 +41,47 @@ class TestOutputBridge(unittest.TestCase):
         content = "🤖 Flow: **[L3]**\n🎯 **Context/Goal**\n🛠 **Technical Implementation**\n📂 **Impacted Components**\n📈 **Outcome/Result**"
         missing = bridge.validate_sections(content)
         self.assertEqual(len(missing), 0)
-        
+
         content_missing = "🤖 Flow: **[L3]**"
         missing = bridge.validate_sections(content_missing)
         self.assertGreater(len(missing), 0)
+
+    def test_validate_identity_header_missing_flow_marker(self):
+        # No "🤖 Flow: **[L<N>]**" at all — always invalid, regardless of Model.
+        errors = bridge.validate_identity_header("Just some text with no header.")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("missing or formatted incorrectly", errors[0])
+
+    def test_validate_identity_header_no_model_mentioned_is_valid(self):
+        # 03_gateway.md's current protocol: agents routed through mcp-llm-broker's
+        # call_agent omit Model/TPS/Tokens entirely — the broker stamps them
+        # outside the response text. No Model mention must not be an error.
+        content = "🤖 Flow: **[L4]** | 🔄 **Process**: Audit\n🧠 Team Consensus: **ok** | 👤 Agent: **@red-team**"
+        errors = bridge.validate_identity_header(content)
+        self.assertEqual(errors, [])
+
+    def test_validate_identity_header_unknown_model_is_valid(self):
+        # An honest "unknown" must never be flagged as a hallucination.
+        content = "🤖 Flow: **[L3]** | 🧠 **Model**: unknown | 🔄 **Process**: Audit"
+        errors = bridge.validate_identity_header(content)
+        self.assertEqual(errors, [])
+
+    def test_validate_identity_header_real_model_for_tier_is_valid(self):
+        # qwen3-coder:30b is registered as the L4 ollama model in router_rules.json.
+        content = "🤖 Flow: **[L4]** | 🧠 **Model**: qwen3-coder:30b | 🔄 **Process**: Audit"
+        errors = bridge.validate_identity_header(content)
+        self.assertEqual(errors, [])
+
+    def test_validate_identity_header_wrong_model_for_tier_is_hallucination(self):
+        # qwen3-coder:30b is registered only under L4 (primary) and L3_alt in
+        # router_rules.json — claiming it at L1, where neither the primary nor
+        # any alt/ranking entry matches, is exactly the observed failure mode
+        # (self-reported model belongs to a different tier than the one claimed)
+        # and must still be caught.
+        content = "🤖 Flow: **[L1]** | 🧠 **Model**: qwen3-coder:30b | 🔄 **Process**: Audit"
+        errors = bridge.validate_identity_header(content)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("HALLUCINATION DETECTED", errors[0])
 
     @patch('sys.exit')
     def test_save_to_bus_logic(self, mock_exit):

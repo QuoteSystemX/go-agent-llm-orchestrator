@@ -47,6 +47,12 @@ python3 .agent/scripts/models/ollama_agent.py "analyze technical debt" --agent c
 ✅ Cost saved vs cloud
 ```
 
+**No fabricated values**: every field above must be copied verbatim from the JSON the router
+command actually returned this turn (`provider`, `model_id`, `score`). If the router was not
+called, or the call failed, do not guess a plausible-looking value — write `unknown` instead.
+A wrong-but-confident model name is worse than an honest `unknown`; both `output_bridge.py` and
+downstream automation now treat a confidently wrong self-report as a hallucination, not `unknown`.
+
 **Benchmark Results (2026-05-10, simple/medium/complex tasks)**:
 
 | Tier | Best Model | Avg Time | Avg TPS | Success |
@@ -61,14 +67,36 @@ python3 .agent/scripts/models/ollama_agent.py "analyze technical debt" --agent c
 
 ### 🧠 IDENTITY HEADER PROTOCOL (MANDATORY)
 
-Every response MUST start with the following header (replace placeholders with real values):
+Every response MUST start with the following header:
 
 ```text
-🤖 Flow: **[L<N>]** | 📈 **TPS**: <val> | 🪙 **Tokens**: <input/output> | 🧠 **Model**: <model> | 🔄 **Process**: <sequence>
-🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 📈 Health: **<score>%** [| 🗜️ **Headroom**: <stats> | 🛡️ **RTK**: <stats>] | 🛡️ **Sentinel**: **ACTIVE/OFF**
+🤖 Flow: **[L<N>]** | 🔄 **Process**: <sequence>
+🧠 Team Consensus: **[Brief summary]** | 👤 Agent: **@agent-name** | 🛡️ **Sentinel**: **ACTIVE/OFF**
 ```
 
-*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings.*
+**`Sentinel` is not a vibe — it reports whether `governance_gate.py` (the actual Sentinel
+Governance Gate, `.agent/scripts/orchestration/governance_gate.py`) was run against the impacted
+files this turn and what it returned.** Write `ACTIVE` only if you actually ran it (directly, or
+via the orchestrator) and it passed; write `OFF` if you did not run it, or ran it and it failed.
+`OFF` is the safe default — same principle as `unknown` for Model above: an honest "I didn't check"
+beats a confidently wrong "ACTIVE" that was never verified.
+
+**`TPS` / `Tokens` / `Model` / `Health` are NOT self-reported.** You do not have reliable access to
+your own model identity, token counts, or throughput — do not fabricate them. Two cases:
+
+1. **Running through `mcp-llm-broker`'s `call_agent`** (this is how you were most likely invoked):
+   the broker stamps the *verified* `model_used`, `provider`, and `is_cloud` fields on the JSON
+   envelope around your response, from its own routing decision — not from anything you write.
+   Do not include `TPS`/`Tokens`/`Model`/`Health` in your header at all; they would only duplicate
+   or contradict the broker's verified fields.
+2. **Any other invocation path** (no broker stamping available): if you genuinely have real
+   numbers from an actual tool call this turn (e.g. `get_routing_decision`), copy them verbatim.
+   Otherwise write `Model: unknown` / `TPS: unknown` — never a specific-but-invented name or
+   number. This was a real, confirmed failure mode: local models were observed either copying the
+   static example row from this file's own benchmark table verbatim and presenting it as live
+   telemetry, or inventing a plausible-but-wrong number — both are worse than admitting `unknown`.
+
+*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings — same rule applies: real measured values or `unknown`, never invented.*
 
 **Mandatory Content Structure (Premium Standard):**
 

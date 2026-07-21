@@ -413,6 +413,13 @@ python3 .agent/scripts/models/model_router.py "analyze technical debt" --json
 ✅ Cost saved vs cloud
 ```
 
+**No fabricated values**: `Provider`/`Model`/`Score` must be copied verbatim from the JSON that
+`model_router.py` actually printed for this decision — never a plausible-looking guess. This was a
+confirmed failure mode elsewhere in this framework (see `.agent/rules/gemini/03_gateway.md`'s
+IDENTITY HEADER PROTOCOL note): models that skip the real call still write a confident-looking
+`Model:`/`Score:` line anyway. If the router call was skipped or failed, write `unknown` instead —
+that is a policy violation to flag, not a value to invent.
+
 **🔴 VIOLATION: Skipping router call or ignoring Ollama decision = FAILED ORCHESTRATION**
 
 ---
