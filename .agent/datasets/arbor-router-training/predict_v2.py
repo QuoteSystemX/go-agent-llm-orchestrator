@@ -33,9 +33,17 @@ def phrase_match(text: str, rules: list[dict]) -> str | None:
 
 def score_task(text: str, scoring: dict) -> int:
     lowered = text.lower()
+
+    suppressed: set[str] = set()
+    for exc in scoring.get("phrase_exceptions", []):
+        if exc["phrase"] in lowered:
+            suppressed.update(exc.get("suppress", []))
+
     total = scoring.get("base_score", 5)
     for kw, weight in scoring.get("weights", {}).items():
         if kw.startswith("_"):
+            continue
+        if kw in suppressed:
             continue
         if kw in lowered:
             total += weight

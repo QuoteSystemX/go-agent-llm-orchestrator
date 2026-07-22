@@ -62,7 +62,7 @@
       "optimize": 5,
       "добавь": 3,
       "напиши": 3,
-      "отладь": 3,
+      "отладь": 5,
       "оптимизируй": 5,
       "опечатк": -5,
       "орфограф": -5,
@@ -71,7 +71,12 @@
       "план": 5,
       "критическ": 7,
       "critical": 7
-    }
+    },
+    "phrase_exceptions": [
+      {"phrase": "write throughput", "suppress": ["write"]},
+      {"phrase": " to a file", "suppress": ["write"]},
+      {"phrase": "отладь", "suppress": ["ошибк"]}
+    ]
   },
   "domain_affinity": {
     "context-heavy": "antigravity",
