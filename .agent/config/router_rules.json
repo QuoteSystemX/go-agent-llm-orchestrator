@@ -76,8 +76,8 @@
       {"phrase": "write throughput", "suppress": ["write"]},
       {"phrase": " to a file", "suppress": ["write"]},
       {"phrase": "отладь", "suppress": ["ошибк"]},
-      {"phrase": "fix a bug in", "suppress": ["fix"]},
-      {"phrase": "debug why", "suppress": ["bug"]}
+      {"phrase": "fix a bug", "suppress": ["bug"]},
+      {"phrase": "debug", "suppress": ["bug"]}
     ]
   },
   "domain_affinity": {
