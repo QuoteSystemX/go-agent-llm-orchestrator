@@ -75,7 +75,9 @@
     "phrase_exceptions": [
       {"phrase": "write throughput", "suppress": ["write"]},
       {"phrase": " to a file", "suppress": ["write"]},
-      {"phrase": "отладь", "suppress": ["ошибк"]}
+      {"phrase": "отладь", "suppress": ["ошибк"]},
+      {"phrase": "fix a bug in", "suppress": ["fix"]},
+      {"phrase": "debug why", "suppress": ["bug"]}
     ]
   },
   "domain_affinity": {
