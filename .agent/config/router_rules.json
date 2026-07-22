@@ -19,8 +19,8 @@
     "weights": {
       "security": 7,
       "безопасност": 7,
-      "architecture": 9,
-      "архитектур": 9,
+      "architecture": 7,
+      "архитектур": 7,
       "audit": 6,
       "аудит": 6,
       "refactor": 5,
@@ -59,14 +59,14 @@
       "create": 3,
       "write": 3,
       "design": 7,
-      "optimize": 5,
+      "optimize": 4,
       "добавь": 3,
       "напиши": 3,
       "отладь": 5,
-      "оптимизируй": 5,
+      "оптимизируй": 4,
       "опечатк": -5,
       "орфограф": -5,
-      "migration": 6,
+      "migration": 4,
       "plan": 5,
       "план": 5,
       "критическ": 7,
@@ -77,7 +77,11 @@
       {"phrase": " to a file", "suppress": ["write"]},
       {"phrase": "отладь", "suppress": ["ошибк"]},
       {"phrase": "fix a bug", "suppress": ["bug"]},
-      {"phrase": "debug", "suppress": ["bug"]}
+      {"phrase": "debug", "suppress": ["bug"]},
+      {"phrase": "debug why", "suppress": ["optimize"]},
+      {"phrase": "migration", "suppress": ["add", "create"]},
+      {"phrase": "xsync", "suppress": ["sync"]},
+      {"phrase": "add a missing", "suppress": ["add"]}
     ]
   },
   "domain_affinity": {
