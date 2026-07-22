@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.2.0
+version: 1.4.0
 ---
 
 # Multica CLI Reference
@@ -26,7 +26,10 @@ multica setup        # configure CLI, authenticate, and start daemon
 2. Target the correct workspace and profile:
 ```bash
 multica workspace list --output json                 # list available workspaces
+multica workspace get [id|slug] --output json        # full workspace details, including `settings` (feature flags) — omit id for the current default workspace
 multica workspace switch <workspace-id|slug>         # switch default workspace
+multica workspace member list [id|slug]              # list workspace members
+multica workspace update [id|slug] [--name "..."] [--description "..."] [--context "..." | --context-stdin] [--issue-prefix "..."]   # admin/owner only
 multica --profile <profile> --workspace-id <id> issue list --output json
 ```
 
@@ -43,6 +46,7 @@ Operate issue boards, task lists, metadata, and communication threads.
 # Read
 multica issue get <id> --output json
 multica issue list [--status <s>] [--priority <p>] [--assignee <name> | --assignee-id <uuid>] [--project <id>] [--metadata key=value] [--limit N] --output json
+multica issue search <query> [--include-closed] [--limit N] --output json
 multica issue children <id> --output json
 multica issue pull-requests <id> --output json
 multica issue runs <id> --output json
@@ -53,6 +57,12 @@ multica issue create --title "..." [--description "..." | --description-file <pa
 multica issue update <id> [--title "..."] [--priority <p>] [--status <s>] [--assignee-id <uuid>] [--parent <id> | --parent ""] [--project <id>] [--due-date YYYY-MM-DD] --output json
 multica issue assign <id> [--to <name> | --to-id <uuid> | --unassign]
 multica issue status <id> <backlog|todo|in_progress|in_review|done|blocked|cancelled>
+multica issue cancel-task <task-id> [--issue <id>]   # interrupt an in-flight/queued agent task
+
+# CI-loop (agent use — see "CI-auto-retry loop" section below; opt-in per workspace)
+multica issue suspend <id> --sha <commit-sha> [--on ci:completed] [--max-loops N] [--on-exhaust delegate:<agent-name>] [--repo owner/name]
+multica issue ci-result <id> --conclusion <success|failure|cancelled> --sha <commit-sha> [--failed-jobs job1,job2]   # manual CI report when there's no GitHub App webhook (PAT/local runner setups)
+multica issue rerun <id>   # re-enqueue the issue's current agent assignment as a fresh task
 
 # Comments
 multica issue comment list <id> [--recent N] [--thread <comment-id> [--tail N]] [--since <RFC3339>] --output json
@@ -64,6 +74,11 @@ multica issue metadata list <id>
 multica issue metadata get <id> --key <key>
 multica issue metadata set <id> --key <key> --value <value> [--type <string|number|boolean>]
 multica issue metadata delete <id> --key <key>
+
+# Labels (per-issue; distinct from the top-level `label` group in section 8, which manages the workspace's label definitions)
+multica issue label list <id>
+multica issue label add <id> <label-id>
+multica issue label remove <id> <label-id>
 
 # Subscribers
 multica issue subscriber list <id>
@@ -119,6 +134,11 @@ multica project create --title "..." [--description "..." | --status <s> | --ico
 multica project update <id> [--title "..." | --description "..." | --status <s> | --icon "..." | --lead <name>]
 multica project status <id> <planned|in_progress|paused|completed|cancelled>
 multica project delete <id>
+
+# Project Resources (attach repos/pages for agent discovery)
+multica project resource list <project-id>
+multica project resource add <project-id> [--type github_repo --url <url> | --type <other> --ref '<json>'] [--label "..."] [--default-branch-hint "..."]
+multica project resource remove <project-id> <resource-id>
 ```
 
 ### 4. Repositories & Pull Requests (`repo`)
@@ -168,6 +188,7 @@ multica autopilot runs <id> [--limit N] --output json
 multica autopilot trigger-add <autopilot-id> --cron "..." --timezone "..."
 multica autopilot trigger-update <autopilot-id> <trigger-id> --enabled=false
 multica autopilot trigger-delete <autopilot-id> <trigger-id>
+multica autopilot trigger-rotate-url <autopilot-id> <trigger-id> [--yes]  # invalidates the current webhook URL immediately
 ```
 
 ### 7. Workflows (`workflow`)
@@ -226,6 +247,21 @@ multica issue status <id> in_review     # set this yourself once the PR is open!
 # if you get stuck:
 multica issue status <id> blocked
 ```
+
+### CI-auto-retry loop (opt-in, most workspaces have this off)
+
+Before deciding between the manual flow above and the CI-loop below, check whether this workspace has opted in:
+```bash
+multica workspace get --output json | jq '.settings.ci_auto_retry_loop_enabled // false'
+```
+* If `false` (the default — most workspaces): use the manual flow above exactly as documented.
+* If `true`: instead of pushing and waiting, capture the commit SHA and register a wake condition **before** you push:
+```bash
+SHA=$(git rev-parse HEAD)
+multica issue suspend <id> --sha "$SHA" --max-loops 3   # run BEFORE `multica repo push`
+multica repo push <repo-url>
+```
+  This makes CI's result on that commit automatically resume you (with the failure detail, if any) instead of anyone needing to poll manually. `--on-exhaust delegate:<agent-name>` can additionally hand the issue to a specialist if the loop runs out of retries (default: issue is marked `blocked`).
 
 ### Pre-flight checklist before ending any Multica-issue run
 * [ ] Did I create a PR? → Did I add `Closes <ISSUE-ID>` to its title/body?

@@ -27,6 +27,8 @@ In this workspace, context is sacred.
 - **RULE 3**: `context.Background()` is ONLY permitted in **test files** (`*_test.go`) or the absolute entry point of the application (`main.go`).
 - **RULE 4**: If a function needs a context but wasn't passed one, refactor the caller to provide it.
 
+For the full context.Context reference (values, WithoutCancel, HTTP/DB propagation, deadline patterns) see the `go-context` skill.
+
 ---
 
 ## 1. Logging with `log/slog` (Standard)
@@ -61,6 +63,8 @@ sql, args, err := users.ToSql()
 ### Best Practices:
 - Combine with `pgx` for high-performance PostgreSQL interaction.
 - Use `squirrel.PlaceholderFormat(squirrel.Dollar)` for Postgres.
+
+For the full database reference (parameterized queries, transactions, isolation levels, connection pool sizing, migrations), see the `go-database` skill.
 
 ---
 
@@ -144,9 +148,7 @@ Modern gRPC development uses [buf.build](https://buf.build) for better linting a
 
 ## 8. Error Handling
 
-- Use `%w` for error wrapping: `fmt.Errorf("doing thing: %w", err)`.
-- Use `errors.Is` and `errors.As` for checking.
-- **Explicit over Implicit**: Check every error immediately.
+Full error handling reference (creation, wrapping, the single-handling rule, sentinel vs custom types, panic/recover, structured logging) moved to the `go-error-handling` skill. For structured production errors with stack traces and attributes, see `go-samber-oops`.
 
 ---
 
@@ -214,8 +216,19 @@ type Good struct {
 - **Anti-Pattern (Heap Allocation)**: Avoid passing pointers to small primitive variables or structs that escape to the heap, causing garbage collection overhead.
 - **Anti-Pattern (Raw SQL Concatenation)**: Never build SQL queries using string formatting. Use parameterized builders or GORM options to prevent injection.
 
+## Cross-References
+
+- `go-context` — full context.Context reference (values, WithoutCancel, propagation)
+- `go-error-handling` — error creation, wrapping, single-handling rule
+- `go-database` — parameterized queries, transactions, isolation levels, connection pool
+- `go-concurrency` — general-purpose channels/sync primitives (this skill covers project-specific lock-free/xsync patterns only)
+- `go-samber-oops`, `go-samber-slog` — structured errors and logging pipelines
+
+This skill now covers only what's specific to this project (financial decimals, Vault/Infisical, xsync/zenq/ants, buf/gRPC, framework choice, deep performance tiers) — general Go idioms live in the skills above.
+
 ## Changelog
 
+- **1.3.0** (2026-07-22): Trimmed sections now covered by dedicated skills (go-context, go-error-handling, go-database) ported from samber/cc-skills-golang; added cross-references.
 - **1.2.0** (2026-05-08): Added Tier 3 Expert patterns: PGO, SIMD, Escape Analysis, Alignment.
 - **1.1.0** (2026-05-08): Upgraded to 2026 standards: slog, lock-free, zero-alloc.
 - **1.0.0** (2026-04-26): Initial version

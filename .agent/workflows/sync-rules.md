@@ -1,3 +1,7 @@
+---
+description: Compiles modular Gemini rules from .agent/rules/gemini/ into the monolithic GEMINI.md and re-syncs the Claude/OpenCode agent targets.
+---
+
 # Sync Rules Workflow
 
 This workflow compiles modular Gemini rules from `.agent/rules/gemini/` into the monolithic `.agent/rules/GEMINI.md`.

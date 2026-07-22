@@ -2,6 +2,7 @@
 
 ---
 name: sync-all
+description: Consolidates modular rules compilation, Claude/OpenCode target sync, and code/parity metric collection into a single high-performance sync pipeline.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

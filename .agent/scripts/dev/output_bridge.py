@@ -151,6 +151,23 @@ def validate_impacted_files(content):
             
     return mismatch
 
+def extract_agent_name(content):
+    """Parse the self-reported '👤 Agent: **@name**' (or legacy 'Agent Header') line.
+
+    Unreliable by design, not just in practice: mcp-llm-broker's stripSelfReportedIdentityHeader
+    (main.go) removes this exact line from any response returned via call_agent, and agent names
+    are commonly hyphenated (backend-lead, qa-automation-engineer, ...) which \\w+ does not match.
+    Callers that already know the agent — e.g. the orchestrator right after a call_agent
+    invocation — should pass --agent explicitly instead of relying on this parse.
+    """
+    match = re.search(r"👤 Agent: \*\*@?([\w-]+)\*\*", content, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    match = re.search(r"🤖 \*\*Agent Header\*\*:?\s*([\w-]+)", content, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return "unknown"
+
 def save_to_bus(content, agent_name="unknown"):
     bus_dir = ".agent/bus/outputs"
     if not os.path.exists(bus_dir):
@@ -335,17 +352,36 @@ def main():
     if "--synthesize" in sys.argv:
         synthesize_outputs()
         sys.exit(0)
-    
+
     if "--clear" in sys.argv:
         clear_bus()
         sys.exit(0)
 
-    if len(sys.argv) < 2:
+    # --agent NAME lets a caller that already knows the agent (e.g. the orchestrator
+    # right after a call_agent invocation, whose response had its self-reported header
+    # stripped by the broker) skip the unreliable text parse in extract_agent_name().
+    explicit_agent = None
+    args = sys.argv[1:]
+    positional = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--agent" and i + 1 < len(args):
+            explicit_agent = args[i + 1]
+            i += 2
+            continue
+        if args[i].startswith("--agent="):
+            explicit_agent = args[i].split("=", 1)[1]
+            i += 1
+            continue
+        positional.append(args[i])
+        i += 1
+
+    if not positional:
         # Read from stdin if no file provided
         content = sys.stdin.read()
     else:
         try:
-            with open(sys.argv[1], "r") as f:
+            with open(positional[0], "r") as f:
                 content = f.read()
         except Exception as e:
             print(f"❌ Error reading file: {e}")
@@ -423,15 +459,8 @@ def main():
             print(f"   ⚠️  Threat modeling failed: {e}")
 
     # 4. Save to Bus
-    agent_name = "unknown"
-    agent_match = re.search(r"👤 Agent: \*\*@?(\w+)\*\*", content, re.IGNORECASE)
-    if agent_match:
-        agent_name = agent_match.group(1)
-    else:
-        agent_match = re.search(r"🤖 \*\*Agent Header\*\*:?\s*(\w+)", content, re.IGNORECASE)
-        if agent_match:
-            agent_name = agent_match.group(1)
-    
+    agent_name = explicit_agent if explicit_agent else extract_agent_name(content)
+
     # INTEGRATION: Run Tough Auditor for live agent evaluation
     print("⚖️ Invoking Tough Auditor for live agent evaluation...")
     try:

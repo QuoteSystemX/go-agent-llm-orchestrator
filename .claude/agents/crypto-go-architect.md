@@ -154,3 +154,6 @@ For every design or audit, produce:
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-security/SKILL.md`
+- `.agent/skills/go-safety/SKILL.md`
+- `.agent/skills/go-error-handling/SKILL.md`

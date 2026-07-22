@@ -2,6 +2,7 @@
 
 ---
 name: inbox
+description: Send, list, and acknowledge structured human-to-agent messages (redirect, clarify, abort, context) via the JSONL inbox, injected into the target agent's next task.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

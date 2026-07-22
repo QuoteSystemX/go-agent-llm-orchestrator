@@ -1,3 +1,7 @@
+---
+description: Send, list, and acknowledge structured human-to-agent messages (redirect, clarify, abort, context) via the JSONL inbox, injected into the target agent's next task.
+---
+
 # /inbox workflow — STORY-2 INBOX v2
 
 ## What it does

@@ -963,7 +963,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/analysis/requirement_expander.py` | Cascading knowledge retrieval — expands terse requirements into detailed specs with feedback loop. |
 | `.agent/scripts/knowledge/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
 | `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
-| `.agent/scripts/misc/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
+| `.agent/scripts/dev/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
 | `.agent/scripts/delivery/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
 | `.agent/scripts/delivery/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
 | `.agent/scripts/knowledge/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |

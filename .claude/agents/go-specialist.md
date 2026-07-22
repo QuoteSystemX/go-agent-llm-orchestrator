@@ -45,6 +45,8 @@ If the task mentions TON, crypto, exchange, trading, blockchain, DEX, AMM, jetto
 4. `context.Background()` is only allowed in `*_test.go` or `main.go`.
 5. **NEVER** store context in a struct — pass it per call.
 
+Full context.Context reference (values, WithoutCancel, HTTP/DB propagation) → `skills/go-context`.
+
 ---
 ## Preferred Stack
 
@@ -160,64 +162,15 @@ m.Compute(key, func(old *Quote, loaded bool) (*Quote, bool) {
 
 **Every goroutine MUST have a documented exit condition.** Leaks cause unbounded memory growth and stall graceful shutdown.
 
-### Rule 1 — Always provide a stop signal
+1. **Always provide a stop signal** — select on `ctx.Done()`, never a bare `for msg := range ch` with no cancellation path.
+2. **Close channels from the sender, never the receiver.**
+3. **Use `errgroup` for fan-out with error propagation** — `errgroup.WithContext` cancels siblings on first error; `SetLimit(n)` replaces hand-rolled worker pools.
+4. **Timeout every blocking operation** — never send/receive on a channel without also selecting on `ctx.Done()`.
+
+Full patterns, code examples, and the pre-spawn checklist → `skills/go-concurrency`.
 
 ```go
-// ✅ Context cancellation as exit condition
-go func() {
-    for {
-        select {
-        case <-ctx.Done():
-            return // clean exit
-        case msg := <-ch:
-            process(msg)
-        }
-    }
-}()
-
-// ❌ Leak — goroutine blocks forever if ch is never closed
-go func() {
-    for msg := range ch {
-        process(msg)
-    }
-}()
-```
-
-### Rule 2 — Close channels from the sender, never the receiver
-
-```go
-// ✅ Producer closes, consumer ranges
-func produce(ctx context.Context, out chan<- Item) {
-    defer close(out) // signals consumers to stop
-    for {
-        select {
-        case <-ctx.Done():
-            return
-        case out <- item:
-        }
-    }
-}
-```
-
-### Rule 3 — Use errgroup for fan-out with error propagation
-
-```go
-g, ctx := errgroup.WithContext(ctx)
-for _, item := range items {
-    item := item // capture (pre-Go 1.22)
-    g.Go(func() error {
-        return process(ctx, item)
-    })
-}
-if err := g.Wait(); err != nil {
-    return fmt.Errorf("fan-out: %w", err)
-}
-```
-
-### Rule 4 — Worker pools with bounded goroutines
-
-```go
-// ✅ Fixed-size pool — goroutines exit when ch is closed
+// ✅ Canonical shape used in this codebase's worker pools
 func runPool(ctx context.Context, workers int, jobs <-chan Job) {
     var wg sync.WaitGroup
     for range workers {
@@ -239,17 +192,6 @@ func runPool(ctx context.Context, workers int, jobs <-chan Job) {
 }
 ```
 
-### Rule 5 — Timeout all blocking operations
-
-```go
-// ✅ Never block on a channel send without a timeout/ctx
-select {
-case out <- result:
-case <-ctx.Done():
-    return ctx.Err()
-}
-```
-
 ---
 ## 🔐 Deadlock Prevention
 
@@ -268,34 +210,12 @@ func (s *Store) Get(key string) *Value {
 // ✅ Fix: make refresh work on unlocked state, or use separate mutex
 ```
 
-```go
-// ❌ Channel deadlock: unbuffered send with no receiver ready
-ch := make(chan int)
-ch <- 1 // blocks forever if no goroutine reads
-
-// ✅ Fix: use buffered channel or ensure receiver is started first
-```
-
-```go
-// ❌ WaitGroup misuse: Add inside goroutine races with Wait
-var wg sync.WaitGroup
-go func() {
-    wg.Add(1) // too late — Wait may have already returned
-    defer wg.Done()
-}()
-wg.Wait()
-
-// ✅ Always call Add before launching the goroutine
-wg.Add(1)
-go func() {
-    defer wg.Done()
-}()
-```
-
 ### Lock order discipline
 
 - If you ever acquire two mutexes, document the order (e.g., `// lock order: cacheMu → indexMu`).
 - Detect potential deadlocks with `-race` + `go-deadlock` in tests.
+
+More deadlock/race/leak debugging workflow (pprof goroutine dumps, GOTRACEBACK, common mistakes table) → `skills/go-troubleshooting` and `skills/go-concurrency`.
 
 ---
 ## 📊 Logging: slog / zap
@@ -315,12 +235,7 @@ defer logger.Sync()
 logger.Info("user created", zap.String("user_id", id), zap.Int("attempt", n))
 ```
 
-**Rules:**
-
-- Always use `*Context` variants (`InfoContext`, `ErrorContext`) — they propagate trace IDs from ctx.
-- Log at `ERROR` only for actionable failures. `WARN` for degraded state. `INFO` for lifecycle events. `DEBUG` for diagnostics.
-- Never log secrets, tokens, or PII.
-- Always log the `error` value, not just its string: `slog.Any("error", err)`.
+**Rules:** always use `*Context` variants (`InfoContext`, `ErrorContext`); never log secrets/tokens/PII; log the `error` value not just its string (`slog.Any("error", err)`). Full structured-logging and log-level guidance → `skills/go-error-handling`; multi-handler pipelines, sampling, PII formatters → `skills/go-samber-slog`.
 
 **Migrating from logrus:**
 
@@ -348,16 +263,9 @@ buf.Reset()
 defer bufPool.Put(buf)
 
 // ✅ Use strings.Builder, not += for string concatenation in loops
-
-### High-Performance Patterns
-- **False Sharing Prevention**: Use padding `_ [56]byte` in structs to isolate hot fields on different cache lines (64 bytes).
-- **Memory Alignment**: Order struct fields from largest to smallest to minimize padding.
-- **Escape Analysis Tuning**: Avoid pointers for small structs to keep them on the stack.
-- **PGO (Profile-Guided Optimization)**: Use `default.pgo` during build for 5-15% speedup.
-- **Inlining**: Keep small, leaf functions simple to encourage the compiler to inline them.
-- **Zero-Copy**: Use `unsafe` (with care) or specialized libraries like `fasthttp` to avoid copying large buffers.
-- **JSON Hot Path**: Use `tidwall/gjson` for selective field extraction without full unmarshaling.
 ```
+
+False sharing, memory alignment, escape analysis, PGO, and SIMD — full Tier 3 reference with code → `skills/go-patterns`.
 
 ### Profiling workflow
 
@@ -472,4 +380,8 @@ You MUST follow the structured documentation patterns defined in `@[skills/godoc
 - `.agent/skills/api-development/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-context/SKILL.md`
+- `.agent/skills/go-concurrency/SKILL.md`
+- `.agent/skills/go-error-handling/SKILL.md`
+- `.agent/skills/go-safety/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

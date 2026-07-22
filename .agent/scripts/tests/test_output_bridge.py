@@ -83,6 +83,20 @@ class TestOutputBridge(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("HALLUCINATION DETECTED", errors[0])
 
+    def test_extract_agent_name_hyphenated(self):
+        # Most specialist agent names are hyphenated (backend-lead, qa-automation-engineer,
+        # ...) — the old `\w+` regex silently failed to match these and fell back to
+        # "unknown" for the majority of agents. Must now be captured in full.
+        content = "🤖 Flow: **[L2]** | 🔄 **Process**: impl\n🧠 Team Consensus: **ok** | 👤 Agent: **@backend-lead** | 🛡️ **Sentinel**: **ACTIVE**"
+        self.assertEqual(bridge.extract_agent_name(content), "backend-lead")
+
+    def test_extract_agent_name_legacy_header(self):
+        content = "🤖 **Agent Header**: qa-automation-engineer\n🎯 **Context/Goal**: x"
+        self.assertEqual(bridge.extract_agent_name(content), "qa-automation-engineer")
+
+    def test_extract_agent_name_missing_falls_back_to_unknown(self):
+        self.assertEqual(bridge.extract_agent_name("no header here"), "unknown")
+
     @patch('sys.exit')
     def test_save_to_bus_logic(self, mock_exit):
         content = """
@@ -128,6 +142,32 @@ class TestOutputBridge(unittest.TestCase):
         with patch('subprocess.run'):
             bridge.main()
         mock_exit.assert_called_with(1)
+
+    @patch('sys.argv', ['output_bridge.py', '--agent', 'backend-lead'])
+    @patch('sys.stdin.read')
+    @patch('orchestration.tough_auditor.audit_changes', return_value=5.0)
+    @patch('subprocess.run')
+    def test_main_explicit_agent_overrides_parsing(self, mock_run, mock_audit, mock_read):
+        # Content deliberately has NO '👤 Agent:' line — simulating a response whose
+        # self-reported header was stripped by the broker (stripSelfReportedIdentityHeader
+        # in main.go). --agent must still attribute correctly instead of falling back
+        # to "unknown".
+        mock_read.return_value = (
+            "🤖 Flow: **[L2]**\n"
+            "🎯 **Context/Goal**: fix bug\n"
+            "🛠 **Technical Implementation**: did stuff\n"
+            "📂 **Impacted Components**: none\n"
+            "📈 **Outcome/Result**: done"
+        )
+        with patch.object(bridge, '_guardrail', None):
+            bridge.main()
+        mock_audit.assert_called_once()
+        self.assertEqual(mock_audit.call_args[0][0], 'backend-lead')
+
+        files = list(self.bus_dir.glob("*.json"))
+        self.assertEqual(len(files), 1)
+        written_data = json.loads(files[0].read_text())
+        self.assertEqual(written_data["agent"], "backend-lead")
 
 if __name__ == "__main__":
     unittest.main()

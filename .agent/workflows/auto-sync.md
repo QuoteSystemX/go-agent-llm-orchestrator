@@ -1,3 +1,7 @@
+---
+description: Autonomously detects and repairs documentation drift between code and wiki artifacts, keeping the Karpathy-style Wiki as source of truth without manual intervention.
+---
+
 # /auto-sync - Autonomous Documentation Sync
 
 $ARGUMENTS

@@ -2,6 +2,7 @@
 
 ---
 name: sync-rules
+description: Compiles modular Gemini rules from .agent/rules/gemini/ into the monolithic GEMINI.md and re-syncs the Claude/OpenCode agent targets.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

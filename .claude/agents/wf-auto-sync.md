@@ -2,6 +2,7 @@
 
 ---
 name: auto-sync
+description: Autonomously detects and repairs documentation drift between code and wiki artifacts, keeping the Karpathy-style Wiki as source of truth without manual intervention.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
