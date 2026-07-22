@@ -1,0 +1,56 @@
+run_name: router-training-run-708be80f
+workflow_run: 708be80f
+
+task: |
+  Predict the correct model-complexity tier (L1..L4) for a natural-language
+  engineering task description so the LLM router picks the cheapest capable
+  model. Beat the baseline score on B_dev by at least +0.05 without dropping
+  B_test accuracy below 0.55. Undershoots (routing L4 work to L1) are penalized
+  more than overshoots (routing L1 work to L4). See ARBOR_CONTRACT.md.
+
+target:
+  dir: .agent/datasets/arbor-router-training
+  base_branch: main
+  trunk_branch: arbor/trunk/router-training-run-708be80f
+
+metric:
+  name: score
+  direction: maximize
+  eval_command: python3 eval.py --split B_dev --predictions {predictions}
+  baseline:
+    B_dev:
+      score: 0.8088
+      accuracy: 0.425
+    B_test:
+      score: 0.795
+      accuracy: 0.55
+
+splits:
+  B_dev: B_dev.jsonl
+  B_test: B_test.jsonl
+
+protected_paths:
+  - B_test.jsonl
+  - B_dev.jsonl
+  - eval.py
+  - ARBOR_CONTRACT.md
+  - research_config.yaml
+  - baseline.json
+  - baseline_dev.jsonl
+  - baseline_test.jsonl
+
+edit_surface:
+  - .agent/config/router_rules.json
+  - .agent/datasets/arbor-router-training/predict_*.py
+  - .agent/datasets/arbor-router-training/experiments/**
+
+coordinator:
+  max_cycles: 6
+  ui:
+    interaction_mode: review
+
+hard_constraints:
+  - Do not modify eval.py in a way that rescales the metric.
+  - Do not read labels from B_test.jsonl at prediction time.
+  - Predictor must run offline (no external LLM calls).
+  - No new heavyweight ML dependencies (torch/sklearn) without RFC.

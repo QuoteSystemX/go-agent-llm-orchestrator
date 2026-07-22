@@ -1,0 +1,20 @@
+{"id": "test-001", "lang": "en", "task": "Reformat go.mod indentation and re-run go mod tidy.", "label": "L1"}
+{"id": "test-002", "lang": "ru", "task": "Убери лишний пробел в конце строки в pkg/quotes/README.md.", "label": "L1"}
+{"id": "test-003", "lang": "en", "task": "Rename the metric label `symb` to `symbol` in one Grafana panel JSON.", "label": "L1"}
+{"id": "test-004", "lang": "en", "task": "Update the wiki page title from 'Autopilot' to 'Arbor Autopilot'.", "label": "L1"}
+{"id": "test-005", "lang": "ru", "task": "Спелчек всех markdown-файлов в директории docs/.", "label": "L1"}
+{"id": "test-006", "lang": "en", "task": "Add a config flag to disable the emulator when running against mainnet StonFi.", "label": "L2"}
+{"id": "test-007", "lang": "ru", "task": "Реализуй circuit breaker для http-клиента к Bybit REST API.", "label": "L2"}
+{"id": "test-008", "lang": "en", "task": "Fix a bug in MACD indicator where signal line uses SMA instead of EMA.", "label": "L2"}
+{"id": "test-009", "lang": "en", "task": "Add a JSON export mode to cmd/backtest that writes trades to a file.", "label": "L2"}
+{"id": "test-010", "lang": "en", "task": "Create a shell script that rotates ClickHouse partitions older than 90 days.", "label": "L2"}
+{"id": "test-011", "lang": "ru", "task": "Добавь метрику rejection_rate в /metrics эндпоинт executor'а.", "label": "L2"}
+{"id": "test-012", "lang": "en", "task": "Debug why the ARC cache in model-ML degrades to LRU-like behavior on skewed workloads.", "label": "L3"}
+{"id": "test-013", "lang": "ru", "task": "Проведи аудит гонок в lock-free очереди задач под нагрузкой 10k msg/s.", "label": "L3"}
+{"id": "test-014", "lang": "en", "task": "Design a hedging strategy across StonFi and Bybit for TON/USDT that respects Kelly limits per venue.", "label": "L3"}
+{"id": "test-015", "lang": "en", "task": "Refactor the ClickHouse ingest layer to a batching pipeline with backpressure; keep write throughput ≥ 200k rows/s.", "label": "L3"}
+{"id": "test-016", "lang": "ru", "task": "Отладь регресс качества модели после Transfer Learning цикла: F1 упал с 0.82 до 0.71.", "label": "L3"}
+{"id": "test-017", "lang": "en", "task": "Critical audit: potential zero-day in the WebSocket subprotocol negotiation used by RecipientOFQuotes ingest.", "label": "L4"}
+{"id": "test-018", "lang": "en", "task": "Migration plan: cut over from Kafka to Redpanda for the trading event bus with full replayability guarantees.", "label": "L4"}
+{"id": "test-019", "lang": "ru", "task": "План системного рефакторинга: разделить model-ML на публичный SDK и внутренний прод-код.", "label": "L4"}
+{"id": "test-020", "lang": "en", "task": "System refactor + migration: move all secrets from k8s Secret objects to Vault with zero downtime and audit trail.", "label": "L4"}

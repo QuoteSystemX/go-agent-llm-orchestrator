@@ -1,0 +1,40 @@
+{"id": "dev-001", "lang": "en", "task": "Fix typo in README.md: 'recieve' → 'receive'.", "label": "L1"}
+{"id": "dev-002", "lang": "en", "task": "Run gofmt on the pkg/emulator directory and commit.", "label": "L1"}
+{"id": "dev-003", "lang": "en", "task": "Bump the copyright year in LICENSE.", "label": "L1"}
+{"id": "dev-004", "lang": "ru", "task": "Исправь опечатку в комментарии функции CalculateKelly.", "label": "L1"}
+{"id": "dev-005", "lang": "en", "task": "Add a missing period at the end of the CONTRIBUTING.md intro.", "label": "L1"}
+{"id": "dev-006", "lang": "en", "task": "Delete the unused variable `tmpBuf` in ingest.go.", "label": "L1"}
+{"id": "dev-007", "lang": "ru", "task": "Проверь орфографию в файле docs/quickstart.md.", "label": "L1"}
+{"id": "dev-008", "lang": "en", "task": "Rename the file util.go to helpers.go without changing exports.", "label": "L1"}
+{"id": "dev-009", "lang": "en", "task": "Update the code fence language from `go` to `golang` in one wiki page.", "label": "L1"}
+{"id": "dev-010", "lang": "ru", "task": "Обнови ссылку на новый Grafana dashboard в README.", "label": "L1"}
+{"id": "dev-011", "lang": "en", "task": "Implement a JSON endpoint /health that returns {ok: true} and a git SHA.", "label": "L2"}
+{"id": "dev-012", "lang": "en", "task": "Add unit tests for the Bollinger Bands indicator, including edge cases at boundary windows.", "label": "L2"}
+{"id": "dev-013", "lang": "en", "task": "Create a Prometheus counter for order rejections and expose it on /metrics.", "label": "L2"}
+{"id": "dev-014", "lang": "ru", "task": "Реализуй кэш LRU на 512 записей для результатов ClickHouse-запросов.", "label": "L2"}
+{"id": "dev-015", "lang": "en", "task": "Fix a bug where the RSI indicator returns NaN when the input slice length is exactly 14.", "label": "L2"}
+{"id": "dev-016", "lang": "en", "task": "Add a --dry-run flag to cmd/emulator that logs intended trades without submitting them.", "label": "L2"}
+{"id": "dev-017", "lang": "ru", "task": "Добавь ретрай с экспоненциальным бэкоффом для WebSocket-подключения к Binance.", "label": "L2"}
+{"id": "dev-018", "lang": "en", "task": "Refactor pkg/quotes/dedupe.go to use a lock-free xsync.MapOf; keep the public API stable.", "label": "L2"}
+{"id": "dev-019", "lang": "en", "task": "Write a Helm chart values override to bump the RecipientOFQuotes-Worker replica count to 3.", "label": "L2"}
+{"id": "dev-020", "lang": "ru", "task": "Напиши интеграционный тест для эндпоинта /predict сервиса Gorgonia.", "label": "L2"}
+{"id": "dev-021", "lang": "en", "task": "Add a Postgres migration that creates the `agent_heartbeats` table with a unique index on (agent_id, ts).", "label": "L2"}
+{"id": "dev-022", "lang": "en", "task": "Add structured slog fields to the order-executor loop so every trade log carries symbol, side, and correlation_id.", "label": "L2"}
+{"id": "dev-023", "lang": "ru", "task": "Сделай hot-reload конфига стратегий через fsnotify без даунтайма процесса.", "label": "L2"}
+{"id": "dev-024", "lang": "en", "task": "Add a JSON schema validator for the ingest topic payload and reject malformed messages with a metric.", "label": "L2"}
+{"id": "dev-025", "lang": "en", "task": "Debug intermittent panic in pkg/model-ML/qlearning: goroutine race on replay buffer under -race flag.", "label": "L3"}
+{"id": "dev-026", "lang": "en", "task": "Design the retention/tiering strategy for ClickHouse quote history: hot 30d SSD, warm 180d, cold S3.", "label": "L3"}
+{"id": "dev-027", "lang": "ru", "task": "Проведи аудит безопасности хранения API-ключей биржи в k8s: секреты, ротация, доступ.", "label": "L3"}
+{"id": "dev-028", "lang": "en", "task": "Refactor the emulator's fee model to plug in per-DEX fee curves without touching the price impact math.", "label": "L3"}
+{"id": "dev-029", "lang": "en", "task": "Optimize Bybit WebSocket ingest: p99 latency spikes to 900ms under heavy volume — root-cause and fix.", "label": "L3"}
+{"id": "dev-030", "lang": "ru", "task": "Отладь ошибку hallucination в LLM-роутере: агент выбирает L3 модель для тривиальных задач.", "label": "L3"}
+{"id": "dev-031", "lang": "en", "task": "Architecture: introduce a saga pattern for cross-exchange arbitrage with compensating actions on partial fills.", "label": "L3"}
+{"id": "dev-032", "lang": "en", "task": "Audit the Kelly Criterion implementation for numerical stability at edge cases (near-zero variance, tiny bankroll).", "label": "L3"}
+{"id": "dev-033", "lang": "ru", "task": "Разработай архитектуру онлайн-обучения для RL-агента с безопасным откатом весов.", "label": "L3"}
+{"id": "dev-034", "lang": "en", "task": "Debug why the genetic optimizer converges to identical individuals after ~40 generations across all seeds.", "label": "L3"}
+{"id": "dev-035", "lang": "en", "task": "Plan migration of postgres 14 → 16 for the trading state cluster: zero-downtime, replication, rollback.", "label": "L4"}
+{"id": "dev-036", "lang": "en", "task": "Critical audit of the auth security path for cross-exchange API key delegation; zero-day exposure suspected.", "label": "L4"}
+{"id": "dev-037", "lang": "ru", "task": "План миграции всех сервисов на новый k3s-кластер с сохранением персистентности Longhorn.", "label": "L4"}
+{"id": "dev-038", "lang": "en", "task": "System refactor: split the RecipientOFQuotes monolith into ingest/decision/execute services without downtime.", "label": "L4"}
+{"id": "dev-039", "lang": "ru", "task": "Критический аудит защиты приватных ключей TON-кошельков во всём флоте.", "label": "L4"}
+{"id": "dev-040", "lang": "en", "task": "Migration plan and execution for switching the entire fleet from etcd to embedded SQLite for k3s state.", "label": "L4"}

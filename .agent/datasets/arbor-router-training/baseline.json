@@ -1,0 +1,21 @@
+{
+  "predictor": ".agent/config/router_rules.json (rule-based keyword scoring)",
+  "measured_by": ".agent/datasets/arbor-router-training/predict_baseline.py",
+  "recorded_at": "2026-07-22",
+  "B_dev": {
+    "n": 40,
+    "accuracy": 0.425,
+    "score": 0.8088,
+    "predictions_file": "baseline_dev.jsonl"
+  },
+  "B_test": {
+    "n": 20,
+    "accuracy": 0.55,
+    "score": 0.795,
+    "predictions_file": "baseline_test.jsonl"
+  },
+  "notes": [
+    "The eval score decouples from raw accuracy because near-miss predictions (e.g. L1 vs L2) carry only a mild overshoot penalty; large undershoots (L4 predicted as L1) are what drag the score down.",
+    "Baseline confusion shows the rule-based router (a) overpredicts L2 for trivial L1 tasks and (b) undershoots on L3/L4 architectural work — those are the two failure modes the Arbor Squad should target."
+  ]
+}
