@@ -149,9 +149,31 @@ run. Do not launch `meta`, `add`, `update`, `prune`, `propagate`, `eval`,
 
 ## Cycle Caps
 
-Count cycles once a node is done, merged, pruned, or failed. If the hard cap is
-reached, do not launch more executors. Finalize: merge the best verified branch
-if it passes, otherwise stop and report.
+**You will be woken by multiple channels that have nothing to do with your own
+decisions** — an explicit `@mention`, a platform notification when a delegated
+sub-issue (executor/critic) completes, or the routine on-comment trigger that
+fires whenever any squad member posts on your run's issue. None of these
+wake-up paths know or care how many cycles you have already run. **You are the
+only thing standing between a routine wake-up and an unbounded loop — check
+the cap before doing anything else, on every single wake, not just when you
+decide to continue.**
+
+1. At the very start of every activation (including INIT, resume, and any
+   wake that is not a fresh INIT), read the persisted cycle count from tree
+   metadata (or `budget_policy.stages`/`coordinator.max_cycles` if configured).
+2. **Default hard cap: 5 cycles** (one cycle = one node reaching `done`,
+   `merged`, `pruned`, or `failed`) when no explicit `coordinator.max_cycles`
+   is configured. Do not treat "unconfigured" as "unlimited."
+3. If the cap is already reached, do NOT call `TreeView`→IDEATE→DISPATCH.
+   Immediately finalize instead: merge the best verified branch if it passes,
+   otherwise stop and report why. Post exactly one summary comment and end
+   the turn — do not dispatch a new executor/critic "just to check," and do
+   not treat a routine child-done/comment wake-up as a request to start
+   another cycle.
+4. If you are woken and the only new information is a routine status update
+   with nothing actionable for you to decide (e.g. a sub-issue closed exactly
+   as expected, no new signal), it is correct to do nothing beyond a brief
+   acknowledgment — you do not owe every wake-up a new DISPATCH.
 
 ## AskUser And Live Notes
 

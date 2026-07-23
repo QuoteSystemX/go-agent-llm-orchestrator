@@ -54,8 +54,11 @@ Priority:
 
 ## Budget Policy
 
-Default Arbor behavior favors long real experiments. Do not invent staged
-budgets unless configured.
+Default Arbor behavior favors long real experiments — but "long" must still be
+bounded. Absent explicit configuration, the coordinator's default hard cap is
+**5 cycles** (see `arbor-agent-coordinator`'s Cycle Caps section); do not treat
+"no `budget_policy` configured" as "no limit at all." Do not invent staged
+budgets beyond that default unless configured.
 
 If `budget_policy.stages` exists, use configured stages such as `smoke`,
 `pilot`, and `full` with `RunTraining(budget_stage=...)`.
