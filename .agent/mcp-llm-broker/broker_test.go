@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -559,5 +560,117 @@ func TestMergeHealthCheckResult_PreservesCircuitStateOnSuccessProbe(t *testing.T
 	}
 	if got.Latency != 10*time.Millisecond {
 		t.Errorf("Expected Latency to be updated, got %v", got.Latency)
+	}
+}
+
+// -------- Agent Discovery Tests (live filesystem scan) --------
+// Regression coverage for tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md:
+// loadAgentList used to parse ARCHITECTURE.md's Agents table, silently dropping any
+// agent (notably the whole management/ squad-lead/C-level tier) added without a
+// matching row. It now scans .agent/agents/**/*.md directly instead — an
+// intermediate compiled-manifest design was tried and removed as unnecessary
+// (see this task's history) once weighed against the actual trust model: these
+// files are committed repo content, and invokeAgent already trusts a single
+// such file's full body as the system prompt without any manifest gate.
+
+func TestLoadAgentListScansAgentsDirDirectly(t *testing.T) {
+	tmpDir := t.TempDir()
+	agentsDir := filepath.Join(tmpDir, ".agent", "agents")
+
+	write := func(rel, name, desc string) {
+		p := filepath.Join(agentsDir, rel)
+		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+			t.Fatal(err)
+		}
+		content := fmt.Sprintf("---\nname: %s\ndescription: %s\n---\nBody", name, desc)
+		if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// management/ tier, no ARCHITECTURE.md row for either of these — exactly
+	// the scenario the original bug made uncallable.
+	write("management/cto.md", "cto", "Chief Technology Officer.")
+	write("management/backend-lead.md", "backend-lead", "Backend Engineering Lead.")
+	write("core/orchestrator.md", "orchestrator", "Must never be delegate-able.")
+	write("specialists/go/go-specialist.md", "go-specialist", "Go expert.")
+
+	// A stale/incomplete ARCHITECTURE.md must have zero influence now.
+	archPath := filepath.Join(tmpDir, ".agent", "ARCHITECTURE.md")
+	os.WriteFile(archPath, []byte("## 🤖 Agents (1)\n\n| `go-specialist` | Go expert |\n"), 0644)
+
+	srv := &BrokerServer{workspaceRoot: tmpDir}
+	entries := srv.loadAgentList()
+
+	if len(entries) != 3 {
+		t.Fatalf("expected 3 entries (orchestrator excluded from 4), got %d: %+v", len(entries), entries)
+	}
+
+	byName := map[string]agentEntry{}
+	for _, e := range entries {
+		byName[e.Name] = e
+	}
+
+	for _, want := range []string{"cto", "backend-lead", "go-specialist"} {
+		if _, ok := byName[want]; !ok {
+			t.Errorf("expected %q (a real agent file on disk) to be resolvable via loadAgentList, got %+v", want, entries)
+		}
+	}
+	if _, ok := byName["orchestrator"]; ok {
+		t.Error("orchestrator must be excluded from loadAgentList — it must never be delegated to")
+	}
+}
+
+func TestLoadAgentListIgnoresClaudeAgentsDir(t *testing.T) {
+	// .claude/agents/ also carries wf-*.md workflow-derived pseudo-agents that
+	// were never part of ARCHITECTURE.md's Agents table — loadAgentList's scope
+	// must stay .agent/agents/** only, matching that prior scope exactly.
+	tmpDir := t.TempDir()
+	claudeAgent := filepath.Join(tmpDir, ".claude", "agents", "wf-brainstorm.md")
+	os.MkdirAll(filepath.Dir(claudeAgent), 0755)
+	os.WriteFile(claudeAgent, []byte("---\nname: brainstorm\ndescription: Structured brainstorming.\n---\nBody"), 0644)
+
+	srv := &BrokerServer{workspaceRoot: tmpDir}
+	entries := srv.loadAgentList()
+
+	for _, e := range entries {
+		if e.Name == "brainstorm" {
+			t.Error("loadAgentList must not scan .claude/agents/ — brainstorm should not appear")
+		}
+	}
+}
+
+func TestLoadAgentListEmptyDirReturnsEmptyNotError(t *testing.T) {
+	tmpDir := t.TempDir() // no .agent/agents/ at all
+	srv := &BrokerServer{workspaceRoot: tmpDir}
+
+	entries := srv.loadAgentList()
+	if len(entries) != 0 {
+		t.Errorf("expected no entries when .agent/agents/ is absent, got %+v", entries)
+	}
+}
+
+func TestParseAgentFrontmatterSurvivesDashesInsideAComment(t *testing.T) {
+	// Real bug found while implementing this fix: cto.md has a YAML comment
+	// containing "---" inside a nested delegates_to list
+	// ("# --- Squad Leads (primary routing layer) ---"). A blind
+	// strings.Index(content, "---") would find that comment's dashes instead
+	// of the real closing frontmatter delimiter and truncate the block early.
+	content := "---\n" +
+		"name: cto\n" +
+		"description: Chief Technology Officer.\n" +
+		"hierarchy:\n" +
+		"  delegates_to:\n" +
+		"    # --- Squad Leads (primary routing layer) ---\n" +
+		"    - backend-lead\n" +
+		"---\nBody"
+
+	name, description := parseAgentFrontmatter(content)
+
+	if name != "cto" {
+		t.Errorf("expected name %q, got %q", "cto", name)
+	}
+	if description != "Chief Technology Officer." {
+		t.Errorf("expected description %q, got %q", "Chief Technology Officer.", description)
 	}
 }

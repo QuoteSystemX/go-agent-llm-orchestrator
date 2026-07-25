@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://antigravity.kit/agent_registry.schema.json",
+  "title": "Agent Frontmatter CI Schema",
+  "description": "CI-time schema for the in-memory agent index sync_agents.py builds from every agent's full frontmatter under .agent/agents/**/*.md. Not a runtime artifact — nothing named agent_registry.json is written to disk. sync_agents.py hard-fails (sys.exit(1)) if any agent fails this check, and feeds the validated in-memory list into ARCHITECTURE.md's auto-generated Agents table. mcp-llm-broker's main.go does not read this file or any generated manifest — loadAgentList() scans .agent/agents/**/*.md directly at request time (see tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md for why an intermediate compiled-manifest design was tried and then removed as unnecessary machinery). Each entry carries whatever fields that agent's frontmatter declares (model/tier, domains, skills, hierarchy, ...), not a fixed subset — only name/description are contractually required here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generated_at", "agents"],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of when sync_agents.py ran this validation."
+    },
+    "agents": {
+      "type": "array",
+      "description": "One entry per agent actually synced to .claude/agents/ for this profile — never includes profile-excluded agents. Each entry is that agent's full YAML frontmatter, unmodified, plus the two required fields below.",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Agent identifier — matches the frontmatter name: field and the .md filename stem."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "One-line focus summary shown to the calling LLM in call_agent's tool description, and used as ARCHITECTURE.md's Focus column (first sentence). Required — an agent with no description cannot be usefully selected by name or documented."
+          }
+        }
+      }
+    }
+  }
+}

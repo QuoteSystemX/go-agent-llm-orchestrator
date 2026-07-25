@@ -33,6 +33,7 @@ import logging
 from pathlib import Path
 
 from lib.suppress import suppress
+from lib.common import get_timestamp, validate_json
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
 SOURCE_ROOT = REPO_ROOT
@@ -380,14 +381,22 @@ def should_include_agent(src: Path, profile_name: str, extra_agents: set) -> boo
     content = src.read_text()
     if not content.startswith("---"):
         return True # Universal if no frontmatter
-        
-    parts = content.split("---", 2)
-    if len(parts) < 3:
+
+    # Bound on a line-anchored "\n---" (matches parse_frontmatter()'s own
+    # boundary logic), not a blind content.split("---", 2) — a bare substring
+    # split breaks the moment the frontmatter body contains "---" anywhere
+    # earlier, e.g. a YAML comment like "# --- Squad Leads --- " inside a
+    # delegates_to list (real example: cto.md — this silently truncated the
+    # parse right after `hierarchy:`, dropping the real `profile:` field and
+    # making the agent look profile-universal regardless of what it declared).
+    end = content.find("\n---", 3)
+    if end == -1:
         return True
-        
+    fm_block = content[3:end]
+
     try:
         import yaml
-        fm = yaml.safe_load(parts[1])
+        fm = yaml.safe_load(fm_block)
         agent_profiles = fm.get("profile", "")
         if not agent_profiles:
             return True # Universal
@@ -499,6 +508,186 @@ def sync_mcp_config(target: str, dry_run: bool, check: bool):
 
 
 
+def _parse_frontmatter_yaml(content: str) -> dict:
+    """Full YAML frontmatter parse — preserves nested structures (hierarchy,
+    delegates_to lists, etc.) that the lightweight line-splitting
+    parse_frontmatter() above intentionally flattens/loses.
+
+    Bounds the frontmatter block the same way parse_frontmatter() does —
+    content.find("\\n---", 3), i.e. the closing delimiter must be a line
+    starting at column 0 — rather than a blind content.split("---", 2). A
+    naive split breaks the instant the frontmatter body contains the bare
+    substring "---" anywhere earlier, e.g. a YAML comment like
+    "# --- Squad Leads --- " inside a delegates_to list (real example: this
+    silently truncated cto.md's parsed frontmatter right after `hierarchy:`,
+    dropping skills/domains/tools/profile/model — a comment mid-list starting
+    with whitespace, not column 0, doesn't trip the "\\n---" anchor).
+
+    Used only for the agent registry manifest: downstream consumers (this
+    broker, and external consumers like multica) need the complete frontmatter,
+    not just name/description.
+    """
+    if not content.startswith("---"):
+        return {}
+    end = content.find("\n---", 3)
+    if end == -1:
+        return {}
+    fm_block = content[3:end]
+    try:
+        import yaml
+        fm = yaml.safe_load(fm_block)
+        return fm if isinstance(fm, dict) else {}
+    except Exception as e:
+        logging.warning("Failed to YAML-parse frontmatter: %s", e)
+        return {}
+
+
+def build_agent_registry(agent_files: list) -> tuple[bool, dict]:
+    """Build the in-memory, schema-validated agent index from already-filtered
+    agent source files. Not persisted anywhere — see validate_agent_registry().
+
+    Each entry is the agent's full frontmatter as-is (name, description, model,
+    domains, skills, hierarchy, ...) — no fixed field list, so any consumer
+    that reads this in-process list gets whatever fields an agent declares;
+    only name/description are contractually required (see the schema).
+
+    `agent_files` is the same profile-filtered list `sync()` already used to write
+    `.claude/agents/` — this must never include an agent whose .md file wasn't
+    actually synced for this run.
+
+    An earlier design read the Agents table out of ARCHITECTURE.md at broker
+    runtime as the call_agent registry — that table silently dropped any agent
+    added without a matching row (see
+    tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md).
+    A second design persisted this same data as a compiled
+    .agent/config/agent_registry.json manifest for the broker to read instead
+    of scanning live — that manifest was removed: mcp-llm-broker's
+    loadAgentList() now scans .agent/agents/**/*.md directly at request time
+    (matching how invokeAgent already read a single agent's file), and this
+    function's only remaining job is the CI-time schema check below, plus
+    feeding ARCHITECTURE.md's auto-generated table.
+
+    Returns (ok, data). `ok` is False when schema validation fails — callers must
+    treat that as a hard error and exit non-zero (CI gate) rather than let a
+    malformed agent's frontmatter go unnoticed.
+    """
+    agents = []
+    for src in agent_files:
+        content = src.read_text(encoding="utf-8")
+        fm = _parse_frontmatter_yaml(content)
+        entry = dict(fm)
+        entry.setdefault("name", src.stem)
+        entry.setdefault("description", "")
+        agents.append(entry)
+    agents.sort(key=lambda a: str(a.get("name", "")))
+
+    data = {"generated_at": get_timestamp(), "agents": agents}
+    schema_path = SOURCE_ROOT / ".agent" / "config" / "agent_registry.schema.json"
+    ok, msg = validate_json(data, schema_path)
+    if not ok:
+        print(f"  ❌ agent frontmatter failed schema validation: {msg}")
+    return ok, data
+
+
+def validate_agent_registry(agent_files: list) -> list:
+    """CI gate: build the agent index and hard-fail (sys.exit(1)) on any
+    schema violation — an agent missing a required field (name/description)
+    must break the build, not silently ship.
+
+    Returns the agent entry list (in-memory only — nothing is written to
+    disk) so sync_architecture_md() can render ARCHITECTURE.md's table from
+    the exact same validated build instead of re-scanning the filesystem.
+    """
+    ok, data = build_agent_registry(agent_files)
+    if not ok:
+        sys.exit(1)
+    return data["agents"]
+
+
+def _first_sentence(text: str, max_len: int = 90) -> str:
+    """Best-effort short summary for ARCHITECTURE.md's Focus column — full
+    descriptions run multiple sentences and would make the table unreadable."""
+    text = (text or "").strip()
+    if not text:
+        return ""
+    for sep in (". ", "! ", "? "):
+        idx = text.find(sep)
+        if 0 < idx <= max_len:
+            return text[: idx + 1].strip()
+    return (text[:max_len].rstrip() + "…") if len(text) > max_len else text
+
+
+def build_architecture_agents_table(agents: list) -> str:
+    """Render the '## 🤖 Agents' section of ARCHITECTURE.md from the same data
+    as agent_registry.json — replaces hand-maintenance of this table, which was
+    the root cause of tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md
+    (a manually-added agent with no matching row silently became uncallable).
+    """
+    orchestrator = next((a for a in agents if a.get("name") == "orchestrator"), None)
+    rest = sorted(
+        (a for a in agents if a.get("name") != "orchestrator"),
+        key=lambda a: str(a.get("name", "")),
+    )
+    ordered = ([orchestrator] if orchestrator else []) + rest
+
+    lines = [
+        f"## 🤖 Agents ({len(agents)})",
+        "",
+        "Specialist AI personas for different domains.",
+        "",
+        "<!-- GENERATED by sync_agents.py — do not edit directly. Regenerate with:",
+        "     python3 .agent/scripts/delivery/sync_agents.py --target claude -->",
+        "",
+        "| Agent | Focus | Skills Used |",
+        "| --- | --- | --- |",
+    ]
+    for a in ordered:
+        name = a.get("name", "")
+        focus = _first_sentence(a.get("description", ""))
+        skills_raw = a.get("skills", "")
+        if isinstance(skills_raw, list):
+            skills = ", ".join(str(s) for s in skills_raw)
+        else:
+            skills = str(skills_raw or "")
+        lines.append(f"| `{name}` | {focus} | {skills} |")
+
+    return "\n".join(lines) + "\n"
+
+
+def sync_architecture_md(agents: list, dry_run: bool, check: bool):
+    """Rewrite only the '## 🤖 Agents' section of ARCHITECTURE.md in place,
+    leaving every other section untouched. No-op if ARCHITECTURE.md doesn't
+    exist at the target (e.g. a consumer repo that doesn't ship it).
+    """
+    path = TARGET_ROOT / ".agent" / "ARCHITECTURE.md"
+    if not path.exists():
+        return
+
+    lines = path.read_text(encoding="utf-8").split("\n")
+
+    start = None
+    end = len(lines)
+    for i, line in enumerate(lines):
+        if start is None and (line.startswith("## 🤖 Agents") or line.startswith("## Agents (")):
+            start = i
+            continue
+        if start is not None and i > start and line.startswith("## "):
+            end = i
+            break
+
+    if start is None:
+        logging.warning("ARCHITECTURE.md has no '## 🤖 Agents' section — skipping table regeneration")
+        return
+
+    table_block = build_architecture_agents_table(agents).rstrip("\n")
+    new_lines = lines[:start] + table_block.split("\n") + [""] + lines[end:]
+    new_content = "\n".join(new_lines)
+    if not new_content.endswith("\n"):
+        new_content += "\n"
+
+    _write(path, new_content, dry_run, check)
+
+
 def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: str = "", profile: str = "", no_commands: bool = False, no_workflows: bool = False, no_headroom: bool = False):
     config = TARGETS[target]
     config["agents_out"].mkdir(parents=True, exist_ok=True)
@@ -515,15 +704,25 @@ def sync(target: str, dry_run: bool = False, check: bool = False, only_agent: st
     agent_files = sorted(AGENTS_SRC.rglob("**/*.md"))
     if only_agent:
         agent_files = [f for f in agent_files if f.stem == only_agent]
-    
+
+    included_agent_files = []
     for src in agent_files:
         if not should_include_agent(src, profile, extra_agents):
             continue
-            
+
+        included_agent_files.append(src)
         out_path = config["agents_out"] / src.name
         expected_files.add(out_path)
         content = build_agent_file(src, target, is_workflow=False, no_headroom=no_headroom)
         _write(out_path, content, dry_run, check)
+
+    # 1.5 Agent frontmatter CI gate + ARCHITECTURE.md's Agents table — both
+    # derived from the same in-memory validated build, target-independent,
+    # run once from the claude-target sync. No manifest file is written;
+    # mcp-llm-broker scans .agent/agents/**/*.md directly at request time.
+    if target == "claude" and not only_agent:
+        validated_agents = validate_agent_registry(included_agent_files)
+        sync_architecture_md(validated_agents, dry_run, check)
 
     # 2. Workflows as Agents (Claude only usually)
     if target == "claude" and not no_workflows:

@@ -96,12 +96,241 @@ class TestSyncAgents(unittest.TestCase):
 
     def test_sync_full_opencode(self):
         (self.test_root / ".agent" / "agents" / "dev.md").write_text("---\ndomains: dev\n---\nDev body")
-        
+
         sync_agents.sync("opencode")
-        
+
         out_agent = self.test_root / ".opencode" / "agents" / "dev.md"
         self.assertTrue(out_agent.exists())
         self.assertIn("Dev body", out_agent.read_text())
+
+    # -- Agent frontmatter validation (CI gate, in-memory only) tests --
+    # Regression coverage for tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md.
+    # mcp-llm-broker itself now scans .agent/agents/**/*.md live (see main.go's
+    # loadAgentList) — build_agent_registry()/validate_agent_registry() here exist
+    # only to (a) CI-gate malformed agent frontmatter and (b) feed
+    # ARCHITECTURE.md's auto-generated table. Nothing is persisted to disk.
+
+    def test_build_agent_registry_includes_management_tier_agent(self):
+        mgmt_dir = self.test_root / ".agent" / "agents" / "management"
+        mgmt_dir.mkdir(parents=True)
+        cto_path = mgmt_dir / "cto.md"
+        cto_path.write_text("---\nname: cto\ndescription: Chief Technology Officer.\n---\nBody")
+
+        ok, data = sync_agents.build_agent_registry([cto_path])
+
+        self.assertTrue(ok)
+        names = [a["name"] for a in data["agents"]]
+        self.assertIn("cto", names)
+
+    def test_build_agent_registry_fails_schema_when_description_missing(self):
+        # Install a real schema so validate_json actually enforces it (SOURCE_ROOT
+        # is patched to test_root, so the real repo schema file isn't reachable here).
+        schema_dir = self.test_root / ".agent" / "config"
+        schema_dir.mkdir(parents=True, exist_ok=True)
+        (schema_dir / "agent_registry.schema.json").write_text(json.dumps({
+            "type": "object",
+            "required": ["generated_at", "agents"],
+            "properties": {
+                "agents": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "description"],
+                        "properties": {
+                            "description": {"type": "string", "minLength": 1}
+                        }
+                    }
+                }
+            }
+        }))
+
+        mgmt_dir = self.test_root / ".agent" / "agents" / "management"
+        mgmt_dir.mkdir(parents=True)
+        broken_path = mgmt_dir / "broken.md"
+        broken_path.write_text("---\nname: broken\n---\nBody without a description field")
+
+        try:
+            import jsonschema  # noqa: F401
+        except ImportError:
+            self.skipTest("jsonschema not installed — validate_json degrades to a no-op")
+
+        ok, _data = sync_agents.build_agent_registry([broken_path])
+        self.assertFalse(ok)
+
+    def test_validate_agent_registry_exits_nonzero_on_schema_failure(self):
+        schema_dir = self.test_root / ".agent" / "config"
+        schema_dir.mkdir(parents=True, exist_ok=True)
+        (schema_dir / "agent_registry.schema.json").write_text(json.dumps({
+            "type": "object",
+            "required": ["agents"],
+            "properties": {
+                "agents": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "description"],
+                        "properties": {
+                            "description": {"type": "string", "minLength": 1}
+                        }
+                    }
+                }
+            }
+        }))
+
+        mgmt_dir = self.test_root / ".agent" / "agents" / "management"
+        mgmt_dir.mkdir(parents=True)
+        broken_path = mgmt_dir / "broken.md"
+        broken_path.write_text("---\nname: broken\n---\nNo description")
+
+        try:
+            import jsonschema  # noqa: F401
+        except ImportError:
+            self.skipTest("jsonschema not installed — validate_json degrades to a no-op")
+
+        # Pure CI gate — no file is ever written, so there's nothing to assert
+        # was-not-created; the only observable contract is that a malformed
+        # agent's frontmatter fails the build.
+        with self.assertRaises(SystemExit):
+            sync_agents.validate_agent_registry([broken_path])
+
+    def test_sync_updates_architecture_md_for_claude_target_only(self):
+        # End-to-end: sync("claude") must regenerate ARCHITECTURE.md's table to
+        # include a management-tier agent with no prior row there, with no
+        # intermediate manifest file involved.
+        mgmt_dir = self.test_root / ".agent" / "agents" / "management"
+        mgmt_dir.mkdir(parents=True)
+        (mgmt_dir / "cto.md").write_text("---\nname: cto\ndescription: Chief Technology Officer.\n---\nBody")
+        (self.test_root / ".agent" / "ARCHITECTURE.md").write_text(
+            "## 🤖 Agents (0)\n\nSpecialist AI personas for different domains.\n\n"
+            "| Agent | Focus | Skills Used |\n| --- | --- | --- |\n"
+        )
+
+        sync_agents.sync("claude")
+
+        arch_content = (self.test_root / ".agent" / "ARCHITECTURE.md").read_text()
+        self.assertIn("`cto`", arch_content)
+        self.assertFalse((self.test_root / ".agent" / "config" / "agent_registry.json").exists())
+
+    def test_parse_frontmatter_yaml_survives_dashes_inside_a_comment(self):
+        # Real bug found in cto.md: a YAML comment containing "---" inside a
+        # delegates_to list (e.g. "# --- Squad Leads --- ") made a naive
+        # content.split("---", 2) cut the frontmatter block short right after
+        # `hierarchy:`, silently dropping every field declared afterward
+        # (skills, domains, profile, model, ...).
+        content = (
+            "---\n"
+            "name: cto\n"
+            "description: Chief Technology Officer.\n"
+            "hierarchy:\n"
+            "  delegates_to:\n"
+            "    # --- Squad Leads (primary routing layer) ---\n"
+            "    - backend-lead\n"
+            "skills: clean-code, architecture\n"
+            "profile: universal\n"
+            "---\nBody"
+        )
+
+        fm = sync_agents._parse_frontmatter_yaml(content)
+
+        self.assertEqual(fm.get("skills"), "clean-code, architecture")
+        self.assertEqual(fm.get("profile"), "universal")
+
+    def test_should_include_agent_survives_dashes_inside_a_comment(self):
+        # Same root cause, different function: profile filtering must not
+        # silently treat a restricted agent as "universal" because a comment
+        # inside its frontmatter contains "---".
+        agents_dir = self.test_root / ".agent" / "agents"
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        src = agents_dir / "restricted.md"
+        src.write_text(
+            "---\n"
+            "name: restricted\n"
+            "hierarchy:\n"
+            "  delegates_to:\n"
+            "    # --- comment with dashes ---\n"
+            "    - other-agent\n"
+            "profile: trading\n"
+            "---\nBody"
+        )
+
+        self.assertFalse(sync_agents.should_include_agent(src, "backend", set()))
+        self.assertTrue(sync_agents.should_include_agent(src, "trading", set()))
+
+    def test_build_agent_registry_preserves_full_frontmatter_not_just_name_description(self):
+        # multica (an external consumer) needs the whole agent metadata — model/tier,
+        # domains, skills, nested hierarchy — not a fixed name+description subset.
+        mgmt_dir = self.test_root / ".agent" / "agents" / "management"
+        mgmt_dir.mkdir(parents=True)
+        cto_path = mgmt_dir / "cto.md"
+        cto_path.write_text(
+            "---\n"
+            "name: cto\n"
+            "description: Chief Technology Officer.\n"
+            "model: L4\n"
+            "domains: strategy, architecture, technology\n"
+            "skills: clean-code, architecture\n"
+            "hierarchy:\n"
+            "  reports_to: ceo\n"
+            "  delegates_to:\n"
+            "    - backend-lead\n"
+            "    - frontend-lead\n"
+            "---\nBody"
+        )
+
+        ok, data = sync_agents.build_agent_registry([cto_path])
+
+        self.assertTrue(ok)
+        cto = next(a for a in data["agents"] if a["name"] == "cto")
+        self.assertEqual(cto["model"], "L4")
+        self.assertEqual(cto["domains"], "strategy, architecture, technology")
+        # Nested YAML structure must survive intact (the naive line-splitting
+        # parse_frontmatter() used elsewhere would flatten/lose this).
+        self.assertEqual(cto["hierarchy"]["reports_to"], "ceo")
+        self.assertEqual(cto["hierarchy"]["delegates_to"], ["backend-lead", "frontend-lead"])
+
+    # -- ARCHITECTURE.md auto-regeneration tests --
+    # Root-cause fix: the Agents table itself must never go stale again, on either
+    # the machine-readable (manifest) or human-readable (ARCHITECTURE.md) side.
+
+    def test_build_architecture_agents_table_includes_management_tier_agent(self):
+        agents = [
+            {"name": "orchestrator", "description": "Multi-agent coordination.", "skills": "parallel-agents"},
+            {"name": "cto", "description": "Chief Technology Officer. Owns architecture decisions.", "skills": "architecture"},
+        ]
+
+        table = sync_agents.build_architecture_agents_table(agents)
+
+        self.assertIn("## 🤖 Agents (2)", table)
+        self.assertIn("| `cto` | Chief Technology Officer. | architecture |", table)
+        # orchestrator is always listed first regardless of alphabetical order.
+        self.assertLess(table.index("`orchestrator`"), table.index("`cto`"))
+
+    def test_sync_architecture_md_regenerates_stale_table_in_place(self):
+        arch_path = self.test_root / ".agent" / "ARCHITECTURE.md"
+        arch_path.write_text(
+            "# Architecture\n\n"
+            "## Some Other Section\n\ncontent here\n\n"
+            "## 🤖 Agents (1)\n\n"
+            "Specialist AI personas for different domains.\n\n"
+            "| Agent | Focus | Skills Used |\n"
+            "| --- | --- | --- |\n"
+            "| `go-specialist` | Go expert | go-patterns |\n\n"
+            "## Next Section\n\nkept as-is\n"
+        )
+
+        agents = [
+            {"name": "cto", "description": "Chief Technology Officer.", "skills": "architecture"},
+        ]
+        sync_agents.sync_architecture_md(agents, dry_run=False, check=False)
+
+        new_content = arch_path.read_text()
+        # The stale row (management/ tier previously missing) is gone; the new one is present.
+        self.assertNotIn("go-specialist", new_content)
+        self.assertIn("`cto`", new_content)
+        self.assertIn("## 🤖 Agents (1)", new_content)
+        # Sections outside the Agents block are untouched.
+        self.assertIn("## Some Other Section\n\ncontent here", new_content)
+        self.assertIn("## Next Section\n\nkept as-is", new_content)
 
 if __name__ == "__main__":
     unittest.main()

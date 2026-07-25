@@ -157,59 +157,84 @@ graph TD
 - `python3 .agent/scripts/misc/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
-## 🤖 Agents (48)
+## 🤖 Agents (69)
 
 Specialist AI personas for different domains.
 
-| Agent                    | Focus                      | Skills Used                                                       |
-| ------------------------ | -------------------------- | ----------------------------------------------------------------- |
-| `orchestrator`           | Multi-agent coordination   | parallel-agents, behavioral-modes, intelligent-routing            |
-| `analyst`                | BMAD lifecycle driver      | bmad-lifecycle, plan-writing, brainstorming, architecture         |
-| `project-planner`        | Discovery, task planning   | brainstorming, plan-writing, architecture                         |
-| `frontend-specialist`    | Web UI/UX                  | frontend-design, nextjs-react-expert, tailwind-patterns, i18n-localization |
-| `backend-specialist`     | API, business logic        | api-patterns, nodejs-best-practices, database-design              |
-| `database-architect`     | Schema, SQL                | database-design                                                   |
-| `mobile-developer`       | iOS, Android, RN           | mobile-design, i18n-localization                                  |
-| `game-developer`         | Game logic, mechanics      | game-development                                                  |
-| `go-specialist`          | Go, gRPC, Concurrency, Perf | go-patterns, godoc-patterns, api-patterns, architecture          |
-| `crypto-specialist`      | TON, DEX, Exchange, Trading | ton-blockchain, stonfi-dex, api-patterns, architecture                                       |
-| `crypto-go-architect`    | Go + Crypto system design   | ton-blockchain, stonfi-dex, go-patterns, api-patterns, architecture, brainstorming           |
-| `devops-engineer`        | CI/CD, Docker              | deployment-procedures, server-management                          |
-| `security-auditor`       | Security compliance        | vulnerability-scanner, red-team-tactics                           |
-| `penetration-tester`     | Offensive security         | red-team-tactics                                                  |
-| `test-engineer`          | Testing strategies         | testing-patterns, tdd-workflow, webapp-testing                    |
-| `debugger`               | Root cause analysis        | systematic-debugging                                              |
-| `red-team`               | Adversarial Auditor        | red-team-tactics, vulnerability-scanner                           |
-| `performance-optimizer`  | Speed, Web Vitals          | performance-profiling                                             |
-| `seo-specialist`         | Ranking, visibility        | seo-fundamentals, geo-fundamentals                                |
-| `documentation-writer`   | Manuals, docs              | documentation-templates, i18n-localization                        |
-| `product-manager`        | Requirements, user stories | plan-writing, brainstorming                                       |
-| `product-owner`          | Strategy, backlog, MVP     | plan-writing, brainstorming                                       |
-| `qa-automation-engineer` | E2E testing, CI pipelines  | webapp-testing, testing-patterns                                  |
-| `code-archaeologist`     | Legacy code, refactoring   | clean-code, code-review-checklist                                 |
-| `rest-api-designer`      | REST / OpenAPI design      | api-patterns, typescript-expert, documentation-templates          |
-| `grpc-architect`         | gRPC / Protobuf design     | go-patterns, api-patterns, architecture                           |
-| `explorer-agent`         | Codebase analysis          | -                                                                 |
-| `reviewer`               | Automated code auditing    | code-review-checklist, vulnerability-scanner, systematic-debugging |
-| `git-master`             | Git internals & recovery   | git-master, bash-linux, systematic-debugging, clean-code           |
-| `k8s-engineer`           | Kubernetes platform        | k8s-patterns, deployment-procedures, server-management, bash-linux |
-| `ai-engineer`            | AI / LLM systems           | llm-patterns, python-patterns, api-patterns, systematic-debugging  |
-| `wiki-architect`         | Knowledge architecture     | wiki-writing, documentation-templates, brainstorming               |
-| `data-engineer`          | Data pipelines & analytics | data-patterns, database-design, python-patterns, bash-linux        |
-| `sre-engineer`           | Reliability engineering    | observability-patterns, k8s-patterns, deployment-procedures       |
-| `cloud-engineer`         | Multi-cloud infrastructure | cloud-patterns, terraform-patterns, deployment-procedures         |
-| `visual-designer`      | UI/UX aesthetics          | frontend-design, web-design-guidelines                            |
-| `release-manager`     | Versioning & SemVer       | git-master, testing-patterns, lint-and-validate                   |
-| `prompt-specialist`   | LLM Optimization & QA     | prompt-engineering, clean-code, telemetry, bmad-lifecycle        |
-| `python-specialist`   | Python Ecosystem Expert   | python-patterns, python-expert-advanced, python-ecosystem-mastery |
-| `meta-architect`      | Agentic Evolution Strategist | agentic-evolution, intelligent-routing, architecture |
-| `prompt-red-teamer`      | Adversarial prompt auditing | vulnerability-scanner, red-team-tactics, clean-code |
-| `prompt-benchmarker`     | Prompt metrics & benchmarking | performance-profiling, webapp-testing |
-| `mcp-protocol-engineer`  | MCP integration & schemas   | api-development, go-patterns, typescript-expert |
-| `local-model-optimizer`  | Local LLM settings & VRAM   | performance-profiling, observability-patterns |
-| `prompt-localizer`       | Prompt i18n & token size    | i18n-localization, prompt-engineering |
+<!-- GENERATED by sync_agents.py — do not edit directly. Regenerate with:
+     python3 .agent/scripts/delivery/sync_agents.py --target claude -->
 
----
+| Agent | Focus | Skills Used |
+| --- | --- | --- |
+| `orchestrator` | Multi-agent coordination and task orchestration. | clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, json-canvas, obsidian-bases, codebase-memory-patterns, agent-browser, agent-routing-pro, api-development, better-auth-best-practices, experience-injector, next-best-practices, browser-use, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, headroom-patterns, multica-mcp, multica-cli |
+| `agent-toolchain-integrator` | Specializes in hardening and integrating local AI agent runtimes. | mcp-integration, mcp-integration-standards, wsl-interop, lint-and-validate, intelligent-routing, clean-code, systematic-debugging, multica-mcp, multica-cli |
+| `ai-engineer` | AI/LLM specialist — RAG pipelines, prompt engineering, tool use, agentic loops, vector dat… | llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli |
+| `analyst` | BMAD lifecycle driver. | bmad-lifecycle, plan-writing, brainstorming, neural-prd-engineering, architecture, telemetry, shared-context, clean-code, visual-explainer, multica-mcp, multica-cli |
+| `arbor-coordinator` | Arbor Coordinator Agent. | arbor-research-agent, arbor-agent-orchestrator, arbor-agent-setup-intake, arbor-agent-coordinator, arbor-agent-resume-report, arbor-agent-tools, clean-code, behavioral-modes, arbor-agent-plugins-hitl-budget, multica-mcp, multica-cli |
+| `arbor-critic` | Arbor Critic Agent. | arbor-agent-merge-eval, code-review-checklist, multica-mcp, multica-cli, llm-regression-testing, clean-code |
+| `arbor-executor` | Arbor Executor Agent. | arbor-agent-executor, arbor-agent-ideate, clean-code, multica-mcp, multica-cli |
+| `arbor-search-agent` | Arbor Search Agent. | arbor-agent-search, semantic-search, multica-mcp, multica-cli, clean-code |
+| `archivist` | Governs the high-fidelity knowledge lifecycle. | knowledge-distillation, systemic-thinking, wiki-writing, architecture-governance, clean-code, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, multica-mcp, multica-cli |
+| `backend-lead` | Backend Engineering Lead — tactical layer between CTO and backend squad. | clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel, api-development, multica-mcp, multica-cli |
+| `backend-specialist` | Expert backend architect for Node.js, Python, and modern serverless/edge systems. | clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli |
+| `ceo` | Chief Executive Officer. | clean-code, multica-mcp, multica-cli, bmad-lifecycle, brainstorming, plan-writing |
+| `chaos-monkey` | Resilience testing specialist. | chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp, multica-cli |
+| `cloud-engineer` | Designs, provisions, and maintains cloud infrastructure on AWS/GCP/Azure using Infrastruct… | cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli |
+| `code-archaeologist` | Expert in legacy code, refactoring, and understanding undocumented systems. | clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli |
+| `crypto-go-architect` | Designs and audits cryptographic systems in Go. | ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling |
+| `crypto-specialist` | Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/of… | ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli |
+| `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns |
+| `data-engineer` | Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflo… | data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry, postgres-best-practices, nextflow-development, multica-mcp, multica-cli |
+| `data-lead` | Data & Market Feeds Engineering Lead — tactical layer between CTO and data squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli |
+| `database-architect` | Expert database architect for schema design, query optimization, migrations, and modern se… | clean-code, database-design, shared-context, telemetry, postgres-best-practices, supabase-postgres-best-practices, turso-db, multica-mcp, multica-cli |
+| `debugger` | Expert in systematic debugging, root cause analysis, and crash investigation. | clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes, multica-mcp, multica-cli |
+| `devops-engineer` | Expert in deployment, server management, CI/CD, and production operations. | clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
+| `documentation-writer` | Expert in technical documentation. | clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, visual-explainer, multica-mcp, multica-cli |
+| `ethics-auditor` | AI alignment and ethics governance auditor. | vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, clean-code, multica-mcp, multica-cli |
+| `explorer-agent` | Advanced codebase discovery, deep architectural analysis, and proactive research agent. | clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser, browser-use, multica-mcp, multica-cli |
+| `frontend-lead` | Frontend Engineering Lead — tactical layer between CTO and frontend squad. | clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli |
+| `frontend-specialist` | Senior Frontend Architect who builds maintainable React/Next.js systems with performance-f… | clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel, better-auth-best-practices, next-best-practices, ui-ux-pro-max, shadcn-best-practices, convex-setup-auth, multica-mcp, multica-cli |
+| `game-developer` | Game development across all platforms (PC, Web, Mobile, VR/AR). | clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio, shared-context, telemetry, multica-mcp, multica-cli |
+| `git-master` | Specialist in Git internals, conflict resolution, and repository health. | git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli |
+| `go-specialist` | Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worke… | clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety |
+| `grafana-master` | Expert in Grafana dashboards, data visualization, and observability engineering. | grafana-dashboard-master, observability-patterns, frontend-design, shared-context, telemetry, clean-code, multica-mcp, multica-cli |
+| `grpc-architect` | gRPC and Protobuf contract architect for Go microservices. | go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing |
+| `harness-runner` | Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run ma… | harness-development, capability-authoring, security-audit, clean-code |
+| `inbox-attendant` | Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). | inbox-patterns, knowledge-distillation, communication, triage, clean-code |
+| `k8s-engineer` | Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VPA/KEDA, Ingress, NetworkP… | k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli, kubernetes-mcp |
+| `knowledge-curator` | Closes the distillation loop introduced in STORY-6. | knowledge-distillation, knowledge-injection, archive-management, clean-code |
+| `local-model-optimizer` | Optimizes local models (Ollama, Jan), configures weights, adjusts GGUF quantization settin… | performance-profiling, observability-patterns, local-llm-tuning, clean-code |
+| `maintainer` | Senior Maintainer and Quality Guardian. | clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, hook-development, mcp-integration, multica-mcp, multica-cli |
+| `mcp-protocol-engineer` | Specialized in Model Context Protocol (MCP) schema compliance, tool definitions, transport… | api-development, go-patterns, typescript-expert, mcp-integration-standards, clean-code |
+| `meta-architect` | Strategist for autonomous agent kit evolution. | clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, headroom-patterns, multica-mcp, multica-cli |
+| `ml-lead` | ML & Research Engineering Lead — tactical layer between CTO and ML squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp, multica-cli |
+| `mobile-developer` | Expert in React Native and Flutter mobile development. | clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
+| `penetration-tester` | Conducts systematic penetration tests, identifies attack surfaces, exploits vulnerabilitie… | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp, multica-cli |
+| `performance-optimizer` | Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. | clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli |
+| `permission-guard` | Owns the capabilities matrix at .agent/config/capabilities.yaml. | capability-authoring, security-audit, clean-code, knowledge-distillation |
+| `platform-lead` | Platform Engineering Lead — tactical layer between CTO and platform squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
+| `product-manager` | Expert in product requirements, user stories, metrics, and acceptance criteria. | plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
+| `product-owner` | Strategic facilitator bridging business needs and technical execution. | plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
+| `project-planner` | Smart project planning agent. | clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, agent-routing-pro, behavioral-modes, parallel-agents, experience-injector, multica-mcp, multica-cli |
+| `prompt-benchmarker` | Measures prompt performance metrics, token usage, latency, and consistency across multiple… | performance-profiling, webapp-testing, llm-regression-testing, clean-code |
+| `prompt-localizer` | Adapts and localizes prompts to multiple target languages (e.g. | i18n-localization, prompt-engineering, clean-code |
+| `prompt-red-teamer` | Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection,… | vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code |
+| `prompt-specialist` | Expert in LLM orchestration, prompt design, benchmarking, and token economy. | prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli |
+| `python-specialist` | Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-sa… | python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling, multica-mcp, multica-cli |
+| `qa-automation-engineer` | Specialist in test automation infrastructure and E2E testing. | webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli |
+| `quality-security-lead` | Quality & Security Engineering Lead — tactical layer between CTO and quality/security squa… | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli |
+| `red-team` | Specialized Auditor and Adversarial Agent. | vulnerability-scanner, red-team-tactics, performance-profiling, clean-code, shared-context, better-auth-best-practices, multica-mcp, multica-cli |
+| `release-manager` | Specialist in software release lifecycles, semantic versioning (SemVer), and automated cha… | git-master, lint-and-validate, testing-patterns, clean-code, multica-mcp, multica-cli |
+| `rest-api-designer` | REST API designer specializing in OpenAPI 3.x contract-first design, HTTP semantics, versi… | api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code, typed-service-contracts, multica-mcp, multica-cli |
+| `reviewer` | Automated code auditor that scans the codebase and generates a prioritized task queue in t… | clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry, behavioral-modes, better-auth-best-practices, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli |
+| `risk-manager` | Chief Risk Officer. | clean-code, multica-mcp, multica-cli, bmad-lifecycle, architecture |
+| `security-auditor` | Elite cybersecurity expert. | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
+| `seo-specialist` | SEO and GEO (Generative Engine Optimization) expert. | clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry, multica-mcp, multica-cli |
+| `sre-engineer` | Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry… | observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
+| `test-engineer` | Expert in testing, TDD, regression prevention, and coverage auditing. | clean-code, testing-patterns, tdd-workflow, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli |
+| `trading-lead` | Trading Engineering Lead — tactical layer between CTO and trading squads. | clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp, multica-cli |
+| `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
+| `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
 ## 🧩 Skills (67)
 

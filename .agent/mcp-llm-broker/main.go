@@ -12,7 +12,9 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -1071,52 +1073,97 @@ func (b *BrokerServer) warmUpJanL1(ctx context.Context) {
 }
 
 
-// agentEntry is a parsed row from the Agents table in ARCHITECTURE.md.
+// agentEntry is one discovered agent — name and description parsed straight
+// from its .md frontmatter.
 type agentEntry struct {
-	Name  string
-	Focus string
+	Name        string
+	Description string
 }
 
-// loadAgentList reads .agent/ARCHITECTURE.md and extracts the Agents table.
+var (
+	agentFrontmatterNameRe = regexp.MustCompile(`(?m)^name:\s*(.+)$`)
+	agentFrontmatterDescRe = regexp.MustCompile(`(?m)^description:\s*(.+)$`)
+)
+
+// parseAgentFrontmatter extracts name:/description: from a single-line YAML
+// frontmatter block. The block is bounded the same way sync_agents.py's
+// parse_frontmatter() bounds it — the closing delimiter must be a line
+// starting at column 0 — rather than the first bare occurrence of "---"
+// anywhere in the content. A blind search breaks the instant an earlier line
+// contains "---", e.g. a YAML comment inside a nested list (real example:
+// cto.md has "# --- Squad Leads (primary routing layer) ---" inside its
+// delegates_to block; see this task's history for the same bug hitting
+// sync_agents.py's Python-side parser and the fix applied there).
+func parseAgentFrontmatter(content string) (name, description string) {
+	if !strings.HasPrefix(content, "---") {
+		return "", ""
+	}
+	end := strings.Index(content[3:], "\n---")
+	if end == -1 {
+		return "", ""
+	}
+	block := content[3 : 3+end]
+
+	if m := agentFrontmatterNameRe.FindStringSubmatch(block); m != nil {
+		name = strings.TrimSpace(m[1])
+	}
+	if m := agentFrontmatterDescRe.FindStringSubmatch(block); m != nil {
+		description = strings.TrimSpace(m[1])
+	}
+	return name, description
+}
+
+// loadAgentList scans .agent/agents/**/*.md directly — the source tree with
+// exactly one file per real specialist/management-tier agent persona — and
+// extracts each one's name/description straight from its frontmatter.
+//
+// This used to parse the Agents table out of .agent/ARCHITECTURE.md instead,
+// which silently dropped any agent added without a matching table row (the
+// entire management/ squad-lead/C-level tier was unreachable via call_agent —
+// see tasks/2026-07-25-mcp-llm-broker-call-agent-drops-management-tier-agents.md).
+// An intermediate design read a separate compiled+schema-validated
+// agent_registry.json manifest instead of scanning live; that manifest was
+// removed as unneeded machinery once weighed against the actual trust model
+// here — .agent/agents/ is committed repo content, not attacker-supplied
+// input, and invokeAgent() below already reads a single such file's full body
+// and trusts it completely as the system prompt, so treating this narrower
+// name+description read as the higher-risk operation didn't hold up. Schema
+// validation of every agent's frontmatter still runs — as a CI-time check in
+// sync_agents.py — it just no longer gates what this function reads at
+// runtime, so a data-quality issue in one agent's file can never make a
+// *different*, well-formed agent uncallable.
+//
+// Deliberately does NOT include .claude/agents/ — that directory also carries
+// workflow-derived pseudo-agents (wf-*.md, synthesized from
+// .agent/workflows/) that were never part of ARCHITECTURE.md's Agents table
+// either; scanning only the source tree keeps this list's scope identical to
+// what it always documented.
+//
 // Returns agent entries excluding "orchestrator" (which must never be delegated to).
 func (b *BrokerServer) loadAgentList() []agentEntry {
-	archPath := filepath.Join(b.workspaceRoot, ".agent", "ARCHITECTURE.md")
-	data, err := os.ReadFile(archPath)
-	if err != nil {
-		return nil
-	}
+	agentsRoot := filepath.Join(b.workspaceRoot, ".agent", "agents")
 
 	var entries []agentEntry
-	inTable := false
-	for _, line := range strings.Split(string(data), "\n") {
-		// Detect the Agents section header.
-		if strings.Contains(line, "## 🤖 Agents") || strings.Contains(line, "## Agents (") {
-			inTable = true
-			continue
+	_ = filepath.Walk(agentsRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".md") {
+			return nil
 		}
-		// Stop at the next section.
-		if inTable && strings.HasPrefix(line, "## ") {
-			break
+		data, rErr := os.ReadFile(path)
+		if rErr != nil {
+			return nil
 		}
-		if !inTable || !strings.HasPrefix(line, "|") {
-			continue
+		name, description := parseAgentFrontmatter(string(data))
+		if name == "" {
+			name = strings.TrimSuffix(filepath.Base(path), ".md")
 		}
-		cols := strings.Split(line, "|")
-		if len(cols) < 3 {
-			continue
+		if name == "" || name == "orchestrator" {
+			return nil
 		}
-		nameCell := strings.TrimSpace(cols[1])
-		// Rows look like: | `agent-name` | Focus text | ... |
-		if !strings.HasPrefix(nameCell, "`") {
-			continue
-		}
-		name := strings.Trim(nameCell, "` ")
-		focus := strings.TrimSpace(cols[2])
-		if name == "" || name == "Agent" || name == "orchestrator" {
-			continue
-		}
-		entries = append(entries, agentEntry{Name: name, Focus: focus})
-	}
+		entries = append(entries, agentEntry{Name: name, Description: description})
+		return nil
+	})
+
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
 	return entries
 }
 
@@ -1129,7 +1176,7 @@ func (b *BrokerServer) buildCallAgentDescription() string {
 	}
 	var names []string
 	for _, e := range entries {
-		names = append(names, fmt.Sprintf("%s (%s)", e.Name, e.Focus))
+		names = append(names, fmt.Sprintf("%s (%s)", e.Name, e.Description))
 	}
 	return base + " Available agents: " + strings.Join(names, "; ") + "."
 }
