@@ -19,7 +19,7 @@ hierarchy:
     - maintainer
     - release-manager
     - reviewer
-skills: clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns
+skills: clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns, multica-mcp, multica-cli
 domains: strategy, architecture, technology
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, agents_load, skills_list, skills_load
 profile: universal

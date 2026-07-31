@@ -5,7 +5,7 @@ description: Owns the capabilities matrix at .agent/config/capabilities.yaml. Wi
 hierarchy:
   reports_to: cto
   delegates_to: [harness-runner, security-auditor]
-skills: capability-authoring, security-audit, clean-code, knowledge-distillation
+skills: capability-authoring, security-audit, clean-code, knowledge-distillation, multica-mcp, multica-cli
 domains: security, permissions, infra
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal

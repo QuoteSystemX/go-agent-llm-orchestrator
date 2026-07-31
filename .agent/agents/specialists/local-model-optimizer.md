@@ -4,7 +4,7 @@ description: Optimizes local models (Ollama, Jan), configures weights, adjusts G
 hierarchy:
   reports_to: cto
   delegates_to: []
-skills: performance-profiling, observability-patterns, local-llm-tuning, clean-code
+skills: performance-profiling, observability-patterns, local-llm-tuning, clean-code, multica-mcp, multica-cli
 domains: local-llm, quantization, hardware-acceleration, performance
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

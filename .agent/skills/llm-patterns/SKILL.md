@@ -29,13 +29,13 @@ Input = system prompt + history + retrieved docs + user message
 
 | Use Case | Model Class | Why |
 |----------|-------------|-----|
-| Complex reasoning, architecture | DeepSeek-R1 (Local/Cloud) | SOTA reasoning, chain-of-thought |
-| High-fidelity coding, refactoring | Qwen2.5-Coder (32B+) / Sonnet 4.6 | Best coding performance |
-| Balanced tasks, API backbone | Claude Sonnet / GPT-4o-mini | Speed + cost |
-| Classification, routing, simple extraction | Claude Haiku / Llama-3.1-8B | Cheapest / Fast local |
+| Complex reasoning, architecture | DeepSeek-R1 (Local/Cloud) / Claude Opus 5 | SOTA reasoning, chain-of-thought |
+| High-fidelity coding, refactoring | Qwen2.5-Coder (32B+) / Claude Sonnet 5 | Best coding performance |
+| Balanced tasks, API backbone | Claude Sonnet 5 / GPT-4o-mini | Speed + cost |
+| Classification, routing, simple extraction | Claude Haiku 4.5 / Llama-3.1-8B | Cheapest / Fast local |
 | Embeddings | text-embedding-3-small | Fast, cheap, 1536d |
-| Image understanding | Claude 3.5 / GPT-4o (vision) | Multimodal |
-| Function calling / tool use | Claude 3.x / GPT-4o | Best tool reliability |
+| Image understanding | Claude Sonnet 5 / GPT-4o (vision) | Multimodal |
+| Function calling / tool use | Claude Sonnet 5 / GPT-4o | Best tool reliability |
 
 ---
 

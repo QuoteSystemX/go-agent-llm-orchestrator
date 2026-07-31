@@ -110,3 +110,5 @@ Run this monthly or after major changes:
 - `.agent/skills/knowledge-injection/SKILL.md`
 - `.agent/skills/archive-management/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

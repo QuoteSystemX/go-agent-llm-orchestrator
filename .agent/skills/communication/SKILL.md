@@ -45,8 +45,11 @@ When consuming or responding to `tasks/INBOX.md` entries, follow these rules:
 
 | Incorrect Link (Broken) | Correct Link (Clickable) |
 |---|---|
-| `` `main.go` `` | `[main.go](file:///home/amudrykh/go/project/prompt-library/main.go)` |
-| `path/to/file` | `[file.go](file:///home/amudrykh/go/project/prompt-library/path/to/file)` |
+| `` `main.go` `` | `[main.go](main.go)` |
+| `path/to/file` | `[file.go](path/to/file)` |
+
+Use paths relative to the repo root — never an absolute `file:///home/<user>/...` path. An
+absolute path hardcodes one developer's machine and breaks for every other clone/checkout.
 
 ### Logging Telemetry Events
 

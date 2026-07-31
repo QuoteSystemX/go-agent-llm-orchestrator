@@ -5,7 +5,7 @@ description: "Closes the distillation loop introduced in STORY-6. Owns the lifec
 hierarchy:
   reports_to: archivist
   delegates_to: [archivist]
-skills: knowledge-distillation, knowledge-injection, archive-management, clean-code
+skills: knowledge-distillation, knowledge-injection, archive-management, clean-code, multica-mcp, multica-cli
 domains: data, knowledge, history
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal

@@ -8,9 +8,9 @@
 
 Unified Agent Kit is a modular system consisting of:
 
-- **54 Specialist Agents** - Role-based AI personas
-- **118 Skills** - Domain-specific knowledge modules
-- **24 Workflows** - Slash command procedures
+- **69 Specialist Agents** - Role-based AI personas
+- **162 Skills** - Domain-specific knowledge modules
+- **27 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 - **Autonomous SRE** - Incident Watcher, War Room Manager
@@ -181,9 +181,9 @@ Specialist AI personas for different domains.
 | `chaos-monkey` | Resilience testing specialist. | chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp, multica-cli |
 | `cloud-engineer` | Designs, provisions, and maintains cloud infrastructure on AWS/GCP/Azure using Infrastruct… | cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli |
 | `code-archaeologist` | Expert in legacy code, refactoring, and understanding undocumented systems. | clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli |
-| `crypto-go-architect` | Designs and audits cryptographic systems in Go. | ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling |
+| `crypto-go-architect` | Designs and audits cryptographic systems in Go. | ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops |
 | `crypto-specialist` | Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/of… | ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli |
-| `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns |
+| `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns, multica-mcp, multica-cli |
 | `data-engineer` | Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflo… | data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry, postgres-best-practices, nextflow-development, multica-mcp, multica-cli |
 | `data-lead` | Data & Market Feeds Engineering Lead — tactical layer between CTO and data squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli |
 | `database-architect` | Expert database architect for schema design, query optimization, migrations, and modern se… | clean-code, database-design, shared-context, telemetry, postgres-best-practices, supabase-postgres-best-practices, turso-db, multica-mcp, multica-cli |
@@ -196,29 +196,29 @@ Specialist AI personas for different domains.
 | `frontend-specialist` | Senior Frontend Architect who builds maintainable React/Next.js systems with performance-f… | clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel, better-auth-best-practices, next-best-practices, ui-ux-pro-max, shadcn-best-practices, convex-setup-auth, multica-mcp, multica-cli |
 | `game-developer` | Game development across all platforms (PC, Web, Mobile, VR/AR). | clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio, shared-context, telemetry, multica-mcp, multica-cli |
 | `git-master` | Specialist in Git internals, conflict resolution, and repository health. | git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli |
-| `go-specialist` | Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worke… | clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety |
+| `go-specialist` | Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worke… | clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety, go-skills-guide, go-code-style, go-naming, go-data-structures, go-design-patterns, go-database, go-refactoring, go-modernize, go-troubleshooting, go-stretchr-testify, go-samber-do, go-samber-hot, go-samber-lo, go-samber-mo, go-samber-oops, go-samber-ro, go-samber-slog |
 | `grafana-master` | Expert in Grafana dashboards, data visualization, and observability engineering. | grafana-dashboard-master, observability-patterns, frontend-design, shared-context, telemetry, clean-code, multica-mcp, multica-cli |
-| `grpc-architect` | gRPC and Protobuf contract architect for Go microservices. | go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing |
-| `harness-runner` | Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run ma… | harness-development, capability-authoring, security-audit, clean-code |
-| `inbox-attendant` | Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). | inbox-patterns, knowledge-distillation, communication, triage, clean-code |
+| `grpc-architect` | gRPC and Protobuf contract architect for Go microservices. | go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing, go-design-patterns, go-samber-oops, go-stretchr-testify |
+| `harness-runner` | Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run ma… | harness-development, capability-authoring, security-audit, clean-code, multica-mcp, multica-cli |
+| `inbox-attendant` | Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). | inbox-patterns, knowledge-distillation, communication, triage, clean-code, multica-mcp, multica-cli |
 | `k8s-engineer` | Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VPA/KEDA, Ingress, NetworkP… | k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli, kubernetes-mcp |
-| `knowledge-curator` | Closes the distillation loop introduced in STORY-6. | knowledge-distillation, knowledge-injection, archive-management, clean-code |
-| `local-model-optimizer` | Optimizes local models (Ollama, Jan), configures weights, adjusts GGUF quantization settin… | performance-profiling, observability-patterns, local-llm-tuning, clean-code |
+| `knowledge-curator` | Closes the distillation loop introduced in STORY-6. | knowledge-distillation, knowledge-injection, archive-management, clean-code, multica-mcp, multica-cli |
+| `local-model-optimizer` | Optimizes local models (Ollama, Jan), configures weights, adjusts GGUF quantization settin… | performance-profiling, observability-patterns, local-llm-tuning, clean-code, multica-mcp, multica-cli |
 | `maintainer` | Senior Maintainer and Quality Guardian. | clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, hook-development, mcp-integration, multica-mcp, multica-cli |
-| `mcp-protocol-engineer` | Specialized in Model Context Protocol (MCP) schema compliance, tool definitions, transport… | api-development, go-patterns, typescript-expert, mcp-integration-standards, clean-code |
+| `mcp-protocol-engineer` | Specialized in Model Context Protocol (MCP) schema compliance, tool definitions, transport… | api-development, go-patterns, typescript-expert, mcp-integration-standards, clean-code, multica-mcp, multica-cli |
 | `meta-architect` | Strategist for autonomous agent kit evolution. | clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, headroom-patterns, multica-mcp, multica-cli |
 | `ml-lead` | ML & Research Engineering Lead — tactical layer between CTO and ML squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp, multica-cli |
 | `mobile-developer` | Expert in React Native and Flutter mobile development. | clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
 | `penetration-tester` | Conducts systematic penetration tests, identifies attack surfaces, exploits vulnerabilitie… | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp, multica-cli |
 | `performance-optimizer` | Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. | clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli |
-| `permission-guard` | Owns the capabilities matrix at .agent/config/capabilities.yaml. | capability-authoring, security-audit, clean-code, knowledge-distillation |
+| `permission-guard` | Owns the capabilities matrix at .agent/config/capabilities.yaml. | capability-authoring, security-audit, clean-code, knowledge-distillation, multica-mcp, multica-cli |
 | `platform-lead` | Platform Engineering Lead — tactical layer between CTO and platform squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
 | `product-manager` | Expert in product requirements, user stories, metrics, and acceptance criteria. | plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
 | `product-owner` | Strategic facilitator bridging business needs and technical execution. | plan-writing, brainstorming, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
 | `project-planner` | Smart project planning agent. | clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, agent-routing-pro, behavioral-modes, parallel-agents, experience-injector, multica-mcp, multica-cli |
-| `prompt-benchmarker` | Measures prompt performance metrics, token usage, latency, and consistency across multiple… | performance-profiling, webapp-testing, llm-regression-testing, clean-code |
-| `prompt-localizer` | Adapts and localizes prompts to multiple target languages (e.g. | i18n-localization, prompt-engineering, clean-code |
-| `prompt-red-teamer` | Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection,… | vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code |
+| `prompt-benchmarker` | Measures prompt performance metrics, token usage, latency, and consistency across multiple… | performance-profiling, webapp-testing, llm-regression-testing, clean-code, multica-mcp, multica-cli |
+| `prompt-localizer` | Adapts and localizes prompts to multiple target languages (e.g. | i18n-localization, prompt-engineering, clean-code, multica-mcp, multica-cli |
+| `prompt-red-teamer` | Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection,… | vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code, multica-mcp, multica-cli |
 | `prompt-specialist` | Expert in LLM orchestration, prompt design, benchmarking, and token economy. | prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli |
 | `python-specialist` | Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-sa… | python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling, multica-mcp, multica-cli |
 | `qa-automation-engineer` | Specialist in test automation infrastructure and E2E testing. | webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli |
@@ -231,137 +231,185 @@ Specialist AI personas for different domains.
 | `security-auditor` | Elite cybersecurity expert. | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
 | `seo-specialist` | SEO and GEO (Generative Engine Optimization) expert. | clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry, multica-mcp, multica-cli |
 | `sre-engineer` | Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry… | observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
-| `test-engineer` | Expert in testing, TDD, regression prevention, and coverage auditing. | clean-code, testing-patterns, tdd-workflow, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli |
+| `test-engineer` | Expert in testing, TDD, regression prevention, and coverage auditing. | clean-code, testing-patterns, test-driven-development, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli |
 | `trading-lead` | Trading Engineering Lead — tactical layer between CTO and trading squads. | clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp, multica-cli |
 | `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
 | `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
-## 🧩 Skills (67)
+## 🧩 Skills (162)
 
-Modular knowledge domains that agents can load on-demand. based on task context.
+Modular knowledge domains that agents can load on-demand, based on task context.
 
-### Frontend & UI
+<!-- GENERATED by sync_agents.py — do not edit directly. Regenerate with:
+     python3 .agent/scripts/delivery/sync_agents.py --target claude -->
 
-| Skill                   | Description                                                           |
-| ----------------------- | --------------------------------------------------------------------- |
-| `nextjs-react-expert`   | React & Next.js performance optimization (Vercel - 57 rules)          |
-| `web-design-guidelines` | Web UI audit - 100+ rules for accessibility, UX, performance (Vercel) |
-| `tailwind-patterns`     | Tailwind CSS v4 utilities                                             |
-| `frontend-design`       | UI/UX patterns, design systems                                        |
-| `ui-ux-pro-max`         | 50 styles, 21 palettes, 50 fonts                                      |
+| Skill | Description |
+| --- | --- |
+| `adversarial-prompt-testing` | Hardening prompts against prompt injection, jailbreaks, and system prompt leakage. |
+| `agent-browser` | Browser automation CLI for AI agents. |
+| `agent-development` | This skill should be used when the user asks to "create an agent", "add an agent", "write… |
+| `agent-routing-pro` | Advanced adaptive routing implementation with 4 levels of depth and preliminary analysis. |
+| `agentic-evolution` | Protocols for autonomous agent kit improvement and self-specialization. |
+| `api-development` | Unified API development router. |
+| `api-patterns` | API design principles and decision-making. |
+| `app-builder` | Main application building orchestrator. |
+| `arbor-agent-coordinator` | Coordinator phase for Arbor: persistent ReAct loop, Idea Tree state, INIT/OBSERVE/IDEATE/S… |
+| `arbor-agent-executor` | Executor-dispatch phase for Arbor. |
+| `arbor-agent-ideate` | Strict IDEATE-stage skill for Arbor. |
+| `arbor-agent-merge-eval` | Merge and evaluation discipline for Arbor. |
+| `arbor-agent-orchestrator` | Top-level controller for recreating the open-source AutoResearch workflow as a suite of sk… |
+| `arbor-agent-plugins-hitl-budget` | Domain adaptation, human-in-the-loop, and budget policy phase for Arbor. |
+| `arbor-agent-resume-report` | Resume, checkpoint, event, dashboard, finalization, and report phase for Arbor. |
+| `arbor-agent-search` | Related-work and novelty annotation phase for Arbor. |
+| `arbor-agent-setup-intake` | Setup, intake, preflight, and launch-contract phase for open-source Arbor runs. |
+| `arbor-agent-tools` | Deterministic helper layer for emulating Arbor tools in Codex or Claude Code when native T… |
+| `arbor-research-agent` | Public entrypoint for the Arbor skill suite. |
+| `architecture` | Architectural decision-making framework. |
+| `architecture-governance` | Enforcing architectural standards, maintaining codebase health, preventing directory drift… |
+| `archive-management` | Manage long-term storage, archival of stale context, and history pruning policies. |
+| `bash-linux` | Bash/Linux terminal patterns. |
+| `behavioral-modes` | AI operational modes (brainstorm, implement, debug, review, teach, ship, orchestrate). |
+| `better-auth-best-practices` | Configure Better Auth server and client, set up database adapters, manage sessions, add pl… |
+| `bmad-lifecycle` | BMAD product lifecycle phase knowledge. |
+| `brainstorming` | Socratic questioning protocol + user communication. |
+| `browser-use` | Automates browser interactions for web testing, form filling, screenshots, and data extrac… |
+| `capability-authoring` | How to edit the capability matrix at .agent/config/capabilities.yaml. |
+| `chaos-engineering` | Planning resilience experiments, measuring recovery speeds, and writing Mean Time to Recov… |
+| `chaos-monkey` | Injecting synthetic faults, simulating disasters, and verifying system/agent resilience. |
+| `clean-code` | Pragmatic coding standards - concise, direct, no over-engineering, no unnecessary comments |
+| `cloud-patterns` | Multi-cloud engineering for AWS/GCP/Azure — IAM least-privilege, VPC networking, cost opti… |
+| `code-review-checklist` | Code review guidelines covering code quality, security, and best practices. |
+| `codebase-memory-patterns` | Guidelines on using codebase-memory-mcp tools to query call graphs, dependencies, and clas… |
+| `command-development` | This skill should be used when the user asks to "create a slash command", "add a command",… |
+| `communication` | Manage agent communication style, structure human-to-agent interface protocols, and handle… |
+| `convex-setup-auth` | Implement secure authentication in Convex with user management and access control. |
+| `data-patterns` | Data engineering patterns — ETL/ELT pipeline design, dbt transformations, Airflow DAG auth… |
+| `database-design` | Database design principles and decision-making. |
+| `deployment-procedures` | Production deployment principles and decision-making. |
+| `design-token-architecture` | Design token architecture for modern web apps. |
+| `dispatching-parallel-agents` | Use when facing 2+ independent tasks that can be worked on without shared state or sequent… |
+| `documentation-templates` | Documentation templates and structure guidelines. |
+| `documentation-writer` | Writing architecture summaries, onboarding guides, and compliance reports with Prose-First… |
+| `experience-injector` | Automatically queries the repository lessons learned database and injects relevant histori… |
+| `frontend-design` | Design thinking and decision-making for web UI. |
+| `game-development` | Game development orchestrator. |
+| `geo-fundamentals` | Generative Engine Optimization for AI search engines (ChatGPT, Claude, Perplexity). |
+| `git-master` | Expert-level Git operations, conflict resolution, and repository state management. |
+| `github-actions-expert` | Guidelines for writing, securing, and optimizing GitHub Actions workflows. |
+| `go-code-style` | Go code style conventions — line length and breaking, variable declarations, control flow… |
+| `go-concurrency` | Go concurrency patterns. |
+| `go-context` | Idiomatic context.Context usage in Go — propagation through API boundaries, cancellation,… |
+| `go-data-structures` | Go data structures — slices (internals, capacity growth, preallocation, slices package), m… |
+| `go-database` | Comprehensive guide for Go database access — parameterized queries, struct scanning, NULLa… |
+| `go-dependency-manager` | Handles private Go dependencies for QuoteSystemX. |
+| `go-design-patterns` | Idiomatic Go design patterns — functional options, constructors, error flow, resource mana… |
+| `go-error-handling` | Idiomatic Go error handling — creation, wrapping with %w, errors.Is/As, errors.Join, custo… |
+| `go-modernize` | Modernize Go code to use recent language features, standard library improvements, and idio… |
+| `go-naming` | Go naming conventions — packages, constructors, structs, interfaces, constants, enums, err… |
+| `go-patterns` | Professional Go development principles for 2026. |
+| `go-refactoring` | Go refactoring — the safe, at-scale process for restructuring existing Go code — coverage-… |
+| `go-safety` | Defensive Go coding to prevent panics, silent data corruption, and subtle runtime bugs. |
+| `go-samber-do` | Dependency injection in Go using samber/do — service containers, lifecycle management, sco… |
+| `go-samber-hot` | In-memory caching in Go using samber/hot — eviction algorithms (LRU, LFU, TinyLFU, W-TinyL… |
+| `go-samber-lo` | Functional programming helpers for Go using samber/lo — 500+ type-safe generic functions f… |
+| `go-samber-mo` | Monadic types for Go using samber/mo — Option, Result, Either, Future, IO, Task, and State… |
+| `go-samber-oops` | Structured error handling in Go with samber/oops — error builders, stack traces, error cod… |
+| `go-samber-ro` | Reactive streams and event-driven programming in Go using samber/ro — ReactiveX implementa… |
+| `go-samber-slog` | Structured logging extensions for Go using samber/slog-**** packages — multi-handler pipel… |
+| `go-security` | Security best practices and vulnerability prevention for Go. |
+| `go-skills-guide` | Go skills router — for any Go coding, review, debug, or setup task, identifies which of th… |
+| `go-stretchr-testify` | Comprehensive guide to stretchr/testify for Go testing. |
+| `go-testing` | Production-ready Go tests — table-driven tests, testify suites and mocks, parallel tests,… |
+| `go-troubleshooting` | Troubleshoot Go programs systematically — find and fix the root cause. |
+| `godoc-patterns` | Go documentation standards — package doc-comments, func/type/method docs, doc.go files, Ex… |
+| `grafana-dashboard-master` | Expert-level Grafana dashboard design and engineering. |
+| `harness-development` | How to add a new harness (LLM CLI) to the capability-driven harness_run system. |
+| `headroom-patterns` | Patterns for using Headroom to compress context before passing to LLM. |
+| `hook-development` | This skill should be used when the user asks to "create a hook", "add a PreToolUse/PostToo… |
+| `i18n-localization` | Internationalization and localization patterns. |
+| `inbox-patterns` | How to use the structured INBOX.md channel for human-to-agent communication. |
+| `intelligent-routing` | Automatic agent selection and intelligent task routing. |
+| `json-canvas` | Create and edit JSON Canvas files (.canvas) with nodes, edges, groups, and connections. |
+| `k8s-patterns` | Deep Kubernetes expertise — Helm, Operators, RBAC, HPA/VPA, Ingress, NetworkPolicy, namesp… |
+| `knowledge-distillation` | Distilling operational logs, incident post-mortems, and debugging runs into evergreen less… |
+| `knowledge-injection` | Register, re-inject, and validate distilled lessons into system context for future agent s… |
+| `kubernetes-mcp` | Detailed operational guidelines for interacting with the Kubernetes cluster via MCP tools. |
+| `lint-and-validate` | Automatic quality control, linting, and static analysis procedures. |
+| `llm-patterns` | Production LLM & AI engineering — RAG pipelines, prompt design, tool use, model evaluation… |
+| `llm-regression-testing` | Standards for prompt benchmarking, quality metric calculation, and monitoring quality drif… |
+| `local-llm-tuning` | Best practices for configuring Ollama Modelfiles, setting GGUF quantizations, managing con… |
+| `mcp-agent-kit` | Mastery of the core agent-kit Model Context Protocol (MCP) server. |
+| `mcp-browser` | Mastery of the headless browser automation Model Context Protocol (MCP) server. |
+| `mcp-builder` | MCP (Model Context Protocol) server building principles. |
+| `mcp-codebase-memory` | Mastery of the codebase-memory Model Context Protocol (MCP) server. |
+| `mcp-integration` | This skill should be used when the user asks to "add MCP server", "integrate MCP", "config… |
+| `mcp-integration-standards` | Guidelines for writing custom MCP servers, json-schema formatting, transport debugging, an… |
+| `mcp-kubernetes` | Mastery of the Kubernetes Model Context Protocol (MCP) server. |
+| `mcp-lean-ctx` | Mastery of the lean-ctx Model Context Protocol (MCP) server. |
+| `mobile-design` | Mobile-first design thinking and decision-making for iOS and Android apps. |
+| `multica-cli` | Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Mu… |
+| `multica-mcp` | Router skill for Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. |
+| `neural-prd-engineering` | AI-assisted Product Requirements Document (PRD) generation. |
+| `next-best-practices` | Next.js best practices for RSC boundaries, data patterns, and performance optimization. |
+| `nextflow-development` | Run nf-core bioinformatics pipelines (rnaseq, sarek, atacseq) on sequencing data. |
+| `nextjs-react-expert` | React and Next.js performance optimization from Vercel Engineering. |
+| `nodejs-best-practices` | Node.js development principles and decision-making. |
+| `observability-patterns` | Production observability — OpenTelemetry instrumentation, Prometheus + Grafana (ServiceMon… |
+| `obsidian-bases` | Create and edit Obsidian Bases (.base files) with views, filters, formulas, and summaries. |
+| `obsidian-cli` | Interact with Obsidian vaults using the Obsidian CLI — read, search, and manage notes. |
+| `obsidian-markdown` | Create and edit Obsidian Flavored Markdown (OFM) with wikilinks, embeds, callouts, propert… |
+| `obsidian-validator` | Validate, repair, and migrate Obsidian vault contents. |
+| `parallel-agents` | Multi-agent orchestration patterns. |
+| `performance-profiling` | Performance profiling principles. |
+| `plan-writing` | Structured task planning with clear breakdowns, dependencies, and verification criteria. |
+| `playwright-best-practices` | Best practices for writing, debugging, and optimizing Playwright tests and browser automat… |
+| `postgres-best-practices` | Postgres performance optimization and best practices for schema design, migrations, and qu… |
+| `powershell-windows` | PowerShell Windows patterns. |
+| `prompt-engineering` | Expert skill for designing, testing, and optimizing LLM prompts. |
+| `prompts-best-practices` | Advanced prompt engineering techniques for improving agent accuracy and reasoning. |
+| `python-ecosystem-mastery` | Mastery of modern Python tooling — uv, poetry, dependency management, and build systems. |
+| `python-expert-advanced` | Advanced Python engineering — performance optimization, C-interop, deep concurrency, and m… |
+| `python-patterns` | Python development principles and decision-making. |
+| `red-team-tactics` | Red team tactics principles based on MITRE ATT&CK. |
+| `refactoring-patterns` | Systematic refactoring techniques — code smell detection, safe transformation sequences, l… |
+| `requesting-code-review` | Use when completing tasks, implementing major features, or before merging to verify work m… |
+| `rust-pro` | Master Rust 1.75+ with modern async patterns, advanced type system |
+| `scientific-problem-selection` | This skill should be used when scientists need help with research problem selection, proje… |
+| `scope-sentinel` | Mid-session scope drift detector and self-escalation protocol for specialist agents. |
+| `security-audit` | Principles and procedures for conducting comprehensive codebase security audits. |
+| `semantic-search` | Search the project's knowledge base (wiki, ADRs, lessons) using semantic vector search. |
+| `sentry-cli-expert` | Advanced usage of Sentry CLI for monitoring application health, managing releases, triagin… |
+| `seo-fundamentals` | SEO fundamentals, E-E-A-T, Core Web Vitals, and Google algorithm principles. |
+| `server-management` | Server management principles and decision-making. |
+| `shadcn-best-practices` | Standards for adding, styling, and composing shadcn/ui components in React projects. |
+| `shared-context` | Manage structured data exchange via the Context Bus (.agent/bus/). |
+| `skill-creator` | Create new skills, modify and improve existing skills, and measure skill performance. |
+| `stonfi-dex` | Expert integration with Ston.fi DEX — Swap, Liquidity, Routing, SDK usage, Jetton Wallet i… |
+| `supabase-postgres-best-practices` | Postgres performance optimization and best practices from Supabase. |
+| `systematic-debugging` | 4-phase systematic debugging methodology with root cause analysis and evidence-based verif… |
+| `systemic-thinking` | Global codebase analysis, import tracing, and cross-repository dependency mapping. |
+| `tailwind-patterns` | Tailwind CSS v4 principles. |
+| `telemetry` | Record agent execution metrics (tokens, latency, status) for real-time monitoring and AI a… |
+| `terraform-patterns` | Terraform/OpenTofu best practices — HCL modules, state management, workspace strategy, pro… |
+| `test-driven-development` | Use when implementing any feature or bugfix, before writing implementation code |
+| `testing-patterns` | Testing patterns and principles. |
+| `ton-blockchain` | Expert TON (The Open Network) development — ton-core, ton-crypto, Tact/FunC contracts, BOC… |
+| `triage` | Classify, prioritize, and assign incoming issues, security findings, or documentation drif… |
+| `turso-db` | > |
+| `typed-service-contracts` | Architecture standard for building robust, type-safe TypeScript services using the "Spec a… |
+| `typescript-expert` | TypeScript strict-mode patterns, type system advanced usage, OpenAPI-to-TypeScript generat… |
+| `ui-ux-pro-max` | Advanced UI/UX design intelligence with 50+ styles, 161 color palettes, and 99 UX guidelin… |
+| `verification-before-completion` | Use when about to claim work is complete, fixed, or passing, before committing or creating… |
+| `visual-explainer` | Generate beautiful, self-contained HTML pages that visually explain systems, code changes,… |
+| `vulnerability-scanner` | Advanced vulnerability analysis principles. |
+| `web-design-guidelines` | Review UI code for Web Interface Guidelines compliance. |
+| `webapp-testing` | Web application testing principles. |
+| `wiki-obsidian-bridge` | Bridges Karpathy Wiki-First methodology with Obsidian Flavored Markdown. |
+| `wiki-writing` | Karpathy Wiki-First methodology — Mental Model documents, Intuition sections, Prose-First… |
+| `wsl-interop` | Standards and tools for resolving WSL-specific networking, DNS, and service connectivity i… |
 
-### Backend & API
+## 🛠️ Slash Commands
 
-| Skill                   | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `api-patterns`          | REST, GraphQL, tRPC                                         |
-| `nodejs-best-practices` | Node.js async, modules                                      |
-| `python-patterns`       | Python standards, FastAPI                                   |
-| `go-patterns`           | Go frameworks, gRPC, buf                                    |
-| `rust-pro`              | Rust patterns, systems                                      |
-| `typescript-expert`     | Strict-mode TS, OpenAPI→TS generation, SDK type design, Zod |
-| `prompt-engineering`   | Chain-of-Thought, Few-shot, ReAct, A/B Testing |
-| `mcp-integration-standards` | MCP server schemas, transport, and JSON-RPC compliance |
-
-### Database
-
-| Skill             | Description                 |
-| ----------------- | --------------------------- |
-| `database-design` | Schema design, optimization |
-
-### Cloud & Infrastructure
-
-| Skill                    | Description                                                           |
-| ------------------------ | --------------------------------------------------------------------- |
-| `deployment-procedures`  | CI/CD, deploy workflows                                               |
-| `server-management`      | Infrastructure management                                             |
-| `terraform-patterns`     | HCL modules, state management, plan/apply safety, checkov, terratest  |
-| `observability-patterns` | OTel, Prometheus, Grafana, Loki, Jaeger, SLO/SLI, Alertmanager       |
-
-## 🛠 Scripts
-
-- [ralph_loop.py](file:///home/amudrykh/go/project/prompt-library/.agent/scripts/orchestration/ralph_loop.py): Background script for atomic, autonomous work on linter and test errors (Ralph Loop).
-| `local-llm-tuning`      | Ollama Modelfile tuning, GGUF quantization, and VRAM optimization |
-
-### Testing & Quality
-
-| Skill                   | Description              |
-| ----------------------- | ------------------------ |
-| `testing-patterns`      | Jest, Vitest, strategies |
-| `webapp-testing`        | E2E, Playwright          |
-| `tdd-workflow`          | Test-driven development  |
-| `code-review-checklist` | Code review standards    |
-| `lint-and-validate`     | Linting, validation      |
-| `llm-regression-testing`  | Prompt quality benchmarking, cost/token metrics, and regression suites |
-
-### Security
-
-| Skill                   | Description              |
-| ----------------------- | ------------------------ |
-| `vulnerability-scanner` | Security auditing, OWASP — includes `entropy_scanner.py` (Shannon entropy secrets detection, multiprocessing) |
-| `red-team-tactics`      | Offensive security       |
-| `adversarial-prompt-testing` | Hardening prompts against injections, jailbreaks, and leakage |
-
-### Architecture & Planning
-
-| Skill           | Description                |
-| --------------- | -------------------------- |
-| `app-builder`   | Full-stack app scaffolding |
-| `architecture`  | System design patterns     |
-| `plan-writing`  | Task planning, breakdown   |
-| `brainstorming` | Socratic questioning       |
-
-### Mobile
-
-| Skill           | Description           |
-| --------------- | --------------------- |
-| `mobile-design` | Mobile UI/UX patterns |
-
-### Game Development
-
-| Skill              | Description           |
-| ------------------ | --------------------- |
-| `game-development` | Game logic, mechanics |
-
-### SEO & Growth
-
-| Skill              | Description                   |
-| ------------------ | ----------------------------- |
-| `seo-fundamentals` | SEO, E-E-A-T, Core Web Vitals |
-| `geo-fundamentals` | GenAI optimization            |
-
-### Shell/CLI
-
-| Skill                | Description               |
-| -------------------- | ------------------------- |
-| `bash-linux`         | Linux commands, scripting |
-| `powershell-windows` | Windows PowerShell        |
-
-### Code Quality & Refactoring
-
-| Skill                    | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `clean-code`             | Coding standards (Global)                |
-| `refactoring-patterns`   | Code smell detection, safe transforms    |
-| `code-review-checklist`  | Code review standards                    |
-
-### Agent & Lifecycle
-
-| Skill                     | Description                       |
-| ------------------------- | --------------------------------- |
-| `behavioral-modes`        | Agent personas                    |
-| `parallel-agents`         | Multi-agent patterns              |
-| `mcp-builder`             | Model Context Protocol            |
-| `documentation-templates` | Doc formats                       |
-| `i18n-localization`       | Internationalization              |
-| `performance-profiling`   | Web Vitals, optimization          |
-| `systematic-debugging`    | Troubleshooting                   |
-| `shared-context`         | Context Bus & DTO management      |
-| `telemetry`              | Execution metrics & cost tracking |
-| `bmad-lifecycle`          | BMAD phase knowledge & contracts  |
-| `intelligent-routing`     | Task routing & agent coordination |
-
----
 
 Slash command procedures. Invoke with `/command`.
 
@@ -450,6 +498,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | `model_benchmark.py`  | Model speed & quality benchmarking | Model Selection          |
 | `knowledge_synergy.py` | Cross-project knowledge sync    | Post-Mortem, ADR export  |
 | `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
+| `ralph_loop.py`        | Background atomic autonomous fixes for lint/test errors (Ralph Loop) | Continuous cleanup |
 | `war_room_manager.py`  | Active SRE Incident Reflex Loop — real Git-Ops (_create_branch, _run_validation, _commit_fix, _report_pr), repair file scanner | After incident |
 | `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
 | `bus_sse_server.py`    | Lightweight SSE server for live dashboard updates | Monitoring, Cockpit Ops |
@@ -826,7 +875,7 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 | Data Pipelines     | `data-engineer`          | data-patterns, database-design, python-patterns          |
 | Security Audit     | `security-auditor`       | vulnerability-scanner, red-team-tactics                  |
 | Pentesting         | `penetration-tester`     | red-team-tactics                                         |
-| Testing            | `test-engineer`          | testing-patterns, tdd-workflow, webapp-testing           |
+| Testing            | `test-engineer`          | testing-patterns, test-driven-development, webapp-testing |
 | E2E / QA           | `qa-automation-engineer` | webapp-testing, testing-patterns                         |
 | Debug              | `debugger`               | systematic-debugging                                     |
 | Performance        | `performance-optimizer`  | performance-profiling                                    |

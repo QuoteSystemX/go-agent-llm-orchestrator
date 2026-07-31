@@ -5,7 +5,7 @@ description: Runs LLM CLI tools (claude, free-code, codex) through the capabilit
 hierarchy:
   reports_to: cto
   delegates_to: []
-skills: harness-development, capability-authoring, security-audit, clean-code
+skills: harness-development, capability-authoring, security-audit, clean-code, multica-mcp, multica-cli
 domains: infra, runtime, security
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal

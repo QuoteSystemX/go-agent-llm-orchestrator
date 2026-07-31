@@ -173,3 +173,5 @@ Every CTO response must include:
 - `.agent/skills/documentation-templates/SKILL.md`
 - `.agent/skills/brainstorming/SKILL.md`
 - `.agent/skills/observability-patterns/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

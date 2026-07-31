@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, semantic_definition, workspace_status, health_check
 model: L2
-skills: clean-code, testing-patterns, tdd-workflow, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli
+skills: clean-code, testing-patterns, test-driven-development, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli
 domains: testing, unit-tests, integration-tests, qa, coverage, tdd
 profile: universal
 ---

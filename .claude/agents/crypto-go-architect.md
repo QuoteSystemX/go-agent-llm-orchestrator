@@ -157,3 +157,8 @@ For every design or audit, produce:
 - `.agent/skills/go-security/SKILL.md`
 - `.agent/skills/go-safety/SKILL.md`
 - `.agent/skills/go-error-handling/SKILL.md`
+- `.agent/skills/go-design-patterns/SKILL.md`
+- `.agent/skills/go-database/SKILL.md`
+- `.agent/skills/go-troubleshooting/SKILL.md`
+- `.agent/skills/go-samber-do/SKILL.md`
+- `.agent/skills/go-samber-oops/SKILL.md`

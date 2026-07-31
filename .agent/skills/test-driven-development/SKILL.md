@@ -1,7 +1,7 @@
 ---
 name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Test-Driven Development (TDD)
@@ -355,6 +355,17 @@ Bug found? Write failing test reproducing it. Follow TDD cycle. Test proves fix 
 
 Never fix bugs without a test.
 
+## Multi-Agent TDD
+
+When splitting TDD across agents, keep the phases on separate agents so GREEN can't quietly
+skip verifying RED:
+
+| Agent | Role |
+|-------|------|
+| Agent A | Write failing tests (RED) |
+| Agent B | Implement to pass (GREEN) |
+| Agent C | Optimize (REFACTOR) |
+
 ## Testing Anti-Patterns
 
 When adding mocks or test utilities, read @testing-anti-patterns.md to avoid common pitfalls:
@@ -373,4 +384,6 @@ No exceptions without your human partner's permission.
 
 ## Changelog
 
+- **1.1.0** (2026-07-31): Merged `tdd-workflow` into this skill (duplicate coverage of the
+  RED-GREEN-REFACTOR cycle); carried over its Multi-Agent TDD section.
 - **1.0.0** (2026-05-13): Initial version

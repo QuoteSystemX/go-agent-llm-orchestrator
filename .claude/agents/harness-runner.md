@@ -89,3 +89,5 @@ Activate **immediately** when any of the following occur:
 - `.agent/skills/capability-authoring/SKILL.md`
 - `.agent/skills/security-audit/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

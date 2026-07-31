@@ -165,3 +165,6 @@ For any Go code you generate or modify, you MUST follow the structured documenta
 - `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/go-error-handling/SKILL.md`
 - `.agent/skills/go-testing/SKILL.md`
+- `.agent/skills/go-design-patterns/SKILL.md`
+- `.agent/skills/go-samber-oops/SKILL.md`
+- `.agent/skills/go-stretchr-testify/SKILL.md`

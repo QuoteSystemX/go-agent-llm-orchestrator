@@ -9,6 +9,10 @@ version: 1.0.0
 
 > Manage the re-application of distilled codebase wisdom and lessons learned into subsequent agent sessions.
 
+> **Write side of the lessons pipeline.** This skill covers *registering* lessons (`knowledge_inject.py`:
+> `register_lesson`, TTL, active flag). To *retrieve and inject* existing lessons at the start of a new
+> task, see [experience-injector](../experience-injector/SKILL.md) instead.
+
 ## 🎯 When to Use This Skill
 
 - **Trigger**: Injecting lessons learned from `LESSONS_LEARNED.md` into active agent prompt contexts.

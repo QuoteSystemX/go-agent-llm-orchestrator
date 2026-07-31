@@ -4,7 +4,7 @@ description: Adapts and localizes prompts to multiple target languages (e.g. RU/
 hierarchy:
   reports_to: documentation-writer
   delegates_to: []
-skills: i18n-localization, prompt-engineering, clean-code
+skills: i18n-localization, prompt-engineering, clean-code, multica-mcp, multica-cli
 domains: i18n, localization, prompts, language
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal

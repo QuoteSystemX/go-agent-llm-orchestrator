@@ -34,7 +34,7 @@ Prompt Update or Model Upgrade
 
 ### A. Quality & Correctness Metrics
 *   **F1-Score / Exact Match (EM)**: Used for structured outputs. Checks if keys match schema constraints exactly.
-*   **Semantic Similarity (LLM-As-A-Judge)**: A high-tier model (e.g., Claude 3.5 Sonnet) grades output quality from 1 to 10 based on criteria.
+*   **Semantic Similarity (LLM-As-A-Judge)**: A high-tier model (e.g., Claude Opus 5) grades output quality from 1 to 10 based on criteria.
 *   **Format Compliance**: The percentage of outputs that parse successfully (e.g., valid JSON/YAML).
 
 ### B. Latency & Resource Metrics

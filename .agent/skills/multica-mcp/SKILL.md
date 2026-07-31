@@ -2,7 +2,7 @@
 name: multica-mcp
 description: "Router skill for Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. Resolves dynamic endpoints and delegates to specific sub-skills."
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Multica Global MCP Router Skill
@@ -21,11 +21,11 @@ version: 1.2.0
 
 Instead of using static endpoints, this skill coordinates routing to online services. Ensure you reference the appropriate sub-skills:
 
-- For core task control and schedules, delegate to [mcp-agent-kit](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-agent-kit/SKILL.md).
-- For headless browser tests, delegate to [mcp-browser](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-browser/SKILL.md).
-- For code symbol searches, delegate to [mcp-codebase-memory](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-codebase-memory/SKILL.md).
-- For Kubernetes pods and resources, delegate to [mcp-kubernetes](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-kubernetes/SKILL.md).
-- For payload compression and token limits, delegate to [mcp-lean-ctx](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-lean-ctx/SKILL.md).
+- For core task control and schedules, delegate to [mcp-agent-kit](../mcp-agent-kit/SKILL.md).
+- For headless browser tests, delegate to [mcp-browser](../mcp-browser/SKILL.md).
+- For code symbol searches, delegate to [mcp-codebase-memory](../mcp-codebase-memory/SKILL.md) (see also the general-purpose [codebase-memory-patterns](../codebase-memory-patterns/SKILL.md) for non-cluster usage).
+- For Kubernetes pods and resources, delegate to [mcp-kubernetes](../mcp-kubernetes/SKILL.md) (see also the general-purpose [kubernetes-mcp](../kubernetes-mcp/SKILL.md) for non-cluster usage).
+- For payload compression and token limits, delegate to [mcp-lean-ctx](../mcp-lean-ctx/SKILL.md) (the `lean-ctx` cluster alias is the same `headroom-mcp` API — see also the general-purpose [headroom-patterns](../headroom-patterns/SKILL.md)).
 
 ---
 
@@ -82,3 +82,14 @@ To ensure the highest standard of delivery, the following additional considerati
 3. Ensure that all dependencies are declared and verified beforehand.
 4. Write clean, self-documenting code with clear comments where necessary.
 5. Validate performance under load and avoid premature optimizations.
+
+## Changelog
+
+- **1.3.0** (2026-07-31): Fixed delegation links (were hardcoded absolute `file://` paths to one
+  developer's machine — broken on any other clone) to relative paths. This skill is now attached
+  to all agents (was 59/69) so it acts as a true universal wrapper; the 5 Multica-namespaced
+  sub-skills it delegates to remain separate, full-fledged files from their general-purpose
+  counterparts (`kubernetes-mcp`, `codebase-memory-patterns`, `headroom-patterns`), since agents
+  operating inside the Multica cluster need the cluster-specific endpoint/replica/namespace
+  details that don't belong in the generic docs.
+- **1.2.0**: Initial version with 5 sub-skill delegations.

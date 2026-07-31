@@ -77,3 +77,5 @@ Ensure strict JSON schema compliance of tool definitions with MCP specifications
 - `.agent/skills/typescript-expert/SKILL.md`
 - `.agent/skills/mcp-integration-standards/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

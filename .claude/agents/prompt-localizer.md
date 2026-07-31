@@ -62,3 +62,5 @@ Ensure identical instruction strength (Instruction Compliance) across multiple t
 - `.agent/skills/i18n-localization/SKILL.md`
 - `.agent/skills/prompt-engineering/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

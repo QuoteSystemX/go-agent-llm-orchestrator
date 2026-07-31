@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Edit, Write, semantic_definition, semantic_hover, search_knowledge, search_fulltext, skills_load
 model: L3
 profile: go-service
-skills: clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety
+skills: clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety, go-skills-guide, go-code-style, go-naming, go-data-structures, go-design-patterns, go-database, go-refactoring, go-modernize, go-troubleshooting, go-stretchr-testify, go-samber-do, go-samber-hot, go-samber-lo, go-samber-mo, go-samber-oops, go-samber-ro, go-samber-slog
 domains: go, specialist
 ---
 # Go Specialist

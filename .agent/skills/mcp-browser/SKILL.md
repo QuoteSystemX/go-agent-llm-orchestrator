@@ -148,6 +148,6 @@ Before considering a browser test complete:
 
 ## 🔗 Related Skills
 
-- [mcp-codebase-memory](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-codebase-memory/SKILL.md) — use to look up frontend component selectors before writing tests.
-- [mcp-lean-ctx](file:///home/amudrykh/go/project/prompt-library/.agent/skills/mcp-lean-ctx/SKILL.md) — compress large screenshot metadata or HTML dumps before adding to context.
-- [multica-mcp](file:///home/amudrykh/go/project/prompt-library/.agent/skills/multica-mcp/SKILL.md) — router skill for resolving active browser endpoint URLs dynamically.
+- [mcp-codebase-memory](../mcp-codebase-memory/SKILL.md) — use to look up frontend component selectors before writing tests.
+- [mcp-lean-ctx](../mcp-lean-ctx/SKILL.md) — compress large screenshot metadata or HTML dumps before adding to context.
+- [multica-mcp](../multica-mcp/SKILL.md) — router skill for resolving active browser endpoint URLs dynamically.

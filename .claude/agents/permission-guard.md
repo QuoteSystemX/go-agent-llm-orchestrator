@@ -105,3 +105,5 @@ Steps:
 - `.agent/skills/security-audit/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/knowledge-distillation/SKILL.md`
+- `.agent/skills/multica-mcp/SKILL.md`
+- `.agent/skills/multica-cli/SKILL.md`

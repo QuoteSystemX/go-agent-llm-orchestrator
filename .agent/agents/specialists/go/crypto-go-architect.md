@@ -4,7 +4,7 @@ description: Designs and audits cryptographic systems in Go. Covers key manageme
 hierarchy:
   reports_to: trading-lead
   delegates_to: [go-specialist, crypto-specialist]
-skills: ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling
+skills: ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops
 domains: cryptography, security, go, key-management
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, skills_load, system_info
 profile: universal
