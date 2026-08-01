@@ -1,95 +1,66 @@
 ---
 name: multica-mcp
-description: "Router skill for Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. Resolves dynamic endpoints and delegates to specific sub-skills."
+description: "Guardrails for using Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. Tool lists are dynamic — never rely on hardcoded tool names from docs."
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-version: 1.3.0
+version: 2.0.0
 ---
 
-# Multica Global MCP Router Skill
+# Multica MCP Servers — Usage Guardrails
 
-> Router and discovery coordinator for Model Context Protocol (MCP) servers running in the `multica` Kubernetes cluster namespace.
+> Rules for working with MCP servers running in the `multica` Kubernetes namespace
+> (`multica`, `agent-kit`, `kubernetes`, `browser`, `lean-ctx`, `codebase-memory-*`).
 
 ## 🎯 When to Use This Skill
 
-- **Trigger**: When resolving active MCP server endpoints in the `multica` namespace.
-- **Trigger**: When determining which specialized MCP skills (`mcp-agent-kit`, `mcp-browser`, `mcp-codebase-memory`, `mcp-kubernetes`, `mcp-lean-ctx`) to load dynamically based on service availability.
-- **Trigger**: When calling the `multica` discovery server (`http://multica-multica-mcp:3201/mcp`) to retrieve endpoints list.
+- **Trigger**: When a task involves calling any MCP server from the `multica` namespace.
 
 ---
 
-## 🧭 Dynamic Service Mapping & Delegation
+## 📋 Rules
 
-Instead of using static endpoints, this skill coordinates routing to online services. Ensure you reference the appropriate sub-skills:
+### 1. The MCP handshake is the ONLY source of truth for tool names
 
-- For core task control and schedules, delegate to [mcp-agent-kit](../mcp-agent-kit/SKILL.md).
-- For headless browser tests, delegate to [mcp-browser](../mcp-browser/SKILL.md).
-- For code symbol searches, delegate to [mcp-codebase-memory](../mcp-codebase-memory/SKILL.md) (see also the general-purpose [codebase-memory-patterns](../codebase-memory-patterns/SKILL.md) for non-cluster usage).
-- For Kubernetes pods and resources, delegate to [mcp-kubernetes](../mcp-kubernetes/SKILL.md) (see also the general-purpose [kubernetes-mcp](../kubernetes-mcp/SKILL.md) for non-cluster usage).
-- For payload compression and token limits, delegate to [mcp-lean-ctx](../mcp-lean-ctx/SKILL.md) (the `lean-ctx` cluster alias is the same `headroom-mcp` API — see also the general-purpose [headroom-patterns](../headroom-patterns/SKILL.md)).
+- **Rule 1**: Your tool list (populated automatically via the MCP handshake at session start)
+  contains the real, current names, descriptions, and input schemas of every available MCP tool.
+  Use it directly.
+- **Rule 2**: **Never** call an MCP tool name you found in a document, skill, example, or your
+  own memory without confirming it exists in your current tool list. Server tool sets change
+  between deployments; documented names go stale silently. (A previous version of this very
+  skill mandated calling `get_mcp_endpoints` — a tool that never existed. An audit on 2026-08-01
+  found that of 115 tool names documented across the MCP skills, only 1 matched a live server.)
+- **Rule 3**: If a tool you expected is missing from your tool list, the server is offline,
+  not connected for this task, or the tool was renamed/removed. Fall back to built-in tools
+  (Bash/Read/etc.) or report the gap — do not retry guessed name variants.
 
----
+### 2. Routing between overlapping capabilities
 
-## 📋 Routing Guidelines & Rules
-
-### 1. Dynamic Endpoint Verification
-- **Rule 1**: Always query the `multica` discovery tool `get_mcp_endpoints()` before attempting connection to any sub-service.
-- **Rule 2**: If a service (e.g. `lean-ctx`) is marked `offline` in the discovery response, the agent **must** fallback to local mock implementations and skip loading that skill.
-- **Rule 3**: Cache the endpoints response in `.agent/bus/mcp_endpoints.json` for 5 minutes.
-
-### 2. Namespace Routing
-- **Rule 4**: Verify namespace DNS context (default: `multica`) before building target URLs.
-
----
-
-## 💻 Code Examples & Connection Patterns
-
-### Querying Discovery Endpoint
-
-```json
-// Example payload to get all active endpoints in the namespace
-{
-  "serverName": "multica",
-  "toolName": "get_mcp_endpoints",
-  "arguments": {
-    "namespace": "multica"
-  }
-}
-```
-
-### Discovery Response Structure
-
-| Property | Type | Description |
-|---|---|---|
-| `browser.status` | String | Status of browser server (`online`/`offline`) |
-| `lean-ctx.status` | String | Status of lean-ctx server (`online`/`offline`) |
-| `kubernetes.url` | String | Endpoint URL in the cluster |
+- **Rule 4**: Prefer the most specific server for the job: Multica issue operations → the
+  `multica` server; cluster inspection → `kubernetes`; web page interaction → `browser`;
+  large-file/context-efficient reading → `lean-ctx`; code-graph queries → `codebase-memory-*`.
+- **Rule 5**: When both a built-in tool and an MCP tool can do the job, the built-in tool is
+  usually cheaper and more reliable; reach for the MCP tool when it offers a real advantage
+  (server-side state, cluster access, token savings).
 
 ---
 
-## ❌ Anti-Patterns & Pitfalls to Avoid
+## ❌ Anti-Patterns
 
-- **Anti-Pattern (Hardcoded Endpoints)**: Avoid hardcoding URL endpoints in code or configuration. Always use dynamic discovery via the `multica` endpoint.
-- **Anti-Pattern (Ignoring Offline Status)**: Never attempt to call tools on an MCP server that is reported as `offline`. Always implement fallback logic.
-- **Anti-Pattern (Polling Discovery)**: Don't poll the discovery API on every single step. Use the local cache `.agent/bus/mcp_endpoints.json`.
-- **Anti-Pattern (Missing Namespace)**: Avoid querying the discovery API without specifying the namespace, as it can return wrong endpoints.
-
----
-
-## Additional Quality Guidelines
-To ensure the highest standard of delivery, the following additional considerations must be met:
-1. Maintain consistency with existing naming conventions in the codebase.
-2. Implement comprehensive error handling and logging for all new components.
-3. Ensure that all dependencies are declared and verified beforehand.
-4. Write clean, self-documenting code with clear comments where necessary.
-5. Validate performance under load and avoid premature optimizations.
+- **Hardcoded tool names from docs**: the failure mode that motivated this rewrite. Trust the
+  handshake, not the markdown.
+- **Retrying name variants**: `list_pods` failed? Do not try `pods_list`, `listPods`, `get_pods`
+  in a loop — check the actual tool list once.
+- **Calling offline servers**: if a server's tools are absent from your tool list, it is not
+  available for this session. Skip it.
 
 ## Changelog
 
-- **1.3.0** (2026-07-31): Fixed delegation links (were hardcoded absolute `file://` paths to one
-  developer's machine — broken on any other clone) to relative paths. This skill is now attached
-  to all agents (was 59/69) so it acts as a true universal wrapper; the 5 Multica-namespaced
-  sub-skills it delegates to remain separate, full-fledged files from their general-purpose
-  counterparts (`kubernetes-mcp`, `codebase-memory-patterns`, `headroom-patterns`), since agents
-  operating inside the Multica cluster need the cluster-specific endpoint/replica/namespace
-  details that don't belong in the generic docs.
+- **2.0.0** (2026-08-01): Full rewrite after audit showed 114/115 documented tool names across
+  the MCP skill family were wrong (nonexistent or renamed tools, including a mandatory
+  `get_mcp_endpoints` discovery tool that was never implemented). Removed all hardcoded tool
+  names, endpoints, and delegations to the 5 `mcp-*` sub-skills (deleted in the same change —
+  they were attached to zero agents and documented fabricated tools). Multica is expected to
+  inject an auto-generated, always-current MCP tools reference into task context
+  (see multica repo `tasks/2026-08-01-mcp-tools-dynamic-injection.md`); until then, the MCP
+  handshake tool list is the only source of truth.
+- **1.3.0** (2026-07-31): Fixed delegation links to relative paths; attached to all 69 agents.
 - **1.2.0**: Initial version with 5 sub-skill delegations.

@@ -9,7 +9,7 @@
 Unified Agent Kit is a modular system consisting of:
 
 - **69 Specialist Agents** - Role-based AI personas
-- **162 Skills** - Domain-specific knowledge modules
+- **157 Skills** - Domain-specific knowledge modules
 - **27 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
@@ -236,7 +236,7 @@ Specialist AI personas for different domains.
 | `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
 | `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
-## 🧩 Skills (162)
+## 🧩 Skills (157)
 
 Modular knowledge domains that agents can load on-demand, based on task context.
 
@@ -338,17 +338,12 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `llm-patterns` | Production LLM & AI engineering — RAG pipelines, prompt design, tool use, model evaluation… |
 | `llm-regression-testing` | Standards for prompt benchmarking, quality metric calculation, and monitoring quality drif… |
 | `local-llm-tuning` | Best practices for configuring Ollama Modelfiles, setting GGUF quantizations, managing con… |
-| `mcp-agent-kit` | Mastery of the core agent-kit Model Context Protocol (MCP) server. |
-| `mcp-browser` | Mastery of the headless browser automation Model Context Protocol (MCP) server. |
 | `mcp-builder` | MCP (Model Context Protocol) server building principles. |
-| `mcp-codebase-memory` | Mastery of the codebase-memory Model Context Protocol (MCP) server. |
 | `mcp-integration` | This skill should be used when the user asks to "add MCP server", "integrate MCP", "config… |
 | `mcp-integration-standards` | Guidelines for writing custom MCP servers, json-schema formatting, transport debugging, an… |
-| `mcp-kubernetes` | Mastery of the Kubernetes Model Context Protocol (MCP) server. |
-| `mcp-lean-ctx` | Mastery of the lean-ctx Model Context Protocol (MCP) server. |
 | `mobile-design` | Mobile-first design thinking and decision-making for iOS and Android apps. |
 | `multica-cli` | Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Mu… |
-| `multica-mcp` | Router skill for Model Context Protocol (MCP) servers in the Multica Kubernetes namespace. |
+| `multica-mcp` | Guardrails for using Model Context Protocol (MCP) servers in the Multica Kubernetes namesp… |
 | `neural-prd-engineering` | AI-assisted Product Requirements Document (PRD) generation. |
 | `next-best-practices` | Next.js best practices for RSC boundaries, data patterns, and performance optimization. |
 | `nextflow-development` | Run nf-core bioinformatics pipelines (rnaseq, sarek, atacseq) on sequencing data. |
