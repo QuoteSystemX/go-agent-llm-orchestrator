@@ -168,7 +168,7 @@ Identify ALL domains this task touches:
 1. Use the project-planner agent to create PLAN.md.
 2. For each task in PLAN.md, run the Auctioneer:
    python3 .agent/scripts/orchestration/agent_auctioneer.py $SESSION_ID "Role_Name" "Task Description"
-3. If [PENDING_ARENA] is returned, proceed to Phase 3.
+3. If [PENDING_ARENA] is returned, proceed to Phase 2 (The Arena).
 → STOP after plan is finalized
 → ASK user for approval
 ```

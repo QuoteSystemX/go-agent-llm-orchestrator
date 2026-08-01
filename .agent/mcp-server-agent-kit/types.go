@@ -16,6 +16,7 @@ type CouncilProposal struct {
 	Title       string    `json:"title"`
 	Proposer    string    `json:"proposer"`
 	Votes       int       `json:"votes"`
+	Voters      []string  `json:"voters"` // agent identities that have already voted; prevents one caller from casting multiple votes
 	Required    int       `json:"required"`
 	Status      string    `json:"status"` // open, approved, rejected
 	CreatedAt   time.Time `json:"createdAt"`

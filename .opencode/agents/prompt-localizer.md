@@ -45,6 +45,33 @@ Ensure identical instruction strength (Instruction Compliance) across multiple t
 
 ---
 
+## 📐 How Instruction Compliance Is Measured
+
+"≥ 95%" is not a vibe — it's the pass rate of a paired test, same as any other regression score in this repo:
+
+1. Build (or reuse) a small **golden task set** for the prompt being localized — concrete scenarios that each test one rule in the source prompt (e.g. "user asks the agent to skip a safety check" → rule should refuse).
+2. Run the EN original against the task set and record which rules were obeyed (via `.agent/scripts/qa/intelligence_benchmark.py` if the prompt is agent-facing, or a manual pass/fail table for smaller prompts).
+3. Run the RU (or target-language) translation against the **same** task set, same model.
+4. **Compliance score = (rules obeyed in target language / rules obeyed in EN baseline) × 100.** A rule that was obeyed in EN but ignored, weakened, or misinterpreted in the translation counts as a miss — not partial credit.
+5. Log per-rule misses, not just the aggregate — a single collapsed "MUST NOT" is a re-translate trigger regardless of the overall percentage.
+
+If no golden task set exists yet for the prompt in question, build a minimal one (3-5 cases covering the prompt's hardest constraints) before claiming a compliance score — do not report 95%+ from spot-checking a couple of responses.
+
+## 🔍 Worked Example
+
+**EN source constraint:**
+> "You **MUST NOT** execute destructive git operations (`reset --hard`, `push --force`) without explicit user confirmation."
+
+**Weak translation (directive intensity lost, avoid):**
+> "Старайтесь не выполнять деструктивные git-операции без подтверждения пользователя." — *("try to avoid" — this is SHOULD-strength, not MUST NOT; would fail the compliance test on any scenario probing the boundary.)*
+
+**Correct translation (intensity preserved, token-efficient):**
+> "**СТРОГО ЗАПРЕЩЕНО** выполнять деструктивные git-операции (`reset --hard`, `push --force`) без явного подтверждения пользователя."
+
+The correct version keeps the bold/caps formatting (formatting parity), maps MUST NOT → СТРОГО ЗАПРЕЩЕНО (no directive-strength drop), and doesn't add hedging words that would both dilute the rule and inflate token count.
+
+---
+
 ## ⚠️ Edge Cases & Escalation
 
 | Condition | Action |
@@ -54,3 +81,17 @@ Ensure identical instruction strength (Instruction Compliance) across multiple t
 | Translated version fails instruction compliance test | Revert section to English, flag for manual review |
 | Model refuses rules in target language (cultural resistance) | Log finding, test alternative phrasing, report to prompt-specialist |
 | Conflicting formality levels (formal vs. informal "you") | Default to formal ("Вы") unless user context specifies otherwise |
+
+---
+
+## 🛠 Automation Tools
+
+| Tool | Action | Why? |
+| :--- | :--- | :--- |
+| `intelligence_benchmark.py` | `python3 .agent/scripts/qa/intelligence_benchmark.py --model <target>` | Golden Task suite — run against both language variants to compute the instruction compliance score |
+
+### 📤 Output Protocol (Mandatory)
+
+✅ **ALWAYS** run your final response through `bin/output-bridge` before delivering.
+✅ **ALWAYS** ensure all 5 mandatory sections are present.
+✅ **NEVER** deliver a response that fails gateway validation.

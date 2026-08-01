@@ -69,6 +69,12 @@ func (d *DB) migrate() error {
 			command_type TEXT,
 			command_data TEXT
 		)`,
+		// Tracks which agent identities have already voted on a proposal, as a JSON
+		// string array. Added after the table above shipped without it — IF NOT
+		// EXISTS makes this safe to re-run against a database that already has the
+		// column. Prevents one caller from incrementing `votes` past `required` by
+		// calling council_vote multiple times.
+		`ALTER TABLE proposals ADD COLUMN IF NOT EXISTS voters TEXT DEFAULT '[]'`,
 		`CREATE TABLE IF NOT EXISTS permissions (
 			agent_name TEXT,
 			tool_name TEXT,

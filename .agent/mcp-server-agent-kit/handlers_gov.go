@@ -29,7 +29,20 @@ func (h *handler) listProposals(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 
 func (h *handler) voteProposal(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	id, _ := req.RequireString("id")
-	
+
+	// Same implicit caller-identity convention withRBAC already uses for
+	// permission checks — reused here so one calling agent can't inflate a
+	// proposal's vote count past `required` by calling council_vote repeatedly.
+	voter := ""
+	if args, ok := req.Params.Arguments.(map[string]any); ok {
+		if a, ok := args["_agent"].(string); ok {
+			voter = a
+		}
+	}
+	if voter == "" || voter == "unknown" {
+		return mcp.NewToolResultError("Vote rejected: caller identity (_agent) could not be determined"), nil
+	}
+
 	ps, err := h.db.GetProposals()
 	if err != nil {
 		return mcp.NewToolResultError("db error: " + err.Error()), nil
@@ -47,6 +60,13 @@ func (h *handler) voteProposal(_ context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError("Proposal not found"), nil
 	}
 
+	for _, v := range target.Voters {
+		if v == voter {
+			return mcp.NewToolResultText(fmt.Sprintf("%s already voted on %s — vote not counted twice. Current status: %d/%d", voter, target.Title, target.Votes, target.Required)), nil // nosec
+		}
+	}
+
+	target.Voters = append(target.Voters, voter)
 	target.Votes++
 	if target.Votes >= target.Required {
 		target.Status = "approved"
@@ -56,7 +76,7 @@ func (h *handler) voteProposal(_ context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError("failed to save vote: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Vote cast for %s. Current status: %d/%d", target.Title, target.Votes, target.Required)), nil // nosec
+	return mcp.NewToolResultText(fmt.Sprintf("Vote cast by %s for %s. Current status: %d/%d", voter, target.Title, target.Votes, target.Required)), nil // nosec
 }
 
 func (h *handler) createProposal(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
