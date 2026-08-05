@@ -4,6 +4,17 @@ on:
   push:
     branches: [ "main" ]
     tags: [ "v*.*.*" ]
+    paths-ignore:
+      - '.agent/**'
+      - '.claude/**'
+      - '.opencode/**'
+      - '.jules/**'
+      - '.headroom/**'
+      - 'CLAUDE.md'
+      - 'bin/**'
+      - '.mcp.json'
+      - 'mcp_config.json'
+      - '.github/workflows/agent-evolution.yml'
 
 env:
   REGISTRY: ghcr.io
