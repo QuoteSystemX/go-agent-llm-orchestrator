@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Multica CLI Reference
@@ -289,6 +289,13 @@ multica issue suspend <id> --sha "$SHA" --max-loops 3   # run BEFORE `multica re
 multica repo push <repo-url>
 ```
   This makes CI's result on that commit automatically resume you (with the failure detail, if any) instead of anyone needing to poll manually. `--on-exhaust delegate:<agent-name>` can additionally hand the issue to a specialist if the loop runs out of retries (default: issue is marked `blocked`).
+
+**No Bash access?** An `issue_suspend` MCP tool now wraps this same suspend call for agents
+running in restricted runtimes without shell access. Its ownership check is identical to the
+CLI's (only the issue's current assignee may suspend it) — confirm the tool is actually present
+in your live MCP tool list before relying on it (`multica-mcp` skill Rule 1: the handshake, not
+this doc, is the source of truth for tool names/params). Agents with Bash access should keep
+using the CLI form above; the CLI already works today and is what's proven in production.
 
 ### Pre-flight checklist before ending any Multica-issue run
 * [ ] Did I create a PR? → Did I add `Closes <ISSUE-ID>` to its title/body?
