@@ -94,3 +94,14 @@ When executing tasks in parallel (e.g., dev work by `go-specialist` and testing 
 1. **File Isolation**: Agents must modify strictly separate files (e.g., business logic in `app.go`, tests in `app_test.go`) to prevent write conflicts and git merge conflicts.
 2. **Broker Queueing**: Parallel requests are governed by `mcp-llm-broker` semaphores. Do not implement custom concurrency in python scripts; let the broker handle LLM load balancing.
 
+### 🚫 NO COMMITS WITHOUT EXPLICIT USER PERMISSION (MANDATORY)
+
+**Creating a git commit — or any git history-mutating operation (commit, amend, rebase, push, merge) — is FORBIDDEN without the user's explicit, per-operation approval.**
+
+1. **Always ask first**: Before running `git commit` (or any mutating git command), STOP and ask the user for explicit permission. Do not assume consent from context (e.g., "the task is done", "the previous commit was approved", "commits were allowed earlier in the session").
+2. **One permission per operation**: User approval of one commit does NOT authorize subsequent commits. Ask again for each new commit.
+3. **Explicit permission defined**: The user must clearly confirm (e.g., "да, закоммить", "commit it", "сделай коммит"). Silence, prior patterns, or a generic "continue" do NOT count as permission.
+4. **Staging is allowed**: `git add` (staging) is permitted without approval — it is non-destructive and lets the user review what would be committed. But do NOT commit staged changes without permission.
+5. **Branching/rebasing/pushing**: Creating branches, rebasing, force-pushing, or pushing to remotes are destructive/mutating operations — each requires explicit user permission.
+6. **When in doubt**: If the user has not clearly authorized a commit for the current change, leave changes uncommitted (working tree + staged files) and report the state, offering to commit on their word.
+

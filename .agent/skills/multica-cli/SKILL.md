@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Multica CLI Reference
@@ -146,18 +146,45 @@ Interact directly with linked source code repositories.
 
 ```bash
 # Repository checkout and sync
-multica repo checkout <repo-id> [--branch <name>]
-multica repo sync             # sync working directory to remote origin
-multica repo rebase           # rebase current branch against base branch
-multica repo push             # push current branch to origin
+multica repo checkout <url> [--ref <branch|tag|commit>]   # NOT --branch — that flag doesn't exist here
+multica repo sync <url> [--ref <branch|tag|commit>]        # same as checkout; use when refreshing an already-checked-out repo
+multica repo rebase <url> [--base <branch>]                 # rebase current branch onto <branch>, default "main"
+multica repo push <url> [--branch <name>]                   # push current branch to origin; --branch overrides auto-detect
 
 # Pull Request operations
 multica repo pr list [--output json]
 multica repo pr view <pr-id> --output json
 multica repo pr create --title "..." [--body "..."] [--draft] --output json
-multica repo pr checkout <pr-id>
-multica repo pr merge <pr-id> [--method <merge|squash|rebase>]
+multica repo pr checkout <url> <number>
+multica repo pr merge <url> <number> [--method <merge|squash|rebase>]
 ```
+
+**`repo checkout`/`repo sync` always create a NEW local branch scoped to this task**
+(`agent/<your-agent-name>/<task-id>`), no matter what `--ref` you pass — `--ref` only picks the
+*starting commit*, it does not rename the branch you land on. This means a plain `repo push` after
+checking out an **existing open PR's branch** does NOT push to that PR by default — it pushes your
+task-scoped branch under its own name, creating a brand-new branch disconnected from the PR while
+you think you updated it. If the issue you're working already has one open PR, the daemon verifies
+your push branch against it and rejects a mismatch — but don't rely on that alone; look up and pass
+the real branch explicitly.
+
+**Resuming an existing PR — do this, not a bare `checkout` + `push`:**
+```bash
+# Look up the PR's CURRENT head branch — live, not from an old comment/thread
+BRANCH=$(multica issue pull-requests <issue-id> --output json \
+  | jq -r '.[] | select(.state=="open") | .branch')
+
+multica repo checkout <url> --ref "$BRANCH"
+# ... fix conflicts, rebase, etc. — your local branch is still agent/<you>/<task-id> ...
+
+# Re-check right before pushing — the PR may have moved since checkout, especially on a
+# multi-step task
+BRANCH=$(multica issue pull-requests <issue-id> --output json \
+  | jq -r '.[] | select(.state=="open") | .branch')
+multica repo push <url> --branch "$BRANCH"
+```
+If the issue has zero open PRs (fresh work), skip the lookup — auto-detect (`repo push <url>` with
+no `--branch`) is correct for a brand-new branch that will get its own PR via `repo pr create`.
 
 ### 5. Skills (`skill`)
 Deploy and configure skill definitions across workspaces.

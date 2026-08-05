@@ -7,7 +7,7 @@ hierarchy:
 tools: Read, Write, Edit, Grep, Glob, Bash, health_check, health_fix, system_info, metrics_get, logs_tail, workspace_status, secrets_get
 model: L3
 profile: go-service, data-platform, fullstack
-skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp
+skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-observability, go-stay-updated
 domains: sre, engineer
 ---
 # SRE Engineer

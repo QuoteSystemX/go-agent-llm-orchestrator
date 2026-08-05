@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -31,6 +32,46 @@ func TestHandlers(t *testing.T) {
 		}
 		if res.IsError {
 			t.Errorf("listSkills returned tool error: %v", res.Content)
+		}
+	})
+
+	t.Run("listSkillsExcludesNonSkillDirs", func(t *testing.T) {
+		res, err := h.listSkills(ctx, mcp.CallToolRequest{})
+		if err != nil {
+			t.Fatalf("listSkills failed: %v", err)
+		}
+		// res.Content is []interface{} of mcp.TextContent; concatenate their text fields.
+		got := map[string]bool{}
+		for _, c := range res.Content {
+			if tc, ok := c.(mcp.TextContent); ok {
+				for _, line := range strings.Split(tc.Text, "\n") {
+					line = strings.TrimSpace(line)
+					if line != "" {
+						got[line] = true
+					}
+				}
+			}
+		}
+		for _, excluded := range []string{"archive", "scratch"} {
+			if got[excluded] {
+				t.Errorf("listSkills should not contain non-skill dir %q", excluded)
+			}
+		}
+		if !got["clean-code"] {
+			t.Errorf("listSkills should contain real skill 'clean-code'")
+		}
+	})
+
+	t.Run("loadNonSkillDirReturnsError", func(t *testing.T) {
+		res, err := h.loadSkill(ctx, mcp.CallToolRequest{Params: mcp.CallToolParams{
+			Name:      "archive",
+			Arguments: map[string]any{"name": "archive"},
+		}})
+		if err != nil {
+			t.Fatalf("loadSkill returned err: %v", err)
+		}
+		if res == nil || !res.IsError {
+			t.Errorf(`loadSkill("archive") should error (archive/SKILL.md absent), got: %v`, res)
 		}
 	})
 

@@ -117,4 +117,6 @@ Before declaring a service "Production Ready", you **MUST**:
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/kubernetes-mcp/SKILL.md`
+- `.agent/skills/go-observability/SKILL.md`
+- `.agent/skills/go-stay-updated/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

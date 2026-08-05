@@ -200,4 +200,7 @@ What's slow?
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-performance/SKILL.md`
+- `.agent/skills/go-benchmark/SKILL.md`
+- `.agent/skills/go-gopls/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

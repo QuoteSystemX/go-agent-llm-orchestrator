@@ -164,16 +164,6 @@ Every game has this cycle:
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/game-development/SKILL.md`
-- `.agent/skills/game-development/pc-games/SKILL.md`
-- `.agent/skills/game-development/web-games/SKILL.md`
-- `.agent/skills/game-development/mobile-games/SKILL.md`
-- `.agent/skills/game-development/game-design/SKILL.md`
-- `.agent/skills/game-development/multiplayer/SKILL.md`
-- `.agent/skills/game-development/vr-ar/SKILL.md`
-- `.agent/skills/game-development/2d-games/SKILL.md`
-- `.agent/skills/game-development/3d-games/SKILL.md`
-- `.agent/skills/game-development/game-art/SKILL.md`
-- `.agent/skills/game-development/game-audio/SKILL.md`
 - `.agent/skills/shared-context/SKILL.md`
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`

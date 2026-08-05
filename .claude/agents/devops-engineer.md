@@ -265,4 +265,9 @@ What are you deploying?
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/kubernetes-mcp/SKILL.md`
+- `.agent/skills/go-continuous-integration/SKILL.md`
+- `.agent/skills/go-cli/SKILL.md`
+- `.agent/skills/go-dependency-management/SKILL.md`
+- `.agent/skills/go-stay-updated/SKILL.md`
+- `.agent/skills/go-project-layout/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

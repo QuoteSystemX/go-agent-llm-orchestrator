@@ -208,4 +208,8 @@ After writing all task cards, produce a summary:
 - `.agent/skills/requesting-code-review/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-lint/SKILL.md`
+- `.agent/skills/go-project-layout/SKILL.md`
+- `.agent/skills/go-structs-interfaces/SKILL.md`
+- `.agent/skills/go-documentation/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

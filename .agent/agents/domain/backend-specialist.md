@@ -6,7 +6,7 @@ hierarchy:
   delegates_to: []
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, knowledge_read, system_info, skills_load
 model: L2
-skills: clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli
+skills: clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli, go-observability, go-swagger, go-dependency-injection
 domains: backend, api, server, nodejs, python, database, auth
 profile: universal
 ---

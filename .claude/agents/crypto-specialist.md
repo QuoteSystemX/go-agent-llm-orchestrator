@@ -40,7 +40,7 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 | Layer | Tools / Concepts |
 |-------|-----------------|
 | **VM** | TVM opcodes, gas model, compute phase |
-| **Language** | FunC, Tact — contract structure, recv_internal, recv_external |
+| **Language** | FunC, Tact — contract structure, recv_internal, recv_external. ⚠️ **NEW FORMAT**: Tolk + Acton is the officially recommended modern stack (FunC is legacy). Prefer `@[skills/tolk]`, `@[skills/acton]`, `@[skills/func2tolk]` for new contracts and migrations; `@[skills/ton-blockchain]` covers the legacy Tact/FunC stack. |
 | **SDK** | ton-core, tonutils-go, tongo |
 | **Assets** | Jetton standard (TEP-74/89), NFT (TEP-62), TON DNS |
 | **Wallets** | Wallet V3/V4, Highload Wallet V2, multi-sig |
@@ -124,6 +124,10 @@ You handle: design, protocol analysis, math, architecture decisions, security re
 
 > **Skills** — read these files with the `Read` tool before starting:
 - `.agent/skills/ton-blockchain/SKILL.md`
+- `.agent/skills/ton-docs/SKILL.md`
+- `.agent/skills/tolk/SKILL.md`
+- `.agent/skills/acton/SKILL.md`
+- `.agent/skills/func2tolk/SKILL.md`
 - `.agent/skills/stonfi-dex/SKILL.md`
 - `.agent/skills/clean-code/SKILL.md`
 - `.agent/skills/api-patterns/SKILL.md`

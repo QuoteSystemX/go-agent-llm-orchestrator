@@ -9,7 +9,7 @@
 Unified Agent Kit is a modular system consisting of:
 
 - **69 Specialist Agents** - Role-based AI personas
-- **159 Skills** - Domain-specific knowledge modules
+- **182 Skills** - Domain-specific knowledge modules
 - **27 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
@@ -176,29 +176,29 @@ Specialist AI personas for different domains.
 | `arbor-search-agent` | Arbor Search Agent. | arbor-agent-search, semantic-search, multica-mcp, multica-cli, clean-code |
 | `archivist` | Governs the high-fidelity knowledge lifecycle. | knowledge-distillation, systemic-thinking, wiki-writing, architecture-governance, clean-code, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, multica-mcp, multica-cli |
 | `backend-lead` | Backend Engineering Lead — tactical layer between CTO and backend squad. | clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel, api-development, multica-mcp, multica-cli |
-| `backend-specialist` | Expert backend architect for Node.js, Python, and modern serverless/edge systems. | clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli |
+| `backend-specialist` | Expert backend architect for Node.js, Python, and modern serverless/edge systems. | clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli, go-observability, go-swagger, go-dependency-injection |
 | `ceo` | Chief Executive Officer. | clean-code, multica-mcp, multica-cli, bmad-lifecycle, brainstorming, plan-writing |
 | `chaos-monkey` | Resilience testing specialist. | chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp, multica-cli |
 | `cloud-engineer` | Designs, provisions, and maintains cloud infrastructure on AWS/GCP/Azure using Infrastruct… | cloud-patterns, terraform-patterns, bash-linux, deployment-procedures, clean-code, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli |
 | `code-archaeologist` | Expert in legacy code, refactoring, and understanding undocumented systems. | clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli |
-| `crypto-go-architect` | Designs and audits cryptographic systems in Go. | ton-blockchain, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops |
-| `crypto-specialist` | Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/of… | ton-blockchain, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli |
+| `crypto-go-architect` | Designs and audits cryptographic systems in Go. | go-skills-guide, ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops, go-performance, go-benchmark, go-observability, go-lint, go-dependency-injection, go-pkg-go-dev, go-dependency-management, go-popular-libraries |
+| `crypto-specialist` | Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/of… | ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli |
 | `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns, multica-mcp, multica-cli |
 | `data-engineer` | Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflo… | data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry, postgres-best-practices, nextflow-development, multica-mcp, multica-cli, clickhouse-best-practices, clickhouse-architecture-advisor |
 | `data-lead` | Data & Market Feeds Engineering Lead — tactical layer between CTO and data squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli |
 | `database-architect` | Expert database architect for schema design, query optimization, migrations, and modern se… | clean-code, database-design, shared-context, telemetry, postgres-best-practices, supabase-postgres-best-practices, turso-db, multica-mcp, multica-cli |
 | `debugger` | Expert in systematic debugging, root cause analysis, and crash investigation. | clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes, multica-mcp, multica-cli |
-| `devops-engineer` | Expert in deployment, server management, CI/CD, and production operations. | clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
+| `devops-engineer` | Expert in deployment, server management, CI/CD, and production operations. | clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-continuous-integration, go-cli, go-dependency-management, go-stay-updated, go-project-layout |
 | `documentation-writer` | Expert in technical documentation. | clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, visual-explainer, multica-mcp, multica-cli |
 | `ethics-auditor` | AI alignment and ethics governance auditor. | vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, clean-code, multica-mcp, multica-cli |
 | `explorer-agent` | Advanced codebase discovery, deep architectural analysis, and proactive research agent. | clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser, browser-use, multica-mcp, multica-cli |
 | `frontend-lead` | Frontend Engineering Lead — tactical layer between CTO and frontend squad. | clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli |
 | `frontend-specialist` | Senior Frontend Architect who builds maintainable React/Next.js systems with performance-f… | clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel, better-auth-best-practices, next-best-practices, ui-ux-pro-max, shadcn-best-practices, convex-setup-auth, multica-mcp, multica-cli |
-| `game-developer` | Game development across all platforms (PC, Web, Mobile, VR/AR). | clean-code, game-development, game-development/pc-games, game-development/web-games, game-development/mobile-games, game-development/game-design, game-development/multiplayer, game-development/vr-ar, game-development/2d-games, game-development/3d-games, game-development/game-art, game-development/game-audio, shared-context, telemetry, multica-mcp, multica-cli |
+| `game-developer` | Game development across all platforms (PC, Web, Mobile, VR/AR). | clean-code, game-development, shared-context, telemetry, multica-mcp, multica-cli |
 | `git-master` | Specialist in Git internals, conflict resolution, and repository health. | git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli |
-| `go-specialist` | Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worke… | clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, bash-linux, architecture, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, multica-mcp, multica-cli, go-context, go-concurrency, go-error-handling, go-safety, go-skills-guide, go-code-style, go-naming, go-data-structures, go-design-patterns, go-database, go-refactoring, go-modernize, go-troubleshooting, go-stretchr-testify, go-samber-do, go-samber-hot, go-samber-lo, go-samber-mo, go-samber-oops, go-samber-ro, go-samber-slog |
+| `go-specialist` | Expert Go engineer focused on language mastery, high-performance concurrency (xsync, worke… | go-skills-guide, clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, lint-and-validate, shared-context, telemetry, scope-sentinel, go-context, go-concurrency, go-error-handling, go-safety, go-database, go-refactoring, go-troubleshooting, go-grpc, go-performance, go-observability, go-lint, go-project-layout, go-dependency-injection |
 | `grafana-master` | Expert in Grafana dashboards, data visualization, and observability engineering. | grafana-dashboard-master, observability-patterns, frontend-design, shared-context, telemetry, clean-code, multica-mcp, multica-cli |
-| `grpc-architect` | gRPC and Protobuf contract architect for Go microservices. | go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing, go-design-patterns, go-samber-oops, go-stretchr-testify |
+| `grpc-architect` | gRPC and Protobuf contract architect for Go microservices. | go-skills-guide, go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing, go-design-patterns, go-samber-oops, go-stretchr-testify, go-grpc, go-gopls, go-pkg-go-dev, go-project-layout |
 | `harness-runner` | Runs LLM CLI tools (claude, free-code, codex) through the capability-driven harness_run ma… | harness-development, capability-authoring, security-audit, clean-code, multica-mcp, multica-cli |
 | `inbox-attendant` | Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). | inbox-patterns, knowledge-distillation, communication, triage, clean-code, multica-mcp, multica-cli |
 | `k8s-engineer` | Deep Kubernetes specialist — Helm charts, Operators, RBAC, HPA/VPA/KEDA, Ingress, NetworkP… | k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli, kubernetes-mcp |
@@ -210,7 +210,7 @@ Specialist AI personas for different domains.
 | `ml-lead` | ML & Research Engineering Lead — tactical layer between CTO and ML squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp, multica-cli |
 | `mobile-developer` | Expert in React Native and Flutter mobile development. | clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
 | `penetration-tester` | Conducts systematic ACTIVE penetration tests against live/staged targets — enumerates atta… | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp, multica-cli |
-| `performance-optimizer` | Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. | clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli |
+| `performance-optimizer` | Expert in performance optimization, profiling, Core Web Vitals, and bundle optimization. | clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli, go-performance, go-benchmark, go-gopls |
 | `permission-guard` | Owns the capabilities matrix at .agent/config/capabilities.yaml. | capability-authoring, security-audit, clean-code, knowledge-distillation, multica-mcp, multica-cli |
 | `platform-lead` | Platform Engineering Lead — tactical layer between CTO and platform squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
 | `product-manager` | Expert in product requirements, user stories, metrics, and acceptance criteria — owns WHAT… | plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
@@ -221,22 +221,22 @@ Specialist AI personas for different domains.
 | `prompt-red-teamer` | Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection,… | vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code, multica-mcp, multica-cli |
 | `prompt-specialist` | Expert in LLM orchestration, prompt design, benchmarking, and token economy. | prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli |
 | `python-specialist` | Senior Python engineer specializing in async systems, FastAPI, data pipelines, and type-sa… | python-patterns, python-expert-advanced, python-ecosystem-mastery, clean-code, testing-patterns, performance-profiling, multica-mcp, multica-cli |
-| `qa-automation-engineer` | Specialist in test automation infrastructure and E2E testing. | webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli |
+| `qa-automation-engineer` | Specialist in test automation infrastructure and E2E testing. | webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli, go-continuous-integration |
 | `quality-security-lead` | Quality & Security Engineering Lead — tactical layer between CTO and quality/security squa… | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli |
 | `red-team` | Specialized adversarial reviewer for PLANS and PROPOSALS (ADRs, architecture, PRs) — not l… | vulnerability-scanner, red-team-tactics, performance-profiling, clean-code, shared-context, better-auth-best-practices, multica-mcp, multica-cli |
 | `release-manager` | Specialist in software release lifecycles, semantic versioning (SemVer), and automated cha… | git-master, lint-and-validate, testing-patterns, clean-code, multica-mcp, multica-cli |
 | `rest-api-designer` | REST API designer specializing in OpenAPI 3.x contract-first design, HTTP semantics, versi… | api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code, typed-service-contracts, multica-mcp, multica-cli |
-| `reviewer` | Automated code auditor that scans the codebase and generates a prioritized task queue in t… | clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry, behavioral-modes, better-auth-best-practices, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli |
+| `reviewer` | Automated code auditor that scans the codebase and generates a prioritized task queue in t… | clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry, behavioral-modes, better-auth-best-practices, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli, go-lint, go-project-layout, go-structs-interfaces, go-documentation |
 | `risk-manager` | Chief Risk Officer. | clean-code, multica-mcp, multica-cli, bmad-lifecycle, architecture |
 | `security-auditor` | Elite cybersecurity expert for STATIC/defensive review — code audit, threat modeling, supp… | clean-code, vulnerability-scanner, security-audit, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
 | `seo-specialist` | SEO and GEO (Generative Engine Optimization) expert. | clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry, multica-mcp, multica-cli |
-| `sre-engineer` | Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry… | observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp |
-| `test-engineer` | Expert in testing, TDD, regression prevention, and coverage auditing. | clean-code, testing-patterns, test-driven-development, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli |
+| `sre-engineer` | Site Reliability Engineer — SLO/SLI/SLA definition, error budget management, OpenTelemetry… | observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-observability, go-stay-updated |
+| `test-engineer` | Expert in testing, TDD, regression prevention, and coverage auditing. | clean-code, testing-patterns, test-driven-development, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli, go-benchmark, go-cli |
 | `trading-lead` | Trading Engineering Lead — tactical layer between CTO and trading squads. | clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp, multica-cli |
 | `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
 | `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
-## 🧩 Skills (159)
+## 🧩 Skills (182)
 
 Modular knowledge domains that agents can load on-demand, based on task context.
 
@@ -245,6 +245,7 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 
 | Skill | Description |
 | --- | --- |
+| `acton` | Acton CLI workflow for TON smart contract development in Tolk: install/update, project boo… |
 | `adversarial-prompt-testing` | Hardening prompts against prompt injection, jailbreaks, and system prompt leakage. |
 | `agent-browser` | Browser automation CLI for AI agents. |
 | `agent-development` | This skill should be used when the user asks to "create an agent", "add an agent", "write… |
@@ -294,21 +295,36 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `documentation-writer` | Writing architecture summaries, onboarding guides, and compliance reports with Prose-First… |
 | `experience-injector` | Automatically queries the repository lessons learned database and injects relevant histori… |
 | `frontend-design` | Design thinking and decision-making for web UI. |
-| `game-development` | Game development orchestrator. |
+| `func2tolk` | Port TON smart contracts from FunC (.fc/.func) to modern Tolk (.tolk) with Acton: use acto… |
+| `game-development` | Game development principles across all platforms (PC, Web, Mobile, VR/AR) — game loop, pat… |
 | `geo-fundamentals` | Generative Engine Optimization for AI search engines (ChatGPT, Claude, Perplexity). |
 | `git-master` | Expert-level Git operations, conflict resolution, and repository state management. |
 | `github-actions-expert` | Guidelines for writing, securing, and optimizing GitHub Actions workflows. |
+| `go-benchmark` | Golang benchmarking, profiling, and performance measurement. |
+| `go-cli` | Golang CLI application development. |
 | `go-code-style` | Go code style conventions — line length and breaking, variable declarations, control flow… |
 | `go-concurrency` | Go concurrency patterns. |
 | `go-context` | Idiomatic context.Context usage in Go — propagation through API boundaries, cancellation,… |
+| `go-continuous-integration` | CI/CD pipeline configuration using GitHub Actions for Golang projects — testing, linting,… |
 | `go-data-structures` | Go data structures — slices (internals, capacity growth, preallocation, slices package), m… |
 | `go-database` | Comprehensive guide for Go database access — parameterized queries, struct scanning, NULLa… |
+| `go-dependency-injection` | Comprehensive guide for dependency injection (DI) in Golang. |
+| `go-dependency-management` | Dependency management strategies for Golang projects — go.mod management, installing/upgra… |
 | `go-dependency-manager` | Handles private Go dependencies for QuoteSystemX. |
 | `go-design-patterns` | Idiomatic Go design patterns — functional options, constructors, error flow, resource mana… |
+| `go-documentation` | Comprehensive documentation guide for Golang projects, covering godoc comments, README, CO… |
 | `go-error-handling` | Idiomatic Go error handling — creation, wrapping with %w, errors.Is/As, errors.Join, custo… |
+| `go-gopls` | Golang semantic code intelligence via `gopls`, the official Go language server — go-to-def… |
+| `go-grpc` | Provides gRPC usage guidelines, protobuf organization, and production-ready patterns for G… |
+| `go-lint` | Linting best practices and golangci-lint configuration for Golang projects — running linte… |
 | `go-modernize` | Modernize Go code to use recent language features, standard library improvements, and idio… |
 | `go-naming` | Go naming conventions — packages, constructors, structs, interfaces, constants, enums, err… |
+| `go-observability` | Golang everyday observability — the always-on signals in production. |
 | `go-patterns` | Professional Go development principles for 2026. |
+| `go-performance` | Golang performance optimization patterns and methodology - if X bottleneck, then apply Y. |
+| `go-pkg-go-dev` | Golang package and module documentation and exploration via `godig`, a pkg.go.dev API clie… |
+| `go-popular-libraries` | Recommends production-ready Golang libraries and frameworks. |
+| `go-project-layout` | Provides a guide for setting up Golang project layouts and workspaces. |
 | `go-refactoring` | Go refactoring — the safe, at-scale process for restructuring existing Go code — coverage-… |
 | `go-safety` | Defensive Go coding to prevent panics, silent data corruption, and subtle runtime bugs. |
 | `go-samber-do` | Dependency injection in Go using samber/do — service containers, lifecycle management, sco… |
@@ -320,7 +336,12 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `go-samber-slog` | Structured logging extensions for Go using samber/slog-**** packages — multi-handler pipel… |
 | `go-security` | Security best practices and vulnerability prevention for Go. |
 | `go-skills-guide` | Go skills router — for any Go coding, review, debug, or setup task, identifies which of th… |
+| `go-spf13-cobra` | Golang CLI command tree library using spf13/cobra — cobra.Command, RunE vs Run, Persistent… |
+| `go-spf13-viper` | Golang configuration library using spf13/viper — layered precedence (flag > env > file > K… |
+| `go-stay-updated` | Provides resources to stay updated with Golang news, communities and people to follow. |
 | `go-stretchr-testify` | Comprehensive guide to stretchr/testify for Go testing. |
+| `go-structs-interfaces` | Golang struct and interface design patterns — composition, embedding, type assertions, typ… |
+| `go-swagger` | Golang OpenAPI/Swagger documentation with swaggo/swag — annotation comments (@Summary, @Pa… |
 | `go-testing` | Production-ready Go tests — table-driven tests, testify suites and mocks, parallel tests,… |
 | `go-troubleshooting` | Troubleshoot Go programs systematically — find and fix the root cause. |
 | `godoc-patterns` | Go documentation standards — package doc-comments, func/type/method docs, doc.go files, Ex… |
@@ -390,7 +411,9 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `terraform-patterns` | Terraform/OpenTofu best practices — HCL modules, state management, workspace strategy, pro… |
 | `test-driven-development` | Use when implementing any feature or bugfix, before writing implementation code |
 | `testing-patterns` | Testing patterns and principles. |
+| `tolk` | Write, review, debug, and test idiomatic Tolk smart contracts for The Open Network (TON). |
 | `ton-blockchain` | Expert TON (The Open Network) development — ton-core, ton-crypto, Tact/FunC contracts, BOC… |
+| `ton-docs` | Use when working with The Open Network (TON) blockchain, or when the user mentions TON-eco… |
 | `triage` | Classify, prioritize, and assign incoming issues, security findings, or documentation drif… |
 | `turso-db` | > |
 | `typed-service-contracts` | Architecture standard for building robust, type-safe TypeScript services using the "Spec a… |
@@ -1066,17 +1089,12 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/orchestration/tough_auditor.py` | Adversarial LLM-powered Git Diff Auditor — evaluates staged/unstaged changes with extreme criticism via local Ollama, assigns quality scores (1.0–5.0), logs to `agent_scorer.py`, and warns/blocks if quality is suboptimal. Selects the best available Ollama model automatically. |
 | `.agent/scripts/orchestration/agent_scorer.py` | Log a quality score for an agent's work. |
 | `.agent/skills/nextflow-development/scripts/utils/ncbi_utils.py` | NCBI Utilities for GEO/SRA Data Access |
-| `paperclip-plugin-auth-hub/src/ui/entry.ts` | System module for entry.ts. |
 | `.agent/skills/skill-creator/scripts/improve_description.py` | Improve a skill description based on eval results. |
 | `.agent/skills/skill-creator/scripts/quick_validate.py` | Quick validation script for skills - minimal version |
 | `.agent/skills/nextflow-development/scripts/utils/sample_inference.py` | Sample name and metadata inference from filenames. |
-| `paperclip-plugin-auth-hub/src/ui/AuthDashboard.tsx` | System module for AuthDashboard.tsx. |
 | `.agent/skills/skill-creator/scripts/aggregate_benchmark.py` | Aggregate individual run results into benchmark summary statistics. |
-| `paperclip-plugin-auth-hub/src/handlers/google.ts` | System module for google.ts. |
 | `.agent/skills/skill-creator/scripts/generate_report.py` | Generate an HTML report from run_loop.py output. |
-| `paperclip-plugin-auth-hub/src/handlers/claude.ts` | System module for claude.ts. |
 | `.agent/skills/nextflow-development/scripts/utils/validators.py` | Samplesheet validation utilities. |
-| `paperclip-plugin-auth-hub/src/ui/AuthSidebar.tsx` | System module for AuthSidebar.tsx. |
 | `.agent/skills/nextflow-development/scripts/utils/file_discovery.py` | File discovery utilities for FASTQ, BAM, and CRAM files. |
 | `.agent/local-skill-server/lsp.go` | System module for lsp.go. |
 | `.agent/scripts/analysis/impact_to_roles.py` | System module for impact_to_roles.py. |

@@ -33,6 +33,7 @@ For most Go tasks, more than one skill applies at once — load the primary skil
 | Use samber/hot (in-memory cache) | go-samber-hot | go-database |
 | Use samber/ro (reactive streams) | go-samber-ro | go-samber-lo, go-concurrency |
 | Use samber/do (dependency injection) | go-samber-do | go-design-patterns |
+| Build a CLI (cobra/viper) | go-cli | go-spf13-cobra, go-spf13-viper, go-naming |
 | gRPC / Protobuf service work | grpc-architect agent's guidance | go-testing, go-error-handling |
 | Financial-precision / xsync / zero-alloc patterns | go-patterns | go-safety |
 | GoDoc / README / package documentation | godoc-patterns | go-naming |

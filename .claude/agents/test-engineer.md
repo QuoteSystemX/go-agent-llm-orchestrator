@@ -442,5 +442,7 @@ diff /tmp/baseline.txt <(go test ./... -race 2>&1 | grep -E "^ok|^FAIL")
 - `.agent/skills/telemetry/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-benchmark/SKILL.md`
+- `.agent/skills/go-cli/SKILL.md`
 - `.agent/skills/verification-before-completion/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`

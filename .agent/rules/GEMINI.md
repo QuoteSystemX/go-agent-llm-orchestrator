@@ -312,6 +312,17 @@ When executing tasks in parallel (e.g., dev work by `go-specialist` and testing 
 1. **File Isolation**: Agents must modify strictly separate files (e.g., business logic in `app.go`, tests in `app_test.go`) to prevent write conflicts and git merge conflicts.
 2. **Broker Queueing**: Parallel requests are governed by `mcp-llm-broker` semaphores. Do not implement custom concurrency in python scripts; let the broker handle LLM load balancing.
 
+### 🚫 NO COMMITS WITHOUT EXPLICIT USER PERMISSION (MANDATORY)
+
+**Creating a git commit — or any git history-mutating operation (commit, amend, rebase, push, merge) — is FORBIDDEN without the user's explicit, per-operation approval.**
+
+1. **Always ask first**: Before running `git commit` (or any mutating git command), STOP and ask the user for explicit permission. Do not assume consent from context (e.g., "the task is done", "the previous commit was approved", "commits were allowed earlier in the session").
+2. **One permission per operation**: User approval of one commit does NOT authorize subsequent commits. Ask again for each new commit.
+3. **Explicit permission defined**: The user must clearly confirm (e.g., "да, закоммить", "commit it", "сделай коммит"). Silence, prior patterns, or a generic "continue" do NOT count as permission.
+4. **Staging is allowed**: `git add` (staging) is permitted without approval — it is non-destructive and lets the user review what would be committed. But do NOT commit staged changes without permission.
+5. **Branching/rebasing/pushing**: Creating branches, rebasing, force-pushing, or pushing to remotes are destructive/mutating operations — each requires explicit user permission.
+6. **When in doubt**: If the user has not clearly authorized a commit for the current change, leave changes uncommitted (working tree + staged files) and report the state, offering to commit on their word.
+
 ---
 
 > [!NOTE]
@@ -463,48 +474,6 @@ Before asking questions, the system MUST run the following "Shields Up" suite:
 - **Audits**: `ux_audit.py`, `mobile_audit.py`, `lighthouse_audit.py`, `seo_checker.py`
 - **Knowledge**: `agent_squeeze.py`
 - **Test**: `playwright_runner.py`, `test_runner.py`
-
----
-
-> [!NOTE]
-> **trigger: paperclip_infra_only**
-> **scope: "active on: paperclip paths, agentic orchestration tasks, or explicit agentic keywords"**
-
-
-## TIER 3: PAPERCLIP AGENTIC PROTOCOLS
-
-### 📎 Paperclip Heartbeat Protocol (MANDATORY)
-
-Every session with ANY agent MUST follow the Paperclip Heartbeat cycle (Skill: @[skills/paperclip]):
-
-1. **Awareness**: Sync with current task and read `.agent/bus/` for context.
-2. **Lenses**: Apply Domain Lenses based on role category (Management, Engineering, QA, Infra).
-3. **Action**: Do not stop at planning; perform actionable work in the same heartbeat.
-4. **Reporting**: Every session MUST end with a **Progress Report** (Status, Blockers, Next Action).
-5. **Durable State**: Update task metadata and create child issues for delegated work.
-
-### 🚀 High-Agency Completion
-
-Agents in this workspace operate under the **"End-to-End"** principle.
-
-1. **Never stop at planning**: If the path is clear, proceed to implementation in the same response.
-2. **Hygiene is Mandatory**: Every code change must include necessary imports, basic error handling, and lint fixes.
-3. **Self-Correction**: If a tool fails, analyze the error and attempt a fix or alternative path immediately without asking for permission for trivial adjustments.
-
-### 📎 Paperclip Paradigm Alignment
-
-All development must respect the Paperclip Core Architecture:
-
-1. **Infrastructure First**: Prefer dynamic discovery (FS/API) over hardcoded registries in databases.
-2. **MCP Integration**: New functionality should ideally be exposed via MCP tools to ensure cross-agent accessibility.
-3. **Workspace Integrity**: Respect the `/paperclip` hierarchy and the separation of instances/workspaces.
-
-### 🎯 Mission Awareness
-
-We are building the future of agentic orchestration.
-
-- **Goal**: Create a robust, premium, and autonomous ecosystem.
-- **Standard**: "Minimum Viable Product" is not enough. Aim for "Production Ready" and "Feature Complete".
 
 ---
 

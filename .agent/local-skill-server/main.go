@@ -264,7 +264,17 @@ func (h *handler) statusSummary(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 	skills, _ := os.ReadDir(filepath.Join(h.projectRoot, ".agent", "skills"))
 	workflows, _ := os.ReadDir(filepath.Join(h.projectRoot, ".agent", "workflows"))
 
-	summary := fmt.Sprintf("Agents: %d\nSkills: %d\nWorkflows: %d", agentCount, len(skills), len(workflows))
+	skillCount := 0
+	for _, e := range skills {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") && !nonSkillDirs[e.Name()] {
+			// A directory only counts as a skill when it actually contains a SKILL.md
+			if _, err := os.Stat(filepath.Join(h.projectRoot, ".agent", "skills", e.Name(), "SKILL.md")); err == nil {
+				skillCount++
+			}
+		}
+	}
+
+	summary := fmt.Sprintf("Agents: %d\nSkills: %d\nWorkflows: %d", agentCount, skillCount, len(workflows))
 	return mcp.NewToolResultText(summary), nil
 }
 
@@ -308,16 +318,21 @@ func (h *handler) listWorkflows(_ context.Context, _ mcp.CallToolRequest) (*mcp.
 
 // --- Helpers ---
 
+// nonSkillDirs are container/utility directories under .agent/skills that are
+// not themselves skills (they hold archived or scratch content). Keep in sync
+// with scan_weak_skills.py SKIP_DIRS.
+var nonSkillDirs = map[string]bool{"archive": true, "scratch": true}
+
 func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult, error) {
 	var names []string
 	if isDir {
-		// Skills: list top-level directories only
+		// Skills: list top-level directories only, skipping non-skill containers
 		entries, err := os.ReadDir(path)
 		if err != nil {
-			return mcp.NewToolResultError("cannot read directory: " + err.Error()), nil
+			return mcp.NewToolResultError("cannot read directory: "+err.Error()), nil
 		}
 		for _, e := range entries {
-			if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			if e.IsDir() && !strings.HasPrefix(e.Name(), ".") && !nonSkillDirs[e.Name()] {
 				names = append(names, e.Name())
 			}
 		}

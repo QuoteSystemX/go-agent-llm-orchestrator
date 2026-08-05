@@ -310,4 +310,7 @@ After editing any file:
 - `.agent/skills/typed-service-contracts/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
+- `.agent/skills/go-observability/SKILL.md`
+- `.agent/skills/go-swagger/SKILL.md`
+- `.agent/skills/go-dependency-injection/SKILL.md`
 - `.agent/skills/headroom-patterns/SKILL.md`
