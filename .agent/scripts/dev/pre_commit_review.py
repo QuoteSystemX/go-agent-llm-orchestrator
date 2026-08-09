@@ -22,6 +22,7 @@ parent_dir = Path(__file__).resolve().parent
 if str(parent_dir) not in sys.path:
     sys.path.append(str(parent_dir))
 
+import re
 import subprocess
 
 try:
@@ -31,15 +32,33 @@ except ImportError:
     REPO_ROOT = Path(__file__).resolve().parents[3]
     LESSONS_PATH = REPO_ROOT / "LESSONS_LEARNED.md"
 
+def _strip_symlink_hunks(diff: str) -> str:
+    """Drop per-file diff blocks for symlinks.
+
+    A symlink's diff shows its target path as an added content line, e.g.
+    `+../../.agent/skills/<name>`. The lesson-keyword scan below would match
+    that against a lesson tagged for a substring of <name> — the symlink's
+    target *path* happening to contain a skill name, not any actual code
+    change. Confirmed cause of a real false positive when syncing
+    .agent/skills/ symlinks into .claude/skills/, where a couple of skill
+    names collided with existing lesson tags. Mode 120000 is the marker for
+    a symlink in any of: new/deleted file mode, old/new mode (a regular
+    file <-> symlink typechange), or the index line's mode field.
+    """
+    blocks = re.split(r"(?=^diff --git )", diff, flags=re.MULTILINE)  # no_lessons_check: literal diff header token, not a topical mention
+    kept = [b for b in blocks if "120000" not in b.split("\n@@", 1)[0]]
+    return "\n".join(kept)
+
 def get_staged_diff() -> str:
     try:
-        return subprocess.check_output([
+        raw = subprocess.check_output([
             "git", "diff", "--cached", "--",
             ":(exclude)*.md", ":(exclude)*.json", ":(exclude)*.jsonl",
             ":(exclude)*.yml", ":(exclude)*.html",
         ], cwd=REPO_ROOT).decode("utf-8")
     except Exception:
         return ""
+    return _strip_symlink_hunks(raw)
 
 def review_diff():
     diff = get_staged_diff()
@@ -53,18 +72,20 @@ def review_diff():
         lessons = f.read().lower()
 
     # Simple heuristic: look for keywords from lessons in the diff
-    import re
     # Extract keywords/titles from lessons (simple regex for demo)
     lesson_topics = re.findall(r'### \[\d+-\d+-\d+\] \[\w+\] \[([\w-]+)\] (.*)', lessons)
-    
-    # Only scan added lines to avoid false positives from removed code
+
+    # Only scan added lines to avoid false positives from removed code.
+    # A line containing the literal marker "no_lessons_check" is dropped
+    # entirely before matching — the escape hatch this function's own
+    # word-boundary comment below has always described, now actually wired
+    # up (it previously matched nothing, since no code ever checked for it).
     added_lines = "\n".join(
         l for l in diff.splitlines()
-        if l.startswith("+") and not l.startswith("+++")
+        if l.startswith("+") and not l.startswith("+++") and "no_lessons_check" not in l
     ).lower()
 
     warnings = []
-    import re
     for skill, title in lesson_topics:
         # Word-boundary match: \b...\b ensures we match the skill as a
         # whole word, not as a substring (e.g., "test" won't match "testing"
