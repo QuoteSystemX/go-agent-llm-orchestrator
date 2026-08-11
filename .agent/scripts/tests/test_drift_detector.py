@@ -79,5 +79,43 @@ class TestDriftDetector(unittest.TestCase):
         drifts = drift_detector.detect_drift()
         self.assertEqual(len(drifts), 0)
 
+    @patch('health.drift_detector.get_documented_files')
+    def test_close_resolved_cards(self, mock_docs):
+        # A file that no longer exists → its drift card must be closed.
+        # A file that still exists AND is undocumented → card must stay open.
+        mock_docs.return_value = "Some docs without those files"
+
+        tasks_dir = self.test_root / "tasks"
+        tasks_dir.mkdir(parents=True)
+
+        # Card 1: drift gone — file no longer exists
+        (tasks_dir / "2026-08-01-fix-doc-drift-gone-deadbeef.md").write_text(
+            "# [CHORE] Fix doc drift: FILE DRIFT: src/removed_thing.py (modified but not in docs)\n\n## Problem\n"
+        )
+        # Card 2: drift still active — file exists and is undocumented
+        (self.test_root / "src").mkdir(parents=True)
+        (self.test_root / "src" / "active_thing.py").write_text("x = 1")
+        (tasks_dir / "2026-08-02-fix-doc-drift-active-deadbeef.md").write_text(
+            "# [CHORE] Fix doc drift: FILE DRIFT: src/active_thing.py (modified but not in docs)\n\n## Problem\n"
+        )
+
+        actions = drift_detector.close_resolved_cards()
+        self.assertEqual(len(actions), 1)
+        self.assertIn("gone-deadbeef", actions[0])
+
+        # Resolved card moved to done/, active one untouched
+        self.assertFalse((tasks_dir / "2026-08-01-fix-doc-drift-gone-deadbeef.md").exists())
+        self.assertTrue((tasks_dir / "done" / "2026-08-01-fix-doc-drift-gone-deadbeef.md").exists())
+        self.assertTrue((tasks_dir / "2026-08-02-fix-doc-drift-active-deadbeef.md").exists())
+
+        # Closed card carries a Resolution section
+        closed = (tasks_dir / "done" / "2026-08-01-fix-doc-drift-gone-deadbeef.md").read_text()
+        self.assertIn("## Resolution", closed)
+        self.assertIn("CLOSED", closed)
+
+        # Second run: nothing more to close
+        actions = drift_detector.close_resolved_cards()
+        self.assertEqual(len(actions), 0)
+
 if __name__ == "__main__":
     unittest.main()

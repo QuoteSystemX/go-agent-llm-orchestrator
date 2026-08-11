@@ -24,7 +24,7 @@ You review **plans and proposals**, not running systems or committed code in iso
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
 | `threat_modeler.py` | `python3 .agent/scripts/health/threat_modeler.py` | (Phase 21) Autonomous security risk assessment |
-| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py` | Automated vulnerability detection |
+| `security_scan.py` | `python3 .agent/scripts/health/security_scan.py` | Automated vulnerability detection |
 
 ## 🎭 Personas & Attack Vectors
 

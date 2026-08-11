@@ -46,7 +46,7 @@ echo "Target env: $TARGET_ENV"
 # → Must NOT be: production, prod, live
 
 # Step 4: Create pre-drill snapshot
-python3 .agent/scripts/misc/chaos_monkey.py --snapshot --tag pre-drill-$(date +%Y%m%d)
+python3 .agent/scripts/chaos/chaos_monkey.py --snapshot --tag pre-drill-$(date +%Y%m%d)
 ```
 
 If any step fails — **abort and log** to `chaos_event.json`. Never skip.

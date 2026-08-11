@@ -250,6 +250,16 @@ def main() -> None:
     else:
         print("   No drift detected")
 
+    # 2b. Auto-close resolved drift cards (drift no longer present)
+    try:
+        import drift_detector
+        closed = drift_detector.close_resolved_cards()
+        if closed:
+            for c in closed:
+                print(f"   🗂  {c}")
+    except Exception as e:
+        print(f"   ⚠️ Auto-close of resolved drift cards failed: {e}")
+
     # 3. Infrastructure checks
     print("🏗️  Checking infrastructure...")
     missing = check_missing_infrastructure()

@@ -92,7 +92,7 @@ Before declaring a service "Production Ready", you **MUST**:
 | `status_report.py` | `python3 .agent/scripts/health/status_report.py` | Workspace health dashboard — check before any incident triage |
 | `incident_watcher.py` | `python3 .agent/scripts/health/incident_watcher.py` | Monitor process exit codes and push failures to Context Bus |
 | `war_room_manager.py` | `python3 .agent/scripts/orchestration/war_room_manager.py` | Orchestrate Debugger + Test-Engineer + Orchestrator for incident resolution |
-| `post_mortem_runner.py` | `python3 .agent/scripts/misc/post_mortem_runner.py` | Analyze failure logs, generate Mermaid post-mortem timeline |
+| `post_mortem_runner.py` | `python3 .agent/scripts/analysis/post_mortem_runner.py` | Analyze failure logs, generate Mermaid post-mortem timeline |
 | `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py` | Validate commands against watchdog rules before execution |
 
 ### 📤 Output Protocol (Mandatory)

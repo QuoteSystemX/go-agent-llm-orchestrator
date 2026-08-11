@@ -518,7 +518,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | `model_benchmark.py`  | Model speed & quality benchmarking | Model Selection          |
 | `knowledge_synergy.py` | Cross-project knowledge sync    | Post-Mortem, ADR export  |
 | `incident_watcher.py`  | Autonomous failure detection    | Runtime, CI/CD           |
-| `ralph_loop.py`        | Background atomic autonomous fixes for lint/test errors (Ralph Loop) | Continuous cleanup |
+| `.agent/scripts/orchestration/ralph_loop.py` | Background atomic autonomous fixes for lint/test errors (Ralph Loop) | Continuous cleanup |
 | `war_room_manager.py`  | Active SRE Incident Reflex Loop — real Git-Ops (_create_branch, _run_validation, _commit_fix, _report_pr), repair file scanner | After incident |
 | `arbitrator.py`        | Multi-agent consensus manager   | Architecture decisions   |
 | `bus_sse_server.py`    | Lightweight SSE server for live dashboard updates | Monitoring, Cockpit Ops |
@@ -533,16 +533,15 @@ Master validation scripts that orchestrate skill-level scripts.
 | `personality_adapter.py` | Style & DNA adaptation         | User stylistic alignment  |
 | `requirement_expander.py` | Hybrid knowledge expansion     | /prd, /architecture      |
 | `auto_adr_drafter.py`  | Autonomous ADR drafting        | Phase 3 Architecture     |
-| `browser_resilience.py` | Browser connectivity manager     | Every web/browser task   |
+| `bin/browser-bridge`    | Browser connectivity manager     | Every web/browser task   |
 | `output_bridge.py`     | Agent output validator & Red-Team Gate | Every final response     |
 | `guardrail_middleware.py` | Extensible GuardrailPipeline — composes check functions with halt_on_fail semantics | Every final response |
-| `checks/anthropic_safety.py` | Anthropic LLM safety classifier (haiku) — harmful_instructions, prompt_injection, pii_leak, jailbreak | Every final response |
+| `.agent/scripts/dev/checks/anthropic_safety.py` | Anthropic LLM safety classifier (haiku) — harmful_instructions, prompt_injection, pii_leak, jailbreak | Every final response |
 | `model_router.py`     | Unified Provider Router (Gemini/Claude) | Every subagent call      |
 | `self_healer.py`       | Autonomous Script Repair Wrapper       | Tool execution           |
 | `skill_discovery.py`   | JIT Skill Acquisition (URL Fetcher)    | Knowledge expansion      |
 | `sandbox_runner.py`    | Safe Code Sandbox (AST + Isolation)    | Untrusted code execution |
 | `predictive_watcher.py` | Predictive DevOps (Auto-ADR)          | Post-session maintenance |
-| `obsidian_sync.py`    | Obsidian Wiki-to-Code Bridge          | Every final response     |
 | `model_validator.py`  | Mental Model Architecture Validator   | Every final response     |
 | `governance_gate.py`  | Wiki-First Enforcement Sentinel       | Every final response     |
 | `agent_squeeze.py`    | High-integrity knowledge distillation from session context | End of session |
@@ -857,11 +856,11 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| **Total Agents**    | 49                                              |
-| **Total Skills**    | 114                                             |
-| **Total Workflows** | 24                                              |
-| **Total Scripts**   | 26                                              |
-| **Total Patterns**  | 10 (5 original + 5 BMAD)                        |
+| **Total Agents**    | 69                                              |
+| **Total Skills**    | 182                                             |
+| **Total Workflows** | 27                                              |
+| **Total Scripts**   | 337                                             |
+| **Total Patterns**  | 23                                              |
 | **MCP Servers**     | 2 (`local-skill-server` + `mcp-server-agent-kit`, stdio)        |
 | **Coverage**        | ~95% web/mobile/backend/infra development       |
 
@@ -936,7 +935,7 @@ Jules automation: full_cycle pattern → 1 story → 1 PR
 
 | File | Purpose |
 |------|---------|
-| `.agent/agents/core/analyst.md` | BMAD lifecycle driver — Discovery through Sprint |
+| `.agent/agents/management/analyst.md` | BMAD lifecycle driver — Discovery through Sprint |
 | `.agent/skills/bmad-lifecycle/SKILL.md` | Phase knowledge, artifact contracts, story card format |
 | `.agent/workflows/discovery.md` | `/discovery` — Phase 1 slash command |
 | `.agent/workflows/prd.md` | `/prd` — Phase 2 slash command |
@@ -1024,22 +1023,28 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/autopilot/select_candidates.py` | Autopilot Phase 3 (SELECT) — scores and ranks candidates by impact/urgency/effort/confidence. |
 | `.agent/scripts/autopilot/dispatch.py` | Autopilot Phase 4 (DISPATCH) — creates a `tasks/` card for the selected candidate and optionally notifies Slack. |
 | `.agent/scripts/autopilot/decide.py` | Autopilot Phase 5 (DECIDE) — records cycle outcome to `.agent/autopilot/cycle-log.jsonl` and feeds back into future SELECT scoring. |
-| `.agent/scripts/misc/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
+| `.agent/scripts/health/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
 | `.agent/scripts/health/headroom_benchmark.py` | Headroom Compression Benchmark — tests compression ratios on realistic agent conversation histories. |
 | `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
 | `.agent/scripts/orchestration/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
+| `.agent/mcp-llm-broker/router.go` | Routing decision engine for the mcp-llm-broker — provider/model selection based on task complexity and routing rules. |
+| `.agent/mcp-llm-broker/llamacpp_provisioner.go` | llama-server provisioning for the mcp-llm-broker — builds (if needed) and launches a standalone llama-server instance from Jan-downloaded GGUF models, self-writes the resolved URL into router_rules.json. |
+| `.agent/scripts/orchestration/dag_runner.py` | DAG runner for the orchestrator — parses dependency graphs and executes tasks in topological order. |
+| `.agent/scripts/delivery/mcp_config_setup.py` | Idempotent provisioner for root MCP configuration files and the mcp-llm-broker binary. |
+| `.agent/datasets/arbor-router-training/predict_v2.py` | v2 router-training predictor — phrase-first routing with expanded vocabulary (L4 → L1). |
+| `.agent/datasets/arbor-router-training/predict_baseline.py` | Baseline predictor for the router-training dataset — rule-based routing via `.agent/config/router_rules.json`. |
+| `.agent/skills/vulnerability-scanner/scripts/entropy_scanner.py` | Shannon Entropy Secrets Scanner — detects high-entropy secrets (API keys, tokens) in files. |
 | `.agent/scripts/orchestration/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
 | `.agent/scripts/dev/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
 | `.agent/scripts/delivery/codebase_memory_setup.py` | Codebase memory service provisioning and workspace database configuration. |
 | `.agent/scripts/delivery/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
-| `.agent/scripts/misc/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
+| `.agent/scripts/dev/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
 | `.agent/mcp-llm-broker/mcda.go` | Multi-Candidate Decision Algorithm (MCDA) for broker routing decisions. |
-| `.agent/scripts/chaos_monkey.py` | Deliberate fault injection for resilience testing (run on throwaway branches only). |
+| `.agent/scripts/chaos/chaos_monkey.py` | Deliberate fault injection for resilience testing (run on throwaway branches only). |
 | `.agent/scripts/knowledge/semantic_brain_engine.py` | TF-IDF semantic search engine over LESSONS_LEARNED and global knowledge base. |
 | `.agent/scripts/orchestration/agent_skill_auditor.py` | Ensures every agent has mandatory skills (clean-code) and valid SKILL.md metadata. |
 | `.agent/scripts/dev/ci_auto_fixer.py` | Auto-healing: detects failing CI jobs and proposes targeted fix commits. |
-| `.agent/scripts/context_autofill.py` | Autonomous context investigator — pulls ADRs, lessons, and bus state before an agent starts. |
-| `.agent/scripts/knowledge/discovery_brain_sync.py` | Syncs discovery output to Semantic Brain for future semantic search queries. |
+| `.agent/scripts/context/context_autofill.py` | Autonomous context investigator — pulls ADRs, lessons, and bus state before an agent starts. |
 | `.agent/scripts/analysis/intent_validator.py` | Phase 18 gate — detects architectural conflicts before implementation begins. |
 | `.agent/scripts/analysis/ambiguity_detector.py` | Socratic gate — identifies vague or ambiguous requirements before coding. |
 | `.agent/scripts/analysis/impact_analyzer.py` | Estimates blast radius of a change across the codebase before execution. |
@@ -1056,33 +1061,33 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/orchestration/personality_adapter.py` | Detects user stylistic DNA (Minimalism/Pragmatism) and adapts agent response style. |
 | `.agent/scripts/analysis/requirement_expander.py` | Cascading knowledge retrieval — expands terse requirements into detailed specs with feedback loop. |
 | `.agent/scripts/knowledge/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
-| `.agent/scripts/browser_resilience.py` | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
+| `bin/browser-bridge`    | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
 | `.agent/scripts/dev/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
 | `.agent/scripts/delivery/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
 | `.agent/scripts/delivery/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
 | `.agent/scripts/knowledge/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
-| `.agent/scripts/misc/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
-| `.agent/scripts/misc/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
-| `.agent/scripts/misc/session_manager.py` | Session Manager - Antigravity Kit |
-| `.agent/mcp-server/indexer.go` | System module for indexer.go. |
-| `.agent/mcp-server/helpers.go` | System module for helpers.go. |
-| `.agent/mcp-server/workers.go` | System module for workers.go. |
-| `.agent/mcp-server/db_observability.go` | System module for db_observability.go. |
-| `.agent/mcp-server/db_hooks.go` | System module for db_hooks.go. |
-| `.agent/mcp-server/handlers_hooks.go` | System module for handlers_hooks.go. |
-| `.agent/mcp-server/handlers_bmad.go` | System module for handlers_bmad.go. |
+| `.agent/scripts/dev/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
+| `.agent/scripts/health/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
+| `.agent/scripts/orchestration/session_manager.py` | Session Manager - Antigravity Kit |
+| `.agent/mcp-server-agent-kit/indexer.go` | System module for indexer.go. |
+| `.agent/mcp-server-agent-kit/helpers.go` | System module for helpers.go. |
+| `.agent/mcp-server-agent-kit/workers.go` | System module for workers.go. |
+| `.agent/mcp-server-agent-kit/db_observability.go` | System module for db_observability.go. |
+| `.agent/mcp-server-agent-kit/db_hooks.go` | System module for db_hooks.go. |
+| `.agent/mcp-server-agent-kit/handlers_hooks.go` | System module for handlers_hooks.go. |
+| `.agent/mcp-server-agent-kit/handlers_bmad.go` | System module for handlers_bmad.go. |
 | `.agent/scripts/delivery/auto_preview.py` | Auto Preview - Antigravity Kit |
-| `.agent/mcp-server/handlers_jobs.go` | System module for handlers_jobs.go. |
-| `.agent/mcp-server/handlers_gov.go` | System module for handlers_gov.go. |
-| `.agent/mcp-server/db_ops.go` | System module for db_ops.go. |
-| `.agent/mcp-server/db_governance.go` | System module for db_governance.go. |
-| `.agent/mcp-server/handlers_knowledge.go` | System module for handlers_knowledge.go. |
-| `.agent/mcp-server/handlers_discovery.go` | System module for handlers_discovery.go. |
-| `.agent/mcp-server/maintenance.go` | System module for maintenance.go. |
-| `.agent/mcp-server/db.go` | System module for db.go. |
-| `.agent/mcp-server/types.go` | System module for types.go. |
-| `.agent/mcp-server/handlers_infra.go` | System module for handlers_infra.go. |
-| `.agent/mcp-server/db_security.go` | System module for db_security.go. |
+| `.agent/mcp-server-agent-kit/handlers_jobs.go` | System module for handlers_jobs.go. |
+| `.agent/mcp-server-agent-kit/handlers_gov.go` | System module for handlers_gov.go. |
+| `.agent/mcp-server-agent-kit/db_ops.go` | System module for db_ops.go. |
+| `.agent/mcp-server-agent-kit/db_governance.go` | System module for db_governance.go. |
+| `.agent/mcp-server-agent-kit/handlers_knowledge.go` | System module for handlers_knowledge.go. |
+| `.agent/mcp-server-agent-kit/handlers_discovery.go` | System module for handlers_discovery.go. |
+| `.agent/mcp-server-agent-kit/maintenance.go` | System module for maintenance.go. |
+| `.agent/mcp-server-agent-kit/db.go` | System module for db.go. |
+| `.agent/mcp-server-agent-kit/types.go` | System module for types.go. |
+| `.agent/mcp-server-agent-kit/handlers_infra.go` | System module for handlers_infra.go. |
+| `.agent/mcp-server-agent-kit/db_security.go` | System module for db_security.go. |
 | `fix_design.js` | System module for fix_design.js. |
 | `.agent/scripts/orchestration/dead_ends.py` | Dead-Ends Registry — keeps session-level registry of failed patches and normalizes them for fuzzy comparison to prevent loops. |
 | `.agent/scripts/health/bus_sse_server.py` | Lightweight SSE HTTP server for live dashboard updates — serves `dashboard.html`, streams bus file changes via SSE (`/api/stream/bus`), exposes health API (`/api/health`), and provides Cockpit Exec endpoint (`POST /api/exec`) for running allowed maintenance scripts. Port 3201. |
@@ -1098,7 +1103,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/skills/nextflow-development/scripts/utils/file_discovery.py` | File discovery utilities for FASTQ, BAM, and CRAM files. |
 | `.agent/local-skill-server/lsp.go` | System module for lsp.go. |
 | `.agent/scripts/analysis/impact_to_roles.py` | System module for impact_to_roles.py. |
-| `.agent/scripts/orchestration_session.py` | System module for orchestration_session.py. |
+| `.agent/scripts/orchestration/orchestration_session.py` | System module for orchestration_session.py. |
 | `.agent/scripts/models/profile_routing.py` | Profiling script for L1 and L2 routing performance. |
 | `.agent/scripts/orchestration/wave_dispatcher.py` | Simplified Mermaid DAG parser for extracting nodes and dependencies. |
 | `.agent/scripts/orchestration/agent_auctioneer.py` | Dynamically builds agent matrix by scanning the .agent/agents/ folder |
@@ -1120,7 +1125,6 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/tests/test_squad_orchestrator.py` | 20 unit tests covering AgentScanner, GraphBuilder (cycle detection), ToolSandbox enforcement, Output Guardrails, dynamic routing, self-heal retry success/exhausted, and TaskState persistence. |
 | `.agent/mcp-llm-broker/constants.go` | Core constants including local LLM provider names, default URLs, pricing rates, latency balancing weights, and circuit breaker configuration parameters. |
 | `.agent/mcp-llm-broker/http_server.go` | OpenAI-compatible HTTP and JSON-RPC API server implementing chat completion endpoints, streaming parser, and request delegation handler. |
-| `.agent/scripts/orchestration/daemon/sandbox.py` | Security sandbox and command validation engine for the orchestrator daemon implementing bubblewrap (bwrap) isolation and secret masking. |
 | `.agent/scripts/orchestration/daemon/db.py` | SQLite database layer for the agent orchestrator daemon handling WAL-mode persistence of tasks, agent nodes cache, workspace locks, and execution traces. |
 | `.agent/scripts/orchestration/daemon/server.py` | IPC server daemon for the agent squad orchestrator, listening on Unix Domain Socket, executing tasks, and persisting states. |
 | `.agent/scripts/orchestration/daemon/client.py` | CLI client for the agent squad orchestrator daemon, connecting via UDS to manage task status and trigger execution. |

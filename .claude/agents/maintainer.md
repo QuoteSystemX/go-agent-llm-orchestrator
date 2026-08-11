@@ -21,13 +21,12 @@ You are the final gatekeeper of the codebase. Your mission is to ensure that no 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
 | `intent_validator.py` | `python3 .agent/scripts/analysis/intent_validator.py` | (Phase 18) Detect architectural conflicts |
-| `discovery_brain_sync.py` | `python3 .agent/scripts/knowledge/discovery_brain_sync.py` | (Phase 18) Sync with Global Brain patterns |
-| `context_autofill.py` | `python3 .agent/scripts/context_autofill.py` | (Phase 19) Autonomous context investigation |
+| `context_autofill.py` | `python3 .agent/scripts/context/context_autofill.py` | (Phase 19) Autonomous context investigation |
 | `ci_auto_fixer.py` | `python3 .agent/scripts/dev/ci_auto_fixer.py` | (Phase 19) Autonomous regression healing |
 | `resource_optimizer.py` | `python3 .agent/scripts/analysis/resource_optimizer.py` | (Phase 20) Economic & performance audit |
 | `checklist.py` | `python3 .agent/scripts/dev/checklist.py .` | Verify project-wide health |
-| `pr_audit.py` | `python3 .agent/scripts/misc/pr_audit.py` | Orchestrated deep audit of current changes |
-| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py` | Catch vulnerabilities early |
+| `pr_audit.py` | `python3 .agent/scripts/dev/pr_audit.py` | Orchestrated deep audit of current changes |
+| `security_scan.py` | `python3 .agent/scripts/health/security_scan.py` | Catch vulnerabilities early |
 | `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Ensure docs are updated with code |
 
 ## 🛠 ADVANCED AUDIT PROTOCOLS (MANDATORY)

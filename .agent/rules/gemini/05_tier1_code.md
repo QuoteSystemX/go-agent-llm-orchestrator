@@ -26,7 +26,7 @@ trigger: always_on
 Before asking questions, the system MUST run the following "Shields Up" suite:
 1.  **Clarity & Impact**: `ambiguity_detector.py`, `impact_analyzer.py`.
 2.  **Feasibility & Safety**: `ghost_prototyper.py`, `threat_modeler.py`.
-3.  **Wisdom & History**: `requirement_expander.py`, `failure_correlator.py`, `discovery_brain_sync.py`.
+3.  **Wisdom & History**: `requirement_expander.py`, `failure_correlator.py`.
 4.  **Strategic Thinking**: `hidden_war_room.py` (Advocate Veto active), `auto_adr_drafter.py`.
 5.  **Economy & Style**: `resource_forecaster.py`, `personality_adapter.py`.
 

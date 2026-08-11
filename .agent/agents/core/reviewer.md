@@ -184,9 +184,9 @@ After writing all task cards, produce a summary:
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
 | `experience_distiller.py` | `python3 .agent/scripts/knowledge/experience_distiller.py --query "<topic>"` | Query past lessons before writing task cards |
-| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py <path>` | OWASP static scan to populate security task cards |
+| `security_scan.py` | `python3 .agent/scripts/health/security_scan.py <path>` | OWASP static scan to populate security task cards |
 | `drift_detector.py` | `python3 .agent/scripts/health/drift_detector.py` | Detect documentation gaps to generate `[DOCS]` task cards |
-| `pr_audit.py` | `python3 .agent/scripts/misc/pr_audit.py` | Deep PR audit — security, drift, quality — before writing audit report |
+| `pr_audit.py` | `python3 .agent/scripts/dev/pr_audit.py` | Deep PR audit — security, drift, quality — before writing audit report |
 
 ### 📤 Output Protocol (Mandatory)
 

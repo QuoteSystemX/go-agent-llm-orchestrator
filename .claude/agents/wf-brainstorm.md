@@ -19,7 +19,7 @@ This command activates BRAINSTORM mode for structured idea exploration. Use when
 ---
 
 ## Step 0: Gateway Audit
-- Run `impact_analyzer.py`, `requirement_expander.py`, `failure_correlator.py`, `discovery_brain_sync.py`, `ghost_prototyper.py`.
+- Run `impact_analyzer.py`, `requirement_expander.py`, `failure_correlator.py`, `ghost_prototyper.py`.
 - Run `python3 .agent/scripts/context/context_recall_gate.py "_Context from user message is passed automatically by Claude Code._"`.
 - **Goal**: Inform the brainstorm with automated feasibility checks, historical failure patterns, and architectural impact analysis.
 

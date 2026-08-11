@@ -145,7 +145,7 @@ Is it actively exploited (EPSS >0.5)?
 
 | Tool | Action | Why? |
 | :--- | :--- | :--- |
-| `security_scan.py` | `python3 .agent/scripts/misc/security_scan.py <path> --output summary` | OWASP static scan — hardcoded secrets, dangerous patterns, weak hashes |
+| `security_scan.py` | `python3 .agent/scripts/health/security_scan.py <path> --output summary` | OWASP static scan — hardcoded secrets, dangerous patterns, weak hashes |
 | `threat_modeler.py` | `python3 .agent/scripts/health/threat_modeler.py` | STRIDE-based threat model for a component or PR |
 | `guardrail_monitor.py` | `python3 .agent/scripts/health/guardrail_monitor.py --check-cmd "<cmd>"` | Validate commands for secret leaks and dangerous operation patterns |
 | `vulnerability_patcher.py` | `python3 .agent/scripts/dev/vulnerability_patcher.py <type> <file> <ctx>` | Format a targeted secure fix request for patching |

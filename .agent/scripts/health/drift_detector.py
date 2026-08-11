@@ -168,22 +168,94 @@ def run_drift_detection() -> dict:
     }
 
 
+def close_resolved_cards(dry_run: bool = False) -> list[str]:
+    """Close open fix-doc-drift task cards whose drift has disappeared.
+
+    Scans tasks/*fix-doc-drift-*.md for 'FILE DRIFT: <path>' markers, re-checks
+    whether the file is still missing from documentation, and moves resolved
+    cards to tasks/done/ with a Resolution section. Returns list of actions.
+
+    This closes the loop: drift_detector.py no longer only *creates* cards —
+    it also *closes* them once the drift is gone.
+    """
+    tasks_dir = REPO_ROOT / "tasks"
+    done_dir = tasks_dir / "done"
+    docs_content = get_documented_files()
+    actions: list[str] = []
+
+    if not tasks_dir.exists():
+        return actions
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    for card in sorted(tasks_dir.glob("*fix-doc-drift-*.md")):
+        text = card.read_text(encoding="utf-8", errors="replace")
+        # Extract all FILE DRIFT: <path> markers from the card
+        markers = re.findall(r"FILE DRIFT:\s*([^\s(]+)", text)
+        if not markers:
+            continue
+
+        resolved = True
+        for f in markers:
+            # Drift is gone when the filename is documented OR the file no
+            # longer exists (e.g. renamed/removed — nothing to document).
+            path = REPO_ROOT / f
+            if path.exists() and Path(f).name not in docs_content:
+                resolved = False
+                break
+
+        if not resolved:
+            continue
+
+        # Drift resolved → move card to done/ with Resolution section
+        if dry_run:
+            actions.append(f"WOULD CLOSE: {card.name}")
+            continue
+
+        done_dir.mkdir(parents=True, exist_ok=True)
+        destination = done_dir / card.name
+        resolution = (
+            "\n## Resolution [%s]\n"
+            "**Status**: CLOSED\n"
+            "**Closed by**: drift_detector.py auto-close (drift no longer present)\n\n"
+            "The files referenced by this card are now documented (or no longer exist), "
+            "so the drift is resolved.\n"
+        ) % today
+        destination.write_text(text.rstrip() + "\n" + resolution, encoding="utf-8")
+        card.unlink()
+        actions.append(f"CLOSED: {card.name}")
+
+    return actions
+
+
 def main():
     parser = argparse.ArgumentParser(description="Detect Documentation Drift")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+    parser.add_argument("--close", action="store_true",
+                        help="Auto-close resolved fix-doc-drift task cards (drift no longer present)")
+    parser.add_argument("--dry-run", action="store_true", help="With --close: show what would be closed")
     args = parser.parse_args()
 
     drifts = detect_drift()
-    
+
     if args.format == "json":
-        print(json.dumps({
+        payload = {
             "drifts": drifts,
             "passed": len(drifts) == 0,
-            "count": len(drifts)
-        }))
+            "count": len(drifts),
+        }
+        if args.close:
+            payload["closed_cards"] = close_resolved_cards(dry_run=args.dry_run)
+        print(json.dumps(payload))
         return
 
     print("🔍 Checking for Documentation Drift (Code vs Wiki)...")
+    if args.close:
+        closed = close_resolved_cards(dry_run=args.dry_run)
+        if closed:
+            for c in closed:
+                print(f"  🗂  {c}")
+        elif not args.dry_run:
+            print("  🗂  No open fix-doc-drift cards to close.")
     if drifts:
         print("\n⚠️  WARNING: Found modified files not mentioned in documentation:")
         for d in drifts:

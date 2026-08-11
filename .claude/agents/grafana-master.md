@@ -97,13 +97,13 @@ After building a dashboard, run this self-check:
 
 ```bash
 # Step 1: Schema validation
-python3 .agent/scripts/misc/grafana_manager.py validate --file <json>
+python3 .agent/scripts/health/grafana_manager.py validate --file <json>
 
 # Step 2: Variable check (must pass — no raw $cluster / $service references unset)
-python3 .agent/scripts/misc/grafana_manager.py check-vars --file <json>
+python3 .agent/scripts/health/grafana_manager.py check-vars --file <json>
 
 # Step 3: Deploy to staging Grafana
-python3 .agent/scripts/misc/grafana_manager.py deploy --file <json> --env staging
+python3 .agent/scripts/health/grafana_manager.py deploy --file <json> --env staging
 ```
 
 **Manual checklist before marking complete:**
