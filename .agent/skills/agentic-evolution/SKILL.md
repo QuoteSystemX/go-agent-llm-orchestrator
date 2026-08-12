@@ -10,7 +10,7 @@ This skill provides the logic and scripts for the autonomous evolution of the Ag
 
 ## Principles
 
-1. **Self-Diagnosis**: Analyzing `LESSONS_LEARNED.md` and `telemetry/` to find bottlenecks.
+1. **Self-Diagnosis**: Analyzing `.agent/rules/LESSONS_LEARNED.md` and `.agent/logs/metrics.jsonl` (see the `telemetry` skill) to find bottlenecks.
 2. **Specialization**: Creating new agents for niche domains to reduce "role fatigue" of generic agents.
 3. **Consensus Duels**: Running parallel models to verify logic.
 
@@ -28,7 +28,7 @@ This skill provides the logic and scripts for the autonomous evolution of the Ag
 
 ## When to Use
 
-- **Triggering the breeding cycle** when `LESSONS_LEARNED.md` shows repeated
+- **Triggering the breeding cycle** when `.agent/rules/LESSONS_LEARNED.md` shows repeated
   failure patterns for a single agent role.
 - **Running intelligence benchmarks** to measure quality drift after
   agent or skill changes.
@@ -51,7 +51,7 @@ Avoid using this skill for:
   `intelligence_benchmark.py` before being added to the manifest.
 - **Don't trust self-reported quality** — agents can lie about their
   own performance. Use the `Golden Task` benchmark as ground truth.
-- **Don't breed without `LESSONS_LEARNED.md` evidence** — if there
+- **Don't breed without `.agent/rules/LESSONS_LEARNED.md` evidence** — if there
   are no lessons, there's no signal. Wait for failure data to
   accumulate.
 

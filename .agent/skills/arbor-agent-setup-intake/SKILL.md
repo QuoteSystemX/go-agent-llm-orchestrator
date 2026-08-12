@@ -75,12 +75,25 @@ chat (the durable upgrade over an ephemeral on-screen contract):
 - `ARBOR_CONTRACT.md` — one screen: target dir, metric (name / command /
   direction), baseline anchor, ambition, scope, dev/test discipline, edit
   surface, and budget (suggested max cycles).
-- `research_config.yaml` — machine-readable, auto-detected by `arbor`:
+- `research_config.yaml` — machine-readable, read by this skill suite's
+  coordinator/executor skills during skill-only (LLM-emulated) runs:
   `task` (the contract paragraph), `coordinator.max_cycles`,
   `coordinator.ui.interaction_mode: review` (safest default; change on request).
   Follow `examples/research_config.example.yaml`.
 
 These are written during setup, before handing the contract to the coordinator.
+
+**Native `arbor` binary caveat**: the `coordinator.`-nested schema above is
+this skill suite's own convention for skill-only runs — it is not the real
+[RUC-NLPIR/Arbor](https://github.com/RUC-NLPIR/Arbor) CLI's config format.
+Upstream uses a flat schema instead: top-level `max_cycles`, top-level
+`ui.interaction_mode` (no `coordinator:` wrapper), and no `task` key at all —
+the contract is passed via `arbor run "<contract>"` (positional/`--task`), not
+written into the YAML. If a `research_config.yaml` written per this section is
+ever handed to the real `arbor run --config` (see "Launch Commands"),
+translate it to the flat schema first — as written it is only guaranteed to
+work for skill-only runs, where nothing in this repo parses or validates it
+against upstream's pydantic models.
 
 ## Preflight Checks
 
@@ -198,6 +211,10 @@ arbor doctor
 arbor run "<contract>" --yes --yes-cwd <project> --config <config> --max-cycles 3
 arbor report <project>/.arbor/sessions/<run_name>
 ```
+
+`<config>` here must be the upstream flat schema, not the `coordinator.`-nested
+`research_config.yaml` from "Persist The One-Screen Contract" — translate
+before passing it to the native binary.
 
 Skill-only smoke tests should use `arbor-agent-tools` and a copied project
 directory unless the user explicitly wants to modify the live repo.

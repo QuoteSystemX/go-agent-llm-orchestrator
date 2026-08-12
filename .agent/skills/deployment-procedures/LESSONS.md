@@ -9,7 +9,7 @@
 ### [2026-05-19] [PATTERN] [deployment-procedures] Automated Multi-Client Synchronization and Drift Mitigation
 
 - **Context**: Coordinating multi-client builds or synchronizations.
-- **Prevention**: Always document new codebases or modules inside [.agent/ARCHITECTURE.md](file:///Users/artur/Documents/my/prompt-library/.agent/ARCHITECTURE.md) to satisfy `drift_detector.py`. Then, compile all configurations and prune orphans using `sync_agents.py` for both platforms (`claude` and `opencode`) to restore a healthy (75%+) workspace integrity score.
+- **Prevention**: Always document new codebases or modules inside [.agent/ARCHITECTURE.md](.agent/ARCHITECTURE.md) to satisfy `drift_detector.py`. Then, compile all configurations and prune orphans using `sync_agents.py` for both platforms (`claude` and `opencode`) to restore a healthy (75%+) workspace integrity score.
 
 ### [2026-05-23] [PATTERN] [deployment-procedures] Output Gateway Header Formatting and Regex Termination Alignment
 

@@ -548,7 +548,7 @@
         "glob": "allow",
         "grep": "allow"
       },
-      "description": "Measures prompt performance metrics, token usage, latency, and consistency across multiple model backends.",
+      "description": "Expert in evaluating prompt quality, cross-LLM-backend regression, and prompt-level token economics. Use for comparing prompt templates across model backends, tracking prompt output accuracy/consistency, and catching prompt regressions after template edits. Triggers on prompt benchmark, prompt regression, prompt eval, LLM backend comparison, TTFT, TPS, token cost per prompt, output quality drift. NOT for general runtime/infra performance \u2014 see performance-optimizer for that.",
       "model": "mcp-llm-broker/L2",
       "hidden": true
     },

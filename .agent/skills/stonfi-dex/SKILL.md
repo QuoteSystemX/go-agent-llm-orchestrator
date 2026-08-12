@@ -14,28 +14,40 @@ Expert guidelines for integrating with Ston.fi, the leading decentralized exchan
 Ston.fi uses a request-response pattern for swaps and liquidity provision.
 
 ### Basic Swap Pattern (SDK)
+
+**Always let the STON.fi API pick the router via `simulateSwap()` rather than hardcoding a router
+address** — that stays compatible with future router upgrades. (An older pattern using
+`StonApiClient.getSwapQuote()` / `Router.buildSwapTx()` shows up in some tutorials — it's
+outdated; the API replaced those with `simulateSwap()` + `getSwap*TxParams()`.)
+
 ```typescript
-import { StonApiClient, Router } from '@ston-fi/sdk';
+import { StonApiClient } from '@ston-fi/api';
+import { dexFactory } from '@ston-fi/sdk';
 
-const client = new StonApiClient();
-const router = new Router(client, { address: ROUTER_ADDRESS });
+const stonApi = new StonApiClient();
 
-// 1. Get a quote
-const quote = await client.getSwapQuote({
-    askAddress: JETTON_A,
-    bidAddress: JETTON_B,
-    offerAmount: '1000000',
-    slippage: 0.01,
+// 1. Simulate to get a quote + which router to use
+const simulation = await stonApi.simulateSwap({
+    offerAddress: JETTON_A,
+    askAddress: JETTON_B,
+    offerUnits: '1000000',
+    slippageTolerance: '0.01',
 });
 
-// 2. Build swap message
-const tx = await router.buildSwapTx({
-    userAddress: USER_WALLET,
-    offerAmount: quote.offerAmount,
-    askAddress: quote.askAddress,
-    minAskAmount: quote.minAskAmount,
+// 2. Build swap tx params via the router the simulation picked
+const dexContracts = dexFactory(simulation.router);
+const router = tonClient.open(dexContracts.Router.create(simulation.router.address));
+const txParams = await router.getSwapJettonToJettonTxParams({
+    userWalletAddress: USER_WALLET,
+    offerJettonAddress: simulation.offerAddress,
+    askJettonAddress: simulation.askAddress,
+    offerAmount: simulation.offerUnits,
+    minAskAmount: simulation.minAskUnits,
 });
 ```
+
+Full flow including the TON-to-jetton / jetton-to-TON branches and sending via TonConnect:
+see `examples/swap-execution.ts`.
 
 ## 🚀 Swap Execution Logic
 

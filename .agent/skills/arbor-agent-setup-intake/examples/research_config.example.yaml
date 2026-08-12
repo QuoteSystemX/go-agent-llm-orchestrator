@@ -1,0 +1,77 @@
+# research_config.yaml — machine-readable Arbor research contract.
+#
+# Written by the setup/intake phase after the one-screen contract is
+# confirmed (see "Persist The One-Screen Contract" in SKILL.md), read by this
+# skill suite's coordinator/executor skills during skill-only (LLM-emulated)
+# runs. Genericized from a real, previously-run config in this repo:
+# .agent/datasets/arbor-router-training/research_config.yaml — copy that file
+# directly for a worked example with real values, or use this one as a
+# from-scratch template.
+#
+# NOT the upstream RUC-NLPIR/Arbor CLI's config format: this file's
+# `coordinator.`-nested schema (task/coordinator.max_cycles/
+# coordinator.ui.interaction_mode) is this skill suite's own convention.
+# Translate to upstream's flat schema (top-level max_cycles, top-level
+# ui.interaction_mode, task passed via `arbor run "<contract>"` instead of a
+# YAML key) before feeding a config to the real `arbor run --config` binary
+# — see "Native `arbor` binary caveat" in SKILL.md.
+
+run_name: my-run-2026-08-12
+workflow_run: <optional workflow/session correlation id>
+
+# The contract paragraph: what to improve, by how much, on what data,
+# and what NOT to touch. This is the single source of truth the coordinator
+# optimizes against — see "Research Contract" in SKILL.md for the 5
+# components it must contain (Metric, Baseline anchor, Ambition, Scope
+# preference, Hard constraints).
+task: |
+  Improve <metric name> on <target project> by at least <delta> on B_dev
+  without dropping B_test <metric name> below <floor>. See ARBOR_CONTRACT.md
+  for the full one-screen contract.
+
+target:
+  dir: <path to the project being optimized, relative to repo root>
+  base_branch: main
+  trunk_branch: arbor/trunk/my-run-2026-08-12
+
+metric:
+  name: score
+  direction: maximize   # or minimize
+  eval_command: python3 eval.py --split B_dev --predictions {predictions}
+  baseline:
+    B_dev:
+      score: 0.0        # replace with the measured baseline, or omit and
+                         # let the coordinator measure it during INIT
+    B_test:
+      score: 0.0
+
+splits:
+  B_dev: B_dev.jsonl
+  B_test: B_test.jsonl
+
+# Files the coordinator/executors must never modify — always include the
+# eval harness, held-out splits, and this config itself.
+protected_paths:
+  - B_test.jsonl
+  - B_dev.jsonl
+  - eval.py
+  - ARBOR_CONTRACT.md
+  - research_config.yaml
+
+# Where executors are allowed to make changes. Keep this as narrow as the
+# task allows.
+edit_surface:
+  - src/**
+  - experiments/**
+
+coordinator:
+  max_cycles: 10
+  ui:
+    interaction_mode: review   # auto | direction | review | collaborative
+                                # — review is the safest default; change only
+                                # on explicit request (see "Fast Path" step 6)
+
+hard_constraints:
+  - B_test is not for iteration — never read labels from it at prediction time.
+  - Do not modify the eval harness in a way that rescales or games the metric.
+  - Respect all protected_paths above.

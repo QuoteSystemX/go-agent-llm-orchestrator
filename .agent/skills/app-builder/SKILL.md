@@ -33,6 +33,7 @@ Quick-start scaffolding for new projects. **Read the matching template only!**
 | [nextjs-fullstack](templates/nextjs-fullstack/TEMPLATE.md) | Next.js + Prisma | Full-stack web app |
 | [nextjs-saas](templates/nextjs-saas/TEMPLATE.md) | Next.js + Stripe | SaaS product |
 | [nextjs-static](templates/nextjs-static/TEMPLATE.md) | Next.js + Framer | Landing page |
+| [astro-static](templates/astro-static/TEMPLATE.md) | Astro 4.x + MDX | Content-focused site, blog, docs |
 | [nuxt-app](templates/nuxt-app/TEMPLATE.md) | Nuxt 3 + Pinia | Vue full-stack app |
 | [express-api](templates/express-api/TEMPLATE.md) | Express + JWT | REST API |
 | [python-fastapi](templates/python-fastapi/TEMPLATE.md) | FastAPI | Python API |

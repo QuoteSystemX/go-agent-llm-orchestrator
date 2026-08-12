@@ -15,8 +15,8 @@ source: Adapted from ton-blockchain/skills acton skill, pinned 35ddd7f67836e18b9
   - `acton help <command>`
   - `acton <command> --help`
 - Use official hosted docs for current concepts, tutorials, and full reference:
-  - `https://ton-blockchain.github.io/acton/docs/welcome/`
-  - `https://ton-blockchain.github.io/acton/docs/commands/`
+  - `https://ton-blockchain.github.io/acton/docs/welcome`
+  - `https://ton-blockchain.github.io/acton/docs/commands/overview`
   - `https://ton-blockchain.github.io/acton/llms-full.txt`
 - Use the official examples repo for real project patterns and reference contracts:
   - `https://github.com/ton-blockchain/acton-contracts`

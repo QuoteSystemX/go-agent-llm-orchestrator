@@ -10,6 +10,7 @@ Covers:
   - bus event: action_stop persists stop event to .agent/bus/daemon_stop.jsonl
 """
 import asyncio
+import contextlib
 import json
 import os
 import sys
@@ -188,6 +189,80 @@ class TestActionRunTaskRefusesDuringDrain:
         # Input validation runs BEFORE the draining check
         assert res["status"] == "error"
         assert "Missing task_id" in res["message"]
+
+
+class TestFallbackStopFile:
+    """STORY-3.3 gate G: the daemon must actually read the file `bin/stop
+    --kill` writes, not just leave it on disk. Previously nothing did —
+    bin/stop's own comment claimed a "5s tick" that didn't exist anywhere
+    in server.py. Found in the 2026-08-12 audit."""
+
+    def test_clear_stale_stop_file_removes_pre_existing_file(self, daemon, tmp_path):
+        stop_file = tmp_path / "STOP"
+        stop_file.write_text("stale", encoding="utf-8")
+        with patch.object(daemon_server, "FALLBACK_STOP_FILE", stop_file):
+            daemon._clear_stale_stop_file()
+        assert not stop_file.exists()
+
+    def test_clear_stale_stop_file_noop_when_absent(self, daemon, tmp_path):
+        stop_file = tmp_path / "STOP"
+        with patch.object(daemon_server, "FALLBACK_STOP_FILE", stop_file):
+            daemon._clear_stale_stop_file()  # must not raise
+        assert not stop_file.exists()
+
+    def test_watcher_triggers_shutdown_when_file_appears(self, daemon, tmp_path):
+        stop_file = tmp_path / "STOP"
+        stop_file.write_text("kill: test reason\n", encoding="utf-8")
+
+        shutdown_calls = []
+        async def _record_shutdown(sig):
+            shutdown_calls.append(sig)
+        daemon.shutdown = _record_shutdown
+
+        with patch.object(daemon_server, "FALLBACK_STOP_FILE", stop_file):
+            asyncio.run(daemon._watch_fallback_stop_file())
+
+        assert shutdown_calls == [daemon_server.signal.SIGTERM]
+        assert not stop_file.exists(), "STOP file must be removed before/at shutdown, not left behind"
+
+    def test_watcher_persists_distinct_audit_event(self, daemon, tmp_path):
+        stop_file = tmp_path / "STOP"
+        stop_file.write_text("kill: audit test\n", encoding="utf-8")
+
+        async def _noop_shutdown(sig):
+            pass
+        daemon.shutdown = _noop_shutdown
+
+        with patch.object(daemon_server, "FALLBACK_STOP_FILE", stop_file):
+            asyncio.run(daemon._watch_fallback_stop_file())
+
+        stop_log = BUS_DIR / "daemon_stop.jsonl"
+        events = [json.loads(l) for l in stop_log.read_text(encoding="utf-8").strip().split("\n")]
+        fallback_events = [e for e in events if e["type"] == "daemon_stop_fallback"]
+        assert len(fallback_events) == 1
+        assert "audit test" in fallback_events[0]["reason"]
+        # Distinct from action_stop's own event, so it's clear which path fired.
+        assert fallback_events[0]["author"] == "daemon._watch_fallback_stop_file"
+
+    def test_watcher_takes_no_action_when_file_absent(self, daemon, tmp_path):
+        stop_file = tmp_path / "STOP"  # never created
+
+        shutdown_calls = []
+        async def _record_shutdown(sig):
+            shutdown_calls.append(sig)
+        daemon.shutdown = _record_shutdown
+
+        async def runner():
+            with patch.object(daemon_server, "FALLBACK_STOP_FILE", stop_file), \
+                 patch.object(daemon_server, "FALLBACK_STOP_POLL_INTERVAL_S", 0.01):
+                task = asyncio.create_task(daemon._watch_fallback_stop_file())
+                await asyncio.sleep(0.05)  # several poll cycles
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+        asyncio.run(runner())
+        assert shutdown_calls == []
 
 
 class TestBinStopCLI:

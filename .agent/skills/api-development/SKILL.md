@@ -106,7 +106,7 @@ Need API type?
 
 | File | Description | When to Read |
 |------|-------------|--------------|
-| `ROUTING.md` | This file - routing logic | Always first |
+| `SKILL.md` | This file - routing logic | Always first |
 | `security-checklist.md` | API security requirements | Before implementation |
 | `contract-patterns.md` | Type-safe contract patterns | When defining API |
 | `versioning-strategies.md` | API evolution patterns | When planning changes |

@@ -15,8 +15,8 @@ version: 1.0.0
 
 ## 🎯 When to Use This Skill
 
-- **Trigger**: Injecting lessons learned from `LESSONS_LEARNED.md` into active agent prompt contexts.
-- **Trigger**: Running the `knowledge_inject.py` script to update system prompt templates.
+- **Trigger**: Injecting lessons learned from `.agent/rules/LESSONS_LEARNED.md` into active agent prompt contexts.
+- **Trigger**: Running the `.agent/scripts/communication/knowledge_inject.py` script to update system prompt templates.
 - **Trigger**: Resolving issues where distilled context is stale, corrupted, or failing to load dynamically.
 - **Trigger**: Verifying that newly created files or logic conform to active project guidelines.
 
@@ -27,7 +27,7 @@ version: 1.0.0
 ### 1. Registration Loop
 
 Every archivist agent **must** follow these rules:
-- **Rule 1**: When a new lesson is saved, it **must** be written to `LESSONS_LEARNED.md` using the standard format.
+- **Rule 1**: When a new lesson is saved, it **must** be written to `.agent/rules/LESSONS_LEARNED.md` using the standard format.
 - **Rule 2**: Assign proper metadata to each lesson (creation timestamp, TTL, active flag, and count).
 
 ### 2. Injection Rules

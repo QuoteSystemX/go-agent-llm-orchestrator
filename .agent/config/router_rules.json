@@ -2,7 +2,14 @@
   "scoring": {
     "base_score": 5,
     "failure_context": {
-      "keywords": ["fail", "error", "retry", "broken", "bug", "hallucination"],
+      "keywords": [
+        "fail",
+        "error",
+        "retry",
+        "broken",
+        "bug",
+        "hallucination"
+      ],
       "max_bonus": 3
     },
     "budget": {
@@ -73,15 +80,61 @@
       "critical": 7
     },
     "phrase_exceptions": [
-      {"phrase": "write throughput", "suppress": ["write"]},
-      {"phrase": " to a file", "suppress": ["write"]},
-      {"phrase": "отладь", "suppress": ["ошибк"]},
-      {"phrase": "fix a bug", "suppress": ["bug"]},
-      {"phrase": "debug", "suppress": ["bug"]},
-      {"phrase": "debug why", "suppress": ["optimize"]},
-      {"phrase": "migration", "suppress": ["add", "create"]},
-      {"phrase": "xsync", "suppress": ["sync"]},
-      {"phrase": "add a missing", "suppress": ["add"]}
+      {
+        "phrase": "write throughput",
+        "suppress": [
+          "write"
+        ]
+      },
+      {
+        "phrase": " to a file",
+        "suppress": [
+          "write"
+        ]
+      },
+      {
+        "phrase": "отладь",
+        "suppress": [
+          "ошибк"
+        ]
+      },
+      {
+        "phrase": "fix a bug",
+        "suppress": [
+          "bug"
+        ]
+      },
+      {
+        "phrase": "debug",
+        "suppress": [
+          "bug"
+        ]
+      },
+      {
+        "phrase": "debug why",
+        "suppress": [
+          "optimize"
+        ]
+      },
+      {
+        "phrase": "migration",
+        "suppress": [
+          "add",
+          "create"
+        ]
+      },
+      {
+        "phrase": "xsync",
+        "suppress": [
+          "sync"
+        ]
+      },
+      {
+        "phrase": "add a missing",
+        "suppress": [
+          "add"
+        ]
+      }
     ]
   },
   "domain_affinity": {
@@ -189,11 +242,13 @@
       ],
       "L3": "qwen2.5-coder:32b",
       "L3_alt": [
+        "oamazonasgabriel/qwen3.6-35b-a3b:q4-24gbGPU",
         "qwen3-coder:30b",
         "qwen3.6:27b"
       ],
       "L4": "qwen3-coder:30b",
       "L4_alt": [
+        "oamazonasgabriel/qwen3.6-35b-a3b:q4-24gbGPU",
         "qwen3:32b",
         "qwen3.6:27b"
       ]
@@ -249,31 +304,51 @@
     "Jan-v3.5-4B-Q4_K_XL": {
       "tier": "L1",
       "quality_score": 60,
-      "benchmark": { "avg_time": 4.0, "avg_tps": 80, "success": 100 },
+      "benchmark": {
+        "avg_time": 4.0,
+        "avg_tps": 80,
+        "success": 100
+      },
       "rank_score": 336
     },
     "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS": {
       "tier": "L2",
       "quality_score": 78,
-      "benchmark": { "avg_time": 10.0, "avg_tps": 40, "success": 100 },
+      "benchmark": {
+        "avg_time": 10.0,
+        "avg_tps": 40,
+        "success": 100
+      },
       "rank_score": 400
     },
     "gemma-4-26B-A4B-it-UD-IQ4_XS": {
       "tier": "L3",
       "quality_score": 85,
-      "benchmark": { "avg_time": 20.0, "avg_tps": 20, "success": 100 },
+      "benchmark": {
+        "avg_time": 20.0,
+        "avg_tps": 20,
+        "success": 100
+      },
       "rank_score": 415
     },
     "Qwen3_6-27B-IQ4_XS": {
       "tier": "L3",
       "quality_score": 86,
-      "benchmark": { "avg_time": 22.0, "avg_tps": 22, "success": 100 },
+      "benchmark": {
+        "avg_time": 22.0,
+        "avg_tps": 22,
+        "success": 100
+      },
       "rank_score": 430
     },
     "Qwen3_6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS": {
       "tier": "L3",
       "quality_score": 88,
-      "benchmark": { "avg_time": 25.0, "avg_tps": 18, "success": 100 },
+      "benchmark": {
+        "avg_time": 25.0,
+        "avg_tps": 18,
+        "success": 100
+      },
       "rank_score": 424
     },
     "codestral:22b": {

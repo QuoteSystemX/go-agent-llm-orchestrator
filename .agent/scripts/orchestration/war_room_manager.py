@@ -32,6 +32,7 @@ except ImportError:
 
 BUS_OUTPUTS = REPO_ROOT / ".agent" / "bus" / "outputs"
 CHECKLIST = _SCRIPTS_DIR / "dev" / "checklist.py"
+INCIDENTS_LOG = REPO_ROOT / ".agent" / "logs" / "incidents.jsonl"
 _PROCESSED_REPAIRS: set[str] = set()
 
 
@@ -118,6 +119,38 @@ def _report_pr(branch: str) -> None:
     print(f"{'─' * 50}\n")
 
 
+def _log_incident(
+    incident_id: str,
+    diagnosis: dict | None,
+    proposed_fix: dict,
+    git_status: dict,
+) -> None:
+    """Append a durable record to .agent/logs/incidents.jsonl.
+
+    This is the queryable incident history the blameless retro
+    (.agent/scripts/orchestration/blameless_retro.py) reads to group repeat
+    incidents by root cause. Not itself blameless — the retro's *output* is
+    what gets mechanically redacted, not this raw log.
+    """
+    INCIDENTS_LOG.parent.mkdir(parents=True, exist_ok=True)
+    # diagnosis/proposed_fix may be raw content dicts or full bus objects
+    # ({id, type, author, timestamp, content}) depending on the caller —
+    # unwrap defensively rather than assume either shape.
+    diagnosis_content = (diagnosis or {}).get("content", diagnosis or {})
+    fix_content = proposed_fix.get("content", proposed_fix)
+    record = {
+        "incident_id": incident_id,
+        "ts": get_timestamp(),
+        "root_cause_signature": diagnosis_content.get("root_cause_signature", "unknown"),
+        "diagnosis_summary": diagnosis_content.get("summary", ""),
+        "fix_summary": fix_content.get("summary", fix_content.get("status", "")),
+        "branch": git_status.get("branch"),
+        "status": git_status.get("status", "unknown"),
+    }
+    with open(INCIDENTS_LOG, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
 # ── Repair file scanner ───────────────────────────────────────────────────────
 
 def _scan_repair_files() -> list[dict]:
@@ -157,7 +190,15 @@ def manage_war_room(incident_id: str) -> None:
         f"task_debug_{incident_id}", "requirement", "war_room_manager",
         json.dumps({
             "agent": "debugger",
-            "instruction": f"Analyze incident {incident_id}. Error: {incident['content'].get('stderr', 'N/A')}",
+            "instruction": (
+                f"Analyze incident {incident_id}. Error: {incident['content'].get('stderr', 'N/A')}. "
+                "In your diagnosis object, include a `root_cause_signature` field: a short "
+                "kebab-case tag identifying the underlying root cause (not the symptom), e.g. "
+                "'missing-timeout-default' or 'unhandled-nil-pointer' — this is used to detect "
+                "when the same root cause recurs across incidents, so keep it stable and specific "
+                "enough to distinguish real causes but general enough to match recurrences. Also "
+                "include a one-sentence `summary` field."
+            ),
             "incident_ref": incident_id,
         }),
     )
@@ -193,29 +234,38 @@ def manage_war_room(incident_id: str) -> None:
     )
     print("✅ War Room: proposed fix on bus.")
 
-    # 5. Git-Ops pipeline
-    _activate_git_ops(proposed_fix)
+    # 5. Git-Ops pipeline (writes the durable incident record itself, staged
+    # into the same commit as the fix — see _activate_git_ops)
+    _activate_git_ops(incident_id, diagnosis, proposed_fix)
 
 
-def _activate_git_ops(fix: dict) -> None:
-    """Full Git-Ops pipeline: branch → validate → commit → report."""
-    incident_id = fix.get("incident_ref", "unknown")
+def _activate_git_ops(incident_id: str, diagnosis: dict | None, fix: dict) -> dict:
+    """Full Git-Ops pipeline: branch → validate → log → commit → report.
+
+    The incident record is written *before* `_commit_fix`, so `git add -A`
+    picks it up and it lands in the same commit as the fix — logging after
+    commit would leave it permanently uncommitted.
+
+    Returns a status dict ({"branch", "status"}) for the caller —
+    status is one of: checklist_failed, committed, no_changes, error.
+    """
+    branch = f"fix/inc-{incident_id}"
     try:
         branch = _create_branch(incident_id)
         validated = _run_validation(branch)
         if not validated:
             print(f"🛑 Git-Ops halted: checklist failed on {branch}. Branch left for manual review.")
-            return
+            return {"branch": branch, "status": "checklist_failed"}
+        _log_incident(incident_id, diagnosis, fix, {"branch": branch, "status": "committed"})
         committed = _commit_fix(branch, incident_id)
-        if committed:
-            _report_pr(branch)
-        else:
-            print(f"ℹ️  Branch {branch} ready — no auto-fix file changes to commit.")
-            _report_pr(branch)
+        _report_pr(branch)
+        return {"branch": branch, "status": "committed" if committed else "no_changes"}
     except subprocess.CalledProcessError as exc:
         print(f"❌ Git-Ops error: {exc}")
+        return {"branch": branch, "status": "error"}
     except Exception as exc:
         print(f"❌ Unexpected error in Git-Ops: {exc}")
+        return {"branch": branch, "status": "error"}
 
 
 # ── Entry points ──────────────────────────────────────────────────────────────

@@ -322,17 +322,22 @@ Analysis Process:
 
 ### Pattern 3: Multi-Server Plugin
 
-Integrate multiple MCP servers:
+Integrate multiple MCP servers. Both GitHub's and Atlassian's official remote MCP servers use the
+Streamable HTTP transport (`"type": "http"`), not SSE — Atlassian's legacy `/v1/sse` endpoint is
+deprecated in favor of `/v1/mcp`:
 
 ```json
 {
   "github": {
-    "type": "sse",
-    "url": "https://mcp.github.com/sse"
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {
+      "Authorization": "Bearer ${GITHUB_TOKEN}"
+    }
   },
-  "jira": {
-    "type": "sse",
-    "url": "https://mcp.jira.com/sse"
+  "atlassian": {
+    "type": "http",
+    "url": "https://mcp.atlassian.com/v1/mcp"
   }
 }
 ```

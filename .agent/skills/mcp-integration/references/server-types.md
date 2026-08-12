@@ -173,8 +173,11 @@ Claude Code handles OAuth flow:
 
 **Official Services:**
 - Asana: `https://mcp.asana.com/sse`
-- GitHub: `https://mcp.github.com/sse`
 - Other hosted MCP servers
+
+Note: GitHub's and Atlassian's official remote MCP servers use the HTTP (Streamable HTTP)
+transport, not SSE — see `https://api.githubcopilot.com/mcp/` and
+`https://mcp.atlassian.com/v1/mcp` under HTTP below.
 
 **Custom Hosted Servers:**
 Deploy your own MCP server and expose via HTTPS + SSE.

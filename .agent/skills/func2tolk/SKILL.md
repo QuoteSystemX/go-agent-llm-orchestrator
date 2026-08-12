@@ -142,6 +142,12 @@ Forbidden unless explicitly justified by compatibility:
 - Build: `acton build` (add `--clear-cache` when debugging).
 - Test: `acton test` (use `--filter`, `--coverage`, `--debug` as needed).
 - Debug compilation differences: `acton disasm` (use `--source-map` when available).
+- `scripts/deploy.tolk` is not scaffolded automatically — write it yourself in the ported
+  project (not in this skill's own directory) as a standalone Tolk script with a `main()` entry
+  point, per the `acton script` command convention
+  (https://ton-blockchain.github.io/acton/docs/commands/script). It should build the contract's
+  initial state/code cell and send the deploy message; base it on an existing `scripts/*.tolk` in
+  the target project if one exists, or on `acton-contracts` examples otherwise.
 - Dry-run deployment logic locally: `acton script scripts/deploy.tolk` (no real TON spent).
 - Broadcast only after local success:
   - `acton script scripts/deploy.tolk --broadcast --net testnet|mainnet`

@@ -396,7 +396,11 @@ Working examples in `examples/`:
 Development tools in `scripts/`:
 
 - **`validate-agent.sh`** - Validate agent file structure
-- **`test-agent-trigger.sh`** - Test if agent triggers correctly
+
+> There is no automated trigger-testing script — triggering is judged by the model reading the
+> agent's `<example>` blocks in its description, not deterministic string-matching, so it can't be
+> tested with a shell script. Manually walk through each `<example>` against
+> `references/triggering-examples.md` instead.
 
 ## Implementation Workflow
 

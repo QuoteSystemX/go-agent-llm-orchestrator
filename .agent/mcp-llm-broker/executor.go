@@ -672,9 +672,10 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) || strings.Contains(baseURL, HeadroomPortStr) {
 		// Ollama native API: /api/generate
 		url := fmt.Sprintf("%s/api/generate", baseURL)
+		ollamaNCtx, _, _ := rules.GetProviderCtx(ProviderOllama)
 		opts := map[string]interface{}{
 			"temperature": temperature,
-			"num_ctx":     8192,
+			"num_ctx":     ollamaNCtx,
 		}
 		if maxTokens > 0 {
 			opts["num_predict"] = maxTokens

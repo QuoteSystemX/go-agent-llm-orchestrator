@@ -65,8 +65,12 @@ Every PRD must answer:
 
 | Tool | Purpose |
 | :--- | :--- |
-| `prd_validator.py` | Checks if a PRD has all 5 mandatory sections. |
-| `story_decomposer.py` | Turns a PRD section into atomic `tasks/*.md` cards. |
+| `requirement_expander.py` | Fills context gaps in a vague requirement before drafting the PRD (`.agent/scripts/analysis/requirement_expander.py`). |
+| `/stories` workflow | Decomposes an approved PRD (+ `wiki/ARCHITECTURE.md`) into atomic `tasks/*.md` story cards via the `analyst` agent — see `.agent/workflows/stories.md`. There is no standalone `story_decomposer.py` script; this is the actual mechanism. |
+
+> **No automated validator exists** for the "5 mandatory sections" rule below — checking a PRD for
+> Intent Map / User Journey / Edge Case Audit / Data Schema / API Specs completeness is currently a
+> manual/LLM review step, not a script.
 
 ---
 
@@ -80,12 +84,12 @@ Every PRD must answer:
 
 - **Turning a vague idea into a structured PRD** — use the
   `requirement_expander.py` script to find missing context.
-- **Decomposing a feature into atomic stories** — run
-  `story_decomposer.py` on a PRD section to generate `tasks/*.md`
+- **Decomposing a feature into atomic stories** — run the `/stories`
+  BMAD workflow against an approved PRD to generate `tasks/*.md`
   cards that the squad orchestrator can pick up.
-- **Validating an existing PRD** — run `prd_validator.py` to check
-  it has all 5 mandatory sections (Intent Map, User Journey,
-  Edge Cases, Data Schema, API Specs).
+- **Validating an existing PRD** — manually check it has all 5
+  mandatory sections (Intent Map, User Journey, Edge Cases, Data
+  Schema, API Specs); no automated validator exists for this yet.
 - **Adversarial review** — use the "Red Team" edge case audit to
   find failure modes before implementation.
 - **Cross-team alignment** — share the PRD as a Mermaid flowchart

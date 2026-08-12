@@ -158,3 +158,47 @@ If native `RunExecutor` is unavailable:
 For smoke/forward tests, skip worktree creation, source edits, fresh agent
 launch, and B_dev execution. Save the generated prompt under
 `experiments/<node_id>/`, then use `record` with a cached or mocked report.
+
+## Local LLM Adapter Mode (executor only)
+
+`<tools>/local_role_adapter.py` (same directory as `arbor_state.py`) routes
+the executor role through a local model via `mcp-llm-broker`'s
+`execute_prompt` instead of a fresh Claude subagent:
+
+```bash
+python <tools>/local_role_adapter.py executor \
+  --cwd <project> --model <local-model-name> \
+  --target-file <path/to/file> \
+  --instructions "<what to change>" \
+  --require-prefix "---"   # optional sanity check, e.g. YAML frontmatter survived
+```
+
+Tested and confirmed working (2026-08-13, `qwen2.5-coder:14b` and
+`qwen3.6-35b-a3b` via Ollama through `mcp-llm-broker`): clean single-shot
+file rewrites, no stray commentary or code fences, meaning preserved. Use
+this for executor nodes that are a pure "rewrite this file per these
+instructions" task with no need to explore other files first.
+
+A non-zero exit / `ok: false` from the adapter means the local model
+produced an empty or otherwise unusable result — fall back to a normal
+Claude-subagent executor for that node, don't treat it as a run failure.
+
+**Do NOT use the local adapter's `judge` subcommand yet.** Tested
+2026-08-13 on both models above: local judges do not discriminate reliably
+between weak and strong candidates. On a real before/after pair (Claude
+scored baseline 48/100, final synthesis 91/100), both local models scored
+the *weak, generic baseline higher* than the improved file (14B: 92 vs 87;
+35B: 86 vs 82) — the inverse of the correct ranking. Keep judge/scoring on
+Claude until this is revisited (likely needs few-shot calibration examples
+or chain-of-thought scoring rather than a single forced-JSON call).
+
+**Do NOT attempt to run the coordinator (OBSERVE/IDEATE/SELECT/DECIDE) on a
+local model.** Confirmed 2026-08-13: `qwen2.5-coder:14b` via the real
+`arbor` CLI never emitted a real tool_call (echoed one as plain text
+instead); `qwen3.6-35b-a3b` completed a correct OBSERVE tool-call sequence
+but stalled at the `arbor-agent-ideate` gate's structured-reasoning
+requirement (Probe Block + 4 idea moves + 5-field declaration) and ended
+the session with 0 ideas. The real `arbor` binary's `LLMConfig` is also
+shared by every agent role - there is no per-role provider/model override
+in its CLI or config schema, so this limitation cannot be worked around by
+configuration alone.

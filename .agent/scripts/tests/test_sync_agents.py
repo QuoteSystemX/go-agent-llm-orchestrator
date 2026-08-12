@@ -37,8 +37,10 @@ class TestSyncAgents(unittest.TestCase):
         # Important: Sync TARGETS paths to test_root
         sync_agents.TARGETS["claude"]["agents_out"] = self.test_root / ".claude" / "agents"
         sync_agents.TARGETS["claude"]["commands_out"] = self.test_root / ".claude" / "commands"
+        sync_agents.TARGETS["claude"]["skills_out"] = self.test_root / ".claude" / "skills"
         sync_agents.TARGETS["opencode"]["agents_out"] = self.test_root / ".opencode" / "agents"
         sync_agents.TARGETS["opencode"]["commands_out"] = self.test_root / ".opencode" / "commands"
+        sync_agents.TARGETS["opencode"]["skills_out"] = self.test_root / ".opencode" / "skills"
         sync_agents.TARGETS["opencode"]["config_out"] = self.test_root / "opencode.json"
         
         # Override source paths

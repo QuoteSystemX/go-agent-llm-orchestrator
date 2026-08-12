@@ -131,7 +131,7 @@ Scripts in `.agent/scripts/misc/`:
 Scripts in `.agent/scripts/models/`:
 
 - `.agent/scripts/models/model_benchmark.py` — benchmarks local LLM performance
-- `.agent/scripts/models/model_router.py` — routes tasks to optimal model/provider
+- `bin/mcp-llm-broker` (`get_routing_decision` tool) — routes tasks to optimal model/provider; replaced the old `.agent/scripts/models/model_router.py` (removed in `5bcad48`)
 - `.agent/scripts/models/model_validator.py` — validates model outputs against mental models
 - `.agent/scripts/models/ollama_agent.py` — Ollama sub-agent with filesystem context
 
@@ -221,7 +221,6 @@ Tests in `.agent/scripts/tests/`:
 - `.agent/scripts/tests/test_mcp_provisioner.py`
 - `.agent/scripts/tests/test_memory_ingestor.py`
 - `.agent/scripts/tests/test_model_benchmark.py`
-- `.agent/scripts/tests/test_model_router.py`
 - `.agent/scripts/tests/test_model_validator.py`
 - `.agent/scripts/tests/test_obsidian_validator.py`
 - `.agent/scripts/tests/test_ollama_agent.py`

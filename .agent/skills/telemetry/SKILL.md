@@ -40,7 +40,7 @@ python3 .agent/skills/telemetry/scripts/log_event.py \
 ## Dashboard & Analysis
 
 Data from `metrics.jsonl` can be analyzed using:
-1. `.agent/scripts/misc/metrics_dashboard.py` (Visual representation)
+1. `.agent/scripts/health/metrics_dashboard.py` (Visual representation)
 2. `.agent/scripts/knowledge/experience_distiller.py` (Historical patterns)
 
 ## Best Practices

@@ -38,6 +38,7 @@ Unified Agent Kit is a modular system consisting of:
 <!-- DEPENDENCY_GRAPH_START -->
 ```mermaid
 graph TD
+  args --> cobra
   broker_test --> filepath
   broker_test --> http
   broker_test --> httptest
@@ -50,9 +51,14 @@ graph TD
   circuit_breaker_test --> filepath
   circuit_breaker_test --> http
   circuit_breaker_test --> json
-  config --> v11
+  cli_test --> cobra
+  completion --> cobra
+  config --> fsnotify
+  config --> slog
+  config --> viper
   db --> sql
   db --> stdlib
+  db_governance --> json
   db_security --> sql
   executor --> filepath
   executor --> hex
@@ -66,6 +72,9 @@ graph TD
   executor_test --> httptest
   executor_test --> json
   executor_test --> mcp
+  exit_codes --> cmd
+  flags --> cobra
+  flags --> viper
   handlers_bmad --> exec
   handlers_bmad --> filepath
   handlers_bmad --> mcp
@@ -103,6 +112,12 @@ graph TD
   indexer --> fsnotify
   indexer --> sql
   indexer_test --> filepath
+  llamacpp_provisioner --> exec
+  llamacpp_provisioner --> filepath
+  llamacpp_provisioner --> gzip
+  llamacpp_provisioner --> http
+  llamacpp_provisioner --> json
+  llamacpp_provisioner --> tar
   lsp --> exec
   lsp --> filepath
   lsp --> json
@@ -122,15 +137,29 @@ graph TD
   mcda --> exec
   mcda --> http
   mcda --> json
+  output --> cobra
+  output --> color
+  output --> json
+  output --> tabwriter
+  root --> cobra
+  root --> slog
+  root --> viper
   router --> filepath
   router --> json
   router_test --> json
-  run --> slog
+  serve --> cobra
+  serve --> viper
+  signal --> cobra
+  signal --> http
+  signal --> signal
+  signal --> slog
   test_factory --> ast
   test_factory --> importlib
   testutil_test --> sql
   testutil_test --> stdlib
   testutil_test --> url
+  version --> cobra
+  version --> debug
   workers --> exec
   workers --> json
   workers_test --> json
@@ -153,7 +182,7 @@ graph TD
 - `python3 .agent/scripts/delivery/sync_all.py` - Unified compiler, target synchronizer, and metrics collector
 - `python3 .agent/scripts/delivery/task_helper.py` - Task card generator for `tasks/`
 - `python3 .agent/scripts/health/drift_detector.py` - Wiki vs Code drift detection
-- `python3 .agent/scripts/misc/metrics_dashboard.py` - Real-time agent telemetry
+- `python3 .agent/scripts/health/metrics_dashboard.py` - Real-time agent telemetry
 - `python3 .agent/scripts/misc/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
@@ -183,7 +212,7 @@ Specialist AI personas for different domains.
 | `code-archaeologist` | Expert in legacy code, refactoring, and understanding undocumented systems. | clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli |
 | `crypto-go-architect` | Designs and audits cryptographic systems in Go. | go-skills-guide, ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops, go-performance, go-benchmark, go-observability, go-lint, go-dependency-injection, go-pkg-go-dev, go-dependency-management, go-popular-libraries |
 | `crypto-specialist` | Domain expert for TON blockchain, DEX mechanics, crypto-exchange integrations, on-chain/of… | ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli |
-| `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns, multica-mcp, multica-cli |
+| `cto` | Chief Technology Officer. | clean-code, bmad-lifecycle, architecture, intelligent-routing, documentation-templates, brainstorming, observability-patterns, multica-mcp, multica-cli, scope-sentinel |
 | `data-engineer` | Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflo… | data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry, postgres-best-practices, nextflow-development, multica-mcp, multica-cli, clickhouse-best-practices, clickhouse-architecture-advisor |
 | `data-lead` | Data & Market Feeds Engineering Lead — tactical layer between CTO and data squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli |
 | `database-architect` | Expert database architect for schema design, query optimization, migrations, and modern se… | clean-code, database-design, shared-context, telemetry, postgres-best-practices, supabase-postgres-best-practices, turso-db, multica-mcp, multica-cli |
@@ -216,7 +245,7 @@ Specialist AI personas for different domains.
 | `product-manager` | Expert in product requirements, user stories, metrics, and acceptance criteria — owns WHAT… | plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
 | `product-owner` | Backlog owner and phase-gate enforcer — decides WHAT SHIP ORDER and WHEN, not what the req… | plan-writing, brainstorming, scope-sentinel, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli |
 | `project-planner` | Smart project planning agent. | clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, agent-routing-pro, behavioral-modes, parallel-agents, experience-injector, multica-mcp, multica-cli |
-| `prompt-benchmarker` | Measures prompt performance metrics, token usage, latency, and consistency across multiple… | performance-profiling, webapp-testing, llm-regression-testing, clean-code, multica-mcp, multica-cli |
+| `prompt-benchmarker` | Expert in evaluating prompt quality, cross-LLM-backend regression, and prompt-level token… | performance-profiling, webapp-testing, llm-regression-testing, clean-code, multica-mcp, multica-cli |
 | `prompt-localizer` | Adapts and localizes prompts to multiple target languages (e.g. | i18n-localization, prompt-engineering, clean-code, multica-mcp, multica-cli |
 | `prompt-red-teamer` | Expert in prompt vulnerability assessment, jailbreak prevention, system prompt protection,… | vulnerability-scanner, red-team-tactics, adversarial-prompt-testing, clean-code, multica-mcp, multica-cli |
 | `prompt-specialist` | Expert in LLM orchestration, prompt design, benchmarking, and token economy. | prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli |
@@ -498,7 +527,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | --------------------- | --------------------------------------- | ------------------------ |
 | `checklist.py`        | Priority-based validation (Core checks) | Development, pre-commit  |
 | `verify_all.py`       | Comprehensive verification (All checks) | Pre-deployment, releases |
-| `model_router.py`     | Dynamic task complexity routing (L1-L3) | Every subagent call      |
+| `bin/mcp-llm-broker` (`get_routing_decision`) | Dynamic task complexity routing (L1-L3) & unified provider router (Gemini/Claude) | Every subagent call      |
 | `mcp_provisioner.py`  | Auto-builds and provisions MCP server binaries | MCP initialization       |
 | `bus_manager.py`      | Context Bus administration (Push/Pull)  | Debugging, inspection    |
 | `business_dashboard.py` | Feature-level progress tracking (Rich) | /status, sprint review   |
@@ -537,7 +566,6 @@ Master validation scripts that orchestrate skill-level scripts.
 | `output_bridge.py`     | Agent output validator & Red-Team Gate | Every final response     |
 | `guardrail_middleware.py` | Extensible GuardrailPipeline — composes check functions with halt_on_fail semantics | Every final response |
 | `.agent/scripts/dev/checks/anthropic_safety.py` | Anthropic LLM safety classifier (haiku) — harmful_instructions, prompt_injection, pii_leak, jailbreak | Every final response |
-| `model_router.py`     | Unified Provider Router (Gemini/Claude) | Every subagent call      |
 | `self_healer.py`       | Autonomous Script Repair Wrapper       | Tool execution           |
 | `skill_discovery.py`   | JIT Skill Acquisition (URL Fetcher)    | Knowledge expansion      |
 | `sandbox_runner.py`    | Safe Code Sandbox (AST + Isolation)    | Untrusted code execution |
@@ -660,7 +688,7 @@ Architecture Decision Record Generator.
 
 Failure Analysis Tool.
 
-- `python3 .agent/scripts/misc/post_mortem_runner.py` - Analyzes recent logs and suggests a lesson learned.
+- `python3 .agent/scripts/analysis/post_mortem_runner.py` - Analyzes recent logs and suggests a lesson learned.
 
 ### `pre_commit_review.py`
 
@@ -1128,3 +1156,5 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/orchestration/daemon/db.py` | SQLite database layer for the agent orchestrator daemon handling WAL-mode persistence of tasks, agent nodes cache, workspace locks, and execution traces. |
 | `.agent/scripts/orchestration/daemon/server.py` | IPC server daemon for the agent squad orchestrator, listening on Unix Domain Socket, executing tasks, and persisting states. |
 | `.agent/scripts/orchestration/daemon/client.py` | CLI client for the agent squad orchestrator daemon, connecting via UDS to manage task status and trigger execution. |
+| `.agent/skills/arbor-agent-tools/scripts/local_role_adapter.py` | Routes the Arbor executor/judge roles through a local LLM (auto-selected by tier from the target agent's own `model: L1`-`L4` frontmatter, via `router_rules.json`) using `mcp-llm-broker`'s `execute_prompt`, instead of a Claude subagent. Judge scoring is NOT reliable locally (tested 2026-08-13) - keep judge on Claude. |
+| `.agent/skills/arbor-agent-tools/scripts/run_local_cycle.py` | Mechanized driver for a local-executor Arbor cycle (init/dispatch/record/finish) - wraps the repetitive `arbor_state.py` + `local_role_adapter.py` invocations from one cycle into a few CLI calls. Candidates (what to try) and scores (Claude judge output) are supplied as input; IDEATE and JUDGE are intentionally not automated. |

@@ -28,6 +28,13 @@ logger = logging.getLogger("orchestrator.daemon")
 SOCKET_PATH = REPO_ROOT / ".agent" / "bus" / "orchestrator.sock"
 LOCK_NAME = "workspace"
 
+# STORY-3.3 gate G: file-based fallback kill switch (ADR-007 §6.3). Written
+# by `bin/stop --kill` when the primary UDS IPC path is unavailable. Poll
+# interval, not a "5s tick" as bin/stop's help text previously (falsely)
+# claimed — nothing read this file at all until this fix.
+FALLBACK_STOP_FILE = REPO_ROOT / ".agent" / "STOP"
+FALLBACK_STOP_POLL_INTERVAL_S = float(os.environ.get("DAEMON_STOP_POLL_INTERVAL_S", "2.0"))
+
 # STORY-1: Memory-pressure trigger threshold for distillation.
 # When headroom_memory.db exceeds this size (MB), the daemon runs
 # agent_squeeze + experience_distiller to prevent OOM during long sprints.
@@ -94,9 +101,81 @@ class OrchestratorDaemon:
         for sig in (signal.SIGTERM, signal.SIGINT):
             loop.add_signal_handler(sig, lambda s=sig: asyncio.create_task(self.shutdown(s)))
 
+        self._clear_stale_stop_file()
+        loop.create_task(self._watch_fallback_stop_file())
+
         # Keep server running until shutdown is triggered
         async with self.server:
             await self.server.serve_forever()
+
+    def _clear_stale_stop_file(self) -> None:
+        """STORY-3.3 gate G: discard a STOP file predating this process start.
+
+        A file left over from a previous kill attempt (or a crash before it
+        could be consumed) is ambiguous, not necessarily an active kill
+        request against *this* freshly-started process — treat it as
+        cleanup, log it, and move on, so a fresh daemon doesn't immediately
+        self-terminate on startup. `_watch_fallback_stop_file` only reacts
+        to files that appear after this point.
+        """
+        if FALLBACK_STOP_FILE.exists():
+            logger.warning(
+                "Stale fallback STOP file found at startup (%s) — removing without acting on it.",
+                FALLBACK_STOP_FILE,
+            )
+            try:
+                FALLBACK_STOP_FILE.unlink()
+            except OSError as e:
+                logger.error("Could not remove stale STOP file: %s", e)
+
+    async def _watch_fallback_stop_file(self) -> None:
+        """STORY-3.3 gate G: poll for the fallback kill-switch file.
+
+        `bin/stop --kill` writes FALLBACK_STOP_FILE when the primary UDS IPC
+        path is unavailable — the exact scenario this exists for. Previously
+        nothing read it (bin/stop's own comment claimed a "5s tick" that
+        never existed anywhere in this file); found in the 2026-08-12 audit.
+        Reuses the same idempotent `shutdown()` the signal handlers and
+        `action_stop` call, and persists its own `daemon_stop_fallback`
+        audit event (distinct from `action_stop`'s `daemon_stop` event) so
+        it's observable which path actually triggered a given shutdown.
+        """
+        while not self.shutting_down:
+            if FALLBACK_STOP_FILE.exists():
+                reason = (
+                    FALLBACK_STOP_FILE.read_text(encoding="utf-8", errors="replace").strip()
+                    or "fallback STOP file detected, no reason given"
+                )
+                logger.warning("Fallback STOP file detected — initiating shutdown. %s", reason)
+
+                try:
+                    bus_dir = REPO_ROOT / ".agent" / "bus"
+                    bus_dir.mkdir(parents=True, exist_ok=True)
+                    event = {
+                        "id": f"stop_fallback_{int(datetime.datetime.utcnow().timestamp())}",
+                        "type": "daemon_stop_fallback",
+                        "author": "daemon._watch_fallback_stop_file",
+                        "reason": reason,
+                        "active_tasks_at_stop": list(self.active_tasks.keys()),
+                        "ts": datetime.datetime.utcnow().isoformat() + "Z",
+                    }
+                    with open(bus_dir / "daemon_stop.jsonl", "a", encoding="utf-8") as f:
+                        f.write(json.dumps(event) + "\n")
+                except Exception as e:
+                    logger.warning("Could not persist fallback stop event to bus: %s", e)
+
+                # Remove before shutting down, not after: shutdown() can take
+                # up to 10s waiting on active tasks, and a lingering file
+                # would otherwise look "stale but present" to the startup
+                # check if the process were killed mid-shutdown and restarted.
+                try:
+                    FALLBACK_STOP_FILE.unlink()
+                except OSError:
+                    pass
+
+                await self.shutdown(signal.SIGTERM)
+                return
+            await asyncio.sleep(FALLBACK_STOP_POLL_INTERVAL_S)
 
     # STORY-4: Map action → required capability for capability_check.
     # Each privileged action must be authorized by the caller's role.

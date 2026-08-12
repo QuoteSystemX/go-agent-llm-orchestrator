@@ -15,7 +15,7 @@ The `browser-use` command provides fast, persistent browser automation. A backgr
 browser-use doctor    # Verify installation
 ```
 
-For setup details, see https://github.com/browser-use/browser-use/blob/main/browser_use/skill_cli/README.md
+For setup details, see https://docs.browser-use.com/open-source/browser-use-cli
 
 ## Core Workflow
 

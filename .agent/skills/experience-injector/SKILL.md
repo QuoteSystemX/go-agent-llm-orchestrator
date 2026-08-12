@@ -7,7 +7,7 @@ priority: NORMAL
 ---
 # Experience Injector
 
-This skill enables agents to dynamically check the `LESSONS_LEARNED.md` database and inject relevant technical lessons into active context before planning or execution.
+This skill enables agents to dynamically check the `.agent/rules/LESSONS_LEARNED.md` database and inject relevant technical lessons into active context before planning or execution.
 
 > **Read side of the lessons pipeline.** This skill covers *retrieving and injecting* existing
 > lessons at task start (`inject_experience.py`: `query_lessons`). To *register* a new lesson, see

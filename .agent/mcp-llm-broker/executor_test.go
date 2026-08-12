@@ -156,6 +156,74 @@ func TestExecuteLLMCall_Streaming(t *testing.T) {
 	}
 }
 
+// Regression: executor.go used to hardcode num_ctx=8192 for every Ollama
+// /api/generate call, ignoring provider_settings.ollama.n_ctx in
+// router_rules.json. Assert the configured value actually reaches Ollama.
+func TestExecuteLLMCall_Ollama_UsesConfiguredNCtx(t *testing.T) {
+	var capturedBody map[string]interface{}
+	ollamaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&capturedBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"response": "ok", "eval_count": 1}`))
+	}))
+	defer ollamaServer.Close()
+
+	tmpDir := t.TempDir()
+	cfgDir := filepath.Join(tmpDir, ".agent", "config")
+	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg := `{"provider_settings": {"ollama": {"n_ctx": 65536, "chars_per_token": 4}}}`
+	if err := os.WriteFile(filepath.Join(cfgDir, "router_rules.json"), []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := &BrokerServer{isCLI: false, workspaceRoot: tmpDir}
+	_, err := srv.executeLLMCall(context.Background(), "model", ProviderOllama, ollamaServer.URL, "prompt", "", "", false, 0.1, 0)
+	if err != nil {
+		t.Fatalf("executeLLMCall failed: %v", err)
+	}
+
+	opts, ok := capturedBody["options"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected options object in Ollama request body, got %v", capturedBody)
+	}
+	nCtx, ok := opts["num_ctx"].(float64)
+	if !ok || int(nCtx) != 65536 {
+		t.Errorf("expected num_ctx=65536 (from router_rules.json), got %v", opts["num_ctx"])
+	}
+}
+
+// Regression companion: with no router_rules.json present, the hardcoded
+// fallback of 8192 must still be used (GetProviderCtx's own default) — this
+// is what every Ollama call did before provider_settings existed.
+func TestExecuteLLMCall_Ollama_FallsBackTo8192WithoutConfig(t *testing.T) {
+	var capturedBody map[string]interface{}
+	ollamaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&capturedBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"response": "ok", "eval_count": 1}`))
+	}))
+	defer ollamaServer.Close()
+
+	srv := &BrokerServer{isCLI: false, workspaceRoot: t.TempDir()}
+	_, err := srv.executeLLMCall(context.Background(), "model", ProviderOllama, ollamaServer.URL, "prompt", "", "", false, 0.1, 0)
+	if err != nil {
+		t.Fatalf("executeLLMCall failed: %v", err)
+	}
+
+	opts, ok := capturedBody["options"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected options object in Ollama request body, got %v", capturedBody)
+	}
+	nCtx, ok := opts["num_ctx"].(float64)
+	if !ok || int(nCtx) != 8192 {
+		t.Errorf("expected default num_ctx=8192, got %v", opts["num_ctx"])
+	}
+}
+
 func TestExecuteLLMCall_JanAnthropicNonStreaming(t *testing.T) {
 	janServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/messages") {

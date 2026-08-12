@@ -32,14 +32,21 @@ Apply these lenses to every architectural proposal:
 ## 🚀 Tools & Verification
 
 ### 1. ADR Scaffolder
-Create a new architectural decision record using the internal tool:
+Create a new architectural decision record using the internal tool. Writes
+`wiki/decisions/ADR-NNN-title.md` (repo-root-anchored, uppercase `ADR-` prefix,
+next ID = max existing ADR id + 1) — the same convention as the other 50+ ADRs
+already in `wiki/decisions/`:
 
 ```bash
 python3 .agent/skills/architecture/scripts/generate_adr.py "Decision Title"
 ```
 
-### 2. Architecture Linter
-Refer to `examples/adr-001-template.md` for a "Golden Path" of ADR documentation.
+### 2. Golden-Path ADR Template
+The "Golden Path" ADR structure (Context, Decision Drivers, Considered Options, Decision Outcome,
+Consequences) is the `TEMPLATE` string in `scripts/generate_adr.py` itself — run the scaffolder
+above to generate a pre-filled ADR from it rather than copying a separate template file (there is
+no `examples/` directory in this skill; `examples.md` at the skill root is unrelated — it's
+project-type architecture examples, not an ADR template).
 
 ## 📈 Architecture Checklist
 - [ ] Is there an ADR for this change?

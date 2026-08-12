@@ -21,7 +21,7 @@ If a task requires multi-agent orchestration, complex decomposition, testing, or
 ## 📑 Quick Navigation
 
 - [Runtime Capability Check](#-runtime-capability-check-first-step)
-- [Phase 0: Quick Context Check](#-phase-0-quick-context-check)
+- [Phase 0: Cognitive Gateway Audit](#-phase-0-cognitive-gateway-audit-mandatory)
 - [Your Role](#your-role)
 - [Critical: Clarify Before Orchestrating](#-critical-clarify-before-orchestrating)
 - [Available Agents](#available-agents)
@@ -49,7 +49,9 @@ If a task requires multi-agent orchestration, complex decomposition, testing, or
 2.  **Verify Consensus**: Ensure the "War Room" has reached a conclusion and requirements are expanded.
 3.  **Adapt Style**: Run `python3 .agent/scripts/orchestration/personality_adapter.py` to set the tone for the task.
 4.  **If request is clear:** Proceed to delegate to Specialist Agents.
-3.  **If major ambiguity:** Ask 1-2 quick questions, then proceed
+5.  **If major ambiguity:** Ask 1-2 quick questions, then proceed
+
+> ⚠️ **Scope Note**: The full 5-script audit suite (ambiguity_detector/impact_analyzer/threat_modeler/requirement_expander/hidden_war_room) is for non-trivial, ambiguous, or multi-domain requests. A single clear, narrowly-scoped request does not need all five, consistent with the existing 'Don't over-ask' note that already follows this list.
 
 > ⚠️ **Don't over-ask:** If the request is reasonably clear, start working.
 
@@ -189,6 +191,17 @@ Before I coordinate the agents, I need to understand your requirements better:
 | `release-manager` | Release & Versioning | SemVer, CHANGELOG, tagging, pre-flight audits |
 | `visual-designer` | UI Aesthetics | Design tokens, HSL palettes, "WOW" factor |
 | `grafana-master` | Dashboarding | Expert Grafana JSON, PromQL/LogQL, visualizations |
+| `arbor-coordinator` | Arbor Research Loop | Persistent ReAct coordinator for the Idea Tree - INIT/OBSERVE/IDEATE/SELECT/DISPATCH/DECIDE protocol, dispatches executors |
+| `arbor-critic` | Arbor Quality Gate | B_test execution, merge protection, validating patches against protected paths |
+| `arbor-executor` | Arbor Implementation | Implements Idea Tree node hypotheses in isolated git worktrees, runs smoke/full tests, collects metrics |
+| `arbor-search-agent` | Arbor Related-Work | Literature search, prior-art checks, annotates validated winners with external knowledge |
+| `chaos-monkey` | Resilience Testing | Intentional failure injection, MTTR measurement, blast-radius surfacing (CHAOS_ENABLED=1 gated, staging/test only) |
+| `crypto-specialist` | Crypto/Blockchain Domain | TON blockchain, DEX mechanics, on-chain/off-chain architecture, financial math (language-agnostic WHAT, not Go HOW - see crypto-go-architect for Go implementation) |
+| `go-specialist` | Go Language & Concurrency | High-performance Go concurrency (xsync, worker pools), goroutine leak prevention, pgx pool management, profiling, gRPC/Protobuf (not crypto/TON - see crypto-specialist/crypto-go-architect) |
+| `maintainer` | Code Quality & PR Audit | Code review, PR audits, ARCHITECTURE.md/KNOWLEDGE.md adherence, blocking poor-quality PRs |
+| `python-specialist` | Python & Async Systems | FastAPI, async systems, data pipelines, type-safe Python architecture |
+| `red-team` | Plan/ADR Adversarial Review | Devil's-advocate review of PLANS and PROPOSALS (architecture, ADRs, PRs) across architectural/security/performance lenses - NOT live-system exploitation (penetration-tester) and NOT static code audit (security-auditor) |
+| `risk-manager` | Deployment Risk & Veto | Audits PRs for deployment/operational risk, enforces circuit breakers, can veto deployments breaching risk parameters; consumes security findings as one risk lens, does not run audits itself |
 
 ---
 ## 🔴 AGENT BOUNDARY ENFORCEMENT (CRITICAL)
@@ -383,7 +396,7 @@ WHEN agent returns error or partial result:
 
 ### 1. Call the Model Router (REQUIRED)
 ```bash
-python3 .agent/scripts/models/model_router.py "<task_description>" --json
+./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "<task_description>"}'
 ```
 
 ### 2. If Provider == "ollama" (WSL Support)
@@ -392,16 +405,23 @@ python3 .agent/scripts/models/model_router.py "<task_description>" --json
 # NO manual override needed - it's automatic
 ```
 
-### 3. Execute via Ollama (NOT built-in agents)
-```bash
-# WRONG (violation):
-task(tool, description="...", subagent_type="code-archaeologist")
+### 3. Execute via Ollama for LOW-STAKES subtasks only (NOT built-in agents)
 
-# CORRECT:
-python3 .agent/scripts/models/model_router.py "analyze technical debt" --json
-# → Response: {"provider": "ollama", "model_id": "qwen3.6:27b"}
+**Scope this to simple, single-shot, low-stakes subtasks** — e.g. straightforward text generation, mechanical file rewrites, formatting. See the Reliability Caveat in "Dynamic Model Routing & Overrides" below for why: local/Ollama-routed models are not reliable for multi-step reasoning or specialist-domain judgment calls.
+
+```bash
+# WRONG for a low-stakes subtask (violation — spawning a full specialist agent for simple text generation):
+task(tool, description="rewrite this changelog entry", subagent_type="documentation-writer")
+
+# CORRECT for a low-stakes subtask:
+./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "rewrite this changelog entry"}'
+# → Response: {"model_id": "qwen3.6:27b", "tier": "L3", "provider": "ollama", "score": 10}
 # → Then use: task(tool, description="...", subagent_type="general")
-#   with prompt: "Use model: ollama/qwen3.6:27b for this analysis"
+#   with prompt: "Use model: ollama/qwen3.6:27b for this rewrite"
+
+# For a specialist-judgment subtask (e.g. "analyze technical debt" — a code-archaeologist domain call),
+# keep using the real specialist agent regardless of what the router suggests:
+task(tool, description="analyze technical debt", subagent_type="code-archaeologist")
 ```
 
 ### 4. Log the Decision
@@ -414,13 +434,13 @@ python3 .agent/scripts/models/model_router.py "analyze technical debt" --json
 ```
 
 **No fabricated values**: `Provider`/`Model`/`Score` must be copied verbatim from the JSON that
-`model_router.py` actually printed for this decision — never a plausible-looking guess. This was a
+`get_routing_decision` actually printed for this decision — never a plausible-looking guess. This was a
 confirmed failure mode elsewhere in this framework (see `.agent/rules/gemini/03_gateway.md`'s
 IDENTITY HEADER PROTOCOL note): models that skip the real call still write a confident-looking
 `Model:`/`Score:` line anyway. If the router call was skipped or failed, write `unknown` instead —
 that is a policy violation to flag, not a value to invent.
 
-**🔴 VIOLATION: Skipping router call or ignoring Ollama decision = FAILED ORCHESTRATION**
+**🔴 VIOLATION: Skipping the router call entirely = FAILED ORCHESTRATION.** For a low-stakes subtask, ignoring a valid Ollama decision without cause is also a violation. For a specialist-judgment subtask, routing it to Ollama instead of the correct specialist agent is the violation — see step 3 above.
 
 ---
 ## 🛡️ Approval Flow for Dangerous Commands
@@ -547,17 +567,18 @@ log_event({
 ### 1. Automatic Optimization (Dual Environment)
 Before delegating a task, the `orchestrator` must determine the optimal model and act according to the environment:
 
-1. **Analyze**: Use `python3 .agent/scripts/models/model_router.py "[task description]"` to get the recommended model ID.
-2. **Environment Check**:
+1. **Analyze**: Use `./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "[task description]"}'` to get the recommended model ID.
+2. **Reliability Caveat (Local/Ollama Models)**: If the routing decision suggests a local or Ollama-routed model, strictly limit its use to simple, single-shot, low-stakes subtasks (e.g., straightforward text generation or file rewrites). **DO NOT** route tasks requiring multi-step reasoning, security/compliance judgment calls, or any scenario where a plausible-but-wrong answer would be costly. Local models have been observed fabricating tool names and parameters that appear correct but are invalid. For these higher-stakes cases, the orchestrator must retain its own primary model rather than routing to a local model based on `get_routing_decision`.
+3. **Environment Check**:
    - **If in Antigravity (IDE)**: The routing is **Advisory**. Announce the result to the user: *"🤖 Recommendation: Switch to [Model] for optimal results"*, but **DO NOT WAIT**. Proceed immediately using the currently active model. This prevents the process from getting stuck if the recommended model is unavailable due to rate limits.
    - **If in Claude Code (CLI)**: The routing is **Autonomous**. Use the `bash` tool to spawn a sub-agent with the specific model:
      `claude --model [model_id] -p "[task context + instructions]"`
-3. **Execution**: Collect the result from the sub-agent (or proceed directly in IDE) and synthesize.
+4. **Execution**: Collect the result from the sub-agent (or proceed directly in IDE) and synthesize.
 
 ### 2. Manual Override (`--model`)
 If the user provides a `--model` flag (e.g., `/enhance add feature --model=opus`):
 1. **Priority**: Always honor the manual override.
-2. **Action**: Call `model_router.py "[task]" --model=[user_model]`.
+2. **Action**: `get_routing_decision` has no model-override argument — skip it entirely. In Claude Code (CLI), spawn the sub-agent directly with `claude --model [user_model] -p "[task context + instructions]"`. Via the broker (e.g. for `execute_prompt`), pass `"model": "[user_model]"` in `-args` to bypass routing.
 
 ### 3. Fallback Chain
 If a sub-agent on Haiku fails to follow instructions (e.g., returns a parse error):

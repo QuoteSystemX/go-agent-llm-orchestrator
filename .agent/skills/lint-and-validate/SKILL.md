@@ -32,8 +32,10 @@ python3 .agent/skills/lint-and-validate/scripts/full_validate.py
 If any linting or formatting check fails, you MUST attempt self-healing before making manual edits:
 
 ```bash
-python3 .agent/scripts/self_heal.py .
+python3 .agent/scripts/dev/ci_auto_fixer.py
 ```
+
+Auto-discovers changed Python files (via `git diff`, falling back to a full scan of `.agent/scripts/` if none are found), applies auto-fixable `ruff` fixes to each, and opens `tasks/ci-auto-fix-needed.md` for any issues it couldn't fix automatically. Takes no arguments.
 
 ## 📈 Quality Checklist
 - [ ] Does it pass ESLint/Flake8?

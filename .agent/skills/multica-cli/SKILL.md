@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.6.0
+version: 1.7.1
 ---
 
 # Multica CLI Reference
@@ -84,6 +84,11 @@ multica issue label remove <id> <label-id>
 multica issue subscriber list <id>
 multica issue subscriber add <id> [--user <name>]
 multica issue subscriber remove <id> [--user <name>]
+
+# Dependencies (horizontal issue links — blocks/related; parent/child above is unrelated hierarchical linkage)
+multica issue dependency add <id> --on <target-id> [--type blocks|related]   # default --type blocks; "related" is a symmetric see-also link with no workflow effect
+multica issue dependency list <id>                                            # shows what <id> depends on (enriched), what it blocks (issue ids only — run `issue get` for details), and what it's related to (enriched)
+multica issue dependency remove <id> <dependency-id>
 ```
 
 ### 2. Agents & Runtimes (`agent`, `daemon`, `runtime`)

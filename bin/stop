@@ -110,8 +110,10 @@ def cmd_stop(reason: str) -> int:
 def cmd_kill(reason: str) -> int:
     """G1 fallback: file-based STOP signal. ADR-007 §6.3.
 
-    The daemon's signal handler polls this file as a last-resort kill switch
-    in case the broker IPC is dead. Prefer `bin/stop` for the normal path.
+    A background task in the daemon (`_watch_fallback_stop_file`, not the
+    SIGTERM handler — that's a separate path) polls for this file as a
+    last-resort kill switch in case the broker IPC is dead. Prefer
+    `bin/stop` for the normal path.
     """
     FALLBACK_STOP_FILE.parent.mkdir(parents=True, exist_ok=True)
     FALLBACK_STOP_FILE.write_text(
@@ -120,7 +122,7 @@ def cmd_kill(reason: str) -> int:
         encoding="utf-8",
     )
     print(_c("YELLOW", f"💀 Fallback STOP file written: {FALLBACK_STOP_FILE}"))
-    print("   The daemon's SIGTERM handler will pick this up on the next 5s tick.")
+    print("   The daemon polls for this file every ~2s (DAEMON_STOP_POLL_INTERVAL_S) and will pick it up shortly.")
     return 0
 
 

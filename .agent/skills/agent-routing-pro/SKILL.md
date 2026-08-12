@@ -26,7 +26,7 @@ Run `python3 .agent/scripts/knowledge/experience_distiller.py --query "task keyw
 - If a lesson indicates a high risk or past failure in this area -> Escalate Level (e.g., L2 -> L3).
 
 **Step 1: Model Selection (MANDATORY)**
-Run `python3 .agent/scripts/models/model_router.py "[Task Description]"` to select the model tier.
+Run `./bin/mcp-llm-broker -tool get_routing_decision -args '{"task_description": "[Task Description]"}'` to select the model tier.
 - **L1 Task** -> Uses Flash/Haiku.
 - **L3/L4 Task** -> Uses Pro/Sonnet/Opus.
 - Inject the selected model into the response header.
@@ -102,8 +102,8 @@ Every response MUST start with the Flow plaque:
 
 ## When to Use
 
-- **Choosing a model for a task** — use `@model_router` to
-  pick the right model by complexity.
+- **Choosing a model for a task** — use `bin/mcp-llm-broker`'s
+  `get_routing_decision` tool to pick the right model by complexity.
 - **Setting up routing rules** — `.agent/config/router_rules.json`
   with bilingual weights (EN + RU) for keyword matching.
 - **Optimizing routing** — train via `archivist_trigger.py`
