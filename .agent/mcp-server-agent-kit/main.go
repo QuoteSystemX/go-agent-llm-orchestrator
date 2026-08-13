@@ -185,7 +185,7 @@ func main() {
 	), withRBAC("knowledge_read", h.readKnowledge))
 
 	s.AddTool(mcp.NewTool("search_knowledge",
-		mcp.WithDescription("Semantic search across project brain."),
+		mcp.WithDescription("Weighted keyword search (not semantic/vector) across the global cross-project lessons-learned file."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query")),
 	), withRBAC("search_knowledge", h.searchKnowledge))
 

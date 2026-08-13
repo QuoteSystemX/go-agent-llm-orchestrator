@@ -30,7 +30,7 @@ A production-grade Model Context Protocol (MCP) server that powers the Agent Kit
 ### 🧠 Knowledge & Intelligence
 
 - `knowledge_read`: Read core artifacts (`KNOWLEDGE.md`, `ARCHITECTURE.md`).
-- `search_knowledge`: Semantic search across project brain (requires external script).
+- `search_knowledge`: Weighted keyword search (not semantic/vector) across the global cross-project lessons file — embedded Go logic, no external script/python3 required.
 - `search_fulltext`: Instant full-text search across logs, docs, and tasks (FTS5).
 - `logs_tail`: Get recent agent execution logs from `.agent/logs/`.
 

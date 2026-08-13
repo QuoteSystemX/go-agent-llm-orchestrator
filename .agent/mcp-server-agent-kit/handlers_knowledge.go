@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -34,18 +33,36 @@ func (h *handler) loadItem(path string) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultText(string(data)), nil
 }
 
+// searchKnowledge scores the global cross-project lessons file
+// (~/.agent_knowledge/lessons_learned.md, see resolveGlobalLessonsPath in
+// knowledge_search.go) against query and returns the top matches. Embedded
+// Go logic, not a python3 subprocess — the distroless:nonroot runtime image
+// has no shell/python3/package manager, so exec.Command("python3", ...)
+// could never succeed here (tasks/done/2026-08-12-agent-kit-search-knowledge-broken.md).
 func (h *handler) searchKnowledge(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	query, _ := req.RequireString("query")
-	
-	scriptPath := filepath.Join(h.projectRoot, ".agent", "scripts", "semantic_brain_engine.py")
-	cmd := exec.Command("python3", scriptPath, query)
-	cmd.Dir = h.projectRoot
-	output, err := cmd.CombinedOutput()
-	
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("search failed: %v\n%s", err, string(output))), nil // nosec
+
+	matches := searchGlobalLessons(query, 5)
+	var b strings.Builder
+	fmt.Fprintf(&b, "🧠 Searching Global Brain for: '%s'...\n", query)
+	if len(matches) == 0 {
+		b.WriteString("ℹ️ No relevant lessons found.")
+		return mcp.NewToolResultText(b.String()), nil
 	}
-	return mcp.NewToolResultText(string(output)), nil
+	for i, m := range matches {
+		fmt.Fprintf(&b, "\n--- Result %d (Score: %.2f) ---\n", i+1, m.Score)
+		content := m.Content
+		truncated := false
+		if runes := []rune(content); len(runes) > 300 {
+			content = string(runes[:300])
+			truncated = true
+		}
+		b.WriteString(content)
+		if truncated {
+			b.WriteString("...")
+		}
+	}
+	return mcp.NewToolResultText(b.String()), nil
 }
 
 func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -68,7 +85,7 @@ func (h *handler) searchFullText(_ context.Context, req mcp.CallToolRequest) (*m
 	if err != nil {
 		return mcp.NewToolResultError("Search failed: " + err.Error()), nil
 	}
-	
+
 	if len(results) == 0 {
 		return mcp.NewToolResultText("No matches found."), nil
 	}
@@ -124,4 +141,3 @@ func (h *handler) tailLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.Cal
 	return mcp.NewToolResultText(fmt.Sprintf("=== %s (last %d lines) ===\n%s", // nosec
 		filepath.Base(latestPath), n, strings.Join(all, "\n"))), nil
 }
-
