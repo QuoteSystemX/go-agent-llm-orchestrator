@@ -35,14 +35,15 @@ export LANG=C.UTF-8
 # STORY-1 Forcing Function: chain of pre-commit checks.
 # 1. pre_commit_review.py: scan staged diff against LESSONS_LEARNED.md
 # 2. git_pre_commit_distill.py: refuse done-stories without fresh distillation
-# Both are required for a clean commit. Skip with --no-verify if needed.
+# 3. skill_files_lint.py: refuse if a skill's files: frontmatter drifted from disk
+# All are required for a clean commit. Skip with --no-verify if needed.
 set -e
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-echo "🔍 [1/2] Lesson review..."
+echo "🔍 [1/3] Lesson review..."
 python3 "$REPO_ROOT/.agent/scripts/dev/pre_commit_review.py"
 
-echo "🔍 [2/2] Distill freshness check..."
+echo "🔍 [2/3] Distill freshness check..."
 DISTILL_STATUS=0
 python3 "$REPO_ROOT/.agent/scripts/dev/git_pre_commit_distill.py" || DISTILL_STATUS=$?
 if [ $DISTILL_STATUS -eq 1 ]; then
@@ -50,6 +51,9 @@ if [ $DISTILL_STATUS -eq 1 ]; then
     echo "❌ Distill check refused the commit (see errors above)."
     exit 1
 fi
+
+echo "🔍 [3/3] Skill files: drift check..."
+python3 "$REPO_ROOT/.agent/scripts/dev/skill_files_lint.py"
 
 echo "✅ Pre-commit checks passed."
 exit 0
@@ -65,7 +69,7 @@ def install_pre_commit():
     with open(hook_path, "w", encoding="utf-8") as f:
         f.write(PRE_COMMIT_CONTENT)
     os.chmod(hook_path, 0o755)
-    print(f"✅ Installed pre-commit hook → pre_commit_review.py + git_pre_commit_distill.py + task_tracer.py")
+    print(f"✅ Installed pre-commit hook → pre_commit_review.py + git_pre_commit_distill.py + skill_files_lint.py + task_tracer.py")
     return True
 
 if __name__ == "__main__":

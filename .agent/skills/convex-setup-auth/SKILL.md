@@ -4,6 +4,7 @@ description: "Implement secure authentication in Convex with user management and
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0
 priority: NORMAL
+files: assets/icon.svg, references/auth0.md, references/clerk.md, references/convex-auth.md, references/workos-authkit.md
 ---
 # Convex Authentication Setup
 

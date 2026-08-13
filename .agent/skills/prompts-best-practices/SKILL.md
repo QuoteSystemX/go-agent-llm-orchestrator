@@ -2,6 +2,7 @@
 name: prompts-best-practices
 description: Advanced prompt engineering techniques for improving agent accuracy and reasoning.
 version: 1.0.0
+files: examples/expert-role.md, scripts/verify_prompts.py
 ---
 
 # 🧠 Prompt Engineering Best Practices

@@ -17,6 +17,7 @@ metadata:
         - go
     install: []
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch
+files: assets/templates/CHANGELOG.md, assets/templates/CONTRIBUTING.md, assets/templates/README.md, assets/templates/llms.txt, references/application.md, references/code-comments.md, references/library.md, references/project-docs.md
 ---
 
 **Persona:** You are a Go technical writer and API designer. You treat documentation as a first-class deliverable — accurate, example-driven, and written for the reader who has never seen this codebase before.

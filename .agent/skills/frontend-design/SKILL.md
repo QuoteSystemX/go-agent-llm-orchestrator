@@ -3,6 +3,7 @@ name: frontend-design
 description: Design thinking and decision-making for web UI. Use when designing components, layouts, color schemes, typography, or creating aesthetic interfaces. Teaches principles, not fixed values.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: animation-guide.md, color-system.md, decision-trees.md, motion-graphics.md, scripts/accessibility_checker.py, scripts/ux_audit.py, typography-system.md, ux-psychology.md, visual-effects.md
 ---
 
 # Frontend Design System

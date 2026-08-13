@@ -3,6 +3,7 @@ name: api-development
 description: Unified API development router. Automatically routes to language-specific backend skills, security layers, and type-safe contract generators based on project context. Use when building APIs, designing endpoints, implementing REST/GraphQL/gRPC/tRPC, or any API-related work.
 trigger-keys: api, endpoint, rest, graphql, grpc, trpc, http, server, route, post, get, put, patch, delete, openapi, swagger, json-rpc, webhook
 version: 1.0.0
+files: contract-patterns.md, security-checklist.md, versioning-strategies.md
 ---
 
 # API Development Router

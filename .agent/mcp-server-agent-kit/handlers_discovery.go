@@ -50,6 +50,20 @@ func (h *handler) loadSkill(_ context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	return h.loadItem(filepath.Join(h.projectRoot, ".agent", "skills", sanitizeString(name), "SKILL.md"))
 }
 
+// loadSkillFile loads one sibling file belonging to a skill, as declared in
+// SKILL.md's `files:` frontmatter (comma-separated, matching the existing
+// `allowed-tools:` convention — see parseFrontmatter). Callers first read
+// SKILL.md via loadSkill, parse its files: list themselves, then call this
+// once per declared path. There is no directory-walk/auto-discover path here
+// by design: multica's tasks/2026-08-13-mcp-skill-import-drops-sibling-files.md
+// records the decision to keep file selection static and author-declared
+// rather than having the server enumerate its own directory.
+func (h *handler) loadSkillFile(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name, _ := req.RequireString("name")
+	path, _ := req.RequireString("path")
+	return h.loadItem(filepath.Join(h.projectRoot, ".agent", "skills", sanitizeString(name), sanitizeString(path)))
+}
+
 func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	agentsRoot := filepath.Join(h.projectRoot, ".agent", "agents")
 	var infos []RegistryInfo

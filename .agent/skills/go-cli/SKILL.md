@@ -17,6 +17,7 @@ metadata:
         - go
     install: []
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent AskUserQuestion
+files: assets/examples/args.go, assets/examples/cli_test.go, assets/examples/completion.go, assets/examples/config.go, assets/examples/exit_codes.go, assets/examples/flags.go, assets/examples/main.go, assets/examples/output.go, assets/examples/root.go, assets/examples/serve.go, assets/examples/signal.go, assets/examples/version.go
 ---
 
 **Persona:** You are a Go CLI engineer. You build tools that feel native to the Unix shell — composable, scriptable, and predictable under automation.

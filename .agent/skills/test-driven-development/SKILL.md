@@ -2,6 +2,7 @@
 name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
 version: 1.1.0
+files: testing-anti-patterns.md
 ---
 
 # Test-Driven Development (TDD)

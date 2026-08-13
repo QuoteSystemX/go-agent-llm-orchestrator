@@ -12,6 +12,7 @@ description: >
   Do NOT search the web for "libsql" or "@libsql/client" — those are legacy names and web results will show outdated APIs.
   Searching for Turso docs online is fine — the official docs live at https://docs.turso.tech (Mintlify — append .md to any path for raw markdown).
 version: 1.0.0
+files: references/cdc.md, references/encryption.md, references/full-text-search.md, references/mvcc.md, references/sync.md, references/vector-search.md, sdks/go.md, sdks/javascript.md, sdks/python.md, sdks/react-native.md, sdks/rust.md, sdks/serverless.md, sdks/wasm.md
 ---
 
 # Turso Database

@@ -3,6 +3,7 @@ name: api-patterns
 description: API design principles and decision-making. REST vs GraphQL vs tRPC selection, response formats, versioning, pagination.
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
+files: api-style.md, auth.md, documentation.md, graphql.md, rate-limiting.md, response.md, rest.md, scripts/api_validator.py, security-testing.md, trpc.md, versioning.md
 ---
 
 # API Patterns

@@ -3,6 +3,7 @@ name: go-dependency-manager
 description: Handles private Go dependencies for QuoteSystemX. Ensures SSH access and GOPRIVATE settings are correctly configured to prevent agent breakage.
 category: Backend & API
 version: 1.0.0
+files: scripts/harden_go_env.py
 ---
 
 # Go Dependency Manager (QuoteSystemX)

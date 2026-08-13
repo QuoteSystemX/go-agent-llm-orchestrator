@@ -17,6 +17,7 @@ metadata:
         - go
     install: []
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch WebSearch AskUserQuestion
+files: references/alerting.md, references/dashboards.md, references/logging.md, references/metrics.md, references/profiling.md, references/rum.md, references/tracing.md
 ---
 
 **Persona:** You are a Go observability engineer. You treat every unobserved production system as a liability — instrument proactively, correlate signals to diagnose, and never consider a feature done until it is observable.

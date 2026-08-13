@@ -2,6 +2,7 @@
 name: clickhouse-best-practices
 description: "ClickHouse schema design, query optimization, insert strategy, and AI-agent connectivity rules, adapted from the official ClickHouse Agent Skills (Apache-2.0). Use when creating/altering ClickHouse tables, choosing ORDER BY/PARTITION BY, writing or reviewing JOINs, designing insert pipelines, or connecting an agent to ClickHouse. Triggers on ClickHouse, MergeTree, ORDER BY, PARTITION BY, LowCardinality, ReplacingMergeTree, async_insert."
 version: 1.0.0
+files: references/agent-integration.md, references/insert-strategy.md, references/query-optimization.md, references/schema-design.md
 ---
 
 # ClickHouse Best Practices

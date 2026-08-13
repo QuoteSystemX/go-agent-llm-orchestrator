@@ -2,6 +2,7 @@
 name: next-best-practices
 description: Next.js best practices for RSC boundaries, data patterns, and performance optimization.
 version: 1.0.0
+files: examples/server-component-pattern.tsx, scripts/check_rsc_boundaries.py
 ---
 
 # 🌐 Next.js Best Practices

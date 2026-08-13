@@ -4,6 +4,7 @@ description: "Setup, intake, preflight, and launch-contract phase for open-sourc
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0
 priority: NORMAL
+files: examples/research_config.example.yaml
 ---
 # Arbor Setup And Intake
 

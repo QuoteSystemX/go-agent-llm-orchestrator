@@ -76,6 +76,7 @@ CORE_CHECKS = [
     ("Dead Code Detector", ".agent/scripts/analysis/dead_code_detector.py", False),
     ("Resource Forecast", ".agent/scripts/analysis/resource_forecaster.py", False),
     ("Skill Discovery", ".agent/scripts/dev/skill_discovery.py", False),
+    ("Skill Files Drift", ".agent/scripts/dev/skill_files_lint.py", True),
     ("Incident Watcher", ".agent/scripts/health/incident_watcher.py", False),
 ]
 

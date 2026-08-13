@@ -3,6 +3,7 @@ name: inbox-patterns
 description: How to use the structured INBOX.md channel for human-to-agent communication. Covers intents (redirect, clarify, abort, context, ack), knowledge anchors, sanitization, and ack workflow. Use when sending messages to the running agent, when investigating agent behavior, or when designing a new INBOX-related feature.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: anti-patterns.md, intents.md, knowledge-anchors.md, sanitization.md, scripts/inbox_validate.py
 ---
 
 # INBOX Patterns

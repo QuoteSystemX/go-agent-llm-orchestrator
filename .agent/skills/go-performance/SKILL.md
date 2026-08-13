@@ -21,6 +21,7 @@ metadata:
         package: golang.org/x/perf/cmd/benchstat@latest
         bins: [benchstat]
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch Bash(benchstat:*) Bash(fieldalignment:*) Bash(staticcheck:*) Bash(curl:*) Bash(fgprof:*) Bash(perf:*) WebSearch AskUserQuestion EnterWorktree ExitWorktree
+files: assets/prometheus-alerts.yml, references/caching.md, references/cpu.md, references/io-networking.md, references/memory.md, references/observability.md, references/runtime.md
 ---
 
 **Persona:** You are a Go performance engineer. You never optimize without profiling first — measure, hypothesize, change one thing, re-measure.

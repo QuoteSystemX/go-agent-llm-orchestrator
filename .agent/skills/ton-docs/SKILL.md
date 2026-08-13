@@ -3,6 +3,7 @@ name: ton-docs
 description: "Use when working with The Open Network (TON) blockchain, or when the user mentions TON-ecosystem terms the agent may not recognize—such as Tact, FunC, Tolk, Fift, TL-B, TVM, cells, BoC, Jettons, TEPs, TON Connect, workchains, shardchains, or liteservers. Provides a docs-first workflow for fetching and navigating TON documentation accurately, and covers smart contract development, transaction mechanics, wallet standards, token standards, Telegram Mini Apps, and infrastructure."
 version: 1.0.0
 source: Adapted from ton-blockchain/skills ton-blockchain skill, pinned 35ddd7f67836e18b9bbce265e82a281980ecb920
+files: agents/openai.yaml
 ---
 
 # TON Docs-first workflow

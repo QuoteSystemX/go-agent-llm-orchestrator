@@ -2,6 +2,7 @@
 name: wsl-interop
 description: Standards and tools for resolving WSL-specific networking, DNS, and service connectivity issues. Mandatory for cross-domain internal service access.
 version: 1.0.0
+files: scripts/check_wsl_config.py
 ---
 
 # 🖥 WSL Interoperability & Performance

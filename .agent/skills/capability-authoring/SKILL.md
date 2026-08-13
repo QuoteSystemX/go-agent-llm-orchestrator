@@ -3,6 +3,7 @@ name: capability-authoring
 description: How to edit the capability matrix at .agent/config/capabilities.yaml. Covers default-deny principles, role definition, scope patterns, capability_audit gates, and ADR workflow. Use when adding a new role, new operation, new capability, or when investigating CAPABILITY_DENIED errors.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: audit-checklist.md, default-deny.md, role-patterns.md, scope-patterns.md, scripts/capability_validate.py
 ---
 
 # Capability Authoring

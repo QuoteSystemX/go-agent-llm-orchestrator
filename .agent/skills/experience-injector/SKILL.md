@@ -4,6 +4,7 @@ description: "Automatically queries the repository lessons learned database and 
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0
 priority: NORMAL
+files: scripts/inject_experience.py
 ---
 # Experience Injector
 

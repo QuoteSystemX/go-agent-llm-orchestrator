@@ -3,6 +3,7 @@ name: go-patterns
 description: Professional Go development principles for 2026. Covers slog, gRPC with buf, high-performance lock-free concurrency, and zero-allocation patterns.
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
+files: LESSONS.md
 ---
 
 # Go Patterns

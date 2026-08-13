@@ -2,6 +2,7 @@
 name: postgres-best-practices
 description: Postgres performance optimization and best practices for schema design, migrations, and query optimization.
 version: 1.0.0
+files: examples/schema-migration.sql, scripts/verify_schema.py
 ---
 
 # 🐘 Postgres Best Practices

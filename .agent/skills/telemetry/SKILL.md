@@ -2,6 +2,7 @@
 name: telemetry
 description: Record agent execution metrics (tokens, latency, status) for real-time monitoring and AI analysis.
 version: 1.0.0
+files: scripts/log_event.py
 ---
 
 # Telemetry & Live Metrics

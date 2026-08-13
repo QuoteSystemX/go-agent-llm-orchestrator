@@ -3,6 +3,7 @@ name: func2tolk
 description: "Port TON smart contracts from FunC (.fc/.func) to modern Tolk (.tolk) with Acton: use acton func2tolk when helpful, then refactor storage/messages/opcodes into typed structs and serialization, implement Acton-style entrypoints, generate wrappers, migrate JS/TS tests to native Tolk tests, and use acton build/test/script/verify/disasm to preserve TL-B compatibility and behavior. Use when asked to convert, port, or modernize FunC contracts into idiomatic Tolk."
 version: 1.0.0
 source: Adapted from ton-blockchain/skills func2tolk skill, pinned 35ddd7f67836e18b9bbce265e82a281980ecb920
+files: agents/openai.yaml, references/porting-checklist.md, references/repo-examples.md
 ---
 
 # func2tolk

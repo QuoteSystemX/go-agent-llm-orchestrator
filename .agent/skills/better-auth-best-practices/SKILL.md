@@ -2,6 +2,7 @@
 name: better-auth-best-practices
 description: Configure Better Auth server and client, set up database adapters, manage sessions, add plugins, and handle environment variables.
 version: 1.0.0
+files: scripts/audit_auth_config.py
 ---
 
 # 🔐 Better Auth Best Practices

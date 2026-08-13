@@ -2,6 +2,7 @@
 name: shared-context
 description: Manage structured data exchange via the Context Bus (.agent/bus/). Allows agents to pass complex objects (DTOs) without bloating the conversation context.
 version: 1.0.0
+files: LESSONS.md
 ---
 
 # Shared Context (Context Bus)

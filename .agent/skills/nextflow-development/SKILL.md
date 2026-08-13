@@ -2,6 +2,7 @@
 name: nextflow-development
 description: Run nf-core bioinformatics pipelines (rnaseq, sarek, atacseq) on sequencing data. Use when analyzing RNA-seq, WGS/WES, or ATAC-seq data—either local FASTQs or public datasets from GEO/SRA. Triggers on nf-core, Nextflow, FASTQ analysis, variant calling, gene expression, differential expression, GEO reanalysis, GSE/GSM/SRR accessions, or samplesheet creation.
 version: 1.0.0
+files: LICENSE.txt, references/geo-sra-acquisition.md, references/installation.md, references/pipelines/atacseq.md, references/pipelines/rnaseq.md, references/pipelines/sarek.md, references/troubleshooting.md, scripts/check_environment.py, scripts/config/genomes.yaml, scripts/config/pipelines/atacseq.yaml, scripts/config/pipelines/rnaseq.yaml, scripts/config/pipelines/sarek.yaml, scripts/detect_data_type.py, scripts/generate_samplesheet.py, scripts/manage_genomes.py, scripts/sra_geo_fetch.py, scripts/utils/__init__.py, scripts/utils/file_discovery.py, scripts/utils/ncbi_utils.py, scripts/utils/sample_inference.py, scripts/utils/validators.py
 ---
 
 # nf-core Pipeline Deployment

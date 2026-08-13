@@ -3,6 +3,7 @@ name: stonfi-dex
 description: Expert integration with Ston.fi DEX — Swap, Liquidity, Routing, SDK usage, Jetton Wallet interaction, and fee estimation on TON.
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
+files: examples/swap-execution.ts, scripts/query_stonfi_rates.py
 ---
 
 # 💎 Ston.fi DEX Integration (2026)

@@ -3,6 +3,7 @@ name: acton
 description: "Acton CLI workflow for TON smart contract development in Tolk: install/update, project bootstrap, Acton.toml configuration, build/compile/wrapper generation, tests with coverage/gas/fuzz/mutation/UI, scripts and deployment, wallets, verification, RPC inspection, libraries, lint/format/hooks, LSP/completions, and troubleshooting."
 version: 1.0.0
 source: Adapted from ton-blockchain/skills acton skill, pinned 35ddd7f67836e18b9bbce265e82a281980ecb920
+files: agents/openai.yaml, references/command-map.md, references/troubleshooting.md
 ---
 
 # Acton TON CLI Workflow

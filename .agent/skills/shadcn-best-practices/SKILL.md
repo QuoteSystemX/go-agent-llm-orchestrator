@@ -2,6 +2,7 @@
 name: shadcn-best-practices
 description: Standards for adding, styling, and composing shadcn/ui components in React projects.
 version: 1.0.0
+files: examples/custom-component.tsx, scripts/verify_components.py
 ---
 
 # 🎨 shadcn/ui Best Practices

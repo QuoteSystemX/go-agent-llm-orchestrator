@@ -7,6 +7,7 @@ metadata:
   author: nicobailon
   version: "0.6.3"
 version: 1.0.0
+files: commands/diff-review.md, commands/fact-check.md, commands/generate-slides.md, commands/generate-visual-plan.md, commands/generate-web-diagram.md, commands/plan-review.md, commands/project-recap.md, commands/share-page.md, references/css-patterns.md, references/libraries.md, references/responsive-nav.md, references/slide-patterns.md, scripts/share.sh, templates/architecture.html, templates/data-table.html, templates/mermaid-flowchart.html, templates/slide-deck.html
 ---
 
 # Visual Explainer

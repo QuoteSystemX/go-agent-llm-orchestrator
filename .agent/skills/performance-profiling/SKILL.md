@@ -3,6 +3,7 @@ name: performance-profiling
 description: Performance profiling principles. Measurement, analysis, and optimization techniques.
 allowed-tools: Read, Glob, Grep, Bash
 version: 1.0.0
+files: scripts/lighthouse_audit.py
 ---
 
 # Performance Profiling

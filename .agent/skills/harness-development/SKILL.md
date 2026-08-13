@@ -3,6 +3,7 @@ name: harness-development
 description: How to add a new harness (LLM CLI) to the capability-driven harness_run system. Covers manifest schema (harnesses.yaml), capability matrix updates, security review, and validation. Use when adding a new LLM CLI (claude, codex, gpt-cli, etc.), updating an existing harness, or when asked to "add a new model" or "register a new tool".
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: capability-mapping.md, examples.md, manifest-schema.md, scripts/harness_validate.py, security-review.md
 ---
 
 # Harness Development

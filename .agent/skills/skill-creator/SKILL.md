@@ -2,6 +2,7 @@
 name: skill-creator
 description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
 version: 1.0.0
+files: LICENSE.txt, agents/analyzer.md, agents/comparator.md, agents/grader.md, assets/eval_review.html, eval-viewer/generate_review.py, eval-viewer/viewer.html, references/schemas.md, scripts/__init__.py, scripts/aggregate_benchmark.py, scripts/generate_report.py, scripts/improve_description.py, scripts/package_skill.py, scripts/quick_validate.py, scripts/run_eval.py, scripts/run_loop.py, scripts/utils.py
 ---
 
 # Skill Creator

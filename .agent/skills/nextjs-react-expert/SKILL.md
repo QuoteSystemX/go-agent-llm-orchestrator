@@ -3,6 +3,7 @@ name: react-best-practices
 description: React and Next.js performance optimization from Vercel Engineering. Use when building React components, optimizing performance, eliminating waterfalls, reducing bundle size, reviewing code for performance issues, or implementing server/client-side optimizations.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: 1-async-eliminating-waterfalls.md, 2-bundle-bundle-size-optimization.md, 3-server-server-side-performance.md, 4-client-client-side-data-fetching.md, 5-rerender-re-render-optimization.md, 6-rendering-rendering-performance.md, 7-js-javascript-performance.md, 8-advanced-advanced-patterns.md, 9-cache-components.md, scripts/convert_rules.py, scripts/react_performance_checker.py
 ---
 
 # Next.js & React Performance Expert

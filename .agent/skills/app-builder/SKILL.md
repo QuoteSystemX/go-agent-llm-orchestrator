@@ -3,6 +3,7 @@ name: app-builder
 description: Main application building orchestrator. Creates full-stack applications from natural language requests. Determines project type, selects tech stack, coordinates agents.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 version: 1.0.0
+files: agent-coordination.md, feature-building.md, project-detection.md, scaffolding.md, tech-stack.md, templates/astro-static/TEMPLATE.md, templates/chrome-extension/TEMPLATE.md, templates/cli-tool/TEMPLATE.md, templates/electron-desktop/TEMPLATE.md, templates/express-api/TEMPLATE.md, templates/flutter-app/TEMPLATE.md, templates/monorepo-turborepo/TEMPLATE.md, templates/nextjs-fullstack/TEMPLATE.md, templates/nextjs-saas/TEMPLATE.md, templates/nextjs-static/TEMPLATE.md, templates/nuxt-app/TEMPLATE.md, templates/python-fastapi/TEMPLATE.md, templates/react-native-app/TEMPLATE.md
 ---
 
 # App Builder - Application Building Orchestrator

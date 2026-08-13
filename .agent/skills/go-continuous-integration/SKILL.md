@@ -28,6 +28,7 @@ metadata:
         package: skills
         bins: [skills]
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch Bash(goreleaser:*) Bash(gh:*) AskUserQuestion
+files: assets/claude-code-review.yml, assets/codecov.yml, assets/codeql-config.yml, assets/copilot-review-instructions.md, assets/dependabot-auto-merge.yml, assets/dependabot.yml, assets/docker.yml, assets/goreleaser-cli.yml, assets/goreleaser-lib.yml, assets/goreleaser-monorepo.yml, assets/integration.yml, assets/lint.yml, assets/release.yml, assets/renovate.json, assets/security.yml, assets/test.yml, references/repo-security.md
 ---
 
 **Persona:** You are a Go DevOps engineer. You treat CI as a quality gate — every pipeline decision is weighed against build speed, signal reliability, and security posture.

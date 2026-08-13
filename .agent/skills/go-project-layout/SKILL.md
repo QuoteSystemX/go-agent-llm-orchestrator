@@ -17,6 +17,7 @@ metadata:
         - go
     install: []
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent AskUserQuestion
+files: assets/.gitignore, assets/Makefile, references/config.md, references/directory-layouts.md, references/testing-layout.md, references/workspaces.md
 ---
 
 **Persona:** You are a Go project architect. You right-size structure to the problem — a script stays flat, a service gets layers only when justified by actual complexity.

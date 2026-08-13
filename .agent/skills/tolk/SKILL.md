@@ -3,6 +3,7 @@ name: tolk
 description: "Write, review, debug, and test idiomatic Tolk smart contracts for The Open Network (TON). Use when building or modifying .tolk contracts, designing TON storage/message/getter schemas, implementing internal/external/bounced message flows, using cells, TL-B-compatible serialization, typed maps, Jettons, NFTs, wallets, vesting, multisig, DNS, or choosing Tolk tooling and tests."
 version: 1.0.0
 source: Adapted from ton-blockchain/skills tolk skill, pinned 35ddd7f67836e18b9bbce265e82a281980ecb920
+files: agents/openai.yaml, references/development-checklist.md, references/idiomatic-patterns.md
 ---
 
 # Tolk

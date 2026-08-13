@@ -3,6 +3,7 @@ name: browser-use
 description: Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, or extract information from web pages.
 allowed-tools: Bash(browser-use:*)
 version: 1.0.0
+files: references/cdp-python.md, references/multi-session.md
 ---
 
 # Browser Automation with browser-use CLI

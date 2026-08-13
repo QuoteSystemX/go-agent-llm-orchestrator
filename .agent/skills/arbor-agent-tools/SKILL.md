@@ -4,6 +4,7 @@ description: "Deterministic helper layer for emulating Arbor tools in Codex or C
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0
 priority: NORMAL
+files: references/tool-mapping.md, scripts/arbor_state.py, scripts/local_role_adapter.py, scripts/run_local_cycle.py
 ---
 # Arbor Agent Tools
 

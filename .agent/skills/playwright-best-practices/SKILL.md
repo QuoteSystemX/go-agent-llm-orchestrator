@@ -2,6 +2,7 @@
 name: playwright-best-practices
 description: Best practices for writing, debugging, and optimizing Playwright tests and browser automation.
 version: 1.0.0
+files: examples/basic-e2e.spec.ts, scripts/verify_tests.py
 ---
 
 # 🎭 Playwright Best Practices

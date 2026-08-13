@@ -166,6 +166,11 @@ func main() {
 		mcp.WithDescription("Load full SKILL.md content."),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Skill name")),
 	), withRBAC("skills_load", h.loadSkill))
+	s.AddTool(mcp.NewTool("skills_load_file",
+		mcp.WithDescription("Load one sibling file belonging to a skill, as declared in SKILL.md's files: frontmatter."),
+		mcp.WithString("name", mcp.Required(), mcp.Description("Skill name")),
+		mcp.WithString("path", mcp.Required(), mcp.Description("Relative path of the file within the skill directory, as listed in SKILL.md's files: frontmatter")),
+	), withRBAC("skills_load_file", h.loadSkillFile))
 	s.AddTool(mcp.NewTool("skills_search",
 		mcp.WithDescription("Search skills by keyword in name or description."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search keyword")),

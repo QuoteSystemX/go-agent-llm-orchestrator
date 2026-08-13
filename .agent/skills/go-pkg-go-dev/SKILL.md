@@ -22,6 +22,7 @@ metadata:
         bins: [godig]
     skill-library-version: "0.2.0"
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Bash(godig:*) Agent
+files: references/sample-output.md
 ---
 
 # golang-pkg-go-dev

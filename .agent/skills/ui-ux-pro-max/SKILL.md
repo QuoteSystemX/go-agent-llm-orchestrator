@@ -2,6 +2,7 @@
 name: ui-ux-pro-max
 description: Advanced UI/UX design intelligence with 50+ styles, 161 color palettes, and 99 UX guidelines.
 version: 1.0.0
+files: data/charts.csv, data/colors.csv, data/icons.csv, data/landing.csv, data/products.csv, data/prompts.csv, data/react-performance.csv, data/stacks/flutter.csv, data/stacks/html-tailwind.csv, data/stacks/jetpack-compose.csv, data/stacks/nextjs.csv, data/stacks/nuxt-ui.csv, data/stacks/nuxtjs.csv, data/stacks/react-native.csv, data/stacks/react.csv, data/stacks/shadcn.csv, data/stacks/svelte.csv, data/stacks/swiftui.csv, data/stacks/vue.csv, data/styles.csv, data/typography.csv, data/ui-reasoning.csv, data/ux-guidelines.csv, data/web-interface.csv, scripts/core.py, scripts/design_system.py, scripts/search.py
 ---
 
 # ✨ UI/UX Pro Max

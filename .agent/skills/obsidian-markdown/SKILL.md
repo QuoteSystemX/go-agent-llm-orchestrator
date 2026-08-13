@@ -4,6 +4,7 @@ description: Create and edit Obsidian Flavored Markdown (OFM) with wikilinks, em
 version: 1.0.0
 scope_restriction: vault_path
 trigger: automatic_within_vault, manual_outside_vault
+files: references/PROPERTIES.md
 ---
 
 # Obsidian Flavored Markdown Skill

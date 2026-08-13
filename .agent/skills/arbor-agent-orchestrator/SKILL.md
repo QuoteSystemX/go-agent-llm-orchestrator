@@ -4,6 +4,7 @@ description: "Top-level controller for recreating the open-source AutoResearch w
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0
 priority: NORMAL
+files: references/compatibility.md, references/source-map.md
 ---
 # Arbor Agent Orchestrator
 

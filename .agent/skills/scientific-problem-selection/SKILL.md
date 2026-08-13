@@ -2,6 +2,7 @@
 name: scientific-problem-selection
 description: This skill should be used when scientists need help with research problem selection, project ideation, troubleshooting stuck projects, or strategic scientific decisions. Use this skill when users ask to pitch a new research idea, work through a project problem, evaluate project risks, plan research strategy, navigate decision trees, or get help choosing what scientific problem to work on. Typical requests include "I have an idea for a project", "I'm stuck on my research", "help me evaluate this project", "what should I work on", or "I need strategic advice about my research".
 version: 1.0.0
+files: LICENSE.txt, references/01-intuition-pumps.md, references/02-risk-assessment.md, references/03-optimization-function.md, references/04-parameter-strategy.md, references/05-decision-tree.md, references/06-adversity-planning.md, references/07-problem-inversion.md, references/08-integration-synthesis.md, references/09-meta-framework.md
 ---
 
 # Scientific Problem Selection Skills

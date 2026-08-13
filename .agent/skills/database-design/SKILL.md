@@ -3,6 +3,7 @@ name: database-design
 description: Database design principles and decision-making. Schema design, indexing strategy, ORM selection, serverless databases.
 allowed-tools: Read, Write, Edit, Glob, Grep
 version: 1.0.0
+files: database-selection.md, examples/normalized-schema.md, indexing.md, migrations.md, optimization.md, orm-selection.md, schema-design.md, scripts/analyze_normalization.py, scripts/schema_validator.py
 ---
 
 # 🏗 Database Design & Architecture

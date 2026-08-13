@@ -3,6 +3,7 @@ name: testing-patterns
 description: Testing patterns and principles. Unit, integration, mocking strategies.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 version: 1.0.0
+files: scripts/test_runner.py
 ---
 
 # Testing Patterns

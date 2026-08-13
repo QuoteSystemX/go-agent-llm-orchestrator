@@ -2,6 +2,7 @@
 name: github-actions-expert
 description: Guidelines for writing, securing, and optimizing GitHub Actions workflows.
 version: 1.0.0
+files: examples/ci-standard.yml, scripts/verify_workflows.py
 ---
 
 # 🐙 GitHub Actions Expert
