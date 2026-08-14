@@ -30,8 +30,8 @@ type BackendHealth struct {
 	Available     bool
 	Latency       time.Duration
 	LastCheck     time.Time
-	EMAMsPerToken float64       // Exponential Moving Average of ms per generated token
-	TotalTokens   int64         // Total tokens generated (for EMA warmup)
+	EMAMsPerToken float64 // Exponential Moving Average of ms per generated token
+	TotalTokens   int64   // Total tokens generated (for EMA warmup)
 	// Circuit breaker fields
 	CircuitState        int       // CircuitClosed, CircuitOpen, CircuitHalfOpen
 	ConsecutiveFailures int       // reset on success
@@ -156,6 +156,7 @@ func main() {
 		mcp.WithString("agent_name", mcp.Required(), mcp.Description("Exact agent name from the available list. Never use 'orchestrator'.")),
 		mcp.WithString("task", mcp.Required(), mcp.Description("The task or question to send to the agent")),
 		mcp.WithString("tier", mcp.Description("Optional tier override: L1, L2, L3, L4")),
+		mcp.WithString("tools", mcp.Description("Optional: set to 'false' to disable this dispatch's sandboxed read_file/grep repo access (default: enabled).")),
 	), srv.handleCallAgent)
 
 	s.AddTool(mcp.NewTool(
@@ -1072,7 +1073,6 @@ func (b *BrokerServer) warmUpJanL1(ctx context.Context) {
 	fmt.Fprintf(os.Stderr, "[INFO] warmup: %s loaded (HTTP %d)\n", l1Model, resp.StatusCode)
 }
 
-
 // agentEntry is one discovered agent — name and description parsed straight
 // from its .md frontmatter.
 type agentEntry struct {
@@ -1183,7 +1183,12 @@ func (b *BrokerServer) buildCallAgentDescription() string {
 
 // invokeAgent loads a specialist agent's system prompt and executes a task with it.
 // Shared by handleCallAgent (MCP tool) and the internal agentic loop.
-func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOverride string) (*ExecutionResult, error) {
+//
+// enableTools grants the persona sandboxed read_file/grep access (see
+// tools_readonly.go) so it can check a claim about the codebase instead of
+// confabulating a plausible-sounding file path — independent of the
+// cloud-escape guarantee below (see withToolsEnabled in executor.go).
+func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOverride string, enableTools bool) (*ExecutionResult, error) {
 	if agentName == "" {
 		return nil, fmt.Errorf("agent_name is required")
 	}
@@ -1260,7 +1265,13 @@ func (b *BrokerServer) invokeAgent(ctx context.Context, agentName, task, tierOve
 
 	// GUARANTEE C — sub-agents run LOCAL ONLY. withLocalOnly disables every cloud
 	// fallback path in executePromptLogic so delegated work can never escape to cloud.
-	result, err := b.executePromptLogic(withLocalOnly(ctx), task, systemPrompt, task, "", tierOverride, false)
+	// Independently of that, enableTools may grant sandboxed read_file/grep access —
+	// the two are unrelated guarantees (see withToolsEnabled in executor.go).
+	dispatchCtx := withLocalOnly(ctx)
+	if enableTools {
+		dispatchCtx = withToolsEnabled(dispatchCtx)
+	}
+	result, err := b.executePromptLogic(dispatchCtx, task, systemPrompt, task, "", tierOverride, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1272,12 +1283,16 @@ func (b *BrokerServer) handleCallAgent(ctx context.Context, req mcp.CallToolRequ
 	agentName, _ := req.RequireString("agent_name")
 	task := b.getStringArg(req.Params.Arguments, "task")
 	tierOverride := b.getStringArg(req.Params.Arguments, "tier")
+	// Default true: fixes the systemic hallucination problem this feature exists for
+	// without requiring every existing call_agent caller to opt in explicitly. Pass
+	// tools:"false" to disable for a specific dispatch.
+	toolsWanted := b.getBoolArgDefault(req.Params.Arguments, "tools", true)
 
 	if task == "" {
 		return mcp.NewToolResultError("task is required"), nil
 	}
 
-	result, err := b.invokeAgent(ctx, agentName, task, tierOverride)
+	result, err := b.invokeAgent(ctx, agentName, task, tierOverride, toolsWanted)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("call_agent failed: %v", err)), nil
 	}
@@ -1298,15 +1313,39 @@ func (b *BrokerServer) handleCallAgent(ctx context.Context, req mcp.CallToolRequ
 		isCloud = result.Source == rules.HybridRouting.CloudFallbackProvider
 	}
 
+	// Surface whether the persona actually verified anything against the real
+	// repo, or just asserted blind — so a caller (or a human reading a
+	// Council/Arena transcript) can tell the two apart.
+	usedTools, toolCalls := extractToolUsage(result)
+
 	out := map[string]any{
 		"agent":      agentName,
 		"response":   cleanResponse,
 		"model_used": result.Model,
 		"provider":   result.Source,
 		"is_cloud":   isCloud,
+		"used_tools": usedTools,
+	}
+	if toolCalls != nil {
+		out["tool_calls"] = toolCalls
 	}
 	jsonData, _ := json.MarshalIndent(out, "", "  ")
 	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
+// extractToolUsage reads the tool-call log executeOllamaToolLoop attaches to
+// ExecutionResult.Stats (if any) and reports whether the persona actually
+// used a tool — nil Stats, a missing key, or a present-but-empty log all
+// mean "no tool was used this dispatch" (usedTools=false, toolCalls=nil).
+func extractToolUsage(result *ExecutionResult) (usedTools bool, toolCalls []ollamaToolCallRecord) {
+	if result == nil || result.Stats == nil {
+		return false, nil
+	}
+	tc, ok := result.Stats["tool_calls"].([]ollamaToolCallRecord)
+	if !ok || len(tc) == 0 {
+		return false, nil
+	}
+	return true, tc
 }
 
 // stripSelfReportedIdentityHeader removes the two-line "Identity Header" banner
@@ -1363,7 +1402,7 @@ func (b *BrokerServer) handleProvisionLlamaCpp(ctx context.Context, req mcp.Call
 func (b *BrokerServer) getBackendHealth(provider string) BackendHealth {
 	b.healthCacheMu.RLock()
 	defer b.healthCacheMu.RUnlock()
-	
+
 	if b.healthCache == nil {
 		return BackendHealth{Available: true}
 	}

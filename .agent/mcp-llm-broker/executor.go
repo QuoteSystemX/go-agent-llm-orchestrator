@@ -42,6 +42,25 @@ func isLocalOnly(ctx context.Context) bool {
 	return v
 }
 
+// toolsEnabledCtxKey marks a request whose sub-agent persona may use the
+// sandboxed read-only tools (read_file/grep — see tools_readonly.go) to
+// check a claim against the real repository instead of confabulating it.
+// Deliberately independent of localOnlyCtxKey: "never escape to cloud" and
+// "has tool access" are two unrelated guarantees that happened to be
+// conflated by how the agentic-loop gate was originally written — a
+// dispatch can be local-only AND tool-enabled at the same time (this is, in
+// fact, the common case: see invokeAgent).
+type toolsEnabledCtxKey struct{}
+
+func withToolsEnabled(ctx context.Context) context.Context {
+	return context.WithValue(ctx, toolsEnabledCtxKey{}, true)
+}
+
+func toolsEnabled(ctx context.Context) bool {
+	v, _ := ctx.Value(toolsEnabledCtxKey{}).(bool)
+	return v
+}
+
 // isTierName returns true if s is a direct tier selector (L1–L4).
 func isTierName(s string) bool {
 	return s == "L1" || s == "L2" || s == "L3" || s == "L4"
@@ -368,6 +387,41 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 		return &ExecutionResult{Response: resp, Source: loopProvider, Model: loopModel}, nil
 	}
 
+	// Sub-agent tool-calling: local-only dispatches (invokeAgent) that asked
+	// for tool access. Independent of useAgenticLoop/orchCtx — GUARANTEE C
+	// (never escape to cloud) is still enforced entirely by isLocalOnly;
+	// this only adds sandboxed read_file/grep access on top of it. Only
+	// Ollama is wired up natively here (executeAgenticLoop's Jan/Anthropic
+	// tool format is a different wire protocol and out of this card's
+	// scope — see task card §2) — if no Ollama candidate is available this
+	// falls through to the normal buffered (no-tool) path below unchanged.
+	if jsonSchema == "" && isLocalOnly(ctx) && toolsEnabled(ctx) && !orchCtx {
+		for _, c := range b.getLocalCandidates(decision.Tier, rules, pulled) {
+			if c.Provider != ProviderOllama || b.isCircuitOpen(c.Provider) {
+				continue
+			}
+			baseURL := b.getExecutionURL(ctx, ProviderOllama, env, rules)
+			fmt.Fprintf(os.Stderr, "[INFO] executor: sub-agent tool loop (provider=%s model=%s url=%s)\n", ProviderOllama, c.Model, baseURL)
+			resp, toolLog, terr := b.executeOllamaToolLoop(ctx, processedPrompt, systemPrompt, c.Model, baseURL, maxTokens, rules)
+			if terr != nil {
+				// Try the next Ollama candidate (if any) before giving up on tools
+				// entirely — a transient failure or exhausted iteration budget on
+				// one model shouldn't skip tool access when another candidate
+				// exists. Falls through to the buffered no-tool path only once
+				// every candidate has been tried.
+				fmt.Fprintf(os.Stderr, "[WARN] executor: sub-agent tool loop failed for model=%s (%v) — trying next candidate\n", c.Model, terr)
+				continue
+			}
+			b.saveCache(cacheKey, resp)
+			return &ExecutionResult{
+				Response: resp,
+				Source:   ProviderOllama,
+				Model:    c.Model,
+				Stats:    map[string]interface{}{"tool_calls": toolLog},
+			}, nil
+		}
+	}
+
 	if modelOverride != "" {
 		// If overridden, just try that model
 		if b.isCircuitOpen(decision.Provider) {
@@ -457,12 +511,12 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 
 			cloudModel := b.pickBestCloud(decision.Tier, rules)
 			cloudURL := b.getExecutionURL(ctx, cloudProvider, env, rules)
-			
+
 			fallbackResponse, errFb := executeWithSchemaRetry(cloudModel, cloudProvider, cloudURL, processedPrompt, systemPrompt, jsonSchema, stream, 2)
 			if errFb == nil {
 				// Cache fallback response
 				b.saveCache(cacheKey, fallbackResponse)
-				
+
 				return &ExecutionResult{
 					Response: fallbackResponse,
 					Source:   cloudProvider,
@@ -503,15 +557,7 @@ func (b *BrokerServer) handleExecutePrompt(ctx context.Context, req mcp.CallTool
 	jsonSchema := b.getStringArg(req.Params.Arguments, "json_schema")
 	modelOverride := b.getStringArg(req.Params.Arguments, "model")
 
-	var stream bool
-	if args, ok := req.Params.Arguments.(map[string]interface{}); ok {
-		streamVal := args["stream"]
-		if bVal, ok := streamVal.(bool); ok {
-			stream = bVal
-		} else if sVal, ok := streamVal.(string); ok {
-			stream = (sVal == "true")
-		}
-	}
+	stream := b.getBoolArgDefault(req.Params.Arguments, "stream", false)
 
 	res, err := b.executePromptLogic(ctx, prompt, systemPrompt, difficultyHint, jsonSchema, modelOverride, stream)
 	if err != nil {
@@ -757,9 +803,9 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		}
 
 		var ollamaResp struct {
-			Response   string `json:"response"`
-			EvalCount  int    `json:"eval_count"`
-			EvalDur    int64  `json:"eval_duration"` // nanoseconds
+			Response  string `json:"response"`
+			EvalCount int    `json:"eval_count"`
+			EvalDur   int64  `json:"eval_duration"` // nanoseconds
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
 			return "", err
@@ -1159,8 +1205,8 @@ func (b *BrokerServer) updateTelemetryAfterCall(provider string, model string, p
 	defer b.semaphoresMu.Unlock()
 
 	var telemetry struct {
-		TotalCostUSD float64           `json:"total_cost_usd"`
-		Calls        []TelemetryEntry  `json:"calls,omitempty"`
+		TotalCostUSD float64          `json:"total_cost_usd"`
+		Calls        []TelemetryEntry `json:"calls,omitempty"`
 	}
 
 	data, err := os.ReadFile(telemetryPath)
@@ -1532,7 +1578,7 @@ func (b *BrokerServer) executeAgenticLoop(
 						}
 						onToken(fmt.Sprintf("\n\n**→ %s** *· %s*\n\n", agentName, taskPreview))
 					}
-					agentResp, agentErr := b.invokeAgent(ctx, agentName, task, tier)
+					agentResp, agentErr := b.invokeAgent(ctx, agentName, task, tier, true)
 					if agentErr != nil {
 						resultText = fmt.Sprintf("Error from %s: %v", agentName, agentErr)
 						if onToken != nil {
@@ -1587,6 +1633,209 @@ func (b *BrokerServer) executeAgenticLoop(
 	return lastText, nil
 }
 
+// ollamaToolCallRecord surfaces one executed tool call for the Council/Arena
+// transcript — so handleCallAgent's response can tell "this claim was
+// verified" from "this claim was asserted blind" (the distinction this
+// entire tool-access feature exists to make possible).
+type ollamaToolCallRecord struct {
+	Tool   string `json:"tool"`
+	Args   any    `json:"args"`
+	Result string `json:"result,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
+
+// executeOllamaToolLoop drives a bounded tool-calling loop against Ollama's
+// /api/chat using its OpenAI-compatible function-calling format — a
+// parallel, wire-format-distinct counterpart to executeAgenticLoop's
+// Jan/Anthropic /messages loop, scoped to local-only, tool-enabled sub-agent
+// dispatches (see withToolsEnabled/toolsEnabled). Only read_file/grep
+// (tools_readonly.go) are exposed — not call_agent — so a sub-agent persona
+// can verify a claim but cannot recursively dispatch other agents.
+//
+// Empirically confirmed 2026-08-14 against
+// oamazonasgabriel/qwen3.6-35b-a3b:q4-24gbGPU (the model in real L4 use for
+// this router config): /api/chat honors the "tools" array and returns
+// message.tool_calls with `arguments` as a native JSON object (not a
+// JSON-encoded string, unlike strict OpenAI) — and correctly consumes a
+// role:"tool" follow-up message keyed by tool_call_id to synthesize a final
+// answer. This function defensively also accepts a JSON-encoded string for
+// `arguments` in case another model quirks differently.
+func (b *BrokerServer) executeOllamaToolLoop(
+	ctx context.Context,
+	prompt, systemPrompt, model, baseURL string,
+	maxTokens int,
+	rules *RouterRules,
+) (string, []ollamaToolCallRecord, error) {
+	var rawCfg SubAgentToolsConfig
+	if rules != nil {
+		rawCfg = rules.SubAgentTools
+	}
+	budget := newToolBudget(rawCfg) // resolves zero fields internally — do not call .resolved() again here
+	cfg := budget.cfg
+	toolDefs := buildReadOnlyToolDefs()
+
+	var messages []map[string]any
+	if systemPrompt != "" {
+		messages = append(messages, map[string]any{"role": "system", "content": systemPrompt})
+	}
+	messages = append(messages, map[string]any{"role": "user", "content": extractUserQuery(prompt)})
+
+	genTimeout := 300 * time.Second
+	if rules != nil && rules.Timeouts.GenerationS > 0 {
+		genTimeout = time.Duration(rules.Timeouts.GenerationS) * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, genTimeout)
+	defer cancel()
+
+	client := b.clientSlow
+	if client == nil {
+		client = &http.Client{Timeout: genTimeout}
+	}
+	provLimit := b.getConcurrencyLimit(ProviderOllama, rules)
+
+	var log []ollamaToolCallRecord
+	var lastErr error
+
+	for iter := 0; iter < cfg.MaxIterations; iter++ {
+		opts := map[string]any{"num_ctx": 8192}
+		if maxTokens > 0 {
+			opts["num_predict"] = maxTokens
+		}
+		payload := map[string]any{
+			"model":    model,
+			"messages": messages,
+			"tools":    toolDefs,
+			"stream":   false,
+			"options":  opts,
+		}
+		jsonData, err := json.Marshal(payload)
+		if err != nil {
+			return "", log, err
+		}
+
+		release, err := b.acquireSemaphore(ctx, ProviderOllama, provLimit)
+		if err != nil {
+			return "", log, fmt.Errorf("ollama tool loop semaphore iter %d: %w", iter, err)
+		}
+		req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/api/chat", bytes.NewReader(jsonData))
+		if err != nil {
+			release()
+			return "", log, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			release()
+			b.recordProviderFailure(ProviderOllama)
+			return "", log, fmt.Errorf("ollama tool loop iter %d: %w", iter, err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		release()
+
+		if resp.StatusCode != http.StatusOK {
+			b.recordProviderFailure(ProviderOllama)
+			return "", log, fmt.Errorf("ollama tool loop iter %d: HTTP %d: %s", iter, resp.StatusCode, string(body))
+		}
+
+		var parsed struct {
+			Message struct {
+				Role      string `json:"role"`
+				Content   string `json:"content"`
+				ToolCalls []struct {
+					ID       string `json:"id"`
+					Function struct {
+						Name      string          `json:"name"`
+						Arguments json.RawMessage `json:"arguments"`
+					} `json:"function"`
+				} `json:"tool_calls"`
+			} `json:"message"`
+			Done bool `json:"done"`
+		}
+		if err := json.Unmarshal(body, &parsed); err != nil {
+			b.recordProviderFailure(ProviderOllama)
+			return "", log, fmt.Errorf("decode ollama chat response: %w", err)
+		}
+		b.recordProviderSuccess(ProviderOllama)
+
+		if len(parsed.Message.ToolCalls) == 0 {
+			return stripThinkBlocks(strings.TrimSpace(parsed.Message.Content)), log, nil
+		}
+
+		// Append the assistant turn with its tool_calls, then execute each and
+		// append a role:"tool" result — format verified empirically above.
+		rawToolCalls := make([]map[string]any, 0, len(parsed.Message.ToolCalls))
+		for _, tc := range parsed.Message.ToolCalls {
+			rawToolCalls = append(rawToolCalls, map[string]any{
+				"id":       tc.ID,
+				"function": map[string]any{"name": tc.Function.Name, "arguments": tc.Function.Arguments},
+			})
+		}
+		messages = append(messages, map[string]any{
+			"role":       "assistant",
+			"content":    parsed.Message.Content,
+			"tool_calls": rawToolCalls,
+		})
+
+		budgetHit := false
+		for _, tc := range parsed.Message.ToolCalls {
+			var argsObj map[string]any
+			if err := json.Unmarshal(tc.Function.Arguments, &argsObj); err != nil {
+				// Defensive fallback: some models stringify arguments instead of
+				// emitting a native object.
+				var asString string
+				if jerr := json.Unmarshal(tc.Function.Arguments, &asString); jerr == nil {
+					_ = json.Unmarshal([]byte(asString), &argsObj)
+				}
+			}
+
+			var resultText string
+			var callErr error
+			if budget.exceeded() {
+				callErr = fmt.Errorf("tool-call budget exhausted (%d/%d calls, %d/%d bytes used this dispatch)",
+					budget.callsUsed, budget.cfg.MaxToolCalls, budget.bytesUsed, budget.cfg.MaxBytesPerDispatch)
+			} else {
+				resultText, callErr = b.runReadOnlyTool(ctx, tc.Function.Name, argsObj, budget)
+			}
+
+			rec := ollamaToolCallRecord{Tool: tc.Function.Name, Args: argsObj}
+			if callErr != nil {
+				rec.Error = callErr.Error()
+				resultText = "Error: " + callErr.Error()
+				lastErr = callErr
+			} else {
+				summary := resultText
+				if len(summary) > 300 {
+					summary = truncateAtRuneBoundary(summary, 300) + "…"
+				}
+				rec.Result = summary
+			}
+			log = append(log, rec)
+
+			messages = append(messages, map[string]any{
+				"role":         "tool",
+				"content":      resultText,
+				"tool_call_id": tc.ID,
+			})
+
+			if budget.exceeded() {
+				budgetHit = true
+			}
+		}
+
+		if budgetHit {
+			messages = append(messages, map[string]any{
+				"role":    "user",
+				"content": "[tool budget exhausted for this dispatch — no further tool calls are available; answer with what you have]",
+			})
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "[WARN] ollama-tool-loop: exceeded %d iterations without a final answer (last tool error: %v)\n", cfg.MaxIterations, lastErr)
+	return "", log, fmt.Errorf("ollama tool loop: exceeded %d iterations without a final answer", cfg.MaxIterations)
+}
+
 // isComplexEnoughForAgenticLoop returns true when a prompt requires specialist agent
 // delegation — i.e. it is a technical engineering/debugging/analysis task, not a
 // simple conversational message. Used to gate the L3 bump and the agentic loop so
@@ -1627,7 +1876,7 @@ func isComplexEnoughForAgenticLoop(prompt string) bool {
 
 // agenticIterResult holds the outcome of one streaming agentic iteration.
 type agenticIterResult struct {
-	texts        []string        // raw text blocks (may include <think> tags)
+	texts        []string // raw text blocks (may include <think> tags)
 	toolUses     []agenticToolUse
 	stopReason   string
 	inputTokens  int
@@ -2149,6 +2398,31 @@ func (b *BrokerServer) getStringArg(args interface{}, name string) string {
 	return ""
 }
 
+// getBoolArgDefault reads a bool argument that may arrive as either a native
+// bool or a "true"/"false" string (mirrors the "stream" parsing pattern in
+// handleExecutePrompt), returning def when the argument is absent.
+func (b *BrokerServer) getBoolArgDefault(args interface{}, name string, def bool) bool {
+	m, ok := args.(map[string]interface{})
+	if !ok {
+		return def
+	}
+	v, ok := m[name]
+	if !ok {
+		return def
+	}
+	switch val := v.(type) {
+	case bool:
+		return val
+	case string:
+		if val == "" {
+			return def
+		}
+		return val == "true"
+	default:
+		return def
+	}
+}
+
 func (b *BrokerServer) getConcurrencyLimit(provider string, rules *RouterRules) int {
 	if rules != nil && rules.Concurrency != nil {
 		if limit, ok := rules.Concurrency[provider]; ok && limit > 0 {
@@ -2336,11 +2610,11 @@ func (b *BrokerServer) fetchEmbedding(ctx context.Context, provider string, base
 func (b *BrokerServer) recordProviderFailure(provider string) {
 	b.healthCacheMu.Lock()
 	defer b.healthCacheMu.Unlock()
-	
+
 	if b.healthCache == nil {
 		b.healthCache = make(map[string]BackendHealth)
 	}
-	
+
 	h := b.healthCache[provider]
 	h.ConsecutiveFailures++
 	threshold := CBDefaultFailureThreshold
@@ -2362,11 +2636,11 @@ func (b *BrokerServer) recordProviderFailure(provider string) {
 func (b *BrokerServer) recordProviderSuccess(provider string) {
 	b.healthCacheMu.Lock()
 	defer b.healthCacheMu.Unlock()
-	
+
 	if b.healthCache == nil {
 		b.healthCache = make(map[string]BackendHealth)
 	}
-	
+
 	h := b.healthCache[provider]
 	if h.CircuitState != CircuitClosed {
 		fmt.Fprintf(os.Stderr, "[CIRCUIT] %s → CLOSED (восстановлен)\n", provider)
@@ -2381,11 +2655,11 @@ func (b *BrokerServer) recordProviderSuccess(provider string) {
 func (b *BrokerServer) isCircuitOpen(provider string) bool {
 	b.healthCacheMu.Lock()
 	defer b.healthCacheMu.Unlock()
-	
+
 	if b.healthCache == nil {
 		b.healthCache = make(map[string]BackendHealth)
 	}
-	
+
 	h := b.healthCache[provider]
 
 	recoveryTimeout := time.Duration(CBDefaultRecoveryTimeoutS) * time.Second
@@ -2441,7 +2715,7 @@ func NewFileRuleLoaderAdapter(workspaceRoot string) *FileRuleLoaderAdapter {
 
 func (a *FileRuleLoaderAdapter) LoadRules(systemPrompt, userPrompt, tier string) (string, error) {
 	rulesDir := filepath.Join(a.workspaceRoot, ".agent", "rules", "gemini")
-	
+
 	// Core rules (always injected)
 	filesToLoad := []string{
 		"00_protocol.md",
@@ -2490,7 +2764,7 @@ func (a *FileRuleLoaderAdapter) LoadRules(systemPrompt, userPrompt, tier string)
 
 	var rulesBuilder strings.Builder
 	rulesBuilder.WriteString("<!-- DYNAMICALLY INJECTED RULES -->\n")
-	
+
 	for _, fname := range filesToLoad {
 		fpath := filepath.Join(rulesDir, fname)
 		content, err := os.ReadFile(fpath)
@@ -2498,7 +2772,7 @@ func (a *FileRuleLoaderAdapter) LoadRules(systemPrompt, userPrompt, tier string)
 			fmt.Fprintf(os.Stderr, "[WARN] FileRuleLoaderAdapter: failed to read rule file %s: %v\n", fname, err)
 			continue
 		}
-		
+
 		// Schema validation step (verify trigger: always_on or trigger: paperclip_infra_only)
 		if !strings.Contains(string(content), "trigger: always_on") && !strings.Contains(string(content), "trigger: paperclip_infra_only") {
 			fmt.Fprintf(os.Stderr, "[WARN] FileRuleLoaderAdapter: rule file %s lacks expected trigger schema\n", fname)
@@ -2522,7 +2796,7 @@ func stripOldRules(prompt string) string {
 
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		
+
 		// If we encounter a major rules header, start skipping
 		if strings.HasPrefix(trimmed, "## TIER 0: UNIVERSAL RULES") ||
 			strings.HasPrefix(trimmed, "## TIER 1: CODE RULES") ||
@@ -2555,4 +2829,3 @@ func stripOldRules(prompt string) string {
 
 	return strings.Join(result, "\n")
 }
-

@@ -35,6 +35,43 @@ type RouterRules struct {
 	// source. Defaults to llamaCppDefaultSourceRef (constants.go) when empty — bump
 	// this to build a newer llama.cpp without changing broker code.
 	LlamaCppSourceRef string `json:"llamacpp_source_ref,omitempty"`
+	// SubAgentTools tunes the sandboxed read_file/grep tools available to
+	// tool-enabled local-only sub-agent dispatches (see withToolsEnabled in
+	// executor.go). Zero-value fields fall back to the ToolLoopDefault*
+	// constants in constants.go.
+	SubAgentTools SubAgentToolsConfig `json:"sub_agent_tools,omitempty"`
+}
+
+// SubAgentToolsConfig holds the per-dispatch budget for the read_file/grep
+// tools given to call_agent-dispatched sub-agent personas. All fields are
+// optional — zero values fall back to the ToolLoopDefault* constants.
+type SubAgentToolsConfig struct {
+	MaxToolCalls        int `json:"max_tool_calls"`         // default: ToolLoopDefaultMaxCalls
+	MaxBytesPerCall     int `json:"max_bytes_per_call"`     // default: ToolLoopDefaultMaxBytesPerCall
+	MaxBytesPerDispatch int `json:"max_bytes_per_dispatch"` // default: ToolLoopDefaultMaxBytesPerDispatch
+	MaxGrepMatches      int `json:"max_grep_matches"`       // default: ToolLoopDefaultMaxGrepMatches
+	MaxIterations       int `json:"max_iterations"`         // default: ToolLoopDefaultMaxIterations
+}
+
+// resolved returns a copy with every zero field filled from the
+// ToolLoopDefault* constants.
+func (c SubAgentToolsConfig) resolved() SubAgentToolsConfig {
+	if c.MaxToolCalls <= 0 {
+		c.MaxToolCalls = ToolLoopDefaultMaxCalls
+	}
+	if c.MaxBytesPerCall <= 0 {
+		c.MaxBytesPerCall = ToolLoopDefaultMaxBytesPerCall
+	}
+	if c.MaxBytesPerDispatch <= 0 {
+		c.MaxBytesPerDispatch = ToolLoopDefaultMaxBytesPerDispatch
+	}
+	if c.MaxGrepMatches <= 0 {
+		c.MaxGrepMatches = ToolLoopDefaultMaxGrepMatches
+	}
+	if c.MaxIterations <= 0 {
+		c.MaxIterations = ToolLoopDefaultMaxIterations
+	}
+	return c
 }
 
 type TimeoutsConfig struct {
@@ -46,9 +83,9 @@ type TimeoutsConfig struct {
 // CircuitBreakerConfig holds per-workspace circuit breaker tuning knobs.
 // All fields are optional — zero values fall back to CBDefault* constants.
 type CircuitBreakerConfig struct {
-	FailureThreshold int     `json:"failure_threshold"`   // default: 3
-	RecoveryTimeoutS int     `json:"recovery_timeout_s"`  // default: 120 (for self-hosted / slow HW)
-	SoftEMAThreshold float64 `json:"soft_ema_threshold"`  // default: 5000.0 ms/token
+	FailureThreshold int     `json:"failure_threshold"`  // default: 3
+	RecoveryTimeoutS int     `json:"recovery_timeout_s"` // default: 120 (for self-hosted / slow HW)
+	SoftEMAThreshold float64 `json:"soft_ema_threshold"` // default: 5000.0 ms/token
 }
 
 // ProviderContextConfig holds per-provider LLM context window and prefill constraints.
@@ -125,10 +162,10 @@ type BudgetConfig struct {
 type ModelTiers map[string]interface{}
 
 type ModelRank struct {
-	Tier         string             `json:"tier"`
-	QualityScore int                `json:"quality_score"`
-	RankScore    float64            `json:"rank_score"`
-	Benchmark    BenchmarkConfig    `json:"benchmark"`
+	Tier         string          `json:"tier"`
+	QualityScore int             `json:"quality_score"`
+	RankScore    float64         `json:"rank_score"`
+	Benchmark    BenchmarkConfig `json:"benchmark"`
 }
 
 type BenchmarkConfig struct {
@@ -138,12 +175,12 @@ type BenchmarkConfig struct {
 }
 
 type HybridRoutingConfig struct {
-	Enabled                bool     `json:"enabled"`
-	PrimaryProvider        string   `json:"primary_provider"`
-	CloudFallbackProvider  string   `json:"cloud_fallback_provider"`
-	OllamaBaseURL          string   `json:"ollama_base_url"`
-	OllamaHealthTimeoutMs  int      `json:"ollama_health_timeout_ms"`
-	CloudOnTiers           []string `json:"cloud_on_tiers"`
+	Enabled               bool     `json:"enabled"`
+	PrimaryProvider       string   `json:"primary_provider"`
+	CloudFallbackProvider string   `json:"cloud_fallback_provider"`
+	OllamaBaseURL         string   `json:"ollama_base_url"`
+	OllamaHealthTimeoutMs int      `json:"ollama_health_timeout_ms"`
+	CloudOnTiers          []string `json:"cloud_on_tiers"`
 }
 
 type RoutingDecision struct {
@@ -297,7 +334,7 @@ func (b *BrokerServer) calculateScore(taskDesc string, rules *RouterRules) int {
 	for kw, weight := range rules.Scoring.Weights {
 		matched := false
 		kwLower := strings.ToLower(kw)
-		
+
 		// If keyword is a phrase (contains space), use substring match
 		if strings.Contains(kwLower, " ") {
 			if strings.Contains(strings.ToLower(taskDesc), kwLower) {
@@ -331,7 +368,7 @@ func (b *BrokerServer) calculateScore(taskDesc string, rules *RouterRules) int {
 				}
 			}
 		}
-		
+
 		if matched {
 			score += weight
 		}
@@ -669,9 +706,9 @@ func (b *BrokerServer) pickBestLocal(tier string, rules *RouterRules, pulledMode
 
 	// Sort by EMA latency (lowest first), then by rank score as tiebreaker
 	type scoredCandidate struct {
-		candidate    LocalCandidate
-		ema          float64
-		hasEMA       bool
+		candidate LocalCandidate
+		ema       float64
+		hasEMA    bool
 	}
 	var scored []scoredCandidate
 	for _, c := range candidates {

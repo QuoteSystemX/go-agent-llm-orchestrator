@@ -15,6 +15,29 @@ version: 1.0.0
 - **Trigger**: Moving legacy codebase configuration files to the `/archive` directory.
 - **Trigger**: Auditing logs and artifacts size in `.agent/logs/` or `.agent/brain/`. Both are gitignored, runtime-created directories — they may not exist yet on a fresh checkout until something has logged to them.
 - **Trigger**: Managing persistence policies for session snapshots.
+- **Trigger**: `tasks/done/` has stray top-level cards, a stale/missing `INDEX.md`, or a cluster of
+  near-identical cards that should be distilled and pruned. See "Task Archive Policy" in
+  `.agent/ARCHITECTURE.md` for the mandatory rules; this skill covers the mechanics.
+
+### `tasks/done/` maintenance
+
+Run `python3 .agent/scripts/delivery/task_archive.py` to partition stray cards into
+`tasks/done/YYYY-MM/` and regenerate `INDEX.md`. Use `--check` in CI/pre-commit contexts.
+
+The `Distilled?` / `Wiki link` columns in `INDEX.md` are filled in **by hand**, not auto-detected
+— an agent (or human) sets them only after actually writing the distillation. Auto-detecting via
+a slug/keyword grep against `wiki/` risks false positives (a partial word match marking a card
+"distilled" when nothing was actually written), which silently loses the "did we really capture
+this" signal the column exists to provide. Trade-off: this means the column starts empty and only
+fills in as agents do the work — a stale/empty `INDEX.md` reveals distillation backlog rather
+than hiding it.
+
+Wiki cross-linking rule: 3+ cards converging on the same architectural point (not just a shared
+keyword) → write a `wiki/` page, backlink it from each card and its `INDEX.md` row, mark those
+cards `Distilled? = yes`. Once a cluster is both distilled *and* genuinely redundant (e.g. an
+auto-generated card repeating the identical root cause — see the Archival Decision Table below),
+it's a prune candidate per Rule 1-3 above; a wide feature surface where each card documents a
+*different* thing is not.
 
 ---
 
@@ -43,6 +66,9 @@ Check for stale or expired items in `.agent/rules/LESSONS_LEARNED.md` periodical
 | `skills/old-plugin/` | Unused for 30+ days | Archive | `skills/archive/old-plugin/` |
 | `logs/session_123.log` | Older than 7 days | Prune / Delete | None (Cleaned up) |
 | `wiki/decisions/adr-001.md` | Replaced by new ADR | Update status | Keep in `wiki/decisions/` |
+| `tasks/done/*.md` (single card) | Auto-partition + index | Keep, move | `tasks/done/YYYY-MM/`, row in `INDEX.md` |
+| `tasks/done/*.md` (recurring cluster, same root cause, distilled into one lesson) | Redundant with the lesson | Prune / Delete | None — lesson lives in `LESSONS_LEARNED.md` / `wiki/` |
+| `tasks/done/*.md` (unique investigation, even if large) | Never — value is in the reasoning | Keep, index only | `tasks/done/YYYY-MM/`, `Distilled?` = manual |
 
 ### Log Pruning Script Pattern
 

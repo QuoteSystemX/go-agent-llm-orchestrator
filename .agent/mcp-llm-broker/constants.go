@@ -58,8 +58,19 @@ const (
 
 // Circuit breaker default thresholds (overridable via router_rules.json "circuit_breaker")
 const (
-	CBDefaultFailureThreshold = 3     // consecutive failures before tripping Open
-	CBDefaultRecoveryTimeoutS = 120   // seconds in Open before trying Half-Open (self-hosted = slow HW)
+	CBDefaultFailureThreshold = 3      // consecutive failures before tripping Open
+	CBDefaultRecoveryTimeoutS = 120    // seconds in Open before trying Half-Open (self-hosted = slow HW)
 	CBDefaultSoftEMAThreshold = 5000.0 // ms/token — soft-circuit EMA threshold (5s/token)
 )
 
+// Sub-agent read-only tool loop defaults (overridable via router_rules.json
+// "sub_agent_tools" — see SubAgentToolsConfig). Govern the read_file/grep
+// tools available to tool-enabled local-only sub-agent dispatches
+// (withToolsEnabled) — see tools_readonly.go and executeOllamaToolLoop.
+const (
+	ToolLoopDefaultMaxCalls            = 5          // per-dispatch tool-call budget
+	ToolLoopDefaultMaxBytesPerCall     = 32 * 1024  // 32KB — single read_file/grep response cap
+	ToolLoopDefaultMaxBytesPerDispatch = 250 * 1024 // 250KB — cumulative cap across all calls in one dispatch
+	ToolLoopDefaultMaxGrepMatches      = 50
+	ToolLoopDefaultMaxIterations       = 6 // > MaxCalls, leaves room for a final synthesis turn
+)

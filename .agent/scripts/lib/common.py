@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import datetime
 import subprocess
 from pathlib import Path
@@ -150,3 +151,21 @@ def discover_broker_url() -> str:
         pass
 
     return "http://localhost:11436" # Default fallback
+
+
+def render_task_card(tag: str, title: str, agent: str, priority: str, problem: str,
+                      acceptance_criteria: str, context: str, source: str = "",
+                      date: Optional[str] = None) -> str:
+    """Render an ad-hoc task-queue card from the canonical
+    .agent/wiki-templates/TASK_CARD.md template. Not for BMAD-lifecycle cards (STORY/EPIC/...),
+    which have their own dedicated templates under wiki-templates/."""
+    from lib.paths import AGENT_DIR
+    template_path = AGENT_DIR / "wiki-templates" / "TASK_CARD.md"
+    date = date or datetime.datetime.now().strftime("%Y-%m-%d")
+    # The template's leading <!-- --> block is author-facing field/tag/Resolution guidance, not
+    # part of the card itself — strip it before formatting so it never leaks into rendered output.
+    template = re.sub(r"<!--.*?-->\n*", "", template_path.read_text(encoding="utf-8"), flags=re.DOTALL)
+    return template.format(
+        tag=tag, title=title, date=date, agent=agent, priority=priority,
+        source=source, problem=problem, acceptance_criteria=acceptance_criteria, context=context,
+    )

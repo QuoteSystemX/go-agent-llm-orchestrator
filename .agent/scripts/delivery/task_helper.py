@@ -21,6 +21,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from lib.common import render_task_card
+
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
 def slugify(text):
@@ -42,25 +44,32 @@ def create_task(task_type, title, epic=None):
         print(f"Error: Task file {filename} already exists.")
         return
     
-    # Template selection
+    # Template selection: BMAD-lifecycle types (STORY, EPIC, PRD, ...) keep their own dedicated
+    # template under wiki-templates/. Anything else (BUG, CHORE, PERF, ...) falls back to the
+    # generic ad-hoc TASK_CARD.md — not STORY.md, which is unrelated BMAD/Jules-pipeline content.
     template_name = f"{task_type.upper()}.md"
     template_path = REPO_ROOT / ".agent" / "wiki-templates" / template_name
-    
-    if not template_path.exists():
-        # Fallback to STORY.md if specific template doesn't exist
-        template_path = REPO_ROOT / ".agent" / "wiki-templates" / "STORY.md"
-    
-    if not template_path.exists():
-        template_content = f"# [{task_type.upper()}] {title}\n\n## Context\n\n## Impact\n\n## Acceptance Criteria\n"
-    else:
+
+    if template_path.exists():
         template_content = template_path.read_text(encoding='utf-8')
-    
-    # Replace placeholders
-    content = template_content.replace("[STORY] Story Title", f"[{task_type.upper()}] {title}")
-    content = content.replace("Story Title", title)
-    if epic:
-        content = content.replace("[epic name]", epic)
-    
+        content = template_content.replace("[STORY] Story Title", f"[{task_type.upper()}] {title}")
+        content = content.replace("Story Title", title)
+        if epic:
+            content = content.replace("[epic name]", epic)
+    else:
+        try:
+            content = render_task_card(
+                tag=task_type.upper(), title=title, agent="TBD", priority="Medium",
+                source="task_helper.py",
+                problem="Clear description of what was found and why it matters.",
+                acceptance_criteria="- [ ] Specific, testable outcome 1\n- [ ] Specific, testable outcome 2",
+                context="Any additional context the executing agent needs.",
+            )
+        except FileNotFoundError:
+            # TASK_CARD.md itself missing (e.g. not yet synced to this repo) — degrade to a
+            # minimal stub instead of crashing, same safety net the old STORY.md fallback gave.
+            content = f"# [{task_type.upper()}] {title}\n\n## Context\n\n## Impact\n\n## Acceptance Criteria\n"
+
     task_path.write_text(content, encoding='utf-8')
     print(f"✅ Created task: {task_path.relative_to(REPO_ROOT)}")
     return task_path

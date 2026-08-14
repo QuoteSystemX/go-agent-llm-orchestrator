@@ -186,6 +186,39 @@ graph TD
 - `python3 .agent/scripts/misc/business_dashboard.py` - Story card progress tracking
 - `python3 .agent/skills/lint-and-validate/scripts/lint_runner.py` - Janitor & Linter
 
+## 🗂️ Task Archive Policy (Mandatory)
+
+> Applies to every repo that receives this kit, including this one. This section is synced via
+> the weekly/on-push `.agent/` rsync in `distribute-agentic-kit.yml` — unlike `CLAUDE.md`, which
+> is only provisioned once, on a target's first deploy (see "CI Distribution" below). This is the
+> canonical, always-current copy of the policy for any already-provisioned repo.
+
+**`tasks/done/` MUST be kept partitioned and indexed — never left as a flat, growing pile.**
+
+1. **Month partitioning**: closed task cards live in `tasks/done/YYYY-MM/`, one subfolder per
+   calendar month, keyed off the card's own `YYYY-MM-DD-slug.md` filename prefix. Never move or
+   rename a card manually — always through the script below (`git mv`, so history is preserved).
+2. **`tasks/done/INDEX.md`**: one row per card — `Date | Card | Topic tags | Distilled? | Wiki
+   link`. Regenerated automatically; `Distilled?` and `Wiki link` are the two columns an agent
+   fills in by hand (deliberately not auto-detected — see the `archive-management` skill for why).
+3. **Tooling**: `python3 .agent/scripts/delivery/task_archive.py` partitions any stray top-level
+   cards and rewrites `INDEX.md`, preserving manually-set `Distilled?`/`Wiki link` values.
+   `--check` is CI-safe (no writes, non-zero exit on drift) — same convention as
+   `sync_agents.py --check`.
+4. **Never delete-by-default.** Closed cards are not disposable — in an active repo they are
+   often 40KB+ investigation reports whose value is in the reasoning, not just the outcome.
+   Pruning (physical deletion) is a separate, explicit, human-triggered action, only for cards
+   that are (a) distilled into a lesson/wiki page **and** (b) genuinely redundant with that
+   distillation — e.g. a cluster of near-identical auto-generated cards reporting the same root
+   cause repeatedly (see `LESSONS_LEARNED.md` → `[2026-08-14] [DRIFT] [drift-detector]` for a
+   worked example: 23 cards distilled into one lesson, then pruned).
+5. **Wiki cross-linking rule**: when 3+ `tasks/done/` cards converge on the same architectural
+   point (not just the same keyword — the same underlying decision or recurring root cause),
+   write a `wiki/` page summarizing the evolution/decision, backlink it from each card's own
+   `Wiki link` line and from its `INDEX.md` row, and mark those cards `Distilled? = yes`. Do not
+   distill breadth into a single record — a repo with wide feature surface (many different
+   features, each documented once) does not need this; it's for genuine repetition.
+
 ## 🤖 Agents (69)
 
 Specialist AI personas for different domains.
