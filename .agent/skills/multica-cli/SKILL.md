@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.7.1
+version: 1.7.2
 ---
 
 # Multica CLI Reference
@@ -144,6 +144,22 @@ multica project delete <id>
 multica project resource list <project-id>
 multica project resource add <project-id> [--type github_repo --url <url> | --type <other> --ref '<json>'] [--label "..."] [--default-branch-hint "..."]
 multica project resource remove <project-id> <resource-id>
+
+# Project Memory (per-project notes injected into future tasks' prompts as [PROJECT_MEMORY] — write only what a future agent in this project would genuinely benefit from, never credentials/tokens/passwords)
+multica memory create --project <id> --title "..." [--content "..." | --content-stdin | --content-file <path>] [--tags a,b]
+# Also callable as the memory_create MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory update <id> --project <id> --version <n> [--content "..." | --content-stdin | --content-file <path>] [--tags a,b]  # optimistic-locked; on a 409 the error message includes the note's current version/content so you can retry with --version <current>
+# Also callable as a memory_update MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory archive <id> --project <id>  # soft-delete; idempotent (archiving an already-archived note is not an error); the note stays readable via `memory get`
+# Also callable as a memory_archive MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory list --project <id> [--status active|archived] [--output json|table]  # metadata only, no note content; surfaces a "truncated" note when the project has more active notes than the display cap
+# Also callable as a memory_list MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory get <id> --project <id> [--output json|table]  # full note content, including archived notes (archive is not delete)
+# Also callable as a memory_get MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory versions <id> --project <id> [--output json|table]  # version history, newest first; a never-edited note returns an empty list, not an error
+# Also callable as a memory_versions MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
+multica memory clear-flag <id> --project <id>  # dismisses a 'duplicate'/'stale' curation flag after review; idempotent; a human-review action, not something to call reflexively
+# Also callable as a memory_clear_flag MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
 ```
 
 ### 4. Repositories & Pull Requests (`repo`)

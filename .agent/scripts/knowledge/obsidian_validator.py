@@ -206,6 +206,19 @@ class Validator:
     def _get_file_names(self) -> set[str]:
         return {f.stem for f in self._get_all_md_files()}
 
+    @staticmethod
+    def _strip_code(text: str) -> str:
+        """Strip fenced code blocks and inline code spans before wikilink
+        scanning. Obsidian never parses [[...]] as a link inside code, so
+        literal double-bracket syntax used as a prose example (`[[wikilink]]`,
+        TOML array-of-tables like `[[skills.config]]`, etc.) must not be
+        treated as a real cross-reference.
+        """
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+        text = re.sub(r"~~~.*?~~~", "", text, flags=re.DOTALL)
+        text = re.sub(r"`[^`\n]*`", "", text)
+        return text
+
     def _check_links(self, result: ValidationResult):
         """Check for broken wikilinks and orphan files."""
         all_files = self._get_all_md_files()
@@ -244,7 +257,8 @@ class Validator:
                 result.errors += 1
                 continue
 
-            links = re.findall(r"\[\[(.*?)\]\]", content)
+            stripped_content = self._strip_code(content)
+            links = re.findall(r"\[\[(.*?)\]\]", stripped_content)
             for link in links:
                 # Split by | for aliases, then # for sections
                 target_raw = link.split("|")[0].split("#")[0].strip()
@@ -268,6 +282,15 @@ class Validator:
                     stem = target.split("/")[-1]
                     if stem in orphans:
                         orphans.discard(stem)
+
+            # Standard Markdown links [text](relative/path.md) are also a
+            # legitimate cross-reference style in this vault (used for
+            # GitHub-rendering compatibility, e.g. wiki/README.md's doc
+            # tables) — count them for orphan purposes same as [[wikilinks]].
+            for md_target in re.findall(r"\]\(([^)]+\.md)(?:#[^)]*)?\)", stripped_content):
+                md_stem = Path(md_target).stem
+                if md_stem in orphans:
+                    orphans.discard(md_stem)
 
         result.orphans = orphans
 
