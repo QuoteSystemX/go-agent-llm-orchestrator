@@ -1,7 +1,7 @@
 ---
 name: multica-cli
 description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.7.2
+version: 1.8.0
 ---
 
 # Multica CLI Reference
@@ -20,7 +20,7 @@ multica config show
 If `multica auth status` reports no active session, stop and request authentication:
 ```bash
 multica login        # interactive auth + workspace setup
-multica setup        # configure CLI, authenticate, and start daemon
+multica setup         # = `multica setup cloud`: configure CLI, authenticate, and start daemon
 ```
 
 2. Target the correct workspace and profile:
@@ -32,6 +32,11 @@ multica workspace member list [id|slug]              # list workspace members
 multica workspace update [id|slug] [--name "..."] [--description "..."] [--context "..." | --context-stdin] [--issue-prefix "..."]   # admin/owner only
 multica --profile <profile> --workspace-id <id> issue list --output json
 ```
+
+Only `--server-url`, `--workspace-id`, and `--profile` are true global (persistent) flags. `--output` is
+registered per-command, not globally, and its default varies by command (`table` for most list-style
+commands, `json` for most get/create/update commands) — always pass it explicitly rather than relying on
+the default.
 
 3. Prefer `--output json` for parsing CLI outputs programmatically.
 
@@ -45,18 +50,26 @@ Operate issue boards, task lists, metadata, and communication threads.
 ```bash
 # Read
 multica issue get <id> --output json
-multica issue list [--status <s>] [--priority <p>] [--assignee <name> | --assignee-id <uuid>] [--project <id>] [--metadata key=value] [--limit N] --output json
+multica issue list [--status <s>] [--priority <p>] [--assignee <name> | --assignee-id <uuid>] [--project <id>] [--metadata key=value] [--limit N] [--offset N] --output json
 multica issue search <query> [--include-closed] [--limit N] --output json
-multica issue children <id> --output json
 multica issue pull-requests <id> --output json
 multica issue runs <id> --output json
 multica issue run-messages <task-id> [--issue <id>] [--since <seq>] --output json
+```
+There is no dedicated `issue children` command — to list an issue's children, use
+`issue list --output json` and filter client-side by `parent_issue_id`.
 
+```bash
 # Manage
-multica issue create --title "..." [--description "..." | --description-file <path>] [--priority <p>] [--status <s>] [--assignee <name> | --assignee-id <uuid>] [--parent <id>] [--project <id>] [--due-date YYYY-MM-DD] --output json
-multica issue update <id> [--title "..."] [--priority <p>] [--status <s>] [--assignee-id <uuid>] [--parent <id> | --parent ""] [--project <id>] [--due-date YYYY-MM-DD] --output json
+multica issue create --title "..." [--description "..." | --description-stdin | --description-file <path>] [--priority <p>] [--status <s>] [--assignee <name> | --assignee-id <uuid>] [--parent <id>] [--project <id>] [--start-date YYYY-MM-DD] [--due-date YYYY-MM-DD] [--allow-duplicate] [--repo <url>] [--attachment <path>]... --output json
+# --repo sets which repo a multi-repo decomposition's child issue works in (used at claim time).
+# --allow-duplicate bypasses the active-duplicate-issue guard (409 active_duplicate_issue).
+multica issue update <id> [--title "..."] [--description "..." | --description-stdin | --description-file <path>] [--priority <p>] [--status <s>] [--assignee <name> | --assignee-id <uuid>] [--parent <id> | --parent ""] [--project <id>] [--start-date YYYY-MM-DD] [--due-date YYYY-MM-DD] [--branch <name> [--repo <url>]] --output json
+# --branch records a feature branch for shared multi-agent work; --repo requires --branch and writes
+# into feature_branch_map[repo] instead of the legacy single branch (multi-repo decomposition).
 multica issue assign <id> [--to <name> | --to-id <uuid> | --unassign]
-multica issue status <id> <backlog|todo|in_progress|in_review|done|blocked|cancelled>
+multica issue status <id> <backlog|todo|in_progress|in_review|done|blocked|cancelled|suspended|waiting>
+# suspended/waiting are normally reached via `issue suspend` / the CI-loop below, not set directly.
 multica issue cancel-task <task-id> [--issue <id>]   # interrupt an in-flight/queued agent task
 
 # CI-loop (agent use — see "CI-auto-retry loop" section below; opt-in per workspace)
@@ -65,8 +78,11 @@ multica issue ci-result <id> --conclusion <success|failure|cancelled> --sha <com
 multica issue rerun <id>   # re-enqueue the issue's current agent assignment as a fresh task
 
 # Comments
-multica issue comment list <id> [--recent N] [--thread <comment-id> [--tail N]] [--since <RFC3339>] --output json
-multica issue comment add <id> [--parent <comment-id>] --content "..."
+multica issue comment list <id> [--recent N] [--thread <comment-id> [--tail N]] [--since <RFC3339>] [--roots-only] [--before <cursor> --before-id <uuid>] --output json
+multica issue comment add <id> [--parent <comment-id>] --content "..." | --content-stdin | --content-file <path> [--attachment <path>]... [--mention <name-or-uuid>]... [--delegate <name-or-uuid>]...
+# --mention/--delegate resolve a name/UUID and append the structured [@Name](mention://type/id) link the
+# dispatch pipeline requires — hand-typing "@name" in --content does NOT trigger anyone.
+# --delegate additionally marks ?intent=delegate (the duplicate-delegation guard applies).
 multica issue comment delete <comment-id>
 
 # Metadata (Primitive KV Map)
@@ -82,8 +98,8 @@ multica issue label remove <id> <label-id>
 
 # Subscribers
 multica issue subscriber list <id>
-multica issue subscriber add <id> [--user <name>]
-multica issue subscriber remove <id> [--user <name>]
+multica issue subscriber add <id> [--user <name> | --user-id <uuid>]      # defaults to the caller if neither is given
+multica issue subscriber remove <id> [--user <name> | --user-id <uuid>]
 
 # Dependencies (horizontal issue links — blocks/related; parent/child above is unrelated hierarchical linkage)
 multica issue dependency add <id> --on <target-id> [--type blocks|related]   # default --type blocks; "related" is a symmetric see-also link with no workflow effect
@@ -96,27 +112,39 @@ Monitor and configure local and cluster-level AI agent assignments.
 
 ```bash
 # Agent Management
-multica agent list [--output json]
+multica agent list [--output json] [--include-archived]
 multica agent get <agent-id> [--output json]
-multica agent create --name "..." --model "..." [--skills "skill1,skill2"]
-multica agent update <agent-id> [--name "..."] [--model "..."]
+multica agent create --name "..." --runtime-id <id> [--description "..."] [--instructions "..."] [--from-template <template-id>] [--runtime-config '<json>'] [--model "..."] [--custom-args "..."] [--custom-env '<json>' | --custom-env-stdin | --custom-env-file <path>] [--visibility private|...] [--max-concurrent-tasks N] --output json
+# --runtime-id is required. There is NO --skills flag — assign skills after creation via `agent skills set`.
+multica agent update <agent-id> [--name "..."] [--description "..."] [--instructions "..."] [--runtime-id <id>] [--runtime-config '<json>'] [--model "..."] [--custom-args "..."] [--visibility <v>] [--status <s>] [--max-concurrent-tasks N] --output json
 multica agent archive <agent-id>
 multica agent restore <agent-id>
-multica agent avatar <agent-id> --file <path>
+multica agent avatar <agent-id> --file <path>   # png/jpg/jpeg/gif/webp only, 5MB cap
 
 # Agent Skills & Environment Variables
-multica agent skills <agent-id> [list | add <skill-id> | remove <skill-id>]
-multica agent env <agent-id> [list | set <key>=<value> | delete <key>]
-multica agent tasks <agent-id> [--status <s>] [--output json]
+multica agent skills list <agent-id> --output json
+multica agent skills set <agent-id> --skill-ids <id1,id2,...>   # full-replace of the agent's skill list — there is no add/remove subcommand
+multica agent env get <agent-id> --output json                  # audited read
+multica agent env set <agent-id> --custom-env '<json>' | --custom-env-stdin | --custom-env-file <path>
+# Full-map replace, not key=value — there is no `agent env list`/`delete`. Pass the complete map you
+# want; value "****" preserves an existing entry unchanged, and omitting a key removes it.
+multica agent tasks <agent-id> [--output json]   # no server-side --status filter exists
 
 # Daemon Control
-multica daemon start [--foreground] [--profile <profile>]
+multica daemon start [--foreground] [--daemon-id <id>] [--device-name "..."] [--runtime-name "..."] [--poll-interval <dur>] [--heartbeat-interval <dur>] [--agent-timeout <dur>] [--max-concurrent-tasks N] [--no-auto-update] [--auto-update-interval <dur>] [--profile <profile>]
+# See `multica daemon start --help` for additional tuning flags.
+multica daemon restart [same flags as daemon start]   # stop then start
 multica daemon stop [--profile <profile>]
 multica daemon status [--output json]
 multica daemon logs [-f] [-n <N>]
+multica daemon disk-usage [--by-workspace | --by-task] [--top N] [--workspaces-root <path>] [--output json]
+# Walks the daemon's workspace tree on disk; does not require the daemon to be running.
 
 # Agent Runtimes
 multica runtime list [--output json]
+multica runtime usage <runtime-id> [--days N] [--output json]     # default 90, valid range 1-365
+multica runtime activity <runtime-id> [--output json]              # hourly task-count activity
+multica runtime update <runtime-id> --target-version <version> [--wait] [--output json]   # triggers a CLI update on that runtime; --wait polls to completion
 ```
 
 ### 3. Squads & Projects (`squad`, `project`)
@@ -126,22 +154,25 @@ Track epics, sprints, and team compositions.
 # Squad Management
 multica squad list [--output json]
 multica squad get <id>
-multica squad create --name "..."
-multica squad update <id> --name "..."
+multica squad create --name "..." --leader <agent-name-or-id> [--description "..."]
+multica squad update <id> [--name "..."] [--description "..."] [--instructions "..."] [--leader <agent-name-or-id>] [--avatar-url <url>]
 multica squad delete <id>
-multica squad member <squad-id> [list | add <user-id> [--role <role>] | remove <user-id>]
-multica squad activity <issue-id>  # Record squad leader evaluations on an issue
+multica squad member list <squad-id>
+multica squad member add <squad-id> --member-id <id> [--type agent|member] [--role <role>]     # --type defaults to "agent"
+multica squad member remove <squad-id> --member-id <id> [--type agent|member]
+multica squad activity <issue-id> <action|no_action|failed> [--reason "..."]   # record a squad leader's evaluation outcome on an issue
 
 # Project Management
-multica project list [--status <s>] [--output json]
+multica project list [--status <s>] [--output json] [--full-id]
 multica project get <id> [--output json]
-multica project create --title "..." [--description "..." | --status <s> | --icon "🏃" | --lead <name>]
-multica project update <id> [--title "..." | --description "..." | --status <s> | --icon "..." | --lead <name>]
+multica project create --title "..." [--description "..."] [--status <s>] [--icon "🏃"] [--lead <name>] [--repo <url>]...
+# --repo (repeatable) attaches github_repo resources atomically at creation.
+multica project update <id> [--title "..."] [--description "..."] [--status <s>] [--icon "..."] [--lead <name>]
 multica project status <id> <planned|in_progress|paused|completed|cancelled>
 multica project delete <id>
 
 # Project Resources (attach repos/pages for agent discovery)
-multica project resource list <project-id>
+multica project resource list <project-id> [--full-id]
 multica project resource add <project-id> [--type github_repo --url <url> | --type <other> --ref '<json>'] [--label "..."] [--default-branch-hint "..."]
 multica project resource remove <project-id> <resource-id>
 
@@ -162,8 +193,10 @@ multica memory clear-flag <id> --project <id>  # dismisses a 'duplicate'/'stale'
 # Also callable as a memory_clear_flag MCP tool when connected (Claude-provider tasks only) — verify it's actually in your live tool list first, per the multica-mcp skill's Rule 1 (tool names go stale; don't trust this doc for the exact name).
 ```
 
-### 4. Repositories & Pull Requests (`repo`)
-Interact directly with linked source code repositories.
+### 4. Repositories & Pull Requests (`repo`, `pr`)
+Interact directly with linked source code repositories. Every command in this section runs inside a
+daemon-managed agent task (they call the local daemon over HTTP); running one outside that context fails
+fast with "this command is intended to be run by an agent inside a daemon task."
 
 ```bash
 # Repository checkout and sync
@@ -172,12 +205,18 @@ multica repo sync <url> [--ref <branch|tag|commit>]        # same as checkout; u
 multica repo rebase <url> [--base <branch>]                 # rebase current branch onto <branch>, default "main"
 multica repo push <url> [--branch <name>]                   # push current branch to origin; --branch overrides auto-detect
 
-# Pull Request operations
-multica repo pr list [--output json]
-multica repo pr view <pr-id> --output json
-multica repo pr create --title "..." [--body "..."] [--draft] --output json
+# Pull Request operations — none of these support --output; they always print the daemon's raw JSON response
+multica repo pr list <url> [--state open|closed|all]        # default "open"
+multica repo pr view <url> <number> --number <number>       # takes a positional AND a --number/-n flag; only --number/-n is actually read by the code, so always pass it explicitly
+multica repo pr create <url> --title "..." [--body "..."] [--head <branch>] [--base <branch>] [--draft]
 multica repo pr checkout <url> <number>
-multica repo pr merge <url> <number> [--method <merge|squash|rebase>]
+multica repo pr merge <url> <number> [--method squash|merge|rebase]   # default "squash"
+
+# Standalone shortcut — same underlying logic as `repo pr create`, but <url> is optional: when omitted
+# it's auto-detected from the current directory's git remotes (prefers `upstream` over `origin`, so a
+# fork-based agent PRs against upstream instead of its own fork). Only `create` was promoted to this
+# top-level form; `checkout`/`list`/`view`/`merge` remain under `repo pr` only.
+multica pr create [<url>] --title "..." [--body "..."] [--head <branch>] [--base <branch>] [--draft]
 ```
 
 **`repo checkout`/`repo sync` always create a NEW local branch scoped to this task**
@@ -205,35 +244,39 @@ BRANCH=$(multica issue pull-requests <issue-id> --output json \
 multica repo push <url> --branch "$BRANCH"
 ```
 If the issue has zero open PRs (fresh work), skip the lookup — auto-detect (`repo push <url>` with
-no `--branch`) is correct for a brand-new branch that will get its own PR via `repo pr create`.
+no `--branch`) is correct for a brand-new branch that will get its own PR via `repo pr create` /
+`multica pr create`.
 
 ### 5. Skills (`skill`)
 Deploy and configure skill definitions across workspaces.
 
 ```bash
 multica skill list [--output json]
-multica skill get <skill-id>
-multica skill create --name "..." [--description "..."]
-multica skill update <skill-id> [--name "..."] [--description "..."]
-multica skill delete <skill-id>
-multica skill files <skill-id> [list | upload <path> | download <file-id> <path> | delete <file-id>]
-multica skill import <url>  # Import from clawhub.ai, skills.sh, or github.com
+multica skill get <skill-id> [--output json]
+multica skill create --name "..." [--description "..."] [--content "..."] [--config '<json>'] [--output json]
+multica skill update <skill-id> [--name "..."] [--description "..."] [--content "..."] [--config '<json>'] [--output json]
+multica skill delete <skill-id> [--yes]
+multica skill files list <skill-id> [--output json]
+multica skill files upsert <skill-id> --path "..." --content "..." [--output json]
+# PUTs inline content by path — there is NO upload/download of local files; --content is a string flag.
+multica skill files delete <skill-id> <file-id>
+multica skill import --url <url> [--output json]   # --url is a flag, NOT a positional. Import from clawhub.ai, skills.sh, or github.com
 ```
 
 ### 6. Autopilots (`autopilot`)
 Configure background scheduling cron triggers and loops.
 
 ```bash
-multica autopilot list [--status <s>] [--output json]
+multica autopilot list [--status <s>] [--output json] [--full-id]
 multica autopilot get <id> --output json
-multica autopilot create --title "..." [--description "..."] --agent <id|name> --mode create_issue
-multica autopilot update <id> [--status <active|paused>] [--description "..."]
+multica autopilot create --title "..." --agent <id|name> --mode <create_issue|run_only> [--description "..."] [--priority <p>] [--project <id>] [--issue-title-template "..."]
+multica autopilot update <id> [--title "..."] [--description "..."] [--agent <id|name>] [--project <id>] [--priority <p>] [--status <active|paused>] [--mode <create_issue|run_only>] [--issue-title-template "..."]
 multica autopilot delete <id>
 multica autopilot trigger <id>  # manually fire autopilot run
 
 # Scheduling
-multica autopilot runs <id> [--limit N] --output json
-multica autopilot trigger-add <autopilot-id> --cron "..." --timezone "..."
+multica autopilot runs <id> [--limit N] [--offset N] --output json
+multica autopilot trigger-add <autopilot-id> [--kind schedule|webhook] --cron "..." --timezone "..." [--label "..."]
 multica autopilot trigger-update <autopilot-id> <trigger-id> --enabled=false
 multica autopilot trigger-delete <autopilot-id> <trigger-id>
 multica autopilot trigger-rotate-url <autopilot-id> <trigger-id> [--yes]  # invalidates the current webhook URL immediately
@@ -243,10 +286,11 @@ multica autopilot trigger-rotate-url <autopilot-id> <trigger-id> [--yes]  # inva
 Run and operate agent/squad graph automations (multi-step processes built in the Workflow canvas). Graph authoring (nodes/edges) is visual-only — this CLI covers the operational surface: list, inspect, run, watch history, manage triggers, and basic lifecycle.
 
 ```bash
-multica workflow list [--status <draft|active|archived>] [--output json]
+multica workflow list [--status <draft|active|archived>] [--output json] [--full-id]
 multica workflow get <id> --output json          # includes nodes/edges (read-only)
 multica workflow create --name "..." [--description "..."] [--project <id|name>]
 multica workflow update <id> [--name "..."] [--description "..."] [--status <draft|active>] [--agent-triggerable] [--project <id|name>]
+# --status only accepts draft/active — archiving/unarchiving goes through `workflow delete` (below), not --status.
 multica workflow delete <id>  # archives — does not hard-delete
 multica workflow run <id> [--payload '<json>']  # manual trigger
 multica workflow runs <id> [--limit N] [--offset N] --output json
@@ -263,16 +307,32 @@ multica workflow trigger-rotate-url <workflow-id> <trigger-id> [--yes]  # invali
 ### 8. Core Config & Miscellaneous
 ```bash
 # Setup
-multica setup [self-host] [--port <p>] [--frontend-port <p>] [--server-url <url>] [--app-url <url>]
+multica setup                                                              # = `multica setup cloud`
+multica setup cloud                                                        # configure CLI for Multica Cloud, authenticate, start daemon
+multica setup self-host [--server-url <url>] [--app-url <url>] [--port <p>] [--frontend-port <p>] [--callback-host <host>]
+# `self-host` is a real subcommand, not a bracket-optional modifier — `multica setup self-host ...`, not `multica setup self-host` as a flag on `setup`.
 
 # Configuration
 multica config show
-multica config set <key> <value>  # server_url, app_url, workspace_id
+multica config set <key> <value>  # server_url, app_url, workspace_id — no other keys are accepted
+
+# Authentication
+multica auth status
+multica auth logout
 
 # Other Commands
-multica label [list | get <id> | create | update | delete]
-multica attachment download <id> --file <path>
-multica user profile [--output json]
+multica label list [--output json]
+multica label get <id> [--output json]
+multica label create --name "..." --color "#3b82f6"
+multica label update <id> [--name "..."] [--color "..."]
+multica label delete <id>
+multica attachment download <attachment-id> [-o|--output-dir <dir>]
+# NOT --file — saves into a directory (default ".") using the attachment's own filename, falling back to the attachment ID.
+multica user profile get [--output json]
+multica user profile update [--description "..." | --description-stdin | --description-file <path> | --clear]
+# `profile` is a subcommand group (get/update), not a single flat command. --clear cannot combine with any --description* variant.
+multica update [--download-timeout <dur>]
+# Self-updates the installed CLI binary (Homebrew or direct GitHub Releases download, depending on install method).
 ```
 
 ---
@@ -315,8 +375,10 @@ multica repo push <repo-url>
 running in restricted runtimes without shell access. Its ownership check is identical to the
 CLI's (only the issue's current assignee may suspend it) — confirm the tool is actually present
 in your live MCP tool list before relying on it (`multica-mcp` skill Rule 1: the handshake, not
-this doc, is the source of truth for tool names/params). Agents with Bash access should keep
-using the CLI form above; the CLI already works today and is what's proven in production.
+this doc, is the source of truth for tool names/params). Note that its *advertisement* to an
+agent (not its existence/callability) is itself gated by the same `ci_auto_retry_loop_enabled`
+workspace setting checked above. Agents with Bash access should keep using the CLI form above;
+the CLI already works today and is what's proven in production.
 
 ### Pre-flight checklist before ending any Multica-issue run
 * [ ] Did I create a PR? → Did I add `Closes <ISSUE-ID>` to its title/body?
