@@ -47,7 +47,8 @@ func (h *handler) listSkills(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 
 func (h *handler) loadSkill(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name, _ := req.RequireString("name")
-	return h.loadItem(filepath.Join(h.projectRoot, ".agent", "skills", sanitizeString(name), "SKILL.md"))
+	skillsDir := filepath.Join(h.projectRoot, ".agent", "skills")
+	return h.loadItem(filepath.Join(skillsDir, resolveDirName(skillsDir, name), "SKILL.md"))
 }
 
 // loadSkillFile loads one sibling file belonging to a skill, as declared in
@@ -61,7 +62,8 @@ func (h *handler) loadSkill(_ context.Context, req mcp.CallToolRequest) (*mcp.Ca
 func (h *handler) loadSkillFile(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name, _ := req.RequireString("name")
 	path, _ := req.RequireString("path")
-	return h.loadItem(filepath.Join(h.projectRoot, ".agent", "skills", sanitizeString(name), sanitizeString(path)))
+	skillsDir := filepath.Join(h.projectRoot, ".agent", "skills")
+	return h.loadItem(filepath.Join(skillsDir, resolveDirName(skillsDir, name), sanitizeString(path)))
 }
 
 func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -95,8 +97,13 @@ func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 }
 
 func (h *handler) loadAgent(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, _ := req.RequireString("name")
-	name = sanitizeString(name)
+	rawName, _ := req.RequireString("name")
+	literal := sanitizeString(rawName)
+	// Accept either the real filename (ID) or a pretty display Name (e.g.
+	// from listAgents' Name field) - see resolveDirName's doc comment for why
+	// sanitizeString alone isn't enough. Match against both candidates in one
+	// walk rather than assuming which form the caller used.
+	slug := slugify(rawName)
 	// Recursive search through category subfolders
 	agentsRoot := filepath.Join(h.projectRoot, ".agent", "agents")
 	var found string
@@ -104,14 +111,14 @@ func (h *handler) loadAgent(_ context.Context, req mcp.CallToolRequest) (*mcp.Ca
 		if err != nil || d.IsDir() {
 			return nil
 		}
-		if d.Name() == name+".md" {
+		if d.Name() == literal+".md" || (slug != "" && d.Name() == slug+".md") {
 			found = path
 			return fs.SkipAll
 		}
 		return nil
 	})
 	if found == "" {
-		return mcp.NewToolResultError("agent not found: " + name), nil
+		return mcp.NewToolResultError("agent not found: " + literal), nil
 	}
 	return h.loadItem(found)
 }

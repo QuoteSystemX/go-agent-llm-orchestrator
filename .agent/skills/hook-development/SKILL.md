@@ -1,5 +1,5 @@
 ---
-name: Hook Development
+name: hook-development
 description: This skill should be used when the user asks to "create a hook", "add a PreToolUse/PostToolUse/Stop hook", "validate tool use", "implement prompt-based hooks", "use ${CLAUDE_PLUGIN_ROOT}", "set up event-driven automation", "block dangerous commands", or mentions hook events (PreToolUse, PostToolUse, Stop, SubagentStop, SessionStart, SessionEnd, UserPromptSubmit, PreCompact, Notification). Provides comprehensive guidance for creating and implementing Claude Code plugin hooks with focus on advanced prompt-based hooks API.
 version: 0.1.0
 files: examples/load-context.sh, examples/validate-bash.sh, examples/validate-write.sh, references/advanced.md, references/migration.md, references/patterns.md, scripts/README.md, scripts/hook-linter.sh, scripts/test-hook.sh, scripts/validate-hook-schema.sh

@@ -1,5 +1,5 @@
 ---
-name: MCP Integration Standards
+name: mcp-integration-standards
 description: Guidelines for writing custom MCP servers, json-schema formatting, transport debugging, and API design.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: Adversarial Prompt Testing
+name: adversarial-prompt-testing
 description: Hardening prompts against prompt injection, jailbreaks, and system prompt leakage.
 ---
 

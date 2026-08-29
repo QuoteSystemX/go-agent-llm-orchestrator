@@ -41,6 +41,42 @@ func sanitizeString(s string) string {
 	return reg.ReplaceAllString(s, "")
 }
 
+// slugify converts a human-readable label (e.g. "Adversarial Prompt Testing")
+// into the kebab-case form used for skill/agent directory and file names
+// (e.g. "adversarial-prompt-testing"). Used as a fallback resolver: listSkills
+// / listAgents return both an ID (the real directory name) and a Name (the
+// frontmatter `name:` field, or a Title-Cased fallback derived from the ID)
+// - callers naturally sometimes pass Name back into loadSkill/loadAgent
+// instead of ID. sanitizeString alone only strips characters, it does not
+// normalize case or spacing, so a Name like that resolves to a squished
+// PascalCase string that never matches any real directory ("item not found").
+func slugify(s string) string {
+	s = strings.ToLower(s)
+	reg, _ := regexp.Compile(`[^a-z0-9]+`)
+	s = reg.ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
+}
+
+// resolveDirName picks the actual on-disk directory name for an item under
+// parent, given a caller-supplied name that may be the literal ID (already
+// sanitized) or a pretty display Name. Tries the literal sanitized form
+// first (preserves existing behavior/error messages when it's already
+// correct), then falls back to the slugified form. Returns the sanitized
+// literal unchanged if neither resolves, so callers get the same
+// "item not found at <path>" error as before.
+func resolveDirName(parent, name string) string {
+	literal := sanitizeString(name)
+	if _, err := os.Stat(filepath.Join(parent, literal)); err == nil {
+		return literal
+	}
+	if slug := slugify(name); slug != "" && slug != literal {
+		if _, err := os.Stat(filepath.Join(parent, slug)); err == nil {
+			return slug
+		}
+	}
+	return literal
+}
+
 func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {

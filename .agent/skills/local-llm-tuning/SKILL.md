@@ -1,5 +1,5 @@
 ---
-name: Local LLM Tuning
+name: local-llm-tuning
 description: Best practices for configuring Ollama Modelfiles, setting GGUF quantizations, managing context size, and optimizing VRAM.
 ---
 

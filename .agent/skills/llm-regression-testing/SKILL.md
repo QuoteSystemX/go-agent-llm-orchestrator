@@ -1,5 +1,5 @@
 ---
-name: LLM Regression Testing
+name: llm-regression-testing
 description: Standards for prompt benchmarking, quality metric calculation, and monitoring quality drift across model updates.
 ---
 
