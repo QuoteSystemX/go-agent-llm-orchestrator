@@ -911,6 +911,5 @@ Use built-in agents for speed, custom agents for domain expertise.
 - `.agent/skills/agentic-evolution/SKILL.md`
 - `.agent/skills/skill-creator/SKILL.md`
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`

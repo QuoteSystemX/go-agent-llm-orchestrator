@@ -313,4 +313,3 @@ After editing any file:
 - `.agent/skills/go-observability/SKILL.md`
 - `.agent/skills/go-swagger/SKILL.md`
 - `.agent/skills/go-dependency-injection/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`

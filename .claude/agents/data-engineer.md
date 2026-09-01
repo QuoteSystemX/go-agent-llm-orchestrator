@@ -172,4 +172,3 @@ Transformation complexity?
 - `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/clickhouse-best-practices/SKILL.md`
 - `.agent/skills/clickhouse-architecture-advisor/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`

@@ -181,4 +181,3 @@ You MUST follow the structured documentation patterns defined in `@[skills/godoc
 - `.agent/skills/go-lint/SKILL.md`
 - `.agent/skills/go-project-layout/SKILL.md`
 - `.agent/skills/go-dependency-injection/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`

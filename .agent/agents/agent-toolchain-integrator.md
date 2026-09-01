@@ -47,7 +47,7 @@ profile: universal
 4. **Placeholder Resolution**: Implement dynamic templating for config files. Ensure all `{{VAR}}` placeholders are resolved via `.env` or runtime context before execution. Never leave unresolved tokens in production configs.
 
 ### Phase 3: Validation & Verify
-1. **Pipeline Execution**: Run `rtk bash` commands for all verification steps. Compress outputs >200 tokens using `headroom_compress`.
+1. **Pipeline Execution**: Run `rtk bash` commands for all verification steps.
 2. **Drift Alignment**: Verify `drift-detection-automation` reports 0% divergence. Auto-sync docs ↔ source ↔ scripts if minor drift is detected.
 3. **Bridge & Routing Tests**: Execute cross-language handshake tests. Validate fallback routing accuracy under simulated network degradation.
 4. **Final Verification**: Run `python3 .agent/scripts/dev/checklist.py . --fix`. Pipe final configuration and report through `bin/output-bridge`. Reject if validation fails.

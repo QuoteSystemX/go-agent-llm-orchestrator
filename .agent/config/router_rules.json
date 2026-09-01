@@ -463,16 +463,6 @@
   },
   "_llamacpp_base_url_comment": "Set llamacpp_base_url below to the ACTUAL address printed by llama-server on startup (its port is random/user-chosen, not a fixed default). Re-read on every request — edit this value after each llama-server restart, no broker restart needed.",
   "llamacpp_base_url": "http://localhost:8080",
-  "headroom_proxy": {
-    "enabled": true,
-    "port": 8787,
-    "upstream_ollama": "http://localhost:11434",
-    "proxy_url": "http://localhost:8787",
-    "healthcheck_path": "/healthz",
-    "healthcheck_timeout_ms": 1000,
-    "fallback_direct": true,
-    "comment": "When headroom proxy is running, route Ollama requests through it for 60-95% token savings. fallback_direct=true: if proxy is down, router uses Ollama directly — no interruptions."
-  },
   "concurrency": {
     "ollama": 2,
     "jan": 1,

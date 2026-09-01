@@ -581,35 +581,8 @@ func (b *BrokerServer) getExecutionURL(ctx context.Context, provider string, env
 		return b.getCloudURL(provider, rules)
 	}
 
-	// Ollama — with optional headroom proxy
+	// Ollama — direct
 	if provider == ProviderOllama || provider == "ollama" {
-		if rules.HeadroomProxy.Enabled {
-			url := rules.HeadroomProxy.ProxyURL
-			if url == "" {
-				url = fmt.Sprintf("http://localhost:%d", rules.HeadroomProxy.Port)
-			}
-			hPath := rules.HeadroomProxy.HealthcheckPath
-			if hPath == "" {
-				hPath = "/healthz"
-			}
-			reqCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-			req, err := http.NewRequestWithContext(reqCtx, "GET", url+hPath, nil)
-			if err == nil {
-				client := b.clientFast
-				if client == nil {
-					client = &http.Client{Timeout: 10 * time.Second}
-				}
-				resp, err := client.Do(req)
-				if err == nil {
-					resp.Body.Close()
-					if resp.StatusCode == http.StatusOK {
-						cancel()
-						return url
-					}
-				}
-			}
-			cancel()
-		}
 		return b.getOllamaURL(env)
 	}
 
@@ -715,7 +688,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 	}
 	startTime := time.Now()
 
-	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) || strings.Contains(baseURL, HeadroomPortStr) {
+	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) {
 		// Ollama native API: /api/generate
 		url := fmt.Sprintf("%s/api/generate", baseURL)
 		ollamaNCtx, _, _ := rules.GetProviderCtx(ProviderOllama)
@@ -2528,7 +2501,7 @@ func (b *BrokerServer) fetchEmbedding(ctx context.Context, provider string, base
 		client = &http.Client{Timeout: cacheTimeout}
 	}
 
-	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) || strings.Contains(baseURL, HeadroomPortStr) {
+	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) {
 		url := fmt.Sprintf("%s/api/embeddings", baseURL)
 		payload := map[string]interface{}{
 			"model":  model,

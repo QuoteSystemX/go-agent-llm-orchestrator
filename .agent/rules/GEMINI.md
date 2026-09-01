@@ -178,7 +178,7 @@ your own model identity, token counts, or throughput — do not fabricate them. 
    static example row from this file's own benchmark table verbatim and presenting it as live
    telemetry, or inventing a plausible-but-wrong number — both are worse than admitting `unknown`.
 
-*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings — same rule applies: real measured values or `unknown`, never invented.*
+*Note: The `RTK` metrics field is optional but highly recommended when context compression is enabled to track real-time resource and token savings — same rule applies: real measured values or `unknown`, never invented.*
 
 **Mandatory Content Structure (Premium Standard):**
 
@@ -294,18 +294,6 @@ rtk ls src/          # instead of: ls src/
 rtk grep "x" .       # instead of: grep "x" .
 ```
 RTK filters command output before it reaches LLM context, saving 60-90% tokens.
-
-#### 🗜️ Headroom — Compress large tool outputs
-Call `headroom_compress` BEFORE adding to context when:
-- Tool output (grep, find, diff, log) > 200 tokens
-- File content > 300 tokens
-- Any stack trace or JSON structure
-
-```
-result = bash("grep -r 'pattern' src/")
-compressed = headroom_compress(content=result, content_type="code")
-# work with compressed — LLM calls headroom_retrieve if needed
-```
 
 ### 🔀 Parallel Task Execution & Concurrency
 When executing tasks in parallel (e.g., dev work by `go-specialist` and testing by `test-engineer` via the squad orchestrator):

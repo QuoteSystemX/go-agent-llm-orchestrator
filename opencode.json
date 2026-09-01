@@ -32,19 +32,6 @@
       "enabled": true,
       "env": {}
     },
-    "headroom-mcp": {
-      "type": "local",
-      "command": [
-        "headroom",
-        "mcp",
-        "serve"
-      ],
-      "enabled": true,
-      "env": {
-        "HEADROOM_CONFIG_DIR": "${workspaceFolder}/.headroom",
-        "HEADROOM_WORKSPACE_DIR": "${workspaceFolder}"
-      }
-    },
     "local-skill-server": {
       "type": "local",
       "command": [

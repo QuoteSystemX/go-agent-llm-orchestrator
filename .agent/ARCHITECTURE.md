@@ -9,7 +9,7 @@
 Unified Agent Kit is a modular system consisting of:
 
 - **69 Specialist Agents** - Role-based AI personas
-- **182 Skills** - Domain-specific knowledge modules
+- **181 Skills** - Domain-specific knowledge modules
 - **27 Workflows** - Slash command procedures
 - **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
@@ -228,7 +228,7 @@ Specialist AI personas for different domains.
 
 | Agent | Focus | Skills Used |
 | --- | --- | --- |
-| `orchestrator` | Multi-agent coordination and task orchestration. | clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, json-canvas, obsidian-bases, codebase-memory-patterns, agent-browser, agent-routing-pro, api-development, better-auth-best-practices, experience-injector, next-best-practices, browser-use, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, headroom-patterns, multica-mcp, multica-cli |
+| `orchestrator` | Multi-agent coordination and task orchestration. | clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, json-canvas, obsidian-bases, codebase-memory-patterns, agent-browser, agent-routing-pro, api-development, better-auth-best-practices, experience-injector, next-best-practices, browser-use, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, multica-mcp, multica-cli |
 | `agent-toolchain-integrator` | Specializes in hardening and integrating local AI agent runtimes. | mcp-integration, mcp-integration-standards, wsl-interop, lint-and-validate, intelligent-routing, clean-code, systematic-debugging, multica-mcp, multica-cli |
 | `ai-engineer` | AI/LLM specialist — RAG pipelines, prompt engineering, tool use, agentic loops, vector dat… | llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli |
 | `analyst` | BMAD lifecycle driver. | bmad-lifecycle, plan-writing, brainstorming, neural-prd-engineering, architecture, telemetry, shared-context, clean-code, visual-explainer, multica-mcp, multica-cli |
@@ -268,7 +268,7 @@ Specialist AI personas for different domains.
 | `local-model-optimizer` | Optimizes local models (Ollama, Jan), configures weights, adjusts GGUF quantization settin… | performance-profiling, observability-patterns, local-llm-tuning, clean-code, multica-mcp, multica-cli |
 | `maintainer` | Senior Maintainer and Quality Guardian. | clean-code, code-review-checklist, vulnerability-scanner, performance-profiling, testing-patterns, mcp-builder, command-development, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, hook-development, mcp-integration, multica-mcp, multica-cli |
 | `mcp-protocol-engineer` | Specialized in Model Context Protocol (MCP) schema compliance, tool definitions, transport… | api-development, go-patterns, typescript-expert, mcp-integration-standards, clean-code, multica-mcp, multica-cli |
-| `meta-architect` | Strategist for autonomous agent kit evolution. | clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, headroom-patterns, multica-mcp, multica-cli |
+| `meta-architect` | Strategist for autonomous agent kit evolution. | clean-code, architecture, telemetry, shared-context, brainstorming, prompt-engineering, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, prompts-best-practices, multica-mcp, multica-cli |
 | `ml-lead` | ML & Research Engineering Lead — tactical layer between CTO and ML squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp, multica-cli |
 | `mobile-developer` | Expert in React Native and Flutter mobile development. | clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli |
 | `penetration-tester` | Conducts systematic ACTIVE penetration tests against live/staged targets — enumerates atta… | clean-code, vulnerability-scanner, red-team-tactics, api-patterns, shared-context, telemetry, better-auth-best-practices, adversarial-prompt-testing, multica-mcp, multica-cli |
@@ -298,7 +298,7 @@ Specialist AI personas for different domains.
 | `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
 | `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
-## 🧩 Skills (182)
+## 🧩 Skills (181)
 
 Modular knowledge domains that agents can load on-demand, based on task context.
 
@@ -409,7 +409,6 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `godoc-patterns` | Go documentation standards — package doc-comments, func/type/method docs, doc.go files, Ex… |
 | `grafana-dashboard-master` | Expert-level Grafana dashboard design and engineering. |
 | `harness-development` | How to add a new harness (LLM CLI) to the capability-driven harness_run system. |
-| `headroom-patterns` | Patterns for using Headroom to compress context before passing to LLM. |
 | `hook-development` | This skill should be used when the user asks to "create a hook", "add a PreToolUse/PostToo… |
 | `i18n-localization` | Internationalization and localization patterns. |
 | `inbox-patterns` | How to use the structured INBOX.md channel for human-to-agent communication. |
@@ -918,9 +917,9 @@ Triggers on changes to `.agent/**` or `.claude/**`. Binaries are built by `build
 | Metric              | Value                                           |
 | ------------------- | ----------------------------------------------- |
 | **Total Agents**    | 69                                              |
-| **Total Skills**    | 182                                             |
+| **Total Skills**    | 181                                             |
 | **Total Workflows** | 27                                              |
-| **Total Scripts**   | 337                                             |
+| **Total Scripts**   | 336                                             |
 | **Total Patterns**  | 23                                              |
 | **MCP Servers**     | 2 (`local-skill-server` + `mcp-server-agent-kit`, stdio)        |
 | **Coverage**        | ~95% web/mobile/backend/infra development       |
@@ -1085,7 +1084,6 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/autopilot/dispatch.py` | Autopilot Phase 4 (DISPATCH) — creates a `tasks/` card for the selected candidate and optionally notifies Slack. |
 | `.agent/scripts/autopilot/decide.py` | Autopilot Phase 5 (DECIDE) — records cycle outcome to `.agent/autopilot/cycle-log.jsonl` and feeds back into future SELECT scoring. |
 | `.agent/scripts/health/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
-| `.agent/scripts/health/headroom_benchmark.py` | Headroom Compression Benchmark — tests compression ratios on realistic agent conversation histories. |
 | `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
 | `.agent/scripts/orchestration/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
 | `.agent/mcp-llm-broker/router.go` | Routing decision engine for the mcp-llm-broker — provider/model selection based on task complexity and routing rules. |

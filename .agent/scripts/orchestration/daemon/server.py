@@ -35,12 +35,6 @@ LOCK_NAME = "workspace"
 FALLBACK_STOP_FILE = REPO_ROOT / ".agent" / "STOP"
 FALLBACK_STOP_POLL_INTERVAL_S = float(os.environ.get("DAEMON_STOP_POLL_INTERVAL_S", "2.0"))
 
-# STORY-1: Memory-pressure trigger threshold for distillation.
-# When headroom_memory.db exceeds this size (MB), the daemon runs
-# agent_squeeze + experience_distiller to prevent OOM during long sprints.
-# Override via env: DAEMON_MEMORY_PRESSURE_MB
-HEADROOM_DB = REPO_ROOT / "headroom_memory.db"
-DEFAULT_MEMORY_PRESSURE_MB = float(os.environ.get("DAEMON_MEMORY_PRESSURE_MB", "5.0"))
 
 
 class OrchestratorDaemon:
@@ -458,25 +452,12 @@ class OrchestratorDaemon:
             state = "draining"
         else:
             state = "running"
-        mem_mb = self._get_headroom_db_mb()
         return {
             "status": "success",
             "state": state,
             "active_tasks": list(self.active_tasks.keys()),
             "socket_path": str(self.socket_path),
-            "memory": {
-                "headroom_db_mb": mem_mb,
-                "pressure_threshold_mb": DEFAULT_MEMORY_PRESSURE_MB,
-                "under_pressure": mem_mb is not None and mem_mb > DEFAULT_MEMORY_PRESSURE_MB,
-            },
         }
-
-    @staticmethod
-    def _get_headroom_db_mb() -> float | None:
-        """Return current size of headroom_memory.db in MB, or None if missing."""
-        if not HEADROOM_DB.exists():
-            return None
-        return HEADROOM_DB.stat().st_size / (1024 * 1024)
 
     def _check_capability(self, role: str, capability: str, scope: str = "global"):
         """STORY-4: Default-deny capability check for privileged IPC actions.
@@ -554,17 +535,6 @@ class OrchestratorDaemon:
                 f.write(json.dumps(event) + "\n")
         except Exception as e:
             logger.debug("Could not emit capability_denied event: %s", e)
-
-    def check_memory_pressure(self) -> bool:
-        """STORY-1: Return True if headroom_memory.db exceeds the pressure threshold.
-
-        Called after each task completion. When True, the caller should invoke
-        `_trigger_pressure_distill()` to prevent OOM during long sprints.
-        """
-        mem_mb = self._get_headroom_db_mb()
-        if mem_mb is None:
-            return False
-        return mem_mb > DEFAULT_MEMORY_PRESSURE_MB
 
     def _build_inbox_fragment(self, target: Optional[str] = None, max_chars: int = 4000) -> str:
         """STORY-2: Build a sanitized INBOX fragment for system-prompt injection.
@@ -654,8 +624,6 @@ class OrchestratorDaemon:
             result["steps"].append({"name": "experience_distiller", "status": "error", "error": str(e)})
             result["status"] = "partial"
 
-        # Step 3: report new memory size
-        result["headroom_db_mb_after"] = self._get_headroom_db_mb()
         return result
 
     async def action_stop(self, reason: str) -> Dict[str, Any]:

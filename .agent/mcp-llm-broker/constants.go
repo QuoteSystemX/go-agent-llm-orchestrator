@@ -21,7 +21,6 @@ const (
 	DefaultLlamaCppURL = "http://localhost:8080"
 
 	OllamaDefaultPortStr = "11434"
-	HeadroomPortStr      = "8787"
 )
 
 // llamaCppDefaultSourceRef pins the llama.cpp release tag the provisioner builds

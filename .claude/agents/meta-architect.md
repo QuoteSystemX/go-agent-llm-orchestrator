@@ -164,6 +164,5 @@ An evolution cycle is complete when:
 - `.agent/skills/skill-creator/SKILL.md`
 - `.agent/skills/dispatching-parallel-agents/SKILL.md`
 - `.agent/skills/prompts-best-practices/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`

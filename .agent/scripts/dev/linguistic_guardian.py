@@ -48,8 +48,6 @@ CYRILLIC_ALLOWED_FILES = {
     # pending separate refactor epic — it does NOT compile anyway, see
     # the .agent/mcp-llm-broker/README for the build-error context)
     ".agent/mcp-llm-broker/",
-    # Legacy headroom integration tests (Russian, frozen, pending epic)
-    ".agent/tests/test_headroom_integration.py",
     # Router rules intentionally bilingual (English + Russian routing keywords)
     ".agent/config/router_rules.json",
 }

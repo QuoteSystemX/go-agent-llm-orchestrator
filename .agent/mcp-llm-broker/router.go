@@ -15,7 +15,6 @@ type RouterRules struct {
 	Models           map[string]ModelTiers            `json:"models"`
 	ModelRankings    map[string]json.RawMessage       `json:"model_rankings"`
 	HybridRouting    HybridRoutingConfig              `json:"hybrid_routing"`
-	HeadroomProxy    HeadroomProxyConfig              `json:"headroom_proxy"`
 	Concurrency      map[string]int                   `json:"concurrency,omitempty"`
 	SemanticCache    SemanticCacheConfig              `json:"semantic_cache,omitempty"`
 	ProviderSettings map[string]ProviderContextConfig `json:"provider_settings,omitempty"`
@@ -129,16 +128,6 @@ func (r *RouterRules) GetProviderCtx(provider string) (nCtx, charsPerTok int, pr
 type SemanticCacheConfig struct {
 	Enabled   bool    `json:"enabled"`
 	Threshold float64 `json:"threshold"`
-}
-
-type HeadroomProxyConfig struct {
-	Enabled              bool   `json:"enabled"`
-	Port                 int    `json:"port"`
-	UpstreamOllama       string `json:"upstream_ollama"`
-	ProxyURL             string `json:"proxy_url"`
-	HealthcheckPath      string `json:"healthcheck_path"`
-	HealthcheckTimeoutMs int    `json:"healthcheck_timeout_ms"`
-	FallbackDirect       bool   `json:"fallback_direct"`
 }
 
 type ScoringConfig struct {

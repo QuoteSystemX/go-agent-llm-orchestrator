@@ -96,7 +96,7 @@ your own model identity, token counts, or throughput — do not fabricate them. 
    static example row from this file's own benchmark table verbatim and presenting it as live
    telemetry, or inventing a plausible-but-wrong number — both are worse than admitting `unknown`.
 
-*Note: The `Headroom` and `RTK` metrics fields are optional but highly recommended when context compression is enabled to track real-time resource and token savings — same rule applies: real measured values or `unknown`, never invented.*
+*Note: The `RTK` metrics field is optional but highly recommended when context compression is enabled to track real-time resource and token savings — same rule applies: real measured values or `unknown`, never invented.*
 
 **Mandatory Content Structure (Premium Standard):**
 

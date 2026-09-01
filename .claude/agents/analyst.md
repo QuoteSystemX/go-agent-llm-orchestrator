@@ -206,4 +206,3 @@ ELSE                             → Report status of current phase
 - `.agent/skills/multica-mcp/SKILL.md`
 - `.agent/skills/multica-cli/SKILL.md`
 - `.agent/skills/scientific-problem-selection/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`

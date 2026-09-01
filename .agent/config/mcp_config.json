@@ -13,14 +13,6 @@
             "command": ".agent/mcp-llm-broker/mcp-llm-broker.sh",
             "args": ["--http-port", "11436"]
         },
-        "headroom-mcp": {
-            "command": "headroom",
-            "args": ["mcp", "serve"],
-            "env": {
-                "HEADROOM_CONFIG_DIR": "${workspaceFolder}/.headroom",
-                "HEADROOM_WORKSPACE_DIR": "${workspaceFolder}"
-            }
-        },
         "local-skill-server": {
             "command": "/usr/bin/env",
             "args": ["agent-kit-server"]

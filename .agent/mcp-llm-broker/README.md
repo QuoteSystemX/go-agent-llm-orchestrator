@@ -20,7 +20,7 @@ Runs in **dual mode** — MCP-over-Stdio for IDE integration + optional HTTP RES
   - **Caching**: In-memory + file-based under `.agent/tmp/llm_cache/`
   - **Token Saver**: Strips duplicate whitespace and redundant instructions
 - **Environment-Aware**: Auto-detects WSL (routes to Windows Ollama via gateway) and K8s
-- **No API Keys Required**: Local models are free; cloud fallback uses headroom proxy without storing credentials
+- **No API Keys Required**: Local models are free; cloud fallback routes directly without storing credentials
 
 ---
 

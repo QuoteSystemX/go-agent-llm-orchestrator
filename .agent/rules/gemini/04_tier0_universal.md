@@ -77,18 +77,6 @@ rtk grep "x" .       # instead of: grep "x" .
 ```
 RTK filters command output before it reaches LLM context, saving 60-90% tokens.
 
-#### 🗜️ Headroom — Compress large tool outputs
-Call `headroom_compress` BEFORE adding to context when:
-- Tool output (grep, find, diff, log) > 200 tokens
-- File content > 300 tokens
-- Any stack trace or JSON structure
-
-```
-result = bash("grep -r 'pattern' src/")
-compressed = headroom_compress(content=result, content_type="code")
-# work with compressed — LLM calls headroom_retrieve if needed
-```
-
 ### 🔀 Parallel Task Execution & Concurrency
 When executing tasks in parallel (e.g., dev work by `go-specialist` and testing by `test-engineer` via the squad orchestrator):
 1. **File Isolation**: Agents must modify strictly separate files (e.g., business logic in `app.go`, tests in `app_test.go`) to prevent write conflicts and git merge conflicts.

@@ -218,4 +218,3 @@ After writing all task cards, produce a summary:
 - `.agent/skills/go-project-layout/SKILL.md`
 - `.agent/skills/go-structs-interfaces/SKILL.md`
 - `.agent/skills/go-documentation/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`

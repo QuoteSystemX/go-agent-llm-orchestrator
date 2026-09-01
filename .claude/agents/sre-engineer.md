@@ -119,4 +119,3 @@ Before declaring a service "Production Ready", you **MUST**:
 - `.agent/skills/kubernetes-mcp/SKILL.md`
 - `.agent/skills/go-observability/SKILL.md`
 - `.agent/skills/go-stay-updated/SKILL.md`
-- `.agent/skills/headroom-patterns/SKILL.md`
