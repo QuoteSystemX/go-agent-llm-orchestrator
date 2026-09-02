@@ -1,0 +1,56 @@
+{
+    "mcpServers": {
+        "codebase-memory": {
+            "command": "bin/codebase-memory-mcp",
+            "args": ["serve"],
+            "env": {
+                "CODEBASE_MEMORY_DB_DIR": "${workspaceFolder}/.codebase-memory",
+                "CODEBASE_MEMORY_EXCLUDE": "node_modules,.git,.gemini,dist"
+            }
+        },
+        "mcp-llm-broker": {
+            "command": ".agent/mcp-llm-broker/mcp-llm-broker.sh",
+            "args": ["--http-port", "11436"]
+        },
+        "local-skill-server": {
+            "command": "/usr/bin/env",
+            "args": ["agent-kit-server"]
+        },
+        "shadcn": {
+            "command": "npx",
+            "args": [
+                "shadcn@latest",
+                "mcp"
+            ]
+        },
+        "wikipedia": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "wikipedia-mcp"
+            ]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "${workspaceFolder}"
+            ]
+        },
+        "github": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ]
+        },
+        "browser": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-puppeteer"
+            ]
+        }
+    }
+}
