@@ -38,7 +38,7 @@ func (h *handler) loadItem(path string) (*mcp.CallToolResult, error) {
 // knowledge_search.go) against query and returns the top matches. Embedded
 // Go logic, not a python3 subprocess — the distroless:nonroot runtime image
 // has no shell/python3/package manager, so exec.Command("python3", ...)
-// could never succeed here (tasks/done/2026-08-12-agent-kit-search-knowledge-broken.md).
+// could never succeed here (see knowledge_search.go for the full history).
 func (h *handler) searchKnowledge(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	query, _ := req.RequireString("query")
 

@@ -78,6 +78,7 @@ CORE_CHECKS = [
     ("Skill Discovery", ".agent/scripts/dev/skill_discovery.py", False),
     ("Skill Files Drift", ".agent/scripts/dev/skill_files_lint.py", True),
     ("Incident Watcher", ".agent/scripts/health/incident_watcher.py", False),
+    ("Capability Audit", ".agent/scripts/dev/capability_audit.py", True),
 ]
 
 def check_watchdog_schema() -> tuple[bool, str]:

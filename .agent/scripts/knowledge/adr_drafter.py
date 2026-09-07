@@ -23,8 +23,13 @@ import re
 from pathlib import Path
 from datetime import datetime
 
+try:
+    from lib.paths import REPO_ROOT
+except ImportError:
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+
 # Configuration
-ADR_DIR = Path("docs/adr")
+ADR_DIR = REPO_ROOT / "wiki" / "decisions"
 WORKSPACE_ROOT = Path(".")
 
 # Patterns that trigger ADR drafting
@@ -34,6 +39,18 @@ TRIGGERS = {
     "new_dependency": r"(package\.json|go\.mod)",
     "ui_system_change": r"src/ui/components/shared/",
 }
+
+def next_adr_id() -> int:
+    """Max existing ADR-NNN id + 1. Counting files undercounts after deletions/renumbering
+    (see .agent/skills/architecture/scripts/generate_adr.py's identical helper — reused pattern,
+    not reimplemented from scratch)."""
+    max_id = 0
+    for f in ADR_DIR.glob("ADR-*.md"):
+        match = re.match(r"ADR-(\d+)-", f.name)
+        if match:
+            max_id = max(max_id, int(match.group(1)))
+    return max_id + 1
+
 
 def draft_adr():
     if not ADR_DIR.exists():
@@ -62,15 +79,33 @@ def draft_adr():
             "consequences": "High performance, but requires Go expertise for handler expansion."
         })
 
-    # Draft ADR files
+    # Draft ADR files. `next_id` advances locally across the loop rather than being
+    # re-derived from a mutating directory count per iteration (the bug that made IDs climb
+    # unpredictably and re-glob a directory this same loop was writing into).
     drafted_files = []
-    for i, dec in enumerate(potential_decisions):
-        adr_id = f"{(len(list(ADR_DIR.glob('*.md'))) + 1 + i):04d}"
-        filename = f"{adr_id}-{dec['title'].lower().replace(' ', '-')}.md"
+    next_id = next_adr_id()
+    existing_slugs = set()
+    for f in ADR_DIR.glob("ADR-*.md"):
+        m = re.match(r"ADR-\d+-(.+)\.md$", f.name)
+        if m:
+            existing_slugs.add(m.group(1))
+
+    for dec in potential_decisions:
+        slug = dec['title'].lower().replace(' ', '-')
+
+        # Skip if an ADR for this exact decision already exists under ANY id — not just an
+        # exact-filename check against the current id, which never matches (the id always
+        # increments) and let this trigger re-draft the same two decisions indefinitely. Exact
+        # match on the slug portion, not substring containment — `slug in f.name` would also
+        # match e.g. an unrelated "ADR-005-re-adoption-of-mcp-go-server-framework-v2.md".
+        if slug in existing_slugs:
+            continue
+
+        adr_id = f"{next_id:03d}"
+        filename = f"ADR-{adr_id}-{slug}.md"
         filepath = ADR_DIR / filename
-        
-        if not filepath.exists():
-            content = f"""# ADR {adr_id}: {dec['title']}
+
+        content = f"""# ADR-{adr_id}: {dec['title']}
 
 ## Status
 DRAFT (Proposed by Archivist)
@@ -91,9 +126,10 @@ DRAFT (Proposed by Archivist)
 - **Detected At**: {datetime.now().isoformat()}
 - **Suggested By**: Archivist Agent
 """
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(content)
-            drafted_files.append(str(filepath))
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        drafted_files.append(str(filepath))
+        next_id += 1
 
     return {
         "status": "success",

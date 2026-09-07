@@ -17,7 +17,7 @@ disk in two directions:
       it will silently NOT ship with the skill.
   (b) files: references a path that doesn't exist on disk — a stale
       reference (the same class of bug as
-      tasks/done/2026-08-11-bug-skill-broken-link-adr-template-architecture-efe79c.md).
+      tasks/done/2026-08/2026-08-11-bug-skill-broken-link-adr-template-architecture-efe79c.md).
 
 This script catches both directions and fails loudly instead of letting
 either drift silently, without ever changing what gets imported at runtime.

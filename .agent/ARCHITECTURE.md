@@ -93,7 +93,6 @@ graph TD
   handlers_jobs --> filepath
   handlers_jobs --> json
   handlers_jobs --> mcp
-  handlers_knowledge --> exec
   handlers_knowledge --> filepath
   handlers_knowledge --> mcp
   handlers_v3_test --> mcp
@@ -112,6 +111,9 @@ graph TD
   indexer --> fsnotify
   indexer --> sql
   indexer_test --> filepath
+  knowledge_search --> filepath
+  knowledge_search_test --> filepath
+  knowledge_search_test --> mcp
   llamacpp_provisioner --> exec
   llamacpp_provisioner --> filepath
   llamacpp_provisioner --> gzip
@@ -158,6 +160,15 @@ graph TD
   testutil_test --> sql
   testutil_test --> stdlib
   testutil_test --> url
+  tools_readonly --> filepath
+  tools_readonly --> fs
+  tools_readonly --> utf8
+  tools_readonly_test --> filepath
+  tools_readonly_test --> http
+  tools_readonly_test --> httptest
+  tools_readonly_test --> json
+  tools_readonly_test --> mcp
+  tools_readonly_test --> utf8
   version --> cobra
   version --> debug
   workers --> exec
@@ -205,14 +216,23 @@ graph TD
    cards and rewrites `INDEX.md`, preserving manually-set `Distilled?`/`Wiki link` values.
    `--check` is CI-safe (no writes, non-zero exit on drift) — same convention as
    `sync_agents.py --check`.
-4. **Never delete-by-default.** Closed cards are not disposable — in an active repo they are
+4. **Link rewriting on partition.** Partitioning a card breaks every existing
+   `tasks/done/YYYY-MM-DD-slug.md` reference to it (in other cards, code comments, docs, wiki) —
+   moving it is not enough. The same run also rewrites every `done/YYYY-MM-DD-...` occurrence found
+   across all git-tracked files in the repo into its partitioned `done/YYYY-MM/YYYY-MM-DD-...` form.
+   A reference whose computed destination doesn't actually exist on disk — a pruned card, a
+   reference that was always broken, or one pointing at a card that only exists in a different
+   repo — is left untouched and reported as dangling instead of being guessed at; resolving those is
+   a human decision, not something the tool does automatically. `--check` fails if any rewritable
+   drift remains (dangling references alone do not fail it).
+5. **Never delete-by-default.** Closed cards are not disposable — in an active repo they are
    often 40KB+ investigation reports whose value is in the reasoning, not just the outcome.
    Pruning (physical deletion) is a separate, explicit, human-triggered action, only for cards
    that are (a) distilled into a lesson/wiki page **and** (b) genuinely redundant with that
    distillation — e.g. a cluster of near-identical auto-generated cards reporting the same root
    cause repeatedly (see `LESSONS_LEARNED.md` → `[2026-08-14] [DRIFT] [drift-detector]` for a
    worked example: 23 cards distilled into one lesson, then pruned).
-5. **Wiki cross-linking rule**: when 3+ `tasks/done/` cards converge on the same architectural
+6. **Wiki cross-linking rule**: when 3+ `tasks/done/` cards converge on the same architectural
    point (not just the same keyword — the same underlying decision or recurring root cause),
    write a `wiki/` page summarizing the evolution/decision, backlink it from each card's own
    `Wiki link` line and from its `INDEX.md` row, and mark those cards `Distilled? = yes`. Do not
@@ -1086,6 +1106,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/health/grafana_manager.py` | Grafana dashboard CRUD — create/update panels, datasources, alerts via REST API. |
 | `.agent/scripts/health/incident_watcher.py` | Incident Watcher — monitors process exit codes and pushes failures to Context Bus. |
 | `.agent/scripts/orchestration/war_room_manager.py` | War Room Manager — orchestrates Debugger + Test-Engineer + Orchestrator triad for autonomous incident resolution. |
+| `.agent/scripts/orchestration/blameless_retro.py` | Blameless Post-Mortem — looks backward across `.agent/logs/incidents.jsonl` for root causes War Room resolved individually but recurred 2+ times in the trailing period; spawns a debugger+sre-engineer retro and writes a redacted ADR to `wiki/decisions/`. Idempotent per exact incident-ID set (`.agent/logs/retro_state.json`). |
 | `.agent/mcp-llm-broker/router.go` | Routing decision engine for the mcp-llm-broker — provider/model selection based on task complexity and routing rules. |
 | `.agent/mcp-llm-broker/llamacpp_provisioner.go` | llama-server provisioning for the mcp-llm-broker — builds (if needed) and launches a standalone llama-server instance from Jan-downloaded GGUF models, self-writes the resolved URL into router_rules.json. |
 | `.agent/scripts/orchestration/dag_runner.py` | DAG runner for the orchestrator — parses dependency graphs and executes tasks in topological order. |
@@ -1095,6 +1116,8 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/skills/vulnerability-scanner/scripts/entropy_scanner.py` | Shannon Entropy Secrets Scanner — detects high-entropy secrets (API keys, tokens) in files. |
 | `.agent/scripts/orchestration/arbitrator.py` | Council of Sages judge — produces a `verdict` on architectural decisions from multi-agent debate. |
 | `.agent/scripts/dev/skill_factory.py` | Generates SKILL.md scaffolding for new skills with correct frontmatter and structure. |
+| `.agent/scripts/dev/skill_files_lint.py` | Frontmatter `files:` drift check — every skill may declare sibling files it ships with (the sole mechanism deciding what an MCP skill import carries); catches both a listed-but-missing file and a present-but-unlisted one. |
+| `.agent/scripts/dev/skill_files_retrofit.py` | One-time seeder for `skill_files_lint.py`'s baseline — writes each skill's current sibling files into a new `files:` frontmatter line, skipping any skill that already has one (never overwrites a hand-curated list). |
 | `.agent/scripts/delivery/codebase_memory_setup.py` | Codebase memory service provisioning and workspace database configuration. |
 | `.agent/scripts/delivery/task_miner.py` | Mines `wiki/ROADMAP.md` for untracked backlog items and converts them to `tasks/` cards. |
 | `.agent/scripts/dev/pr_audit.py` | Deep PR audit — runs security, drift, conflict, and quality checks on staged changes. |
@@ -1141,6 +1164,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/mcp-server-agent-kit/db_ops.go` | System module for db_ops.go. |
 | `.agent/mcp-server-agent-kit/db_governance.go` | System module for db_governance.go. |
 | `.agent/mcp-server-agent-kit/handlers_knowledge.go` | System module for handlers_knowledge.go. |
+| `.agent/mcp-server-agent-kit/knowledge_search.go` | Embedded Go port of `semantic_brain_engine.py`'s `search_lessons`/`calculate_similarity`/`preprocess` — weighted Jaccard-like token-overlap scoring over the global cross-project `lessons_learned.md` file. Replaces a `python3` subprocess call that could never work in the distroless `mcp-server-agent-kit` runtime image (no shell/python3). |
 | `.agent/mcp-server-agent-kit/handlers_discovery.go` | System module for handlers_discovery.go. |
 | `.agent/mcp-server-agent-kit/maintenance.go` | System module for maintenance.go. |
 | `.agent/mcp-server-agent-kit/db.go` | System module for db.go. |
@@ -1184,6 +1208,7 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/tests/test_squad_orchestrator.py` | 20 unit tests covering AgentScanner, GraphBuilder (cycle detection), ToolSandbox enforcement, Output Guardrails, dynamic routing, self-heal retry success/exhausted, and TaskState persistence. |
 | `.agent/mcp-llm-broker/constants.go` | Core constants including local LLM provider names, default URLs, pricing rates, latency balancing weights, and circuit breaker configuration parameters. |
 | `.agent/mcp-llm-broker/http_server.go` | OpenAI-compatible HTTP and JSON-RPC API server implementing chat completion endpoints, streaming parser, and request delegation handler. |
+| `.agent/mcp-llm-broker/tools_readonly.go` | Sandboxed read-only tool set (`read_file`, `grep`) given to `call_agent`-dispatched sub-agent personas so they can check a claim about the codebase before making it, instead of confabulating a path or symbol. Enforces `workspaceRoot` containment and refuses common secret-bearing filenames (`.env`, `*.pem`, `id_rsa*`, etc.) by base filename, case-insensitive. |
 | `.agent/scripts/orchestration/daemon/db.py` | SQLite database layer for the agent orchestrator daemon handling WAL-mode persistence of tasks, agent nodes cache, workspace locks, and execution traces. |
 | `.agent/scripts/orchestration/daemon/server.py` | IPC server daemon for the agent squad orchestrator, listening on Unix Domain Socket, executing tasks, and persisting states. |
 | `.agent/scripts/orchestration/daemon/client.py` | CLI client for the agent squad orchestrator daemon, connecting via UDS to manage task status and trigger execution. |

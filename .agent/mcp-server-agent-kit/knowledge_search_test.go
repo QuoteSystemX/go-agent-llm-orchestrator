@@ -39,10 +39,11 @@ func writeTestLessonsFixture(t *testing.T, content string) {
 	t.Setenv("AGENT_GLOBAL_ROOT", root)
 }
 
-// TestSearchKnowledge_ReturnsRealResults is the regression test for
-// tasks/done/2026-08-12-agent-kit-search-knowledge-broken.md: search_knowledge
-// must return real, scored results for a matching query using embedded Go
-// logic — no python3 subprocess, no "executable file not found in $PATH".
+// TestSearchKnowledge_ReturnsRealResults is the regression test ensuring
+// search_knowledge returns real, scored results for a matching query using
+// embedded Go logic — no python3 subprocess, no "executable file not found
+// in $PATH" (see knowledge_search.go for why the subprocess approach was
+// replaced).
 func TestSearchKnowledge_ReturnsRealResults(t *testing.T) {
 	writeTestLessonsFixture(t, testLessonsFixture)
 

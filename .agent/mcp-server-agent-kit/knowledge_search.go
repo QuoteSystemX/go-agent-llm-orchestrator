@@ -10,8 +10,7 @@ import (
 
 // This file replaces the previous exec.Command("python3", ...) call into
 // .agent/scripts/knowledge/semantic_brain_engine.py, which was fatally
-// broken two ways in the mcp-server-agent-kit distroless runtime image
-// (tasks/done/2026-08-12-agent-kit-search-knowledge-broken.md):
+// broken two ways in the mcp-server-agent-kit distroless runtime image:
 //   1. the constructed script path was missing a "knowledge/" path segment
 //      and never resolved to the real file even on a host with python3;
 //   2. the runtime image is `gcr.io/distroless/static:nonroot` — no shell,

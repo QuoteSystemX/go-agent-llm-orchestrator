@@ -32,6 +32,14 @@ DATE_RE = re.compile(r"^(\d{4}-\d{2})-\d{2}-(.+)\.md$")
 HASH_SUFFIX_RE = re.compile(r"-[0-9a-f]{6}$")
 STOPWORDS = {"and", "the", "for", "with", "to", "of", "in", "a", "on", "at", "is", "not", "but"}
 
+# Matches a flat, pre-partition reference such as `done/` + a `YYYY-MM-DD-slug.md` filename.
+# Anchoring on the literal
+# `done/` token (rather than requiring a `tasks/` prefix) catches both the repo-relative form used
+# in comments/docs (`tasks/done/...`) and the bare form used from within tasks/ itself (`done/...`)
+# with one pattern. Idempotent by construction: after rewriting, the text right after `done/` is
+# `YYYY-MM/` (a slash), not `YYYY-MM-` (a dash), so this can't match its own output on a re-run.
+STALE_DONE_RE = re.compile(r"done/(\d{4}-\d{2})-(\d{2}-[\w.-]+\.md)")
+
 INDEX_HEADER = "| Date | Card | Topic tags | Distilled? | Wiki link |\n|---|---|---|---|---|\n"
 ROW_RE = re.compile(
     r"^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*\[([^\]]+)\]\(([^)]+)\)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*$"
@@ -68,18 +76,20 @@ def load_existing_index(index_path: Path) -> dict:
     return preserved
 
 
-def is_tracked(f: Path) -> bool:
+def is_tracked(f: Path, root: Path = REPO_ROOT) -> bool:
     return subprocess.run(
         ["git", "ls-files", "--error-unmatch", str(f)],
-        cwd=REPO_ROOT, capture_output=True,
+        cwd=root, capture_output=True,
     ).returncode == 0
 
 
-def partition(done_dir: Path, dry_run: bool) -> list:
+def partition(done_dir: Path, dry_run: bool, root: Path = REPO_ROOT) -> list:
     """Moves top-level dated cards into tasks/done/YYYY-MM/. Returns list of (src, dst).
     Freshly-created cards may not be committed/staged yet — `git mv` requires a tracked file,
     so untracked cards fall back to a plain filesystem move (git picks them up as new/untracked
-    at the destination, same as before the move)."""
+    at the destination, same as before the move). `root` must be the actual git repo `done_dir`
+    lives under (defaults to this checkout) — passing a mismatched root makes `is_tracked()`
+    check the wrong repo and silently fall back to the plain-rename path instead of `git mv`."""
     moves = []
     for f in sorted(done_dir.glob("*.md")):
         if f.name in ("INDEX.md", "README.md"):
@@ -92,14 +102,73 @@ def partition(done_dir: Path, dry_run: bool) -> list:
         dst = done_dir / month / f.name
         moves.append((f, dst))
         if dry_run:
-            print(f"  [dry-run] move {f.relative_to(REPO_ROOT)} -> {dst.relative_to(REPO_ROOT)}")
+            print(f"  [dry-run] move {f.relative_to(root)} -> {dst.relative_to(root)}")
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
-        if is_tracked(f):
-            subprocess.run(["git", "mv", str(f), str(dst)], cwd=REPO_ROOT, check=True)
+        if is_tracked(f, root):
+            subprocess.run(["git", "mv", str(f), str(dst)], cwd=root, check=True)
         else:
             f.rename(dst)
     return moves
+
+
+def list_tracked_files(root: Path) -> list:
+    """All git-tracked files under root, as absolute Paths. Read-only; excludes untracked files
+    and gitignored build artifacts by construction (they're simply not in `git ls-files`)."""
+    result = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True)
+    if result.returncode != 0:
+        return []
+    names = result.stdout.decode("utf-8", errors="surrogateescape").split("\0")
+    return [root / n for n in names if n]
+
+
+def rewrite_links(root: Path, done_dir: Path, dry_run: bool) -> tuple:
+    """Rewrites flat `done/YYYY-MM-DD-slug.md` references into their partitioned
+    `done/YYYY-MM/YYYY-MM-DD-slug.md` form, across every git-tracked file under root.
+
+    Only rewrites a match whose computed destination actually exists on disk. Anything else — a
+    pruned card, a reference that was already broken, or one pointing at a card that only exists in
+    a different repo — is left untouched and reported as dangling instead of guessed at.
+
+    Returns (changed: {Path: [(old, new), ...]}, dangling: [(Path, old_token), ...]).
+    """
+    changed = {}
+    dangling = []
+
+    for f in list_tracked_files(root):
+        try:
+            text = f.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if "\x00" in text[:8192] or "done/" not in text:
+            continue
+
+        file_changes = []
+
+        def _sub(m):
+            month, rest = m.group(1), m.group(2)
+            old, new = m.group(0), f"done/{month}/{month}-{rest}"
+            if not (done_dir / month / f"{month}-{rest}").exists():
+                dangling.append((f, old))
+                return old
+            file_changes.append((old, new))
+            return new
+
+        new_text = STALE_DONE_RE.sub(_sub, text)
+        if file_changes:
+            changed[f] = file_changes
+            if not dry_run:
+                f.write_text(new_text, encoding="utf-8")
+
+    return changed, dangling
+
+
+def _print_capped(label: str, items: list, formatter, cap: int = 10) -> None:
+    print(f"{label} ({len(items)}):")
+    for item in items[:cap]:
+        print(f"  {formatter(item)}")
+    if len(items) > cap:
+        print(f"  ... and {len(items) - cap} more.")
 
 
 def build_index(done_dir: Path, preserved: dict) -> str:
@@ -138,15 +207,42 @@ def main():
         if expected != actual:
             print("❌ tasks/done/INDEX.md is out of date. Run: python3 .agent/scripts/delivery/task_archive.py")
             raise SystemExit(1)
+
+        changed, dangling = rewrite_links(args.root, done_dir, dry_run=True)
+        if dangling:
+            _print_capped(
+                "⚠️  Dangling done/ reference(s) (card not found in this repo)", dangling,
+                lambda fd: f"{fd[0].relative_to(args.root)}: {fd[1]}",
+            )
+        if changed:
+            total_links = sum(len(v) for v in changed.values())
+            print(f"❌ {total_links} stale done/ reference(s) in {len(changed)} file(s) need rewriting. "
+                  f"Run: python3 .agent/scripts/delivery/task_archive.py")
+            raise SystemExit(1)
+
         print("✅ tasks/done/ is partitioned and INDEX.md is current.")
         return
 
     print("Partitioning tasks/done/ ...")
-    partition(done_dir, dry_run=False)
+    moves = partition(done_dir, dry_run=False, root=args.root)
 
     preserved = load_existing_index(index_path)
     index_path.write_text(build_index(done_dir, preserved), encoding="utf-8")
     print(f"✅ Wrote {index_path.relative_to(args.root)}")
+
+    changed, dangling = rewrite_links(args.root, done_dir, dry_run=False)
+    total_links = sum(len(v) for v in changed.values())
+    print(f"🔗 Rewrote {total_links} stale done/ reference(s) in {len(changed)} file(s).")
+    if changed:
+        pairs = [(f, old, new) for f, cs in changed.items() for old, new in cs]
+        _print_capped("  Rewritten", pairs, lambda t: f"{t[0].relative_to(args.root)}: {t[1]} -> {t[2]}")
+    if dangling:
+        _print_capped(
+            "⚠️  Dangling done/ reference(s) left as-is (card not found in this repo)", dangling,
+            lambda fd: f"{fd[0].relative_to(args.root)}: {fd[1]}",
+        )
+
+    print(f"✅ Partitioned {len(moves)} card(s).")
 
 
 if __name__ == "__main__":
