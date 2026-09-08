@@ -24,6 +24,21 @@ type CouncilProposal struct {
 	CommandData string    `json:"commandData"`
 }
 
+// VetoRecord tracks an ethics-auditor veto's block state, separately from the CouncilProposal
+// that governs lifting it — a veto takes effect immediately on creation (it is a block, not
+// something to be approved), only its *lifting* is voted on via CouncilProposal.
+type VetoRecord struct {
+	ID            string     `json:"id"`
+	PlanOrTaskRef string     `json:"planOrTaskRef"`
+	Status        string     `json:"status"` // active, lifted
+	CreatedBy     string     `json:"createdBy"`
+	LiftedBy      string     `json:"liftedBy,omitempty"`
+	Reason        string     `json:"reason,omitempty"`
+	ProposalID    string     `json:"proposalId"` // the lift-proposal's CouncilProposal.ID
+	CreatedAt     time.Time  `json:"createdAt"`
+	LiftedAt      *time.Time `json:"liftedAt,omitempty"`
+}
+
 type WorkflowInfo struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`

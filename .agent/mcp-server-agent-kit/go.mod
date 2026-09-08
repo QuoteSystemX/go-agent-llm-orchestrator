@@ -1,6 +1,6 @@
 module mcp-server-agent-kit
 
-go 1.26
+go 1.27
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.7

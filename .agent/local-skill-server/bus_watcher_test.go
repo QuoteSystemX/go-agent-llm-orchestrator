@@ -90,7 +90,7 @@ func TestRefactorSessionStateMachine(t *testing.T) {
 
 	t.Run("Step completes when all files processed", func(t *testing.T) {
 		// Continue stepping until complete
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			if err := bw.Step(); err != nil {
 				break
 			}

@@ -68,22 +68,30 @@ Agents live in two locations:
 | `.agent/agents/`  | Antigravity (Gemini) | Source of truth — edit here           |
 | `.claude/agents/` | Claude Code          | Auto-generated — do not edit directly |
 
-Skills live in `.agent/skills/` and are embedded into `.claude/agents/` by `sync_claude_agents.py`.
+Skills live in `.agent/skills/` and are embedded into `.claude/agents/` by `sync_agents.py`.
 
 ### Specialist Agents (Adopt profile when active)
 
-| Category     | Path                                  | Agents                                              |
-| ------------ | ------------------------------------- | --------------------------------------------------- |
-| **Core**     | `.agent/agents/core/`                 | orchestrator, project-planner, reviewer, maintainer |
-| **Domain**   | `.agent/agents/domain/`               | backend-specialist, frontend-specialist, mobile-developer, ai-engineer |
-| **QA**       | `.agent/agents/qa/`                   | debugger, test-engineer, performance-optimizer      |
-| **Security** | `.agent/agents/specialists/security/` | security-auditor, red-team, penetration-tester      |
+Illustrative, not exhaustive — see `.agent/ARCHITECTURE.md`'s Agents table for the full,
+generated list.
+
+| Category       | Path                                  | Agents                                              |
+| -------------- | -------------------------------------- | --------------------------------------------------- |
+| **Core**       | `.agent/agents/core/`                 | orchestrator, project-planner, reviewer, maintainer, meta-architect, arbor-coordinator |
+| **Management** | `.agent/agents/management/`           | cto, ceo, risk-manager, product-manager, and other lead/exec roles |
+| **Domain**     | `.agent/agents/domain/`               | backend-specialist, mobile-developer, ai-engineer (frontend-specialist lives under `specialists/web/`, not here) |
+| **QA**         | `.agent/agents/qa/`                   | debugger, test-engineer, performance-optimizer      |
+| **Security**   | `.agent/agents/specialists/security/` | security-auditor, red-team, penetration-tester      |
 
 ---
 
 ## 🛠️ Workflows (Slash Commands)
 
 Workflows in `.agent/workflows/` define procedures. Claude MUST read them before execution.
+27 workflows exist in that directory in total — the table below is the BMAD product lifecycle
+core, not the full list. For everything else (`/debug`, `/create`, `/test`, `/deploy`,
+`/dashboard`, `/wiki`, and more), read `.agent/workflows/` directly rather than trusting a
+hardcoded list here to stay current.
 
 | Command              | Path                   | Purpose                           |
 | -------------------- | ---------------------- | --------------------------------- |

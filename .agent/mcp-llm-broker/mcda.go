@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -21,8 +22,8 @@ func getAvailableMemory() uint64 {
 	if runtime.GOOS == "linux" {
 		data, err := os.ReadFile("/proc/meminfo")
 		if err == nil {
-			lines := strings.Split(string(data), "\n")
-			for _, line := range lines {
+			lines := strings.SplitSeq(string(data), "\n")
+			for line := range lines {
 				if strings.HasPrefix(line, "MemAvailable:") {
 					fields := strings.Fields(line)
 					if len(fields) >= 2 {
@@ -98,11 +99,8 @@ func tokenOverlap(target, candidate string) float64 {
 
 	matches := 0
 	for _, tw := range tWords {
-		for _, cw := range cWords {
-			if tw == cw {
-				matches++
-				break
-			}
+		if slices.Contains(cWords, tw) {
+			matches++
 		}
 	}
 	return float64(matches) / float64(len(tWords))
@@ -146,10 +144,7 @@ func getNormalizedLevenshtein(s, t string) float64 {
 	if len(sNorm) == 0 && len(tNorm) == 0 {
 		return 1.0
 	}
-	maxLen := len(sNorm)
-	if len(tNorm) > maxLen {
-		maxLen = len(tNorm)
-	}
+	maxLen := max(len(tNorm), len(sNorm))
 	dist := levenshteinDistance(sNorm, tNorm)
 	return 1.0 - float64(dist)/float64(maxLen)
 }
@@ -230,7 +225,7 @@ func (b *BrokerServer) performModelPull(model string, rules *RouterRules, env En
 	}
 	url := fmt.Sprintf("%s/api/pull", baseURL)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name":   model,
 		"stream": false,
 	}

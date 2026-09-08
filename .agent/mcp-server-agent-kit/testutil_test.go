@@ -12,15 +12,15 @@ import (
 )
 
 // testAdminPgURL returns the connection string used to create/drop per-test
-// databases. Override with TEST_PG_URL (CI sets this to the service
-// container); defaults to the docker-compose Postgres started by `make
-// db-up` in the main multica repo, since that's what local dev already has
-// running.
+// databases. Override with TEST_PG_URL; defaults to the same DSN both
+// docker-compose.yml's `make db-up` (this repo, local) and
+// .github/workflows/docker-build-push.yml's Postgres service (CI) already
+// use — mcpkit/mcpkit, port 5432 — so no override is needed in either place.
 func testAdminPgURL() string {
 	if v := os.Getenv("TEST_PG_URL"); v != "" {
 		return v
 	}
-	return "postgres://multica:multica@localhost:5432/multica?sslmode=disable"
+	return "postgres://mcpkit:mcpkit@localhost:5432/mcpkit?sslmode=disable"
 }
 
 // dsnWithDatabase returns dsn with its path replaced by /dbName.

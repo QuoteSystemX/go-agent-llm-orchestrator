@@ -160,7 +160,7 @@ func TestExecuteLLMCall_Streaming(t *testing.T) {
 // /api/generate call, ignoring provider_settings.ollama.n_ctx in
 // router_rules.json. Assert the configured value actually reaches Ollama.
 func TestExecuteLLMCall_Ollama_UsesConfiguredNCtx(t *testing.T) {
-	var capturedBody map[string]interface{}
+	var capturedBody map[string]any
 	ollamaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&capturedBody)
 		w.Header().Set("Content-Type", "application/json")
@@ -185,7 +185,7 @@ func TestExecuteLLMCall_Ollama_UsesConfiguredNCtx(t *testing.T) {
 		t.Fatalf("executeLLMCall failed: %v", err)
 	}
 
-	opts, ok := capturedBody["options"].(map[string]interface{})
+	opts, ok := capturedBody["options"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected options object in Ollama request body, got %v", capturedBody)
 	}
@@ -199,7 +199,7 @@ func TestExecuteLLMCall_Ollama_UsesConfiguredNCtx(t *testing.T) {
 // fallback of 8192 must still be used (GetProviderCtx's own default) — this
 // is what every Ollama call did before provider_settings existed.
 func TestExecuteLLMCall_Ollama_FallsBackTo8192WithoutConfig(t *testing.T) {
-	var capturedBody map[string]interface{}
+	var capturedBody map[string]any
 	ollamaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&capturedBody)
 		w.Header().Set("Content-Type", "application/json")
@@ -214,7 +214,7 @@ func TestExecuteLLMCall_Ollama_FallsBackTo8192WithoutConfig(t *testing.T) {
 		t.Fatalf("executeLLMCall failed: %v", err)
 	}
 
-	opts, ok := capturedBody["options"].(map[string]interface{})
+	opts, ok := capturedBody["options"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected options object in Ollama request body, got %v", capturedBody)
 	}
@@ -391,9 +391,7 @@ func TestExecuteLLMCall_LocalRetryFailover(t *testing.T) {
 	ctx := context.Background()
 
 	req := mcp.CallToolRequest{
-		Request: mcp.Request{
-			Method: "tools/call",
-		},
+		Method: "tools/call",
 		Params: mcp.CallToolParams{
 			Name: "execute_prompt",
 			Arguments: map[string]any{
@@ -498,14 +496,12 @@ func TestExecuteLLMCall_SemanticCacheHit(t *testing.T) {
 	ctx := context.Background()
 
 	req := mcp.CallToolRequest{
-		Request: mcp.Request{
-			Method: "tools/call",
-		},
+		Method: "tools/call",
 		Params: mcp.CallToolParams{
 			Name: "execute_prompt",
 			Arguments: map[string]any{
-				"prompt":          "Write a hello world program in Go",
-				"model":           "Jan-v3.5-4B-Q4_K_XL",
+				"prompt": "Write a hello world program in Go",
+				"model":  "Jan-v3.5-4B-Q4_K_XL",
 			},
 		},
 	}
@@ -987,7 +983,7 @@ func TestFormatPerfStats(t *testing.T) {
 		want    string
 	}{
 		{0, 2 * time.Second, "", "", 0, ""},
-		{100, 400 * time.Millisecond, "", "", 0, ""},  // < 0.5 s → skip
+		{100, 400 * time.Millisecond, "", "", 0, ""}, // < 0.5 s → skip
 		{200, 2 * time.Second, "", "", 0, "100 tok/s (200 tokens)"},
 		{1000, 10 * time.Second, "Qwen3-27B", "L3", 10, "100 tok/s (1000 tokens) · score=10 L3 · Qwen3-27B"},
 		{500, 5 * time.Second, "Jan-4B", "L1", 5, "100 tok/s (500 tokens) · score=5 L1 · Jan-4B"},
@@ -1169,14 +1165,14 @@ func TestStripOldRules(t *testing.T) {
 			want:  "You are a helpful assistant.\nAnswer in detail.",
 		},
 		{
-			name: "strips single section",
+			name:  "strips single section",
 			input: "You are a helpful assistant.\n## TIER 0: UNIVERSAL RULES (Always Active)\n- rule 1\n- rule 2\nAlways use rtk <cmd> instead of raw commands.\nAnswer in detail.",
-			want: "You are a helpful assistant.\nAnswer in detail.",
+			want:  "You are a helpful assistant.\nAnswer in detail.",
 		},
 		{
-			name: "strips multiple sections and attention headers",
+			name:  "strips multiple sections and attention headers",
 			input: "🔴 ATTENTION: THIS FILE IS AUTO-GENERATED\n- rule 1\n-->\nNormal instructions\n## TIER 1: CODE RULES (When Writing Code)\n- rule 2\nAlways use `rtk <cmd>` instead of raw commands.\nEnd instructions",
-			want: "Normal instructions\nEnd instructions",
+			want:  "Normal instructions\nEnd instructions",
 		},
 	}
 
@@ -1284,5 +1280,3 @@ func TestFileRuleLoaderAdapter_LoadRules(t *testing.T) {
 		t.Errorf("Expected gateway rules for L4 query, got: %s", res)
 	}
 }
-
-

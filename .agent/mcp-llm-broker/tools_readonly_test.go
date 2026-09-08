@@ -341,17 +341,17 @@ func TestGetBoolArgDefault(t *testing.T) {
 	b := &BrokerServer{}
 	tests := []struct {
 		name string
-		args interface{}
+		args any
 		def  bool
 		want bool
 	}{
-		{"absent uses default true", map[string]interface{}{}, true, true},
-		{"absent uses default false", map[string]interface{}{}, false, false},
-		{"native bool true", map[string]interface{}{"tools": true}, false, true},
-		{"native bool false", map[string]interface{}{"tools": false}, true, false},
-		{"string true", map[string]interface{}{"tools": "true"}, false, true},
-		{"string false", map[string]interface{}{"tools": "false"}, true, false},
-		{"empty string uses default", map[string]interface{}{"tools": ""}, true, true},
+		{"absent uses default true", map[string]any{}, true, true},
+		{"absent uses default false", map[string]any{}, false, false},
+		{"native bool true", map[string]any{"tools": true}, false, true},
+		{"native bool false", map[string]any{"tools": false}, true, false},
+		{"string true", map[string]any{"tools": "true"}, false, true},
+		{"string false", map[string]any{"tools": "false"}, true, false},
+		{"empty string uses default", map[string]any{"tools": ""}, true, true},
 		{"non-map args uses default", "not-a-map", true, true},
 	}
 	for _, tc := range tests {
@@ -374,14 +374,14 @@ func TestExtractToolUsage(t *testing.T) {
 	})
 
 	t.Run("stats without tool_calls key", func(t *testing.T) {
-		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]interface{}{"other": 1}})
+		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]any{"other": 1}})
 		if used || calls != nil {
 			t.Errorf("got used=%v calls=%v, want false/nil", used, calls)
 		}
 	})
 
 	t.Run("empty tool_calls log", func(t *testing.T) {
-		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]interface{}{"tool_calls": []ollamaToolCallRecord{}}})
+		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]any{"tool_calls": []ollamaToolCallRecord{}}})
 		if used || calls != nil {
 			t.Errorf("empty log must report used_tools=false, got used=%v calls=%v", used, calls)
 		}
@@ -389,7 +389,7 @@ func TestExtractToolUsage(t *testing.T) {
 
 	t.Run("non-empty tool_calls log", func(t *testing.T) {
 		rec := []ollamaToolCallRecord{{Tool: "read_file", Result: "ok"}}
-		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]interface{}{"tool_calls": rec}})
+		used, calls := extractToolUsage(&ExecutionResult{Stats: map[string]any{"tool_calls": rec}})
 		if !used || len(calls) != 1 {
 			t.Errorf("got used=%v calls=%v, want true/[1 item]", used, calls)
 		}
@@ -481,7 +481,7 @@ func TestExecuteOllamaToolLoop_NoToolCallReturnsDirectly(t *testing.T) {
 // told plainly and forced toward a final answer rather than looping forever.
 func TestExecuteOllamaToolLoop_BudgetExhaustionStopsToolExecution(t *testing.T) {
 	root := t.TempDir()
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		name := "f" + string(rune('a'+i)) + ".txt"
 		if err := os.WriteFile(filepath.Join(root, name), []byte("x"), 0o644); err != nil {
 			t.Fatal(err)
@@ -591,7 +591,7 @@ func TestHandleCallAgent_EndToEnd_UsesToolsAndSurfacesUsage(t *testing.T) {
 	}
 
 	req := mcp.CallToolRequest{
-		Request: mcp.Request{Method: "tools/call"},
+		Method: "tools/call",
 		Params: mcp.CallToolParams{
 			Name: "call_agent",
 			Arguments: map[string]any{
@@ -699,7 +699,7 @@ func TestHandleCallAgent_ToolsDisabled_UsesBufferedPathUnaffected(t *testing.T) 
 	}
 
 	req := mcp.CallToolRequest{
-		Request: mcp.Request{Method: "tools/call"},
+		Method: "tools/call",
 		Params: mcp.CallToolParams{
 			Name: "call_agent",
 			Arguments: map[string]any{

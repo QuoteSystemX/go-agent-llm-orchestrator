@@ -46,11 +46,9 @@ func (d *Dispatcher) Start() {
 		go d.worker(i)
 	}
 	// Recovery: Resume pending jobs from DB
-	d.recoverWg.Add(1)
-	go func() {
-		defer d.recoverWg.Done()
+	d.recoverWg.Go(func() {
 		d.recoverJobs()
-	}()
+	})
 }
 
 func (d *Dispatcher) Stop() {

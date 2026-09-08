@@ -73,8 +73,8 @@ func (h *handler) listAgents(_ context.Context, _ mcp.CallToolRequest) (*mcp.Cal
 		if err != nil || d.IsDir() || strings.HasPrefix(d.Name(), ".") {
 			return nil
 		}
-		if strings.HasSuffix(d.Name(), ".md") {
-			id := strings.TrimSuffix(d.Name(), ".md")
+		if before, ok := strings.CutSuffix(d.Name(), ".md"); ok {
+			id := before
 			content, _ := os.ReadFile(path)
 			meta := parseFrontmatter(string(content))
 

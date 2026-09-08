@@ -44,7 +44,7 @@ func TestHandlers(t *testing.T) {
 		got := map[string]bool{}
 		for _, c := range res.Content {
 			if tc, ok := c.(mcp.TextContent); ok {
-				for _, line := range strings.Split(tc.Text, "\n") {
+				for line := range strings.SplitSeq(tc.Text, "\n") {
 					line = strings.TrimSpace(line)
 					if line != "" {
 						got[line] = true

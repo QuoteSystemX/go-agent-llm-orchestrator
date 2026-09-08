@@ -36,7 +36,7 @@ A lightweight Model Context Protocol (MCP) server designed to bridge the gap bet
 ## 📦 Installation
 
 ### Prerequisites
-- Go 1.26+
+- Go 1.27+
 - Node.js 20+ (for TypeScript support)
 - `make` (optional, for building)
 

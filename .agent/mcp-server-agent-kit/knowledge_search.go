@@ -118,9 +118,9 @@ func resolveGlobalLessonsPath() string {
 		}
 		return filepath.Join(home, ".agent_knowledge", "lessons_learned.md")
 	}
-	if strings.HasPrefix(root, "~") {
+	if after, ok := strings.CutPrefix(root, "~"); ok {
 		if home, err := os.UserHomeDir(); err == nil {
-			root = filepath.Join(home, strings.TrimPrefix(root, "~"))
+			root = filepath.Join(home, after)
 		}
 	}
 	return filepath.Join(root, "lessons_learned.md")

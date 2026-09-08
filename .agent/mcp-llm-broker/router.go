@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -16,12 +17,12 @@ type RouterRules struct {
 	ModelRankings    map[string]json.RawMessage       `json:"model_rankings"`
 	HybridRouting    HybridRoutingConfig              `json:"hybrid_routing"`
 	Concurrency      map[string]int                   `json:"concurrency,omitempty"`
-	SemanticCache    SemanticCacheConfig              `json:"semantic_cache,omitempty"`
+	SemanticCache    SemanticCacheConfig              `json:"semantic_cache"`
 	ProviderSettings map[string]ProviderContextConfig `json:"provider_settings,omitempty"`
 	AgentTiers       map[string]string                `json:"agent_tiers,omitempty"`
 	DomainTiers      map[string]string                `json:"domain_tiers,omitempty"`
 	CircuitBreaker   *CircuitBreakerConfig            `json:"circuit_breaker,omitempty"`
-	Timeouts         TimeoutsConfig                   `json:"timeouts,omitempty"`
+	Timeouts         TimeoutsConfig                   `json:"timeouts"`
 	// LlamaCppBaseURL is the base URL of a standalone llama-server instance.
 	// Unlike Ollama/Jan/LM Studio, its port is not a fixed default — a standalone
 	// llama-server is commonly started on a random/user-chosen port — so it must be
@@ -38,7 +39,7 @@ type RouterRules struct {
 	// tool-enabled local-only sub-agent dispatches (see withToolsEnabled in
 	// executor.go). Zero-value fields fall back to the ToolLoopDefault*
 	// constants in constants.go.
-	SubAgentTools SubAgentToolsConfig `json:"sub_agent_tools,omitempty"`
+	SubAgentTools SubAgentToolsConfig `json:"sub_agent_tools"`
 }
 
 // SubAgentToolsConfig holds the per-dispatch budget for the read_file/grep
@@ -148,7 +149,7 @@ type BudgetConfig struct {
 	Penalty        int     `json:"penalty"`
 }
 
-type ModelTiers map[string]interface{}
+type ModelTiers map[string]any
 
 type ModelRank struct {
 	Tier         string          `json:"tier"`
@@ -228,13 +229,7 @@ func (b *BrokerServer) makeRoutingDecision(taskDesc string, pulledModels map[str
 	var warning string
 	var pullHints []string
 
-	isCloudOnly := false
-	for _, t := range cloudOnlyTiers {
-		if t == tier {
-			isCloudOnly = true
-			break
-		}
-	}
+	isCloudOnly := slices.Contains(cloudOnlyTiers, tier)
 
 	if isCloudOnly {
 		targetProvider = cloudProvider
@@ -416,14 +411,8 @@ func (b *BrokerServer) getFailureScore(taskDesc string, rules *RouterRules) int 
 	failureCount := 0
 	for _, w := range words {
 		if idx := strings.Index(content, w); idx != -1 {
-			start := idx - 100
-			if start < 0 {
-				start = 0
-			}
-			end := idx + 200
-			if end > len(content) {
-				end = len(content)
-			}
+			start := max(idx-100, 0)
+			end := min(idx+200, len(content))
 			snippet := content[start:end]
 
 			for _, fk := range failureKeywords {
@@ -454,8 +443,8 @@ func (b *BrokerServer) getBudgetPenalty(rules *RouterRules) int {
 		return 0
 	}
 
-	var telemetry map[string]interface{}
-	var watchdog map[string]interface{}
+	var telemetry map[string]any
+	var watchdog map[string]any
 
 	_ = json.Unmarshal(telemetryData, &telemetry)
 	_ = json.Unmarshal(watchdogData, &watchdog)
@@ -463,7 +452,7 @@ func (b *BrokerServer) getBudgetPenalty(rules *RouterRules) int {
 	cost, _ := telemetry["total_cost_usd"].(float64)
 
 	var limit float64 = 2.0
-	if limits, ok := watchdog["limits"].(map[string]interface{}); ok {
+	if limits, ok := watchdog["limits"].(map[string]any); ok {
 		if l, ok := limits["cost_limit_per_task_usd"].(float64); ok {
 			limit = l
 		}
@@ -546,11 +535,8 @@ func (b *BrokerServer) modelNameMatches(configModel, actualModel string) bool {
 	if len(cSizes) > 0 && len(aSizes) > 0 {
 		matched := false
 		for _, cs := range cSizes {
-			for _, as := range aSizes {
-				if cs == as {
-					matched = true
-					break
-				}
+			if slices.Contains(aSizes, cs) {
+				matched = true
 			}
 			if matched {
 				break
@@ -773,11 +759,11 @@ func (b *BrokerServer) pickBestCloud(tier string, rules *RouterRules) string {
 	return "gemini-3-flash" // Safe fallback
 }
 
-func (b *BrokerServer) getStringOrFirst(val interface{}) string {
+func (b *BrokerServer) getStringOrFirst(val any) string {
 	if str, ok := val.(string); ok {
 		return str
 	}
-	if slice, ok := val.([]interface{}); ok && len(slice) > 0 {
+	if slice, ok := val.([]any); ok && len(slice) > 0 {
 		if str, ok := slice[0].(string); ok {
 			return str
 		}
@@ -785,8 +771,8 @@ func (b *BrokerServer) getStringOrFirst(val interface{}) string {
 	return ""
 }
 
-func (b *BrokerServer) getStringSlice(val interface{}) []string {
-	if slice, ok := val.([]interface{}); ok {
+func (b *BrokerServer) getStringSlice(val any) []string {
+	if slice, ok := val.([]any); ok {
 		var res []string
 		for _, item := range slice {
 			if str, ok := item.(string); ok {

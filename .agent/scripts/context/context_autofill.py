@@ -12,7 +12,15 @@ import sys
 from datetime import datetime, timezone
 import logging
 from pathlib import Path
-from lib.suppress import suppress
+
+# Antigravity Domain-Aware Import Logic
+try:
+    from lib.suppress import suppress
+except ImportError:
+    SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.append(str(SCRIPTS_DIR))
+    from lib.suppress import suppress
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BUS_DIR = REPO_ROOT / ".agent" / "bus"

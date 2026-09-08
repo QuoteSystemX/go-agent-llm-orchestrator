@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -25,11 +25,11 @@ type LSPManager struct {
 
 type lspClient struct {
 	process *os.Process
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	stdout *bufio.Reader
-	mu     sync.Mutex
-	id     int
+	cmd     *exec.Cmd
+	stdin   io.WriteCloser
+	stdout  *bufio.Reader
+	mu      sync.Mutex
+	id      int
 }
 
 func NewLSPManager(root string) *LSPManager {
@@ -39,11 +39,11 @@ func NewLSPManager(root string) *LSPManager {
 	}
 }
 
-func (m *LSPManager) log(format string, v ...interface{}) {
+func (m *LSPManager) log(format string, v ...any) {
 	f, err := os.OpenFile("lsp_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err == nil {
 		defer f.Close()
-		fmt.Fprintf(f, "[%s] "+format+"\n", append([]interface{}{time.Now().Format(time.RFC3339)}, v...)...)
+		fmt.Fprintf(f, "[%s] "+format+"\n", append([]any{time.Now().Format(time.RFC3339)}, v...)...)
 	}
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
@@ -121,21 +121,21 @@ func (m *LSPManager) getClient(lang string) (*lspClient, error) {
 }
 
 func (c *lspClient) initialize(root string) error {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"processId": os.Getpid(),
 		"rootUri":   "file://" + root,
-		"workspaceFolders": []map[string]interface{}{
+		"workspaceFolders": []map[string]any{
 			{
 				"uri":  "file://" + root,
 				"name": filepath.Base(root),
 			},
 		},
-		"capabilities": map[string]interface{}{
-			"textDocument": map[string]interface{}{
-				"definition": map[string]interface{}{"dynamicRegistration": true},
-				"hover":      map[string]interface{}{"dynamicRegistration": true},
+		"capabilities": map[string]any{
+			"textDocument": map[string]any{
+				"definition": map[string]any{"dynamicRegistration": true},
+				"hover":      map[string]any{"dynamicRegistration": true},
 			},
-			"workspace": map[string]interface{}{
+			"workspace": map[string]any{
 				"configuration": true,
 			},
 		},
@@ -146,14 +146,14 @@ func (c *lspClient) initialize(root string) error {
 	}
 
 	// Send initialized notification (no ID, no response expected)
-	return c.notify("initialized", map[string]interface{}{})
+	return c.notify("initialized", map[string]any{})
 }
 
-func (c *lspClient) notify(method string, params interface{}) error {
+func (c *lspClient) notify(method string, params any) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	req := map[string]interface{}{
+	req := map[string]any{
 		"jsonrpc": "2.0",
 		"method":  method,
 		"params":  params,
@@ -171,12 +171,12 @@ func (c *lspClient) notify(method string, params interface{}) error {
 	return err
 }
 
-func (c *lspClient) call(method string, params interface{}) (json.RawMessage, error) {
+func (c *lspClient) call(method string, params any) (json.RawMessage, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.id++
-	req := map[string]interface{}{
+	req := map[string]any{
 		"jsonrpc": "2.0",
 		"id":      c.id,
 		"method":  method,
@@ -237,7 +237,7 @@ func (c *lspClient) call(method string, params interface{}) (json.RawMessage, er
 		var resp struct {
 			ID     *int            `json:"id"`
 			Result json.RawMessage `json:"result"`
-			Error  interface{}     `json:"error"`
+			Error  any             `json:"error"`
 		}
 		if err := json.Unmarshal(body, &resp); err != nil {
 			continue
@@ -258,7 +258,7 @@ func (c *lspClient) call(method string, params interface{}) (json.RawMessage, er
 // --- MCP Handlers ---
 
 func (h *handler) semanticDefinition(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args, _ := req.Params.Arguments.(map[string]interface{})
+	args, _ := req.Params.Arguments.(map[string]any)
 	file, _ := args["file"].(string)
 	lineVal, _ := args["line"].(float64)
 	charVal, _ := args["char"].(float64)
@@ -277,11 +277,11 @@ func (h *handler) semanticDefinition(_ context.Context, req mcp.CallToolRequest)
 		return mcp.NewToolResultError("LSP client error: " + err.Error()), nil
 	}
 
-	params := map[string]interface{}{
-		"textDocument": map[string]interface{}{
+	params := map[string]any{
+		"textDocument": map[string]any{
 			"uri": "file://" + filepath.Join(h.projectRoot, file),
 		},
-		"position": map[string]interface{}{
+		"position": map[string]any{
 			"line":      int(lineVal),
 			"character": int(charVal),
 		},
@@ -296,7 +296,7 @@ func (h *handler) semanticDefinition(_ context.Context, req mcp.CallToolRequest)
 }
 
 func (h *handler) semanticHover(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args, _ := req.Params.Arguments.(map[string]interface{})
+	args, _ := req.Params.Arguments.(map[string]any)
 	file, _ := args["file"].(string)
 	lineVal, _ := args["line"].(float64)
 	charVal, _ := args["char"].(float64)
@@ -315,11 +315,11 @@ func (h *handler) semanticHover(_ context.Context, req mcp.CallToolRequest) (*mc
 		return mcp.NewToolResultError("LSP client error: " + err.Error()), nil
 	}
 
-	params := map[string]interface{}{
-		"textDocument": map[string]interface{}{
+	params := map[string]any{
+		"textDocument": map[string]any{
 			"uri": "file://" + filepath.Join(h.projectRoot, file),
 		},
-		"position": map[string]interface{}{
+		"position": map[string]any{
 			"line":      int(lineVal),
 			"character": int(charVal),
 		},

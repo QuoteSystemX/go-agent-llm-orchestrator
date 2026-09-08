@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"os/signal"
 	"syscall"
 
 	"github.com/fsnotify/fsnotify"
@@ -28,7 +28,10 @@ type handler struct {
 func main() {
 	// Emergency boot log
 	f, _ := os.OpenFile("server_boot.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if f != nil { defer f.Close(); fmt.Fprintf(f, "BOOT: Process started PID=%d\n", os.Getpid()) }
+	if f != nil {
+		defer f.Close()
+		fmt.Fprintf(f, "BOOT: Process started PID=%d\n", os.Getpid())
+	}
 	root := resolveProjectRoot()
 	fmt.Fprintf(os.Stderr, "DEBUG: Initializing handler with root %s\n", root)
 	// Initialize bus watcher for refactoring state machine
@@ -227,14 +230,14 @@ func (h *handler) submitTask(_ context.Context, req mcp.CallToolRequest) (*mcp.C
 	agent = sanitizeString(agent)
 
 	// Generate task file in tasks/
-	filename := fmt.Sprintf("TASK-%d-%s.md", os.Getpid(), agent) // nosec
+	filename := fmt.Sprintf("TASK-%d-%s.md", os.Getpid(), agent)                 // nosec
 	content := fmt.Sprintf("# %s\n\nAgent: %s\n\n%s", title, agent, description) // nosec
-	
+
 	path := filepath.Join(h.projectRoot, "tasks", filename)
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		return mcp.NewToolResultError("failed to write task: " + err.Error()), nil
 	}
-	
+
 	return mcp.NewToolResultText("Task submitted: " + filename), nil
 }
 
@@ -329,7 +332,7 @@ func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult,
 		// Skills: list top-level directories only, skipping non-skill containers
 		entries, err := os.ReadDir(path)
 		if err != nil {
-			return mcp.NewToolResultError("cannot read directory: "+err.Error()), nil
+			return mcp.NewToolResultError("cannot read directory: " + err.Error()), nil
 		}
 		for _, e := range entries {
 			if e.IsDir() && !strings.HasPrefix(e.Name(), ".") && !nonSkillDirs[e.Name()] {
@@ -342,8 +345,8 @@ func (h *handler) listItemsHelper(path string, isDir bool) (*mcp.CallToolResult,
 			if err != nil || d.IsDir() || strings.HasPrefix(d.Name(), ".") {
 				return nil
 			}
-			if strings.HasSuffix(d.Name(), ".md") {
-				names = append(names, strings.TrimSuffix(d.Name(), ".md"))
+			if before, ok := strings.CutSuffix(d.Name(), ".md"); ok {
+				names = append(names, before)
 			}
 			return nil
 		})
@@ -378,7 +381,7 @@ func (h *handler) readKnowledge(_ context.Context, req mcp.CallToolRequest) (*mc
 
 func (h *handler) tailLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	lines := 20
-	if args, ok := req.Params.Arguments.(map[string]interface{}); ok {
+	if args, ok := req.Params.Arguments.(map[string]any); ok {
 		if l, ok := args["lines"].(float64); ok {
 			lines = int(l)
 		}
@@ -418,14 +421,14 @@ func (h *handler) refactorInit(_ context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError("bus watcher not initialized"), nil
 	}
 
-	filesIface, ok := req.Params.Arguments.(map[string]interface{})["files"]
+	filesIface, ok := req.Params.Arguments.(map[string]any)["files"]
 	if !ok {
 		return mcp.NewToolResultError("files parameter is required"), nil
 	}
 
 	var files []string
 	switch v := filesIface.(type) {
-	case []interface{}:
+	case []any:
 		for _, f := range v {
 			if s, ok := f.(string); ok {
 				files = append(files, sanitizeString(s))

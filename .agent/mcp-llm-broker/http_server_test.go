@@ -24,10 +24,10 @@ func setupTestServer(t *testing.T) *BrokerServer {
 
 func TestExtractPromptFromMessages(t *testing.T) {
 	tests := []struct {
-		name           string
-		messages       []ChatMessage
-		wantPrompt     string
-		wantSystem     string
+		name       string
+		messages   []ChatMessage
+		wantPrompt string
+		wantSystem string
 	}{
 		{
 			name: "user only",
@@ -111,7 +111,7 @@ func TestHealthz(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var resp map[string]interface{}
+	var resp map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestHealthz(t *testing.T) {
 		t.Errorf("expected status 'ok', got %q", resp["status"])
 	}
 
-	backends, ok := resp["backends"].(map[string]interface{})
+	backends, ok := resp["backends"].(map[string]any)
 	if !ok {
 		t.Fatal("backends not present")
 	}
@@ -144,7 +144,7 @@ func TestHealthzDegraded(t *testing.T) {
 	handler := corsMiddleware(http.HandlerFunc(srv.handleHealthz))
 	handler.ServeHTTP(w, req)
 
-	var resp map[string]interface{}
+	var resp map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
@@ -333,7 +333,7 @@ func TestHealthzViaHTTPServer(t *testing.T) {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
 
-	var body map[string]interface{}
+	var body map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("failed to decode: %v", err)
 	}
@@ -585,7 +585,7 @@ func TestConvertToolsToAnthropic_Basic(t *testing.T) {
 		t.Fatal("input_schema missing")
 	}
 	// Schema must be non-nil and usable
-	schemaMap, ok := schema.(interface{})
+	schemaMap, ok := schema.(any)
 	if !ok || schemaMap == nil {
 		t.Error("input_schema must be non-nil")
 	}
@@ -642,8 +642,8 @@ func TestBuildAnthropicMessages_AssistantToolUse(t *testing.T) {
 			Role: "assistant",
 			ToolCalls: []ToolCall{
 				{
-					ID:   "tc_1",
-					Type: "function",
+					ID:       "tc_1",
+					Type:     "function",
 					Function: ToolCallFunction{Name: "list_dir", Arguments: `{"path":"."}`},
 				},
 			},

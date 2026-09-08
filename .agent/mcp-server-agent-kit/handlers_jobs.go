@@ -115,7 +115,7 @@ func (h *handler) parseWorkflowInfo(id, path string) WorkflowInfo {
 	info := WorkflowInfo{
 		ID:          id,
 		Name:        strings.Title(strings.ReplaceAll(id, "-", " ")), // fallback
-		Description: "No description provided.",                     // fallback
+		Description: "No description provided.",                      // fallback
 		Phase:       "utility",                                       // fallback
 		Args:        ".",                                             // fallback
 	}
@@ -132,8 +132,8 @@ func (h *handler) parseWorkflowInfo(id, path string) WorkflowInfo {
 		return info
 	}
 
-	lines := strings.Split(match[1], "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(match[1], "\n")
+	for line := range lines {
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) < 2 {
 			continue
@@ -192,7 +192,7 @@ func (h *handler) submitTask(_ context.Context, req mcp.CallToolRequest) (*mcp.C
 	agent = sanitizeString(agent)
 
 	filename := fmt.Sprintf("%s-%s-%d.md", time.Now().Format("2006-01-02"), agent, time.Now().UnixNano()%1e9) // nosec
-	content := fmt.Sprintf("# %s\n\nAgent: %s\n\n%s\n", title, agent, description) // nosec
+	content := fmt.Sprintf("# %s\n\nAgent: %s\n\n%s\n", title, agent, description)                            // nosec
 
 	tasksDir := filepath.Join(h.projectRoot, "tasks")
 	if err := os.MkdirAll(tasksDir, 0o755); err != nil {

@@ -26,6 +26,7 @@ Activate on **any** of the following:
 | Deployment blocked | `release-manager` needs sign-off | Risk Assessment Report |
 | Explicit call | `risk-manager: review`, `/risk-audit` | Full audit of named component |
 | Incident post-mortem | `[INCIDENT]` task created | Failure Modes Analysis |
+| Ethics veto lift pending | An open `council_list` proposal with `CommandType: lift_ethics_veto` | Review the veto's `reason` and `council_vote` — you're one of the 3-vote quorum (with `cto`, `security-auditor`); ethics-auditor cannot vote on its own veto's lift |
 
 ---
 

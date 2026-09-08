@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -53,7 +54,7 @@ type ChatCompletionRequest struct {
 	Stream         bool                    `json:"stream,omitempty"`
 	Temperature    *float64                `json:"temperature,omitempty"`
 	Tools          []Tool                  `json:"tools,omitempty"`
-	ToolChoice     interface{}             `json:"tool_choice,omitempty"`
+	ToolChoice     any                     `json:"tool_choice,omitempty"`
 	ResponseFormat *ResponseFormatSettings `json:"response_format,omitempty"`
 }
 
@@ -109,19 +110,19 @@ func (m *ChatMessage) UnmarshalJSON(data []byte) error {
 }
 
 type ChatCompletionResponse struct {
-	ID      string              `json:"id"`
-	Object  string              `json:"object"`
-	Created int64               `json:"created"`
-	Model   string              `json:"model"`
-	Choices []ResponseChoice    `json:"choices"`
-	Usage   *ResponseUsage      `json:"usage,omitempty"`
-	Error   *ResponseError      `json:"error,omitempty"`
+	ID      string           `json:"id"`
+	Object  string           `json:"object"`
+	Created int64            `json:"created"`
+	Model   string           `json:"model"`
+	Choices []ResponseChoice `json:"choices"`
+	Usage   *ResponseUsage   `json:"usage,omitempty"`
+	Error   *ResponseError   `json:"error,omitempty"`
 }
 
 type ResponseChoice struct {
-	Index        int              `json:"index"`
-	Message      ResponseMessage  `json:"message"`
-	FinishReason string           `json:"finish_reason"`
+	Index        int             `json:"index"`
+	Message      ResponseMessage `json:"message"`
+	FinishReason string          `json:"finish_reason"`
 }
 
 type ResponseMessage struct {
@@ -151,9 +152,9 @@ type ChatCompletionChunk struct {
 }
 
 type ChunkChoice struct {
-	Index int          `json:"index"`
-	Delta MessageDelta `json:"delta"`
-	FinishReason *string `json:"finish_reason,omitempty"`
+	Index        int          `json:"index"`
+	Delta        MessageDelta `json:"delta"`
+	FinishReason *string      `json:"finish_reason,omitempty"`
 }
 
 type MessageDelta struct {
@@ -164,9 +165,9 @@ type MessageDelta struct {
 
 // ModelObject for GET /v1/models
 type ModelObject struct {
-	ID       string `json:"id"`
-	Object   string `json:"object"`
-	OwnedBy  string `json:"owned_by"`
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	OwnedBy string `json:"owned_by"`
 }
 
 type ListModelsResponse struct {
@@ -187,9 +188,9 @@ func extractPromptFromMessages(messages []ChatMessage) (prompt, systemPrompt str
 		}
 	}
 	// Last user message is the prompt
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].Role == "user" {
-			prompt = messages[i].Content
+	for _, message := range slices.Backward(messages) {
+		if message.Role == "user" {
+			prompt = message.Content
 			break
 		}
 	}
@@ -611,8 +612,8 @@ func (f *thinkFilter) flush() {
 // anthropicTurn is an intermediate representation before building the final messages array.
 type anthropicTurn struct {
 	role    string
-	text    string   // set for plain text messages
-	content []any    // set for structured content (tool_use, tool_result)
+	text    string // set for plain text messages
+	content []any  // set for structured content (tool_use, tool_result)
 }
 
 func (t anthropicTurn) charLen() int { return len(t.text) }
@@ -687,8 +688,8 @@ func buildAnthropicMessages(messages []ChatMessage, maxChars int) []map[string]a
 	if maxChars > 0 {
 		total := 0
 		keep := len(turns)
-		for i := len(turns) - 1; i >= 0; i-- {
-			total += turns[i].charLen()
+		for i, turn := range slices.Backward(turns) {
+			total += turn.charLen()
 			if total > maxChars {
 				keep = i + 1
 				break
@@ -881,8 +882,8 @@ func (b *BrokerServer) tryStreamDirect(
 	var lastEvent string
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "event: ") {
-			lastEvent = strings.TrimPrefix(line, "event: ")
+		if after, ok := strings.CutPrefix(line, "event: "); ok {
+			lastEvent = after
 			if lastEvent == "message_stop" {
 				break
 			}
@@ -1137,7 +1138,7 @@ func (b *BrokerServer) fetchModelsWithWSLFallback(ctx context.Context, localURL,
 // handleListModels implements GET /v1/models.
 func (b *BrokerServer) handleListModels(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{"error": "method not allowed, use GET"})
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method not allowed, use GET"})
 		return
 	}
 
@@ -1185,7 +1186,7 @@ func (b *BrokerServer) handleListModels(w http.ResponseWriter, r *http.Request) 
 // handleHealthz implements GET /healthz.
 func (b *BrokerServer) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{"error": "method not allowed, use GET"})
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method not allowed, use GET"})
 		return
 	}
 
@@ -1231,14 +1232,14 @@ func (b *BrokerServer) handleHealthz(w http.ResponseWriter, r *http.Request) {
 		status = "degraded"
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"status":       status,
-		"version":      serverVersion,
-		"backends": map[string]interface{}{
-			"ollama":         ollamaOK,
-			"ollama_circuit": ollamaCircuit,
-			"jan":            janOK,
-			"jan_circuit":    janCircuit,
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":  status,
+		"version": serverVersion,
+		"backends": map[string]any{
+			"ollama":            ollamaOK,
+			"ollama_circuit":    ollamaCircuit,
+			"jan":               janOK,
+			"jan_circuit":       janCircuit,
 			"lm-studio":         lmsOK,
 			"lm-studio_circuit": lmsCircuit,
 		},
@@ -1287,7 +1288,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 // JSON writer helper
 // ---------------------------------------------------------------------------
 
-func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)

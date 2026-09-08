@@ -69,7 +69,7 @@ func TestPickBestLocalWithEMA(t *testing.T) {
 		Models: map[string]ModelTiers{
 			"ollama": {
 				"L2":     "model-a",
-				"L2_alt": []interface{}{"model-b", "model-c", "model-d"},
+				"L2_alt": []any{"model-b", "model-c", "model-d"},
 			},
 		},
 		ModelRankings: map[string]json.RawMessage{
@@ -119,7 +119,7 @@ func TestPickBestLocalExcludesHighLatency(t *testing.T) {
 		Models: map[string]ModelTiers{
 			"ollama": {
 				"L2":     "model-a", // on ollama, 50000ms/tok → excluded
-				"L2_alt": []interface{}{"model-b"},
+				"L2_alt": []any{"model-b"},
 			},
 		},
 		ModelRankings: map[string]json.RawMessage{
@@ -145,8 +145,8 @@ func TestPickBestLocalExcludesHighLatency(t *testing.T) {
 	}
 
 	pulledModels := map[string]string{
-		"model-a": "ollama",  // EMA=50000 → excluded by threshold
-		"model-b": "ollama",  // same provider, but different model — both get same EMA
+		"model-a": "ollama", // EMA=50000 → excluded by threshold
+		"model-b": "ollama", // same provider, but different model — both get same EMA
 	}
 
 	// Both models are on ollama with EMA=50000 > threshold, so both excluded
@@ -187,7 +187,7 @@ func TestExecuteLLMCallWithJSONSchemaOllama(t *testing.T) {
 	// Mock Ollama server that checks for format field
 	ollamaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		var payload map[string]interface{}
+		var payload map[string]any
 		json.Unmarshal(body, &payload)
 
 		_, hasFormat := payload["format"]
@@ -202,8 +202,8 @@ func TestExecuteLLMCallWithJSONSchemaOllama(t *testing.T) {
 	defer ollamaServer.Close()
 
 	srv := &BrokerServer{
-		isCLI:        false,
-		healthCache:  make(map[string]BackendHealth),
+		isCLI:       false,
+		healthCache: make(map[string]BackendHealth),
 	}
 	srv.workspaceRoot = "../.."
 
@@ -223,14 +223,14 @@ func TestExecuteLLMCallWithJSONSchemaOpenAI(t *testing.T) {
 	// Note: Jan uses the Anthropic /messages API which doesn't use response_format.
 	openaiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		var payload map[string]interface{}
+		var payload map[string]any
 		json.Unmarshal(body, &payload)
 
 		rf, hasResponseFormat := payload["response_format"]
 		if !hasResponseFormat {
 			t.Error("Expected 'response_format' field in OpenAI payload when json_schema provided")
 		}
-		if rfMap, ok := rf.(map[string]interface{}); ok {
+		if rfMap, ok := rf.(map[string]any); ok {
 			if rfMap["type"] != "json_schema" {
 				t.Errorf("Expected response_format type 'json_schema', got %v", rfMap["type"])
 			}
@@ -266,7 +266,7 @@ func TestExecutePromptWithInvalidJSONSchema(t *testing.T) {
 	req := mcp.CallToolRequest{
 		Params: mcp.CallToolParams{
 			Name: "execute_prompt",
-			Arguments: map[string]interface{}{
+			Arguments: map[string]any{
 				"prompt":      "test",
 				"json_schema": "not valid json",
 			},
@@ -389,8 +389,8 @@ func TestUpdateTelemetryAfterCall(t *testing.T) {
 	var telemetry struct {
 		TotalCostUSD float64 `json:"total_cost_usd"`
 		Calls        []struct {
-			Provider string `json:"provider"`
-			Model    string `json:"model"`
+			Provider string  `json:"provider"`
+			Model    string  `json:"model"`
 			CostUSD  float64 `json:"cost_usd"`
 		} `json:"calls"`
 	}

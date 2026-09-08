@@ -1,5 +1,5 @@
 # Docker Sandbox environment for running agent tests and lints
-FROM golang:1.26-bookworm
+FROM golang:1.27-bookworm
 
 # Install Python 3, pip, and clean up cache
 RUN apt-get update && apt-get install -y \

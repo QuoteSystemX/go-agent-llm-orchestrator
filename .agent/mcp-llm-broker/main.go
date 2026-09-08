@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"os/exec"
@@ -330,20 +331,18 @@ func findPIDByPort(port int) int {
 }
 
 func (b *BrokerServer) runCLIMode(ctx context.Context, tool string, argsJSON string) {
-	var args map[string]interface{}
+	var args map[string]any
 	if argsJSON != "" {
 		if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error parsing JSON args: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
-		args = make(map[string]interface{})
+		args = make(map[string]any)
 	}
 
 	req := mcp.CallToolRequest{
-		Request: mcp.Request{
-			Method: "tools/call",
-		},
+		Method: "tools/call",
 		Params: mcp.CallToolParams{
 			Name:      tool,
 			Arguments: args,
@@ -653,9 +652,7 @@ func (b *BrokerServer) handleDetectBackends(ctx context.Context, _ mcp.CallToolR
 	b.pullingStatesMu.RLock()
 	if len(b.pullingStates) > 0 {
 		result.Downloads = make(map[string]string)
-		for k, v := range b.pullingStates {
-			result.Downloads[k] = v
-		}
+		maps.Copy(result.Downloads, b.pullingStates)
 	}
 	b.pullingStatesMu.RUnlock()
 
@@ -730,8 +727,8 @@ func (b *BrokerServer) getWSLGateway() string {
 
 	// Priority 2: resolvectl / systemd-resolved
 	if data, err := os.ReadFile("/etc/resolv.conf"); err == nil {
-		lines := strings.Split(string(data), "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(string(data), "\n")
+		for line := range lines {
 			if strings.HasPrefix(line, "nameserver") {
 				parts := strings.Fields(line)
 				if len(parts) >= 2 {
@@ -755,7 +752,7 @@ func hexToByte(h string) byte {
 		return 0
 	}
 	val := 0
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		c := h[i]
 		switch {
 		case c >= '0' && c <= '9':

@@ -432,10 +432,7 @@ func grepTool(ctx context.Context, workspaceRoot string, budget *toolBudget, pat
 }
 
 func looksBinary(data []byte) bool {
-	n := len(data)
-	if n > 512 {
-		n = 512
-	}
+	n := min(len(data), 512)
 	return bytes.IndexByte(data[:n], 0) != -1
 }
 

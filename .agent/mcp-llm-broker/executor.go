@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"net/http"
 	"os"
@@ -21,10 +22,10 @@ import (
 )
 
 type ExecutionResult struct {
-	Response string                 `json:"response"`
-	Source   string                 `json:"source"`
-	Model    string                 `json:"model"`
-	Stats    map[string]interface{} `json:"stats,omitempty"`
+	Response string         `json:"response"`
+	Source   string         `json:"source"`
+	Model    string         `json:"model"`
+	Stats    map[string]any `json:"stats,omitempty"`
 }
 
 // localOnlyCtxKey marks a request that must NEVER fall back to the cloud provider.
@@ -252,7 +253,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 			Response: cachedResponse,
 			Source:   "cache",
 			Model:    decision.ModelID,
-			Stats: map[string]interface{}{
+			Stats: map[string]any{
 				"cached": true,
 			},
 		}, nil
@@ -290,7 +291,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 						Response: bestMatch.Response,
 						Source:   "semantic-cache",
 						Model:    decision.ModelID,
-						Stats: map[string]interface{}{
+						Stats: map[string]any{
 							"cached":     true,
 							"similarity": bestScore,
 						},
@@ -362,10 +363,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 	fmt.Fprintf(os.Stderr, "[DEBUG] executePromptLogic: sysPromptLen=%d orchCtx=%v useAgenticLoop=%v jsonSchema=%q localOnly=%v\n",
 		len(systemPrompt), orchCtx, useAgenticLoop, jsonSchema, isLocalOnly(ctx))
 	if len(systemPrompt) > 0 {
-		scanEnd := 200
-		if len(systemPrompt) < scanEnd {
-			scanEnd = len(systemPrompt)
-		}
+		scanEnd := min(len(systemPrompt), 200)
 		fmt.Fprintf(os.Stderr, "[DEBUG] sysPrompt[:200]=%q\n", systemPrompt[:scanEnd])
 	}
 
@@ -417,7 +415,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 				Response: resp,
 				Source:   ProviderOllama,
 				Model:    c.Model,
-				Stats:    map[string]interface{}{"tool_calls": toolLog},
+				Stats:    map[string]any{"tool_calls": toolLog},
 			}, nil
 		}
 	}
@@ -521,7 +519,7 @@ func (b *BrokerServer) executePromptLogic(ctx context.Context, prompt, systemPro
 					Response: fallbackResponse,
 					Source:   cloudProvider,
 					Model:    cloudModel,
-					Stats: map[string]interface{}{
+					Stats: map[string]any{
 						"fallback_triggered": true,
 						"local_error":        executionErr.Error(),
 					},
@@ -692,14 +690,14 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		// Ollama native API: /api/generate
 		url := fmt.Sprintf("%s/api/generate", baseURL)
 		ollamaNCtx, _, _ := rules.GetProviderCtx(ProviderOllama)
-		opts := map[string]interface{}{
+		opts := map[string]any{
 			"temperature": temperature,
 			"num_ctx":     ollamaNCtx,
 		}
 		if maxTokens > 0 {
 			opts["num_predict"] = maxTokens
 		}
-		payload := map[string]interface{}{
+		payload := map[string]any{
 			"model":   model,
 			"prompt":  prompt,
 			"stream":  stream,
@@ -713,7 +711,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 			if jsonSchema == "{}" {
 				payload["format"] = "json"
 			} else {
-				var formatObj interface{}
+				var formatObj any
 				if err := json.Unmarshal([]byte(jsonSchema), &formatObj); err == nil {
 					payload["format"] = formatObj
 				}
@@ -799,7 +797,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		url := fmt.Sprintf("%s/v1/messages", baseURL)
 
 		janCall := func(sysPrompt string, outTokens int) (*http.Response, error) {
-			payload := map[string]interface{}{
+			payload := map[string]any{
 				"model":    model,
 				"messages": []map[string]string{{"role": "user", "content": prompt}},
 				"stream":   stream,
@@ -862,8 +860,8 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 			var lastEvent string
 			for scanner.Scan() {
 				line := strings.TrimSpace(scanner.Text())
-				if strings.HasPrefix(line, "event: ") {
-					lastEvent = strings.TrimPrefix(line, "event: ")
+				if after, ok := strings.CutPrefix(line, "event: "); ok {
+					lastEvent = after
 					if lastEvent == "message_stop" {
 						break
 					}
@@ -944,7 +942,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		"content": prompt,
 	})
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"model":       model,
 		"messages":    messages,
 		"temperature": temperature,
@@ -956,13 +954,13 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 	// JSON Schema enforcement for OpenAI-compatible
 	if jsonSchema != "" {
 		if jsonSchema == "{}" {
-			payload["response_format"] = map[string]interface{}{
+			payload["response_format"] = map[string]any{
 				"type": "json_object",
 			}
 		} else {
-			var schemaObj interface{}
+			var schemaObj any
 			if err := json.Unmarshal([]byte(jsonSchema), &schemaObj); err == nil {
-				payload["response_format"] = map[string]interface{}{
+				payload["response_format"] = map[string]any{
 					"type":   "json_schema",
 					"schema": schemaObj,
 				}
@@ -1005,8 +1003,8 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 			if line == "data: [DONE]" {
 				break
 			}
-			if strings.HasPrefix(line, "data: ") {
-				jsonData := strings.TrimPrefix(line, "data: ")
+			if after, ok := strings.CutPrefix(line, "data: "); ok {
+				jsonData := after
 				var chunk struct {
 					Choices []struct {
 						Delta struct {
@@ -1060,7 +1058,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 		if len(raw) > 0 && string(raw) != "null" {
 			if err := json.Unmarshal(raw, &content); err != nil {
 				// content is an array of content parts — extract text values
-				var parts []map[string]interface{}
+				var parts []map[string]any
 				if err2 := json.Unmarshal(raw, &parts); err2 == nil {
 					for _, part := range parts {
 						if t, ok := part["text"].(string); ok {
@@ -1096,7 +1094,7 @@ func (b *BrokerServer) executeLLMCall(ctx context.Context, model string, provide
 
 // isValidJSON checks if a string is valid JSON
 func isValidJSON(s string) bool {
-	var js interface{}
+	var js any
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
@@ -1375,7 +1373,7 @@ func (b *BrokerServer) executeAgenticLoop(
 	startTime := time.Now()
 	var totalOutputTokens int
 
-	for iter := 0; iter < maxIter; iter++ {
+	for iter := range maxIter {
 		// Compact accumulated history before each request to prevent context overflow.
 		messages = b.compactMessagesHistory(ctx, messages, maxMessagesHistoryBytes, baseURL, model)
 
@@ -1867,9 +1865,7 @@ func (b *BrokerServer) streamAgenticIteration(
 	onToken func(string),
 ) (*agenticIterResult, error) {
 	p := make(map[string]any, len(payload)+1)
-	for k, v := range payload {
-		p[k] = v
-	}
+	maps.Copy(p, payload)
 	p["stream"] = true
 
 	jsonData, err := json.Marshal(p)
@@ -1914,8 +1910,8 @@ func (b *BrokerServer) streamAgenticIteration(
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "event: ") {
-			lastEvent = strings.TrimPrefix(line, "event: ")
+		if after, ok := strings.CutPrefix(line, "event: "); ok {
+			lastEvent = after
 			if lastEvent == "message_stop" {
 				break
 			}
@@ -2169,10 +2165,7 @@ func isOrchestratorContext(systemPrompt string) bool {
 	// Signal 1: role declaration.
 	// Extend scan to 1500 chars so YAML frontmatter is included.
 	// orchestrator.md frontmatter contains "name: orchestrator" which is unique enough.
-	scanLen := 1500
-	if len(systemPrompt) < scanLen {
-		scanLen = len(systemPrompt)
-	}
+	scanLen := min(len(systemPrompt), 1500)
 	opening := strings.ToLower(systemPrompt[:scanLen])
 	hasRoleDecl := strings.Contains(opening, "you are") ||
 		strings.Contains(opening, "your role") ||
@@ -2266,8 +2259,8 @@ func trimToFirstInstructionFile(systemPrompt string) string {
 
 	// Fallback for OpenCode concatenated instructions where subsequent files
 	// do not start with the generated marker but start with "trigger: always_on".
-	if idx := strings.Index(systemPrompt, "trigger: always_on"); idx >= 0 {
-		if lastDash := strings.LastIndex(systemPrompt[:idx], "---"); lastDash >= 0 {
+	if before, _, ok := strings.Cut(systemPrompt, "trigger: always_on"); ok {
+		if lastDash := strings.LastIndex(before, "---"); lastDash >= 0 {
 			return strings.TrimRight(systemPrompt[:lastDash], "\n\r\t ")
 		}
 	}
@@ -2362,8 +2355,8 @@ func (b *BrokerServer) saveCache(key string, response string) {
 	_ = os.WriteFile(cachePath, []byte(response), 0644)
 }
 
-func (b *BrokerServer) getStringArg(args interface{}, name string) string {
-	if m, ok := args.(map[string]interface{}); ok {
+func (b *BrokerServer) getStringArg(args any, name string) string {
+	if m, ok := args.(map[string]any); ok {
 		if val, ok := m[name].(string); ok {
 			return val
 		}
@@ -2374,8 +2367,8 @@ func (b *BrokerServer) getStringArg(args interface{}, name string) string {
 // getBoolArgDefault reads a bool argument that may arrive as either a native
 // bool or a "true"/"false" string (mirrors the "stream" parsing pattern in
 // handleExecutePrompt), returning def when the argument is absent.
-func (b *BrokerServer) getBoolArgDefault(args interface{}, name string, def bool) bool {
-	m, ok := args.(map[string]interface{})
+func (b *BrokerServer) getBoolArgDefault(args any, name string, def bool) bool {
+	m, ok := args.(map[string]any)
 	if !ok {
 		return def
 	}
@@ -2503,7 +2496,7 @@ func (b *BrokerServer) fetchEmbedding(ctx context.Context, provider string, base
 
 	if provider == ProviderOllama || strings.Contains(baseURL, OllamaDefaultPortStr) {
 		url := fmt.Sprintf("%s/api/embeddings", baseURL)
-		payload := map[string]interface{}{
+		payload := map[string]any{
 			"model":  model,
 			"prompt": prompt,
 		}
@@ -2538,7 +2531,7 @@ func (b *BrokerServer) fetchEmbedding(ctx context.Context, provider string, base
 	}
 
 	url := fmt.Sprintf("%s/v1/embeddings", baseURL)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"model": model,
 		"input": prompt,
 	}

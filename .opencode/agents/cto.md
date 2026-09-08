@@ -44,6 +44,7 @@ Activate on **any** of the following:
 | Quality gate | Pre-release review, test coverage concern, observability gap | Quality Audit |
 | Escalation from specialist | Agent reports blocker requiring architectural decision | Unblock + document |
 | Capacity question | "do we need a new agent for X?" | Capacity Review → escalate to CEO if yes |
+| Ethics veto lift pending | An open `council_list` proposal with `CommandType: lift_ethics_veto` | Review the veto's `reason` and `council_vote` — you're one of the 3-vote quorum (with `risk-manager`, `security-auditor`); ethics-auditor cannot vote on its own veto's lift |
 
 ---
 

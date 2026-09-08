@@ -9,15 +9,15 @@ import (
 func makeTestRules() *RouterRules {
 	return &RouterRules{
 		Scoring: ScoringConfig{
-			BaseScore: 5,
+			BaseScore:  5,
 			Thresholds: map[string]int{"L1": 3, "L2": 7, "L3": 10, "L4": 13},
 		},
 		Models: map[string]ModelTiers{
 			"jan": {
-				"L1": "Jan-v3.5-4B-Q4_K_XL",
-				"L2": "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS",
-				"L3": "Qwen3_6-27B-IQ4_XS",
-				"L3_alt": []interface{}{"gemma-4-26B-A4B-it-UD-IQ4_XS"},
+				"L1":     "Jan-v3.5-4B-Q4_K_XL",
+				"L2":     "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS",
+				"L3":     "Qwen3_6-27B-IQ4_XS",
+				"L3_alt": []any{"gemma-4-26B-A4B-it-UD-IQ4_XS"},
 			},
 			"ollama": {
 				"L3": "qwen3.6:27b",
@@ -140,7 +140,7 @@ func TestPickBestLocal(t *testing.T) {
 		Models: map[string]ModelTiers{
 			"ollama": {
 				"L2":     "primary:1",
-				"L2_alt": []interface{}{"alt:1", "alt:2"},
+				"L2_alt": []any{"alt:1", "alt:2"},
 			},
 		},
 		ModelRankings: map[string]json.RawMessage{

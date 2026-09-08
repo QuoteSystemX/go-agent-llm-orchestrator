@@ -11,7 +11,7 @@ Unified Agent Kit is a modular system consisting of:
 - **69 Specialist Agents** - Role-based AI personas
 - **181 Skills** - Domain-specific knowledge modules
 - **27 Workflows** - Slash command procedures
-- **1 MCP Server** - `skill-server` Go binary (skills_load, skills_list, skills_search)
+- **2 MCP Servers** - `local-skill-server` Go binary (skills_load, skills_list, skills_search) + `mcp-server-agent-kit` (Council, Jobs, RBAC, Governance)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
 - **Autonomous SRE** - Incident Watcher, War Room Manager
 - **Intelligence Layer** - Council of Sages (Multi-agent Consensus), Global Brain
@@ -918,6 +918,7 @@ python3 .agent/scripts/sync_claude_agents.py --profile mobile
 - `.agent/` — Unified Agent Kit (unchanged)
 - `.claude/agents/` — Claude Code subagents (generated, filtered by profile if set)
 - `.claude/commands/` — Claude Code slash commands (generated)
+- `.claude/workflows/*.js` — Claude Code native Workflow scripts (hand-authored, not generated from `.agent/workflows/` — synced verbatim)
 - `.agent/local-skill-server/bin/` — Pre-built Go binaries (linux-amd64, linux-arm64)
 - `CLAUDE.md` — first-time provisioning only (target repos own their copy after that)
 

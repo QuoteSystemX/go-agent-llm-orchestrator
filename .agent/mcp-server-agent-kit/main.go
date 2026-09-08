@@ -196,12 +196,12 @@ func main() {
 
 	s.AddTool(mcp.NewTool("search_fulltext",
 		mcp.WithDescription("Instant full-text search across project logs, docs, and tasks."),
-		mcp.WithString("query", mcp.Required(), mcp.Description("Search query (supports FTS5 syntax)")),
+		mcp.WithString("query", mcp.Required(), mcp.Description("Plain-text search query (Postgres plainto_tsquery — no operator syntax, e.g. no phrase/prefix/boolean operators; not FTS5)")),
 	), withRBAC("search_fulltext", h.searchFullText))
 
 	// --- Infrastructure & Ops ---
 	s.AddTool(mcp.NewTool("backup_s3",
-		mcp.WithDescription("Backup SQLite database to S3/SeaweedFS."),
+		mcp.WithDescription("Backup the PostgreSQL database to S3/SeaweedFS."),
 		mcp.WithString("bucket", mcp.Required(), mcp.Description("S3 Bucket name")),
 		mcp.WithString("endpoint", mcp.Required(), mcp.Description("S3 Endpoint URL")),
 	), withRBAC("backup_s3", h.backupS3))
@@ -345,6 +345,12 @@ func main() {
 		mcp.WithString("file_path", mcp.Required(), mcp.Description("File to patch")),
 	), withRBAC("security_fix", h.securityFix))
 
+	s.AddTool(mcp.NewTool("ethics_veto",
+		mcp.WithDescription("ethics-auditor: block a plan/task immediately. Lifting the veto requires council quorum (risk-manager, cto, security-auditor) via council_vote/council_execute on the auto-created lift-proposal."),
+		mcp.WithString("plan_or_task_ref", mcp.Required(), mcp.Description("Plan or task ID being vetoed")),
+		mcp.WithString("reason", mcp.Required(), mcp.Description("Why this is being vetoed")),
+	), withRBAC("ethics_veto", h.ethicsVeto))
+
 	// --- BMAD Automation ---
 	s.AddTool(mcp.NewTool("bmad_decompose",
 		mcp.WithDescription("Decompose a PRD into story cards."),
@@ -386,10 +392,7 @@ func main() {
 				return
 			}
 			lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
-			start := len(lines) - 100
-			if start < 0 {
-				start = 0
-			}
+			start := max(len(lines)-100, 0)
 			for _, line := range lines[start:] {
 				fmt.Fprintf(w, "data: %s\n\n", line)
 				flusher.Flush()

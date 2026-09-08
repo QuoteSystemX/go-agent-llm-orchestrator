@@ -116,7 +116,7 @@ func TestWorkerPool_Concurrency(t *testing.T) {
 
 	// Check that only 1 is running (at most)
 	success := false
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		time.Sleep(200 * time.Millisecond)
 		var runningCount int
 		db.conn.QueryRow("SELECT COUNT(*) FROM jobs WHERE status = 'running'").Scan(&runningCount)
@@ -136,7 +136,7 @@ func TestDispatcher_StopDuringRecovery(t *testing.T) {
 
 	// Seed pending jobs with task_data so recoverJobs has work to do.
 	const n = 50
-	for i := 0; i < n; i++ {
+	for i := range n {
 		jobID := fmt.Sprintf("RECOVER-STOP-%d", i)
 		task := Task{
 			JobID:   jobID,

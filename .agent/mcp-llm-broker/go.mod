@@ -1,6 +1,6 @@
 module github.com/QuoteSystemX/mcp-llm-broker
 
-go 1.26
+go 1.27
 
 require github.com/mark3labs/mcp-go v0.49.0
 

@@ -50,6 +50,10 @@ CYRILLIC_ALLOWED_FILES = {
     # Auto-trace / runtime output (regenerated each session)
     ".agent/tmp/response.md",
     "wiki/status.md",
+    # Regenerated on every session Stop hook (context_autofill.py) — its "Active Tasks" section
+    # verbatim-quotes real tasks/*.md titles, some of which are Russian; content is inherently
+    # volatile, not something to hand-curate here.
+    ".agent/SESSION_CONTEXT.md",
     ".agent/rules/LESSONS_LEARNED.md",  # Contains Cyrillic entries from past sessions
     # Deliberate Russian-language example phrases inside an English commit-permission rule (the
     # rule needs to recognize both languages, since the user sometimes confirms in Russian) — the

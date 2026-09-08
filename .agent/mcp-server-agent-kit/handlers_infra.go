@@ -88,24 +88,37 @@ func (h *handler) listProjects(_ context.Context, _ mcp.CallToolRequest) (*mcp.C
 func (h *handler) backupS3(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	bucket, _ := req.RequireString("bucket")
 	endpoint, _ := req.RequireString("endpoint")
-	
-	dbPath := filepath.Join(h.projectRoot, ".agent", "mcp_server.db")
-	s3Path := "s3://" + bucket + "/backups/mcp_server_" + strconv.FormatInt(time.Now().Unix(), 10) + ".db"
 
-	// Logic for S3 upload using AWS CLI
-	args := []string{"s3", "cp", dbPath, s3Path}
+	if h.db == nil || h.db.dsn == "" {
+		return mcp.NewToolResultError("backup_s3 failed: no database connection string available"), nil
+	}
+
+	// Dump the live PostgreSQL database — this used to copy a SQLite file
+	// (.agent/mcp_server.db) that stopped being written to in May 2026's Postgres
+	// migration; that file is 4+ months stale, not a backup of current state.
+	dumpPath := filepath.Join(os.TempDir(), "mcp_server_backup_"+strconv.FormatInt(time.Now().Unix(), 10)+".sql")
+	defer os.Remove(dumpPath)
+
+	dumpCmd := exec.CommandContext(ctx, "pg_dump", h.db.dsn, "-f", dumpPath)
+	if out, err := dumpCmd.CombinedOutput(); err != nil {
+		return mcp.NewToolResultError("pg_dump failed: " + err.Error() + "\n" + string(out)), nil
+	}
+
+	s3Path := "s3://" + bucket + "/backups/mcp_server_" + strconv.FormatInt(time.Now().Unix(), 10) + ".sql"
+
+	args := []string{"s3", "cp", dumpPath, s3Path}
 	if endpoint != "" && !strings.Contains(endpoint, "amazonaws.com") {
 		args = append(args, "--endpoint-url", endpoint)
 	}
 
-	cmd := exec.Command("aws", args...)
+	cmd := exec.CommandContext(ctx, "aws", args...)
 	cmd.Dir = h.projectRoot
 	out, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
-		return mcp.NewToolResultError("S3 backup failed: " + err.Error() + "\n" + string(out)), nil
+		return mcp.NewToolResultError("S3 upload failed: " + err.Error() + "\n" + string(out)), nil
 	}
-	
+
 	return mcp.NewToolResultText("Backup successful: " + s3Path + "\n" + string(out)), nil
 }
 

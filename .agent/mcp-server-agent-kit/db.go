@@ -10,6 +10,7 @@ import (
 // DB wraps the standard database/sql connection pool.
 type DB struct {
 	conn *sql.DB
+	dsn  string // retained for tools that need to shell out (e.g. pg_dump for backupS3)
 }
 
 // InitDB initializes a connection to the PostgreSQL database and runs migrations.
@@ -32,7 +33,7 @@ func InitDB(pgURL string) (*DB, error) {
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
 
-	h := &DB{conn: db}
+	h := &DB{conn: db, dsn: pgURL}
 	if err := h.migrate(); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("migration: %w", err)
@@ -116,6 +117,20 @@ func (d *DB) migrate() error {
 			status TEXT,
 			project_id TEXT,
 			created_at TIMESTAMPTZ
+		)`,
+		// Ethics-auditor veto block state, kept separate from `proposals` so that lifting a
+		// veto is a pure state transition (see LiftVeto) rather than routed through
+		// executeProposal's job-dispatch switch the way "security_fix" is.
+		`CREATE TABLE IF NOT EXISTS veto_records (
+			id TEXT PRIMARY KEY,
+			plan_or_task_ref TEXT,
+			status TEXT,
+			created_by TEXT,
+			lifted_by TEXT,
+			reason TEXT,
+			proposal_id TEXT,
+			created_at TIMESTAMPTZ,
+			lifted_at TIMESTAMPTZ
 		)`,
 		`CREATE TABLE IF NOT EXISTS documents (
 			path TEXT PRIMARY KEY,

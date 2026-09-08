@@ -3,7 +3,7 @@
 # The runtime image bakes in the full .agent/ tree so discovery tools
 # (agents_load, skills_load, workflows_list, ...) can serve content in
 # environments without a mounted checkout (e.g. Kubernetes).
-FROM golang:1.26-alpine AS build
+FROM golang:1.27-alpine AS build
 WORKDIR /app
 COPY .agent/mcp-server-agent-kit/go.mod .agent/mcp-server-agent-kit/go.sum ./
 RUN go mod download

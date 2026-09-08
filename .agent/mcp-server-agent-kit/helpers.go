@@ -102,8 +102,8 @@ func parseFrontmatter(content string) map[string]string {
 	re := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---`)
 	match := re.FindStringSubmatch(content)
 	if len(match) > 1 {
-		lines := strings.Split(match[1], "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(match[1], "\n")
+		for line := range lines {
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
 				key := strings.TrimSpace(parts[0])
