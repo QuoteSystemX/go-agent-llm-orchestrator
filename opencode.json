@@ -13,8 +13,7 @@
     "codebase-memory": {
       "type": "local",
       "command": [
-        "bin/codebase-memory-mcp",
-        "serve"
+        ".agent/scripts/delivery/codebase-memory-mcp.sh"
       ],
       "enabled": true,
       "env": {
@@ -64,10 +63,7 @@
     "filesystem": {
       "type": "local",
       "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "${workspaceFolder}"
+        ".agent/scripts/delivery/filesystem-mcp.sh"
       ],
       "enabled": true,
       "env": {}
