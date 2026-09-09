@@ -59,6 +59,19 @@
 
 ---
 
+## 🧠 CODEBASE SEARCH DEFAULT (MANDATORY)
+
+**Before grepping the workspace or reading multiple files sequentially to trace code relationships, use `codebase-memory` MCP tools instead of `Grep`/`Read`.**
+
+1. First call in a session: `list_projects`. If this project isn't indexed, call `index_repository` once — indexed projects auto-refresh in the background afterward, don't re-index every turn.
+2. For symbol/definition/relationship discovery, prefer: `search_graph` (find symbols — not grep), `trace_path` (callers/callees/data flow — not grep for "who calls X"), `get_architecture` (system orientation), `get_code_snippet` (exact source for a `qualified_name` from `search_graph`).
+3. Fall back to `search_code` or raw `Grep` only for literal/non-code text, or when `check_index_coverage`/`index_status` shows the graph doesn't cover the file.
+4. If `codebase-memory` is unavailable or fails to connect this session, fall back to `Explore`/`Grep` as normal — don't block on it.
+
+Full tool reference and workflow patterns: `.agent/skills/codebase-memory-patterns/SKILL.md`.
+
+---
+
 ## 🏗️ Agent & Skill System
 
 Agents live in two locations:

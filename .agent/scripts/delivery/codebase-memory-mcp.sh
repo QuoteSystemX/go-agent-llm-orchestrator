@@ -31,8 +31,15 @@ BIN_DIR="$REPO_ROOT/bin"
 
 BIN="$BIN_DIR/codebase-memory-mcp-${OS}-${ARCH}"
 
-# Fallback to a plain `codebase-memory-mcp` (e.g. locally compiled)
-if [ ! -x "$BIN" ] && [ -x "$BIN_DIR/codebase-memory-mcp" ]; then
+# Fallback to a plain `codebase-memory-mcp` (e.g. locally compiled) — but never when that path
+# resolves back to this very wrapper script. codebase_memory_setup.py separately creates
+# bin/codebase-memory-mcp as a convenience symlink TO this wrapper (so it can be invoked directly
+# from the shell), which collides with this fallback's original intent (a real, unsuffixed binary
+# a developer compiled locally): without this guard, the wrapper would treat its own launcher
+# symlink as "the binary", exec itself, and recurse into a fork bomb instead of ever reaching a
+# real binary or the auto-provisioning step below. `-ef` (POSIX test) compares the two paths'
+# resolved device+inode, so it correctly sees through the symlink either way.
+if [ ! -x "$BIN" ] && [ -x "$BIN_DIR/codebase-memory-mcp" ] && ! [ "$BIN_DIR/codebase-memory-mcp" -ef "$DIR/codebase-memory-mcp.sh" ]; then
   BIN="$BIN_DIR/codebase-memory-mcp"
 fi
 
@@ -90,7 +97,7 @@ fi
 # watch anything with).
 PARENT_PID=$PPID
 
-"$BIN" "$@" &
+"$BIN" "$@" <&0 &
 CHILD_PID=$!
 
 # Forward a normal termination signal to the child so `kill` on this wrapper still works as

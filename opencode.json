@@ -50,6 +50,16 @@
       "enabled": true,
       "env": {}
     },
+    "context7": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "enabled": true,
+      "env": {}
+    },
     "wikipedia": {
       "type": "local",
       "command": [
