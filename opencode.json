@@ -105,8 +105,8 @@
       ],
       "enabled": true,
       "env": {
-        "GRAFANA_URL": "YOUR_GRAFANA_URL",
-        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "YOUR_GRAFANA_SERVICE_ACCOUNT_TOKEN"
+        "GRAFANA_URL": "http://grafana.lab.me/",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "glsa_m17fFU5mGDiffQ0tKwlGy5CoLkgiF25t_97e4ec3d"
       }
     }
   },
