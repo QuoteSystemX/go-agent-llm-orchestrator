@@ -885,6 +885,11 @@ def build_claude_settings() -> str:
                     "hooks": [
                         {"type": "command", "command": "rtk hook claude"},
                         {"type": "command", "command": _GUARDRAIL_CMD},
+                        {
+                            "type": "command",
+                            "command": ".agent/scripts/health/block_grep_search.sh",
+                            "statusMessage": "Checking whether grep/rg/ag should be an MCP call instead...",
+                        },
                     ]
                 }
             ],

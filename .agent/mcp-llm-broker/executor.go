@@ -1834,7 +1834,7 @@ func isComplexEnoughForAgenticLoop(prompt string) bool {
 		// Russian problem signals
 		"ошибк", "баг", "фич", "проблем", "зависает", "не работает", "сбой",
 		// Service/system artifacts (often appear in task descriptions)
-		"headroom", "endpoint", "service", "server", "api", "database",
+		"endpoint", "service", "server", "api", "database",
 		"файл", "функци", "метод", "класс", "модуль",
 	}
 	for _, kw := range keywords {

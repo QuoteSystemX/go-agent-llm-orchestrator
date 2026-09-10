@@ -97,6 +97,17 @@
       ],
       "enabled": true,
       "env": {}
+    },
+    "grafana": {
+      "type": "local",
+      "command": [
+        ".agent/scripts/delivery/grafana-mcp.sh"
+      ],
+      "enabled": true,
+      "env": {
+        "GRAFANA_URL": "YOUR_GRAFANA_URL",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "YOUR_GRAFANA_SERVICE_ACCOUNT_TOKEN"
+      }
     }
   },
   "default_agent": "orchestrator",

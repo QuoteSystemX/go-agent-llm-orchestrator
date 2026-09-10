@@ -810,7 +810,7 @@ func TestIsComplexEnoughForAgenticLoop(t *testing.T) {
 		// Creative/short non-technical
 		{"напиши стихотворение", false},
 		// Russian engineering tasks — must trigger
-		{"сделай дебаг headroom", true},
+		{"сделай дебаг сервиса", true},
 		{"нужен анализ почему сервис падает", true},
 		{"проверь ошибки в логах", true},
 		{"реализуй новый endpoint", true},
@@ -822,7 +822,7 @@ func TestIsComplexEnoughForAgenticLoop(t *testing.T) {
 		{"analyze why the service crashes", true},
 		{"implement the new API endpoint", true},
 		// Service names in prompt
-		{"headroom не отвечает", true},
+		{"api не отвечает", true},
 		// Longer conversational — no keywords → still false
 		{"расскажи мне о себе подробнее", false},
 	}
@@ -871,7 +871,7 @@ func TestCompactMessagesHistory_LLMSummarizes(t *testing.T) {
 
 	srv := &BrokerServer{workspaceRoot: "../.."}
 	messages := []map[string]any{
-		{"role": "user", "content": "debug headroom"},
+		{"role": "user", "content": "debug the api"},
 		{"role": "assistant", "content": []any{map[string]any{"type": "tool_use", "id": "t1", "name": "call_agent", "input": map[string]any{"agent_name": "debugger", "task": "check"}}}},
 		{"role": "user", "content": []any{map[string]any{"type": "tool_result", "tool_use_id": "t1", "content": strings.Repeat("log line\n", 300)}}},
 	}
@@ -881,7 +881,7 @@ func TestCompactMessagesHistory_LLMSummarizes(t *testing.T) {
 	if len(result) != 2 {
 		t.Fatalf("expected [original, summary], got %d messages", len(result))
 	}
-	if result[0]["content"] != "debug headroom" {
+	if result[0]["content"] != "debug the api" {
 		t.Errorf("original prompt not preserved: %v", result[0]["content"])
 	}
 	summaryContent, _ := result[1]["content"].(string)
