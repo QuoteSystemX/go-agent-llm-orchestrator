@@ -29,6 +29,18 @@ esac
 REPO_ROOT="$(cd "$DIR/../../.." >/dev/null 2>&1 && pwd)"
 BIN_DIR="$REPO_ROOT/bin"
 
+# Some MCP hosts pass ${workspaceFolder} through to child env vars unexpanded instead of
+# substituting it (same issue documented in filesystem-mcp.sh) — when that happens the binary
+# gets a literal "${workspaceFolder}/..." path, fails to open its db dir, and exits immediately,
+# which the host reports as "Connection closed". Resolve it ourselves so we never depend on the
+# host doing the substitution.
+case "${CODEBASE_MEMORY_DB_DIR:-}" in
+  *'${workspaceFolder}'*)
+    CODEBASE_MEMORY_DB_DIR="$(printf '%s' "$CODEBASE_MEMORY_DB_DIR" | sed "s|\${workspaceFolder}|$REPO_ROOT|g")"
+    export CODEBASE_MEMORY_DB_DIR
+    ;;
+esac
+
 BIN="$BIN_DIR/codebase-memory-mcp-${OS}-${ARCH}"
 
 # Fallback to a plain `codebase-memory-mcp` (e.g. locally compiled) — but never when that path
@@ -97,8 +109,17 @@ fi
 # watch anything with).
 PARENT_PID=$PPID
 
-"$BIN" "$@" <&0 &
+# dash (the real /bin/sh on Debian/Ubuntu/WSL) forces an asynchronous command's stdin to
+# /dev/null even when it carries an explicit `<&0` — POSIX lets implementations treat "before
+# any explicit redirection" as already-resolved by the time the async list starts, and dash
+# takes that reading. Pre-duplicating fd 0 onto fd 3 *before* backgrounding, then reading from
+# fd 3, sidesteps that: the dup happens in the foreground shell, so the child inherits a real
+# pipe instead of /dev/null. Without this, the server never sees the host's stdin at all and
+# just hangs — which surfaces as a silent "Connection closed" in the MCP client, not a crash.
+exec 3<&0
+"$BIN" "$@" <&3 &
 CHILD_PID=$!
+exec 3<&-
 
 # Forward a normal termination signal to the child so `kill` on this wrapper still works as
 # expected — a plain `exec` would have gotten this for free; polling for the parent does not.
