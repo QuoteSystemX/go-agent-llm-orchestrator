@@ -25,6 +25,10 @@ class TestTaskArchive(unittest.TestCase):
             shutil.rmtree(self.test_root)
         self.test_root.mkdir(parents=True)
         subprocess.run(["git", "init", "-q"], cwd=self.test_root, check=True)
+        # A runner without a global git identity (CI) fails `git commit` with exit
+        # 128 ("Author identity unknown"), so set one on this throwaway repo.
+        subprocess.run(["git", "config", "user.email", "tests@example.com"], cwd=self.test_root, check=True)
+        subprocess.run(["git", "config", "user.name", "task-archive tests"], cwd=self.test_root, check=True)
         self.done_dir = self.test_root / "tasks" / "done"
         self.done_dir.mkdir(parents=True)
 

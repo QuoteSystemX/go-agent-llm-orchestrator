@@ -60,6 +60,10 @@ CYRILLIC_ALLOWED_FILES = {
     # same example string appears in both the Gemini source and its Claude-side sync target.
     ".agent/rules/GEMINI.md",
     ".agent/rules/gemini/04_tier0_universal.md",
+    # Validates task cards, which are written in Russian: the "no dependencies" value it
+    # accepts is the Russian word for "no", alongside the English "none"/"n/a". The literal
+    # has to match what card authors actually type.
+    ".agent/scripts/dev/validate_task.py",
     # Arbor router training/eval sets: deliberately include Russian-language task prompts
     # ("lang": "ru") to verify the router classifies correctly across languages, not just English.
     ".agent/datasets/arbor-router-training/B_dev.jsonl",

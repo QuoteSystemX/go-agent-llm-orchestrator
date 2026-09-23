@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import contextlib
+import io
 import unittest
 import shutil
 import sys
@@ -57,13 +59,18 @@ class TestPreCommitReview(unittest.TestCase):
         self.lessons_path.write_text("### [2026-05-13] [agent] [code-archaeologist] Use specific tools")
 
         # Mock health and conflict resolver to pass
+        out = io.StringIO()
         with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}),
                                         'conflict_resolver': MagicMock(resolve_conflicts=lambda: None),
-                                        'task_tracer': MagicMock()}):
+                                        'task_tracer': MagicMock()}), contextlib.redirect_stdout(out):
             ok, msg = reviewer.review_diff()
 
-        self.assertFalse(ok)
-        self.assertIn("Review finished with warnings", msg)
+        # A lesson match is advisory, not a gate (see review_diff): it prints a
+        # warning and still lets the commit through. Only health/conflicts/
+        # threats block, and those are mocked clean here.
+        self.assertTrue(ok)
+        self.assertIn("Diff looks clean", msg)
+        self.assertIn("code-archaeologist", out.getvalue())
 
     @patch('dev.pre_commit_review.get_staged_diff', return_value="+ test_inbox_module_loaded")
     def test_review_diff_substring_match_no_false_positive(self, mock_diff):
@@ -90,14 +97,19 @@ class TestPreCommitReview(unittest.TestCase):
         """C1: real word match should still trigger warning."""
         self.lessons_path.write_text("### [2026-05-13] [INFO] [test] Always run tests")
 
+        out = io.StringIO()
         with patch.dict('sys.modules', {'status_report': MagicMock(get_health_report=lambda: {"score": 100}),
                                         'conflict_resolver': MagicMock(resolve_conflicts=lambda: None),
-                                        'task_tracer': MagicMock()}):
+                                        'task_tracer': MagicMock()}), contextlib.redirect_stdout(out):
             ok, msg = reviewer.review_diff()
 
-        # 'test' appears as a whole word, should trigger warning
-        self.assertFalse(ok)
-        self.assertIn("Review finished with warnings", msg)
+        # 'test' appears as a whole word, so the advisory warning fires; the
+        # review itself still passes (see the sibling test above).
+        self.assertTrue(ok)
+        self.assertIn("PRE-COMMIT WARNING", out.getvalue())
+        # review_diff lowercases the lessons file before matching, so the title
+        # comes back lowercased in the warning.
+        self.assertIn("always run tests", out.getvalue())
 
     @patch('dev.pre_commit_review.get_staged_diff', return_value="+ Clean code")
     def test_review_diff_low_health(self, mock_diff):
