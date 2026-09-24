@@ -634,7 +634,7 @@ Master validation scripts that orchestrate skill-level scripts.
 | `knowledge_inject.py` (communication/) | STORY-6 re-injection — distilled lessons reapplied in next session | Daemon prompt injection |
 | `harness_run.py` (harness/) | STORY-5 capability-driven subprocess — manifest + sandbox + OTel | bin/harness_run |
 | `walkthrough_assembler.py` | Auto-documentation assembler   | Maintenance              |
-| `task_sync.py`        | Task status synchronizer        | Maintenance              |
+| `task_sync.py`        | Session checklist synchronizer  | Maintenance              |
 
 ### Usage
 
@@ -1146,8 +1146,8 @@ The kit implements a provider-agnostic cognitive layer that bridges Antigravity 
 | `.agent/scripts/knowledge/auto_adr_drafter.py` | Autonomous ADR drafting triggered by Phase 22/23 architectural decision gates. |
 | `bin/browser-bridge`    | Browser connectivity manager for WSL/macOS — CDP, DNS gateway, headless fallback. |
 | `.agent/scripts/dev/output_bridge.py` | Mandatory Agent Output Gateway — validates 5-section report structure and syncs to bus. |
-| `.agent/scripts/delivery/walkthrough_assembler.py` | Assembles session walkthrough log from task.md and bus events into wiki/archive. |
-| `.agent/scripts/delivery/task_sync.py` | Synchronises task card status (open/in-progress/done) with Context Bus state. |
+| `.agent/scripts/delivery/walkthrough_assembler.py` | Assembles session walkthrough log from bus events into wiki/archive. |
+| `.agent/scripts/delivery/task_sync.py` | Ticks `- [ ]` items in the session checklist (`task_output_gateway.md`) whose keywords match the latest Context Bus goal. Does not touch `tasks/*.md` cards. |
 | `.agent/scripts/knowledge/obsidian_validator.py` | Validates Obsidian-format wiki links and frontmatter before distribution to target repos. |
 | `.agent/scripts/dev/autonomous_reviewer_cron.py` | Daily codebase audit — drift, infra gaps, roadmap items → auto-creates task cards. |
 | `.agent/scripts/health/security_scan.py` | OWASP static scanner — detects hardcoded secrets, dangerous patterns (eval, shell=True, weak hashes). |
