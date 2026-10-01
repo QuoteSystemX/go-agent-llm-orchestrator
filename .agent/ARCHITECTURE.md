@@ -9,7 +9,7 @@
 Unified Agent Kit is a modular system consisting of:
 
 - **69 Specialist Agents** - Role-based AI personas
-- **181 Skills** - Domain-specific knowledge modules
+- **182 Skills** - Domain-specific knowledge modules
 - **27 Workflows** - Slash command procedures
 - **2 MCP Servers** - `local-skill-server` Go binary (skills_load, skills_list, skills_search) + `mcp-server-agent-kit` (Council, Jobs, RBAC, Governance)
 - **Core Infrastructure** - Bus, Router, Telemetry, Dashboard, **Resilience Chain**
@@ -269,7 +269,7 @@ Specialist AI personas for different domains.
 | `data-engineer` | Expert data engineer specializing in ETL/ELT pipelines, dbt transformations, Apache Airflo… | data-patterns, database-design, python-patterns, bash-linux, clean-code, shared-context, telemetry, postgres-best-practices, nextflow-development, multica-mcp, multica-cli, clickhouse-best-practices, clickhouse-architecture-advisor |
 | `data-lead` | Data & Market Feeds Engineering Lead — tactical layer between CTO and data squad. | clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli |
 | `database-architect` | Expert database architect for schema design, query optimization, migrations, and modern se… | clean-code, database-design, shared-context, telemetry, postgres-best-practices, supabase-postgres-best-practices, turso-db, multica-mcp, multica-cli |
-| `debugger` | Expert in systematic debugging, root cause analysis, and crash investigation. | clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes, multica-mcp, multica-cli |
+| `debugger` | Expert in systematic debugging, root cause analysis, and crash investigation. | clean-code, systematic-debugging, shared-context, telemetry, behavioral-modes, multica-mcp, multica-cli, fix-production-error |
 | `devops-engineer` | Expert in deployment, server management, CI/CD, and production operations. | clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-continuous-integration, go-cli, go-dependency-management, go-stay-updated, go-project-layout |
 | `documentation-writer` | Expert in technical documentation. | clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, visual-explainer, multica-mcp, multica-cli |
 | `ethics-auditor` | AI alignment and ethics governance auditor. | vulnerability-scanner, documentation-writer, shared-context, red-team-tactics, clean-code, multica-mcp, multica-cli |
@@ -318,7 +318,7 @@ Specialist AI personas for different domains.
 | `visual-designer` | Specialist in UI/UX aesthetics, design systems, and visual quality. | frontend-design, web-design-guidelines, design-token-architecture, clean-code, ui-ux-pro-max, shadcn-best-practices, multica-mcp, multica-cli |
 | `wiki-architect` | Karpathy Wiki-First specialist — writes Mental Model documents, Intuition sections, ADRs,… | wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli |
 
-## 🧩 Skills (181)
+## 🧩 Skills (182)
 
 Modular knowledge domains that agents can load on-demand, based on task context.
 
@@ -376,6 +376,7 @@ Modular knowledge domains that agents can load on-demand, based on task context.
 | `documentation-templates` | Documentation templates and structure guidelines. |
 | `documentation-writer` | Writing architecture summaries, onboarding guides, and compliance reports with Prose-First… |
 | `experience-injector` | Automatically queries the repository lessons learned database and injects relevant histori… |
+| `fix-production-error` | Diagnose and fix a production error that an error tracker (bug-tracker) reported, from its… |
 | `frontend-design` | Design thinking and decision-making for web UI. |
 | `func2tolk` | Port TON smart contracts from FunC (.fc/.func) to modern Tolk (.tolk) with Acton: use acto… |
 | `game-development` | Game development principles across all platforms (PC, Web, Mobile, VR/AR) — game loop, pat… |
