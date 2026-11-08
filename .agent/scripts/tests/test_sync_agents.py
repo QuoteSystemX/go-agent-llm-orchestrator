@@ -237,6 +237,18 @@ class TestSyncAgents(unittest.TestCase):
         self.assertEqual(fm.get("skills"), "clean-code, architecture")
         self.assertEqual(fm.get("profile"), "universal")
 
+    def test_parse_frontmatter_yaml_exits_when_pyyaml_missing(self):
+        # CI without PyYAML used to get {} for every agent: an empty
+        # ARCHITECTURE.md table reported as [DRIFT] and a schema gate that
+        # passed on name/description defaults. Missing dependency must fail loudly.
+        content = "---\nname: cto\ndescription: CTO.\n---\nBody"
+
+        with patch.dict(sys.modules, {"yaml": None}):
+            with self.assertRaises(SystemExit) as ctx:
+                sync_agents._parse_frontmatter_yaml(content)
+
+        self.assertIn("PyYAML", str(ctx.exception.code))
+
     def test_should_include_agent_survives_dashes_inside_a_comment(self):
         # Same root cause, different function: profile filtering must not
         # silently treat a restricted agent as "universal" because a comment

@@ -4,7 +4,8 @@ role: Knowledge Loop Steward (Distill → Register → Inject → Prune)
 description: "Closes the distillation loop introduced in STORY-6. Owns the lifecycle of distilled lessons: registers fresh lessons for re-injection, prunes stale ones (applied_count=0 + TTL expired), monitors the lesson_applied bus events, and tunes TTL/registry policy. Triggers after archivist_trigger runs, on knowledge re-injection issues, and on /distill slash command."
 hierarchy:
   reports_to: archivist
-  delegates_to: [archivist]
+  delegates_to:
+    - archivist
 skills: knowledge-distillation, knowledge-injection, archive-management, clean-code, multica-mcp, multica-cli
 domains: data, knowledge, history
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge

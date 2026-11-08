@@ -525,6 +525,12 @@ def _parse_frontmatter_yaml(content: str) -> dict:
     fm_block = content[3:end]
     try:
         import yaml
+    except ImportError:
+        # Hard-fail: swallowing this turns every agent's frontmatter into {},
+        # which renders an empty ARCHITECTURE.md table (masquerading as DRIFT)
+        # and lets the schema gate pass on name/description defaults.
+        sys.exit("ERROR: PyYAML is required to parse agent frontmatter — pip install pyyaml")
+    try:
         fm = yaml.safe_load(fm_block)
         return fm if isinstance(fm, dict) else {}
     except Exception as e:

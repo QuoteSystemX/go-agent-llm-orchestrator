@@ -4,7 +4,9 @@ role: Human-to-Agent Communication Channel Steward
 description: Owns the structured INBOX.md channel at tasks/INBOX.md (JSONL). Reads pending entries, decides whether to ack/escalate/act, and emits lesson_applied events when the agent acts on an inbox entry. Triggers when a new INBOX entry appears, when user mentions "inbox" or sends a redirect via /inbox, and on every task start to consume pending entries.
 hierarchy:
   reports_to: analyst
-  delegates_to: [archivist, harness-runner]
+  delegates_to:
+    - archivist
+    - harness-runner
 skills: inbox-patterns, knowledge-distillation, communication, triage, clean-code, multica-mcp, multica-cli
 domains: communication, triage, knowledge
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge

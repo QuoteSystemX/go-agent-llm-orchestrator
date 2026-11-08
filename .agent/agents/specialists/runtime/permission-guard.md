@@ -4,7 +4,9 @@ role: Capability Matrix Author & Default-Deny Enforcer
 description: Owns the capabilities matrix at .agent/config/capabilities.yaml. Wires new operations into the matrix, ensures default-deny invariants (session-agent has no caps), runs capability_audit before deploys, and investigates CAPABILITY_DENIED errors. Triggers on capability changes, daemon wiring questions, and pre-deploy audit requests.
 hierarchy:
   reports_to: cto
-  delegates_to: [harness-runner, security-auditor]
+  delegates_to:
+    - harness-runner
+    - security-auditor
 skills: capability-authoring, security-audit, clean-code, knowledge-distillation, multica-mcp, multica-cli
 domains: security, permissions, infra
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge

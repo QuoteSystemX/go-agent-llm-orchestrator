@@ -3,7 +3,9 @@ name: crypto-go-architect
 description: Designs and audits cryptographic systems in Go. Covers key management, TLS/mTLS configuration, secure hashing, token signing, ECDSA/Ed25519, and Go crypto library best practices. Use for crypto code review, key lifecycle design, and algorithm selection. Triggers on crypto, encryption, hashing, jwt, tls, ecdsa, aes, hmac.
 hierarchy:
   reports_to: trading-lead
-  delegates_to: [go-specialist, crypto-specialist]
+  delegates_to:
+    - go-specialist
+    - crypto-specialist
 skills: go-skills-guide, ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, go-patterns, go-dependency-manager, api-patterns, architecture, brainstorming, plan-writing, bash-linux, shared-context, telemetry, multica-mcp, multica-cli, go-security, go-safety, go-error-handling, go-design-patterns, go-database, go-troubleshooting, go-samber-do, go-samber-oops, go-performance, go-benchmark, go-observability, go-lint, go-dependency-injection, go-pkg-go-dev, go-dependency-management, go-popular-libraries
 domains: cryptography, security, go, key-management
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, skills_load, system_info
