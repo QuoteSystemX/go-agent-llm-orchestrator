@@ -933,6 +933,20 @@ Both are generated from the same `.agent/workflows/` source. Use the right one f
 - `/debug error message` — slash command, runs inline in current chat
 - `@wf-debug` — subagent, used by orchestrator to delegate work programmatically
 
+### Generated File Format
+
+Generated agent/command files start with `---` on line 1 (Claude Code ignores files whose
+frontmatter is not first); the "GENERATED ... do not edit" notice is a YAML comment right after it.
+For the claude target, `model:` is mapped from the source tier (L1-L3 -> `sonnet`, L4 -> `opus`,
+alias passthrough, default `sonnet`; `wf-*` agents always `sonnet`) via `CLAUDE_MODEL_BY_TIER`.
+
+For the claude target, `tools:` is emitted only when every entry (ignoring a trailing `(...)`
+specifier, e.g. `Bash(git *)`) is in `CLAUDE_BUILTIN_TOOLS` or starts with `mcp__`. A list with any
+bare MCP name (`logs_tail`, ...) never matches Claude Code's `mcp__<server>__<tool>` ids, so `tools:`
+is omitted and the agent inherits all tools, MCP included. If such a list had no Write/Edit/
+MultiEdit/NotebookEdit, `disallowedTools: Write, Edit, MultiEdit, NotebookEdit` keeps the agent
+read-only. Opencode is unaffected.
+
 ### Regenerating After Changes
 
 ```bash
