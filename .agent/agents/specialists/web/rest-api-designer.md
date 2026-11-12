@@ -9,6 +9,20 @@ model: L3
 profile: go-service, web-app, fullstack
 skills: api-patterns, typescript-expert, documentation-templates, lint-and-validate, shared-context, telemetry, clean-code, typed-service-contracts, multica-mcp, multica-cli
 domains: rest, api, designer
+conversation_starters:
+  - label: Design an OpenAPI spec for a resource
+    prompt: >
+      Design the OpenAPI 3.1 spec for the <resource> API: endpoints, schemas, cursor pagination, RFC
+      9457 errors and auth. Lint it with redocly or spectral before handing it over.
+  - label: Check an API change for breaking changes
+    prompt: >
+      Compare <new spec> with <previous spec or version> and list every breaking change: removed or
+      renamed fields, type changes, new required inputs and status code changes. Tell me if this
+      needs /v2.
+  - label: Review existing endpoints for REST design
+    prompt: >
+      Review the endpoints in <spec or route file> for resource naming, HTTP methods and status
+      codes, error format, pagination and money or date formats. Propose a cleaned-up spec.
 ---
 # REST API Designer
 

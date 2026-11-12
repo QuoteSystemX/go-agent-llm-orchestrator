@@ -9,6 +9,19 @@ model: L1
 profile: web-app, fullstack
 skills: clean-code, seo-fundamentals, geo-fundamentals, shared-context, telemetry, multica-mcp, multica-cli
 domains: seo, specialist
+conversation_starters:
+  - label: Run an SEO audit of a site
+    prompt: >
+      Run a technical and content SEO audit of <site or repo path>: sitemap, robots.txt, canonicals,
+      titles, meta descriptions, headings and Core Web Vitals. Give me a fix list ordered by impact.
+  - label: Make a page more likely to be cited by AI search
+    prompt: >
+      Improve <page URL or file> for AI search citations: FAQ section, author credentials, JSON-LD,
+      sourced statistics and clear entity definitions. Show me the changes.
+  - label: Add structured data to content pages
+    prompt: >
+      Add Schema.org JSON-LD to the <page type> pages in <path>, with author, dates and citations,
+      and check that it validates.
 ---
 
 # SEO Specialist

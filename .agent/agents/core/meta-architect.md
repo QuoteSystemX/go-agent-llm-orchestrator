@@ -15,6 +15,19 @@ skills: clean-code, architecture, telemetry, shared-context, brainstorming, prom
 tools: Read, Grep, Glob, Bash, Edit, Write, search_knowledge, knowledge_read, agents_list, agents_load, skills_list, skills_load
 profile: universal
 model: L3
+conversation_starters:
+  - label: Audit an underperforming agent
+    prompt: >
+      The agent <name> keeps producing poor results on <kind of task>. Review its prompt and
+      telemetry, find the cause, and propose a fix or a deprecation.
+  - label: Decide whether we need a new agent
+    prompt: >
+      Tasks about <domain> keep landing on generic agents. Decide whether an existing agent should
+      be extended or a new one is needed, and draft the agent spec if it is.
+  - label: Resolve a routing conflict between agents
+    prompt: >
+      Both <agent A> and <agent B> pick up tasks about <topic>. Compare their triggers and
+      descriptions and propose a rule that separates them.
 ---
 
 # Meta-Architect (@meta-architect)

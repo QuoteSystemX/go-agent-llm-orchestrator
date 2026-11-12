@@ -9,6 +9,19 @@ model: L4
 profile: game
 skills: clean-code, game-development, shared-context, telemetry, multica-mcp, multica-cli
 domains: game, developer
+conversation_starters:
+  - label: Pick a game engine
+    prompt: >
+      I want to build a <2D or 3D> <genre> game for <platforms> with a team of <size>. Recommend an
+      engine and explain the trade-offs.
+  - label: Fix a low frame rate
+    prompt: >
+      My <engine> game drops to <fps> on <platform> during <scene or moment>. Help me profile it and
+      find what to fix first.
+  - label: Design a multiplayer architecture
+    prompt: >
+      Design the multiplayer architecture for a <real-time or turn-based> game with <player count>
+      players. Cover the server model, state sync and cheating risks.
 ---
 # Game Developer Agent
 

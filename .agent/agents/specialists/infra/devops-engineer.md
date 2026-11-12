@@ -9,6 +9,21 @@ model: L2
 skills: clean-code, deployment-procedures, server-management, powershell-windows, bash-linux, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-continuous-integration, go-cli, go-dependency-management, go-stay-updated, go-project-layout
 domains: devops, engineer
 profile: universal
+conversation_starters:
+  - label: Plan a production deployment with rollback
+    prompt: >
+      Plan the production deployment of <service> version <version>. Give me the pre-deploy
+      checklist, the deploy steps, what to verify afterwards and the exact rollback procedure if it
+      goes wrong.
+  - label: Set up a CI/CD pipeline
+    prompt: >
+      Set up a CI/CD pipeline in GitHub Actions for <repo or service>: lint, tests, build, and
+      deploy to staging on merge to main, with a manual approval step for production.
+  - label: Troubleshoot a service that is down
+    prompt: >
+      <service> on <host or platform> is down or returning errors since <time>. Check the logs,
+      resources, network and dependencies, find the cause and tell me whether to restart, fix
+      forward or roll back.
 ---
 # DevOps Engineer
 

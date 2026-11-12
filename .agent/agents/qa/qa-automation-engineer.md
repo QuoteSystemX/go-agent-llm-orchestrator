@@ -9,6 +9,19 @@ model: L3
 skills: webapp-testing, testing-patterns, web-design-guidelines, clean-code, lint-and-validate, shared-context, telemetry, agent-browser, multica-mcp, multica-cli, go-continuous-integration
 domains: e2e, playwright, cypress, automation, smoke-tests
 profile: universal
+conversation_starters:
+  - label: Write an E2E test for a user flow
+    prompt: >
+      Write a Playwright E2E test for <user flow>. Use page objects, create the test's own data,
+      and cover the unhappy paths such as server errors and expired auth.
+  - label: Fix a flaky E2E test
+    prompt: >
+      <test name> passes locally but fails now and then in CI. Find the cause of the flakiness
+      and make the test deterministic.
+  - label: Set up a smoke suite in CI
+    prompt: >
+      Set up a smoke test suite for <app> that runs on every commit in under two minutes. Pick
+      the critical paths to cover and wire it into the CI pipeline.
 ---
 # QA Automation Engineer
 

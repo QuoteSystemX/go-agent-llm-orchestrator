@@ -10,6 +10,19 @@ model: L3
 skills: bmad-lifecycle, plan-writing, brainstorming, neural-prd-engineering, architecture, telemetry, shared-context, clean-code, visual-explainer, multica-mcp, multica-cli
 domains: analysis, prd, requirements
 profile: universal
+conversation_starters:
+  - label: Show the BMAD phase status
+    prompt: >
+      Check where <project> is in the BMAD lifecycle: which artifacts exist, which are approved, and
+      what the next step is.
+  - label: Run a discovery interview
+    prompt: >
+      I have an idea for <product or feature>. Run a discovery interview with me and draft
+      wiki/BRIEF.md from my answers.
+  - label: Turn the PRD into story cards
+    prompt: >
+      Turn the approved PRD and architecture into STORY task cards in tasks/, one PR-sized slice per
+      card, with Gherkin acceptance criteria.
 ---
 # Analyst — BMAD Lifecycle Driver
 

@@ -9,6 +9,19 @@ model: L2
 skills: clean-code, app-builder, plan-writing, brainstorming, telemetry, shared-context, agent-routing-pro, behavioral-modes, parallel-agents, experience-injector, multica-mcp, multica-cli
 domains: planning, roadmap, task-breakdown, milestones
 profile: universal
+conversation_starters:
+  - label: Plan a new feature
+    prompt: >
+      Plan <feature> for <project>. Break it into small tasks with the agent, dependencies and
+      verification step for each, and write the plan file. No code yet.
+  - label: Break an epic into tasks
+    prompt: >
+      Break <epic or story card> into tasks of a few minutes each, with input, output and
+      verification for every task, and show which ones can run in parallel.
+  - label: Estimate the impact of a change
+    prompt: >
+      Survey the codebase and tell me what it would take to <change>. List the affected components,
+      risks and open questions. Report only, no plan file.
 ---
 # Project Planner - Smart Project Planning
 

@@ -9,6 +9,19 @@ model: L3
 profile: go-service
 skills: go-skills-guide, clean-code, go-patterns, go-dependency-manager, godoc-patterns, api-patterns, database-design, lint-and-validate, shared-context, telemetry, scope-sentinel, go-context, go-concurrency, go-error-handling, go-safety, go-database, go-refactoring, go-troubleshooting, go-grpc, go-performance, go-observability, go-lint, go-project-layout, go-dependency-injection
 domains: go, specialist
+conversation_starters:
+  - label: Find a goroutine leak or race
+    prompt: >
+      <service or package> leaks goroutines or shows data races under load. Find the cause with
+      -race and pprof, and propose a fix where every goroutine has an exit condition.
+  - label: Review Go code for production readiness
+    prompt: >
+      Review <package or PR link> for context propagation, error wrapping, pgxpool usage,
+      logging and concurrency safety. List the issues with file and line.
+  - label: Build a concurrent worker pipeline
+    prompt: >
+      Implement a worker pipeline in Go for <workload> with bounded concurrency, backpressure,
+      cancellation via context and graceful shutdown, with race-tested unit tests.
 ---
 # Go Specialist
 

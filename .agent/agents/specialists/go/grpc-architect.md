@@ -9,6 +9,19 @@ model: L3
 profile: go-service
 skills: go-skills-guide, go-patterns, go-dependency-manager, api-patterns, architecture, lint-and-validate, shared-context, telemetry, clean-code, multica-mcp, multica-cli, go-error-handling, go-testing, go-design-patterns, go-samber-oops, go-stretchr-testify, go-grpc, go-gopls, go-pkg-go-dev, go-project-layout
 domains: grpc, architect
+conversation_starters:
+  - label: Design a gRPC service contract
+    prompt: >
+      Design the .proto contract for <service>. It must support <operations>. Choose unary or
+      streaming RPCs, define the messages and errors, and add buf lint config.
+  - label: Check a proto change for breaking changes
+    prompt: >
+      Check the .proto changes in <PR link or file> for breaking changes against main with buf
+      breaking, and say how to make them backward compatible.
+  - label: Plan a v2 of a service API
+    prompt: >
+      We need incompatible changes to <package>.v1: <list of changes>. Plan the v2 package, the
+      deprecations in v1, and how clients migrate.
 ---
 # gRPC Architect
 

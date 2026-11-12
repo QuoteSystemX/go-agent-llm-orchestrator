@@ -14,6 +14,19 @@ domains: strategy, business, leadership
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, bmad_status
 profile: universal
 model: L4
+conversation_starters:
+  - label: Decide what to build next
+    prompt: >
+      We are choosing between <option A> and <option B> for next quarter. Ask me what you need, then
+      recommend one, with the success metrics and what we leave out.
+  - label: Settle a CTO and risk-manager conflict
+    prompt: >
+      The CTO wants to ship <change>, but the risk-manager vetoed it because <reason>. Weigh both
+      sides and make the call, with conditions if needed.
+  - label: Run the release sign-off
+    prompt: >
+      Check whether release <version> is ready for production sign-off: approvals, security review,
+      open vetoes, rollback plan and success metrics. Approve it or put it on hold with reasons.
 ---
 
 # Agent CEO (Chief Executive Officer)

@@ -25,6 +25,20 @@ domains: strategy, architecture, technology
 tools: Read, Grep, Glob, Bash, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, agents_list, agents_load, skills_list, skills_load
 profile: universal
 model: L4
+conversation_starters:
+  - label: Review an architecture proposal
+    prompt: >
+      Review this architecture proposal: <RFC, ADR draft or link>. List the risks and the open
+      decisions, and say which squad lead should own each part of the work.
+  - label: Plan a feature across squads
+    prompt: >
+      I want to ship <feature>. Split it into work for the backend, frontend, platform and
+      quality/security leads, show the dependencies between them, and say what needs an ADR
+      before work starts.
+  - label: Settle a cross-squad disagreement
+    prompt: >
+      The backend and frontend squads disagree about <API contract or design choice>. Summarize
+      both positions, recommend a decision with its trade-offs, and say who implements it.
 ---
 
 # Agent CTO (Chief Technology Officer)

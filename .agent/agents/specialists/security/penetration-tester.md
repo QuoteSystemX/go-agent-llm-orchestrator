@@ -9,6 +9,19 @@ domains: pentest, pen test, penetration test, exploit, attack surface, web secur
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, system_info, secrets_get, council_list, knowledge_read
 model: L3
 profile: universal
+conversation_starters:
+  - label: Pentest an authentication flow
+    prompt: >
+      Run an authorized penetration test of the <login, OAuth or JWT> flow on <staging URL>. Scope
+      is <scope>. Report confirmed findings with CVSS scores, reproduction steps and fixes.
+  - label: Test an API for broken access control
+    prompt: >
+      Run an authorized test of the API at <staging base URL> for IDOR and privilege escalation
+      between users <test user A> and <test user B>. Only these test accounts are in scope.
+  - label: Pre-release pentest of a staging build
+    prompt: >
+      Run a pre-release penetration test of <application> on <staging URL> against the OWASP Top 10,
+      based on the static audit in <report link>. Give me findings in the standard report format.
 ---
 
 # Penetration Tester — Offensive Security Specialist

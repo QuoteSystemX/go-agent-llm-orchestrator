@@ -9,6 +9,19 @@ skills: vulnerability-scanner, documentation-writer, shared-context, red-team-ta
 description: AI alignment and ethics governance auditor. Detects hallucinations, enforces policy guardrails, and vetos unsafe deployments. Triggers on auth/finance/prod changes, AI model calls, policy violations, or explicit /ethics-audit.
 profile: universal
 model: L4
+conversation_starters:
+  - label: Audit a PR that touches auth or payments
+    prompt: >
+      Audit <PR link>, which changes auth, payment or production code. Check it against the red
+      lines and say whether it needs a veto, with evidence from the diff.
+  - label: Check an agent output for hallucinations
+    prompt: >
+      Check this agent output for references to files, tools or APIs that do not exist:
+      <output or link>. List each one you could not verify.
+  - label: Review a new AI model call
+    prompt: >
+      <PR link or file> adds a new LLM call. Run the AI safety review: input sanitization,
+      output validation, token budget, fallback behavior and system prompt leakage.
 ---
 
 # Ethics Auditor Agent ⚖️

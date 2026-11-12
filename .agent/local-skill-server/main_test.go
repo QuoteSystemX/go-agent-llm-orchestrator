@@ -119,3 +119,49 @@ func TestValidatePath(t *testing.T) {
 		}
 	}
 }
+
+// TestLoadAgent_ReturnsConversationStartersVerbatim: the optional nested
+// conversation_starters frontmatter key is parsed by consumers (Multica) out
+// of agents_load's raw text, so the file must come back byte-for-byte.
+func TestLoadAgent_ReturnsConversationStartersVerbatim(t *testing.T) {
+	const fixture = `---
+name: debugger
+description: Debugger.
+conversation_starters:
+  - label: "Find the root cause: flaky test"
+    prompt: |
+      TestCheckout fails about once in ten CI runs.
+      Find the root cause before anyone retries it again.
+---
+
+# Debugger
+`
+	// validatePath resolves symlinks in the file path but not in the root,
+	// and macOS temp dirs live under the /var -> /private/var symlink.
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	agentDir := filepath.Join(root, ".agent", "agents", "qa")
+	if err := os.MkdirAll(agentDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(agentDir, "debugger.md"), []byte(fixture), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h := &handler{projectRoot: root}
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"name": "debugger"}
+	res, err := h.loadAgent(context.Background(), req)
+	if err != nil || res.IsError {
+		t.Fatalf("loadAgent failed: err=%v res=%v", err, res)
+	}
+	tc, ok := res.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("expected text content, got %T", res.Content[0])
+	}
+	if tc.Text != fixture {
+		t.Fatalf("agents_load must return the source file verbatim, got:\n%s", tc.Text)
+	}
+}

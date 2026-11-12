@@ -9,6 +9,19 @@ skills: clean-code, systematic-debugging, shared-context, telemetry, behavioral-
 domains: debugging, bugfix, analysis
 profile: universal
 model: L2
+conversation_starters:
+  - label: Find the root cause of a bug
+    prompt: >
+      Find the root cause of this bug: <error message, stack trace or issue link>. Reproduce it
+      first, then explain the cause and propose a fix with a regression test.
+  - label: Investigate a flaky test
+    prompt: >
+      <test name> fails now and then in CI. Find out why it is flaky and how to make it
+      deterministic.
+  - label: Analyze an error spike
+    prompt: >
+      Errors in <service> spiked after the last deployment. Go through the logs and the recent
+      changes and tell me what broke.
 ---
 # Debugger - Root Cause Analysis Expert
 

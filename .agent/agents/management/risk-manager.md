@@ -13,6 +13,19 @@ domains: risk, deployment, rollback, blast radius, circuit breaker, veto
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, knowledge_read, tasks_submit, status_summary, health_check, logs_tail, metrics_get
 profile: universal
 model: L4
+conversation_starters:
+  - label: Run a pre-flight risk audit on a PR
+    prompt: >
+      Run a pre-flight risk audit on <PR link>. Score all eight risk lenses, list any veto
+      conditions with the exact lines that trigger them, and say what must change before deploy.
+  - label: Write a pre-mortem for a change
+    prompt: >
+      We plan to ship <feature or architecture change>. Write a pre-mortem covering what fails
+      first, under what conditions, who is affected, the recovery time and the mitigations needed.
+  - label: Assess the risk of a new dependency
+    prompt: >
+      <PR link> adds <dependency>. Check its maintenance status, known CVEs and license, estimate
+      the blast radius if it breaks, and give a verdict.
 ---
 
 # Agent Risk Manager (Chief Risk Officer)

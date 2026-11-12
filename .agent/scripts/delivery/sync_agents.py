@@ -281,6 +281,13 @@ def build_agent_file(src_path: Path, target: str, is_workflow: bool = False) -> 
     skills_clean = str(skills_raw).strip().strip("[]").strip()
     skills = [s.strip() for s in skills_clean.split(",") if s.strip()]
 
+    # Output whitelist: generated target files carry ONLY the keys set below.
+    # Do NOT add `conversation_starters` here: it is a nested YAML list
+    # (label/prompt items, block-scalar prompts) meant for humans in chat UIs
+    # (read by Multica straight from the source file via agents_load), and
+    # parse_frontmatter() above is a flat `key: val` line splitter that turns
+    # its lines into junk keys. Emitting it would need a real nested parse
+    # (see _parse_frontmatter_yaml) and a reason for the target to see it.
     clean_fm: dict = {}
     clean_fm["name"] = fm.get("name", agent_name)
     if fm.get("description"): clean_fm["description"] = fm["description"]
@@ -538,6 +545,120 @@ def _parse_frontmatter_yaml(content: str) -> dict:
         return {}
 
 
+STARTERS_KEY = "conversation_starters"
+STARTERS_MAX_ITEMS = 3
+STARTERS_MAX_LABEL = 80
+STARTERS_MAX_PROMPT = 4000
+_BLOCK_SCALAR_RE = re.compile(r"""^\s*(?:-\s+)?["']?prompt["']?:\s*[|>][0-9+-]*\s*(?:#.*)?$""")
+# Keys that kit consumers read through line-based parsers; a starter line
+# starting with one of them would be taken as that key even when the agent
+# itself does not declare it (e.g. a missing `tools:` changes .claude output).
+_CONSUMER_KEYS = {"name", "description", "tools", "model", "skills", "domains", "hierarchy", "profile"}
+_TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):")
+
+
+def _extract_starters_subtree(fm_block: str) -> str | None:
+    """Cut the `conversation_starters:` subtree out of a frontmatter block:
+    from that column-0 key to the next column-0 key. Mirrors how Multica's
+    parser isolates it (it YAML-parses only this subtree, never the whole
+    frontmatter). Returns None when the key is absent."""
+    lines = fm_block.splitlines()
+    start = next((i for i, l in enumerate(lines) if l.startswith(f"{STARTERS_KEY}:")), None)
+    if start is None:
+        return None
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        line = lines[i]
+        if line and not line[0].isspace() and not line.startswith("#") and _TOP_LEVEL_KEY_RE.match(line):
+            end = i
+            break
+    return "\n".join(lines[start:end])
+
+
+def lint_conversation_starters(content: str) -> list[str]:
+    """Advisory checks for the optional `conversation_starters` frontmatter key.
+
+    Returns human-readable warnings; never fails the build (the field is
+    optional and consumers drop invalid items). Validation uses
+    yaml.safe_load on the isolated subtree — the same unit Multica parses —
+    and PyYAML is already a hard requirement of this script in CI.
+
+    Format: list of at most 3 {label, prompt} string pairs; label <= 80 and
+    prompt <= 4000 Unicode code points, both non-empty after trimming;
+    multi-line prompt only via a `|` / `>` block scalar.
+    """
+    if not content.startswith("---"):
+        return []
+    end = content.find("\n---", 3)
+    if end == -1:
+        return []
+    fm_block = content[3:end]
+    subtree = _extract_starters_subtree(fm_block.lstrip("\n"))
+    if subtree is None:
+        return []
+
+    import yaml  # presence already enforced by _parse_frontmatter_yaml()
+
+    warnings: list[str] = []
+    try:
+        parsed = yaml.safe_load(subtree)
+    except Exception as e:
+        return [f"{STARTERS_KEY}: subtree is not valid YAML ({str(e).splitlines()[0]})"]
+    items = parsed.get(STARTERS_KEY) if isinstance(parsed, dict) else None
+    if items is None:
+        return [f"{STARTERS_KEY}: key present but empty"]
+    if not isinstance(items, list):
+        return [f"{STARTERS_KEY}: must be a YAML list of {{label, prompt}} items"]
+    if len(items) > STARTERS_MAX_ITEMS:
+        warnings.append(f"{STARTERS_KEY}: {len(items)} items, max {STARTERS_MAX_ITEMS} (extra ones are dropped)")
+    for idx, item in enumerate(items, 1):
+        where = f"{STARTERS_KEY}[{idx}]"
+        if not isinstance(item, dict):
+            warnings.append(f"{where}: must be a mapping with label and prompt")
+            continue
+        extra = sorted(set(map(str, item)) - {"label", "prompt"})
+        if extra:
+            warnings.append(f"{where}: unknown keys {extra}")
+        label, prompt = item.get("label"), item.get("prompt")
+        if not isinstance(label, str) or not label.strip():
+            warnings.append(f"{where}: label must be a non-empty string")
+        else:
+            if len(label.strip()) > STARTERS_MAX_LABEL:
+                warnings.append(f"{where}: label is {len(label.strip())} chars, max {STARTERS_MAX_LABEL}")
+            if "\n" in label.strip():
+                warnings.append(f"{where}: label must be a single line")
+        if not isinstance(prompt, str) or not prompt.strip():
+            warnings.append(f"{where}: prompt must be a non-empty string")
+        elif len(prompt.strip()) > STARTERS_MAX_PROMPT:
+            warnings.append(f"{where}: prompt is {len(prompt.strip())} chars, max {STARTERS_MAX_PROMPT}")
+
+    # Multi-line prompts must use a block scalar: count multi-line prompts and
+    # compare with the number of `prompt: |` / `prompt: >` lines.
+    multiline = sum(
+        1 for it in items
+        if isinstance(it, dict) and isinstance(it.get("prompt"), str) and "\n" in it["prompt"].strip()
+    )
+    block_scalars = sum(1 for l in subtree.splitlines() if _BLOCK_SCALAR_RE.match(l))
+    if multiline > block_scalars:
+        warnings.append(f"{STARTERS_KEY}: multi-line prompt must use a `|` or `>` block scalar")
+
+    # Several kit consumers (parse_frontmatter() here, mcp-server-agent-kit's
+    # parseFrontmatter, agent_auctioneer) split frontmatter line by line with
+    # last-wins semantics and ignore indentation. A starter line that looks
+    # like `<top-level key>: ...` after stripping would silently override it.
+    top_keys = {m.group(1) for l in fm_block.splitlines() if (m := _TOP_LEVEL_KEY_RE.match(l))}
+    top_keys |= _CONSUMER_KEYS
+    top_keys.discard(STARTERS_KEY)
+    for l in subtree.splitlines()[1:]:
+        m = _TOP_LEVEL_KEY_RE.match(l.strip())
+        if m and m.group(1) in top_keys:
+            warnings.append(
+                f"{STARTERS_KEY}: line starting with `{m.group(1)}:` would override that frontmatter "
+                "key in line-based parsers — rephrase it"
+            )
+    return warnings
+
+
 def build_agent_registry(agent_files: list) -> tuple[bool, dict]:
     """Build the in-memory, schema-validated agent index from already-filtered
     agent source files. Not persisted anywhere — see validate_agent_registry().
@@ -571,6 +692,8 @@ def build_agent_registry(agent_files: list) -> tuple[bool, dict]:
     for src in agent_files:
         content = src.read_text(encoding="utf-8")
         fm = _parse_frontmatter_yaml(content)
+        for warning in lint_conversation_starters(content):
+            print(f"  ⚠️ {src.stem}: {warning}")
         entry = dict(fm)
         entry.setdefault("name", src.stem)
         entry.setdefault("description", "")

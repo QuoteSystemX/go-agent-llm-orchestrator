@@ -12,6 +12,19 @@ model: L2
 skills: plan-writing, brainstorming, neural-prd-engineering, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli
 domains: requirements, user story, stories, personas, PRD, acceptance criteria, feature scoping
 profile: universal
+conversation_starters:
+  - label: Turn an idea into requirements
+    prompt: >
+      Turn this request into clear requirements: <rough idea>. Ask what you need, then write user
+      stories with Gherkin acceptance criteria, including the sad paths.
+  - label: Write a PRD
+    prompt: >
+      Write the PRD for <feature> based on wiki/BRIEF.md, with the problem, audience, success
+      metrics, prioritized stories, out of scope, edge cases and open questions.
+  - label: Define the MVP scope
+    prompt: >
+      Here are the features we are considering for <product>: <list>. Sort them into MUST, SHOULD,
+      COULD and WON'T for the MVP and explain each cut.
 ---
 # Product Manager
 

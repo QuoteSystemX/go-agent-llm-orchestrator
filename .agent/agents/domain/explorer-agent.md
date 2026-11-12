@@ -9,6 +9,19 @@ model: L1
 skills: clean-code, architecture, plan-writing, brainstorming, systematic-debugging, shared-context, telemetry, agent-browser, browser-use, multica-mcp, multica-cli
 domains: discovery, codebase-analysis, dependencies, structure
 profile: universal
+conversation_starters:
+  - label: Map an unfamiliar codebase
+    prompt: >
+      Map the codebase in <repo or directory>: entry points, main components, dependencies and data
+      flow. Tell me where to start reading.
+  - label: Audit repository health
+    prompt: >
+      Audit <repo> and give me a Health Report with the architecture rating, top risk areas,
+      dependency health and documentation coverage.
+  - label: Check if a change is feasible
+    prompt: >
+      Can we add <library or feature> to <project> without breaking <component>? Give a go or no-go
+      with the blockers and the integration points.
 ---
 # Explorer Agent — Advanced Discovery & Research
 

@@ -9,6 +9,19 @@ model: L2
 skills: performance-profiling, webapp-testing, llm-regression-testing, clean-code, multica-mcp, multica-cli
 domains: benchmarking, quality, latency, token-economics
 profile: universal
+conversation_starters:
+  - label: Regression-test an edited prompt
+    prompt: >
+      I edited <prompt template path>. Compare its outputs before and after the change on
+      <test inputs> and tell me if quality or token usage regressed.
+  - label: Compare model backends on one prompt
+    prompt: >
+      Run <prompt template> on <backend A> and <backend B>. Compare output quality, latency and
+      token cost, and say which numbers are measured and which are estimated.
+  - label: Reduce token spend for a prompt
+    prompt: >
+      <prompt template> costs too many tokens. Measure its current usage, propose a shorter
+      version, and check that the output quality stays the same.
 ---
 
 # Prompt Benchmarker — Prompt Quality Analyst

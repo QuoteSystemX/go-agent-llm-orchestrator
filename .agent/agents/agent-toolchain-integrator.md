@@ -9,6 +9,19 @@ hierarchy:
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent, skills_load, skills_search, knowledge_read, tasks_submit
 model: L2
 profile: universal
+conversation_starters:
+  - label: Fix MCP config for a client
+    prompt: >
+      The MCP server <server name> works from <client A> but not from <client B: Claude Code, Codex
+      or IDE>. Compare the client configs, fix the one that is wrong and confirm the handshake works.
+  - label: Check config drift between scripts and docs
+    prompt: >
+      Check whether the MCP config, the scripts under .agent/scripts/ and the docs still agree for
+      <area or file>. List every mismatch and unresolved placeholder, then fix the minor ones.
+  - label: Make a tool work on WSL, Linux and macOS
+    prompt: >
+      <script or tool> works on <platform> but fails on <other platform> with <error>. Find the
+      platform-specific assumption and make it work on both.
 ---
 
 # 🛠️ Agent Toolchain Integrator

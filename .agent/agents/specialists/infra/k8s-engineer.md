@@ -9,6 +9,21 @@ model: L3
 profile: go-service, data-platform, fullstack
 skills: k8s-patterns, deployment-procedures, server-management, bash-linux, clean-code, terraform-patterns, observability-patterns, cloud-patterns, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli, kubernetes-mcp
 domains: k8s, engineer
+conversation_starters:
+  - label: Write a production-ready Helm chart
+    prompt: >
+      Write a production-ready Helm chart for <service> (<stateless or stateful>): resource requests
+      and limits, probes, PDB, topology spread, a non-root security context, NetworkPolicy and an
+      HPA.
+  - label: Harden RBAC and NetworkPolicy in a namespace
+    prompt: >
+      Audit the RBAC and NetworkPolicy setup in namespace <namespace>. Find over-privileged
+      ServiceAccounts, cluster-wide bindings and missing default-deny policies, and give me the
+      corrected manifests.
+  - label: Debug a crash-looping pod
+    prompt: >
+      Pods of <deployment> in <namespace> keep restarting with <CrashLoopBackOff, OOMKilled or
+      error>. Diagnose it from describe output, logs and events, and propose a fix in the manifests.
 ---
 # Kubernetes Engineer
 

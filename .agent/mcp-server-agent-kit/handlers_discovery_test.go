@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -120,5 +121,76 @@ func TestLoadSkill_FallsBackToPrettyName(t *testing.T) {
 	}
 	if res.IsError {
 		t.Fatalf("expected success loading skill via pretty display name, got error result")
+	}
+}
+
+// starterAgentFixture carries the optional conversation_starters frontmatter
+// key (nested list, block-scalar prompts, quoted label with a colon).
+// Consumers such as Multica parse it out of agents_load's raw text, so the
+// server must hand the file back byte-for-byte.
+const starterAgentFixture = `---
+name: backend-lead
+description: Backend Engineering Lead.
+conversation_starters:
+  - label: "Plan the sprint: backend"
+    prompt: |
+      Review the open backend tasks and propose an order.
+      Group them by service: api, worker.
+  - label: Triage failing jobs
+    prompt: >
+      Look at the jobs that failed overnight
+      and tell me who should own each one.
+skills: clean-code
+---
+
+# Backend Lead
+`
+
+func writeStarterAgent(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	agentDir := filepath.Join(root, ".agent", "agents", "management")
+	if err := os.MkdirAll(agentDir, 0o755); err != nil {
+		t.Fatalf("failed to create agent dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(agentDir, "backend-lead.md"), []byte(starterAgentFixture), 0o644); err != nil {
+		t.Fatalf("failed to write agent file: %v", err)
+	}
+	return root
+}
+
+func TestLoadAgent_ReturnsConversationStartersVerbatim(t *testing.T) {
+	h := &handler{projectRoot: writeStarterAgent(t)}
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"name": "backend-lead"}
+
+	res, err := h.loadAgent(context.Background(), req)
+	if err != nil || res.IsError {
+		t.Fatalf("loadAgent failed: err=%v res=%v", err, res)
+	}
+	tc, ok := res.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("expected text content, got %T", res.Content[0])
+	}
+	if tc.Text != starterAgentFixture {
+		t.Fatalf("agents_load must return the source file verbatim, got:\n%s", tc.Text)
+	}
+}
+
+// TestListAgents_IgnoresConversationStartersLines guards the flat line-based
+// parseFrontmatter: starter lines must not leak into name/description.
+func TestListAgents_IgnoresConversationStartersLines(t *testing.T) {
+	h := &handler{projectRoot: writeStarterAgent(t)}
+
+	res, err := h.listAgents(context.Background(), mcp.CallToolRequest{})
+	if err != nil || res.IsError {
+		t.Fatalf("listAgents failed: err=%v res=%v", err, res)
+	}
+	var infos []RegistryInfo
+	if err := json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &infos); err != nil {
+		t.Fatalf("listAgents returned invalid JSON: %v", err)
+	}
+	if len(infos) != 1 || infos[0].Name != "backend-lead" || infos[0].Description != "Backend Engineering Lead." {
+		t.Fatalf("unexpected listAgents result: %+v", infos)
 	}
 }

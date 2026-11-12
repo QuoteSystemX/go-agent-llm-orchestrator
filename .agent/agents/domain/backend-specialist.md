@@ -9,6 +9,19 @@ model: L2
 skills: clean-code, nodejs-best-practices, python-patterns, api-patterns, database-design, mcp-builder, lint-and-validate, powershell-windows, bash-linux, rust-pro, observability-patterns, shared-context, telemetry, wsl-interop, scope-sentinel, api-development, better-auth-best-practices, postgres-best-practices, supabase-postgres-best-practices, turso-db, convex-setup-auth, typed-service-contracts, multica-mcp, multica-cli, go-observability, go-swagger, go-dependency-injection
 domains: backend, api, server, nodejs, python, database, auth
 profile: universal
+conversation_starters:
+  - label: Build an API endpoint
+    prompt: >
+      Add a <REST or GraphQL> endpoint to <Node.js or Python service> that <does what>. Include
+      input validation, auth checks, error handling and tests.
+  - label: Review backend code for security
+    prompt: >
+      Review <file, module or PR> in our <Node.js or Python> backend for input validation, auth, SQL
+      injection and secret handling. List the issues by severity with fixes.
+  - label: Choose a backend stack
+    prompt: >
+      I am starting a backend for <product> with <expected load, clients and deployment target>.
+      Recommend the runtime, framework, database and API style, with the trade-offs.
 ---
 # Backend Development Architect
 

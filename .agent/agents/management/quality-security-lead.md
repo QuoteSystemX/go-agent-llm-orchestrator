@@ -16,6 +16,19 @@ model: L2
 skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli
 domains: quality, security, testing, audit, compliance, pentest, e2e, static-analysis, vulnerability
 profile: universal
+conversation_starters:
+  - label: Run a pre-release security gate
+    prompt: >
+      <service or feature> is about to go to production. Plan the security gate: static audit,
+      penetration test scope and E2E coverage, and say what would block the release.
+  - label: Triage a vulnerability report
+    prompt: >
+      We received this vulnerability report: <report or link>. Assess its severity, decide who
+      verifies it and who fixes it, and say whether it blocks the next deployment.
+  - label: Find untested critical paths
+    prompt: >
+      Find the critical paths in <area> that have no unit or E2E tests and create prioritized
+      tasks to cover them.
 ---
 
 # Quality & Security Lead

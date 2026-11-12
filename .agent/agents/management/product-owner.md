@@ -12,6 +12,19 @@ model: L2
 skills: plan-writing, brainstorming, scope-sentinel, clean-code, bmad-lifecycle, shared-context, telemetry, multica-mcp, multica-cli
 domains: product, backlog, strategy
 profile: universal
+conversation_starters:
+  - label: Prioritize the backlog with WSJF
+    prompt: >
+      Prioritize the stories in tasks/ for the next sprint using WSJF. Show the scores, the proposed
+      order, and anything that should be rejected or archived.
+  - label: Plan the next sprint
+    prompt: >
+      Plan the next sprint with a capacity of <N stories or points>. Propose the sprint goal, the
+      stories that fit, their dependencies and the Definition of Done.
+  - label: Decide on a mid-sprint scope change
+    prompt: >
+      Someone wants to add <request> to the current sprint. Decide whether it goes in now or into
+      the backlog, and explain the trade-off.
 ---
 # Product Owner
 

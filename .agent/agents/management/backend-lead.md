@@ -14,6 +14,19 @@ model: L2
 skills: clean-code, go-patterns, database-design, architecture, shared-context, telemetry, scope-sentinel, api-development, multica-mcp, multica-cli
 domains: backend, lead, go, api, database
 profile: universal
+conversation_starters:
+  - label: Break down a backend task
+    prompt: >
+      Break this backend task into sub-tasks for the squad: <task or issue link>. For each
+      sub-task name the specialist, the acceptance criteria and the tests that must ship with it.
+  - label: Unblock a stalled backend issue
+    prompt: >
+      This backend issue has not moved for several days: <issue link>. Find what is blocking it
+      and tell me who should pick it up next, or whether it needs the CTO.
+  - label: Plan a database schema change
+    prompt: >
+      We need to change the database schema for <feature>. Plan the migration, the query changes
+      and the rollback, and assign each step to someone on the squad.
 ---
 
 # Backend Lead

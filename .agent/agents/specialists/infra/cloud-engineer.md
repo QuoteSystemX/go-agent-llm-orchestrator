@@ -9,6 +9,22 @@ domains: cloud, infrastructure, aws, gcp, azure, terraform, iac
 tools: Read, Write, Edit, Grep, Glob, Bash, health_check, system_info, workspace_sync, workspace_status, project_list, secrets_get
 profile: universal
 model: L3
+conversation_starters:
+  - label: Design cloud infrastructure for a service
+    prompt: >
+      Design the cloud infrastructure for <service> on <AWS/GCP/Azure>: compute, network, storage,
+      IAM and a DR region. Target <availability SLO>, RTO <N>h and RPO <N>h, and include a monthly
+      cost estimate.
+  - label: Audit a cloud cost spike
+    prompt: >
+      Our cloud bill grew <N>% month over month in <account or project>. Find what drives the
+      increase, flag untagged and oversized resources, and propose right-sizing changes with
+      expected savings.
+  - label: Review Terraform for security issues
+    prompt: >
+      Review the Terraform in <path or PR link> for security and reliability problems: wildcard IAM
+      permissions, public buckets, open security groups, unencrypted storage, single-AZ databases
+      and local state. List fixes in priority order.
 ---
 
 # Cloud Engineer — Cloud Infrastructure Specialist

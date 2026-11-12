@@ -9,6 +9,20 @@ domains: local-llm, quantization, hardware-acceleration, performance
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L2
+conversation_starters:
+  - label: Pick a quantization for a local model
+    prompt: >
+      Which GGUF quantization of <model> should I run on <GPU and VRAM, or CPU and RAM>? Compare the
+      options for quality, VRAM use and expected tokens per second, and recommend one.
+  - label: Speed up a slow local model
+    prompt: >
+      <model> in <Ollama, Jan or llama.cpp> runs at only <N> tokens per second with <N>s time to
+      first token. Profile the setup and tune GPU offload, context size and KV cache settings to
+      make it faster.
+  - label: Fix out-of-memory errors with a large context
+    prompt: >
+      <model> runs out of VRAM when the context goes above <N> tokens on <GPU>. Work out the safe
+      num_ctx for this hardware and propose a Modelfile that fits without swapping to CPU.
 ---
 
 # Local Model Optimizer — Local LLM Optimizer

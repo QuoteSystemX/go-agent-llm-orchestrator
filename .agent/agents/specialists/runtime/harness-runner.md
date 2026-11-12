@@ -10,6 +10,20 @@ domains: infra, runtime, security
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal
 model: L2
+conversation_starters:
+  - label: Run a prompt through an LLM CLI harness
+    prompt: >
+      Run the prompt in <prompt file> through the <claude, codex or free-code> harness with caller
+      role <role>, then show me the exit code, duration, output size and any sandbox violations.
+  - label: Compare LLM CLIs on the same prompt
+    prompt: >
+      Run the same prompt from <prompt file> through the <harness A> and <harness B> harnesses and
+      compare exit codes, duration and output size in a table.
+  - label: Explain a failed harness run
+    prompt: >
+      bin/harness_run failed for harness <name> with <error or exit code, for example
+      CAPABILITY_DENIED>. Find out why from the result JSON and the manifest, and tell me what to
+      change.
 ---
 
 # 🎯 @harness-runner (Capability-Gated Subprocess Executor)

@@ -14,6 +14,21 @@ model: L2
 skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, cloud-patterns, terraform-patterns, github-actions-expert, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp
 domains: platform, kubernetes, k8s, devops, cloud, cicd, infrastructure, sre, reliability, iac, terraform
 profile: universal
+conversation_starters:
+  - label: Onboard a new service
+    prompt: >
+      We are launching <service>. Plan what it needs from the platform: Kubernetes deployment,
+      CI/CD pipeline, cloud resources, monitoring and alerts, and who on the squad owns each
+      part.
+  - label: Plan a production infra change
+    prompt: >
+      Plan this production infrastructure change: <change, e.g. ingress controller upgrade>.
+      Include the staging check, the rollback procedure and the SLO impact before anyone applies
+      it.
+  - label: Explain a cloud cost spike
+    prompt: >
+      Our cloud bill grew noticeably this month. Find which resources drove the increase and
+      propose rightsizing or cleanup tasks for the squad.
 ---
 
 # Platform Lead

@@ -9,6 +9,18 @@ model: L2
 profile: mobile
 skills: clean-code, mobile-design, i18n-localization, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli
 domains: mobile, react-native, flutter
+conversation_starters:
+  - label: Build a mobile screen
+    prompt: >
+      Build the <screen> screen in our <React Native, Expo or Flutter> app for <iOS, Android or
+      both>. Handle loading, error and offline states, and run the build to confirm it compiles.
+  - label: Fix a janky list or animation
+    prompt: >
+      <screen or list> stutters on <device>. Find the cause and fix it so it runs at a smooth 60fps.
+  - label: Fix a failing mobile build
+    prompt: >
+      The <Android or iOS> build fails with <error>. Find the cause, fix it, and run the build again
+      until it passes.
 ---
 # Mobile Developer
 

@@ -346,5 +346,148 @@ class TestSyncAgents(unittest.TestCase):
         self.assertIn("## Some Other Section\n\ncontent here", new_content)
         self.assertIn("## Next Section\n\nkept as-is", new_content)
 
+    # -- conversation_starters frontmatter key --
+    # The key is for humans in chat UIs (Multica reads it from the raw source
+    # file via agents_load); generated targets must never change because of it.
+
+    STARTERS_BLOCK = (
+        "conversation_starters:\n"
+        "  - label: \"Plan the Q3 roadmap: backend\"\n"
+        "    prompt: |\n"
+        "      Review the open backend tasks and propose an order.\n"
+        "      Group them by service: api, worker.\n"
+        "  - label: Triage failing jobs\n"
+        "    prompt: >\n"
+        "      Look at the jobs that failed overnight\n"
+        "      and tell me who should own each one.\n"
+    )
+
+    def _agent_source(self, with_starters: bool) -> str:
+        head = (
+            "---\n"
+            "name: dev\n"
+            "description: Dev agent. Builds things.\n"
+        )
+        tail = (
+            "tools: Read, Grep\n"
+            "skills: testing\n"
+            "model: L2\n"
+            "domains: dev\n"
+            "---\nDev body\n"
+        )
+        return head + (self.STARTERS_BLOCK if with_starters else "") + tail
+
+    def test_generated_files_unchanged_by_conversation_starters_all_targets(self):
+        (self.test_root / ".agent" / "skills" / "testing").mkdir(parents=True)
+        (self.test_root / ".agent" / "skills" / "testing" / "SKILL.md").write_text("Skill")
+        agents_dir = self.test_root / ".agent" / "agents"
+        src = agents_dir / "dev.md"
+
+        outputs = {}
+        for with_starters in (False, True):
+            src.write_text(self._agent_source(with_starters))
+            outputs[with_starters] = {
+                target: sync_agents.build_agent_file(src, target) for target in sync_agents.TARGETS
+            }
+            outputs[with_starters]["opencode.json"] = json.dumps(
+                sync_agents._build_agent_section(), sort_keys=True
+            )
+
+        self.assertEqual(set(outputs[True]) - {"opencode.json"}, set(sync_agents.TARGETS))
+        for key, without in outputs[False].items():
+            self.assertEqual(outputs[True][key], without, f"output for {key} changed")
+        self.assertNotIn("conversation_starters", outputs[True]["claude"])
+        self.assertNotIn("label", outputs[True]["opencode"])
+
+    def test_lint_conversation_starters_accepts_valid_block(self):
+        self.assertEqual(sync_agents.lint_conversation_starters(self._agent_source(True)), [])
+
+    def test_lint_conversation_starters_absent_key_is_silent(self):
+        self.assertEqual(sync_agents.lint_conversation_starters(self._agent_source(False)), [])
+
+    def _lint(self, block: str) -> list:
+        return sync_agents.lint_conversation_starters(
+            "---\nname: dev\ndescription: Dev agent.\n" + block + "model: L2\n---\nBody\n"
+        )
+
+    def test_lint_conversation_starters_flags_limits(self):
+        items = "".join(f"  - label: L{i}\n    prompt: P{i}\n" for i in range(4))
+        warnings = self._lint("conversation_starters:\n" + items)
+        self.assertTrue(any("max 3" in w for w in warnings), warnings)
+
+        long_label = "x" * 81
+        warnings = self._lint(f"conversation_starters:\n  - label: {long_label}\n    prompt: ok\n")
+        self.assertTrue(any("label is 81 chars" in w for w in warnings), warnings)
+
+        long_prompt = "y" * 4001
+        warnings = self._lint(f"conversation_starters:\n  - label: ok\n    prompt: {long_prompt}\n")
+        self.assertTrue(any("prompt is 4001 chars" in w for w in warnings), warnings)
+
+        warnings = self._lint("conversation_starters:\n  - label: ok\n")
+        self.assertTrue(any("prompt must be a non-empty string" in w for w in warnings), warnings)
+
+    def test_lint_conversation_starters_counts_code_points_not_bytes(self):
+        label = "\u0436" * 80  # 80 Cyrillic letters = 160 UTF-8 bytes
+        self.assertEqual(self._lint(f"conversation_starters:\n  - label: {label}\n    prompt: ok\n"), [])
+
+    def test_lint_conversation_starters_requires_block_scalar_for_multiline(self):
+        block = (
+            "conversation_starters:\n"
+            "  - label: ok\n"
+            "    prompt: \"line one\\nline two\"\n"
+        )
+        warnings = self._lint(block)
+        self.assertTrue(any("block scalar" in w for w in warnings), warnings)
+
+    def test_lint_conversation_starters_reports_invalid_yaml(self):
+        warnings = self._lint("conversation_starters:\n  - label: bad: colon\n    prompt: ok\n")
+        self.assertTrue(any("not valid YAML" in w for w in warnings), warnings)
+
+    def test_lint_conversation_starters_flags_top_level_key_collision(self):
+        block = (
+            "conversation_starters:\n"
+            "  - label: ok\n"
+            "    prompt: |\n"
+            "      model: please use the bigger one\n"
+        )
+        warnings = self._lint(block)
+        self.assertTrue(any("`model:`" in w for w in warnings), warnings)
+
+    def test_lint_conversation_starters_flags_undeclared_consumer_key(self):
+        # The fixture declares no `tools:`; a starter line `tools: ...` would
+        # still become fm["tools"] in parse_frontmatter() and change outputs.
+        block = (
+            "conversation_starters:\n"
+            "  - label: ok\n"
+            "    prompt: |\n"
+            "      tools: list the ones we use\n"
+        )
+        warnings = self._lint(block)
+        self.assertTrue(any("`tools:`" in w for w in warnings), warnings)
+
+    def test_lint_conversation_starters_accepts_indentation_indicator_variants(self):
+        for header in ("prompt: |2-", "prompt: |-2", "prompt: >+", '"prompt": |'):
+            block = (
+                "conversation_starters:\n"
+                "  - label: ok\n"
+                f"    {header}\n"
+                "      line one\n"
+                "      line two\n"
+            )
+            self.assertEqual(self._lint(block), [], header)
+
+    def test_build_agent_registry_warns_but_passes_on_bad_starters(self):
+        path = self.test_root / ".agent" / "agents" / "dev.md"
+        items = "".join(f"  - label: L{i}\n    prompt: P{i}\n" for i in range(4))
+        path.write_text(
+            "---\nname: dev\ndescription: Dev agent.\nconversation_starters:\n" + items + "---\nBody\n"
+        )
+        with patch("builtins.print") as fake_print:
+            ok, data = sync_agents.build_agent_registry([path])
+        self.assertTrue(ok)
+        self.assertEqual(len(data["agents"][0]["conversation_starters"]), 4)
+        printed = " ".join(str(c.args[0]) for c in fake_print.call_args_list if c.args)
+        self.assertIn("max 3", printed)
+
 if __name__ == "__main__":
     unittest.main()

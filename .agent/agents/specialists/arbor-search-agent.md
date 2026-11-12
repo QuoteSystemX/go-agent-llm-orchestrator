@@ -9,6 +9,19 @@ domains: research, search, web-search, literature-review
 tools: Read, Grep, Glob, Bash, search_web
 profile: universal
 model: L2
+conversation_starters:
+  - label: Check a research idea for prior art
+    prompt: >
+      Check whether <research direction or hypothesis> is already covered in published work or
+      open-source code. Search at least three sources and give the novelty verdict with references.
+  - label: Annotate a merged winner with citations
+    prompt: >
+      Node <node_id> was merged. Find the papers or repositories that explain why its approach
+      works and add the annotation with citations to the run report.
+  - label: Find recent work on a technique
+    prompt: >
+      Find work from the last three years on <technique> applied to <problem>. Summarize the
+      main approaches and their reported results, and mark the confidence of each source.
 ---
 
 # Arbor Search Agent — Literature Search & Research Vetting

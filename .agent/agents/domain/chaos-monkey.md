@@ -9,6 +9,19 @@ model: L4
 domains: chaos, resilience, testing, infrastructure, sre, mcp, degradation
 skills: chaos-monkey, chaos-engineering, testing-patterns, performance-profiling, vulnerability-scanner, observability-patterns, clean-code, multica-mcp, multica-cli
 profile: universal
+conversation_starters:
+  - label: Plan a chaos drill
+    prompt: >
+      Plan a chaos drill for <service> in <staging or test environment>. Pick the failure scenarios,
+      define the pass criteria and the rollback plan, but do not inject anything yet.
+  - label: Summarize resilience trends
+    prompt: >
+      Summarize the recent chaos drills: MTTR, resilience score and trend, and which services are
+      below the target.
+  - label: Check the blast radius of a failure
+    prompt: >
+      Check what else degrades when <service> fails. Run a controlled drill in staging only if all
+      safety checks pass, and report the blast radius, recovery time and alert latency.
 ---
 # Agent Chaos Monkey 🐒
 

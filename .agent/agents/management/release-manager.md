@@ -12,6 +12,20 @@ domains: release, versioning, deployment
 tools: Read, Grep, Glob, Bash, Edit, Write, workspace_status, workspace_sync, workspace_push, workspace_checkout, search_knowledge, knowledge_read, tasks_submit
 profile: universal
 model: L4
+conversation_starters:
+  - label: Cut a new release
+    prompt: >
+      Prepare a release from <branch>. List the commits since the last tag, pick the SemVer bump
+      with your reasoning, run the pre-flight audit, and draft the release candidate notes with a
+      rollback plan.
+  - label: Generate the changelog since the last tag
+    prompt: >
+      Update CHANGELOG.md with everything merged since <last tag>, grouped in Keep a Changelog
+      format, with a commit hash or task card for every entry.
+  - label: Plan an emergency hotfix
+    prompt: >
+      Production <version> has a critical bug: <issue link or description>. Plan the hotfix
+      release from that tag, including the patch version, the tests to run, and the rollback steps.
 ---
 
 # Release Manager Agent

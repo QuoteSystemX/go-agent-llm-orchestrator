@@ -9,6 +9,19 @@ model: L4
 skills: clean-code, vulnerability-scanner, security-audit, api-patterns, shared-context, telemetry, better-auth-best-practices, multica-mcp, multica-cli
 domains: security, audit, vulnerabilities, threat model, static analysis
 profile: universal
+conversation_starters:
+  - label: Run a security review of code
+    prompt: >
+      Do a security review of <path, service or PR link> against the OWASP Top 10: access control,
+      injection, secrets, crypto and error handling. Rank findings by severity and give fixes.
+  - label: Audit dependencies and the supply chain
+    prompt: >
+      Audit the dependencies of <repo or service>: lock files, known CVEs, unmaintained or
+      suspicious packages and CI/CD integrity. Tell me what to upgrade or replace first.
+  - label: Build a threat model for a component
+    prompt: >
+      Build a STRIDE threat model for <component or feature>: assets, trust boundaries, attack
+      vectors and mitigations, with the high-risk gaps called out.
 ---
 # Security Auditor
 

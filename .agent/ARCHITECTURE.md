@@ -540,6 +540,51 @@ Slash command procedures. Invoke with `/command`.
 
 ---
 
+## 🧾 Agent Frontmatter
+
+Every `.agent/agents/**/*.md` starts with a YAML frontmatter block. Required: `name`, `description`
+(CI-gated by `sync_agents.py` against `.agent/config/agent_registry.schema.json`). Common optional
+keys: `hierarchy`, `skills`, `domains`, `tools`, `profile`, `model`.
+
+### `conversation_starters` (optional, for humans)
+
+Ready-made requests a **person** can click in a chat UI (Multica shows them in the agent profile
+and, later, as buttons in an empty chat). They are **not instructions for the agent** — never put
+behaviour rules here; the agent's prompt body owns behaviour.
+
+```yaml
+conversation_starters:
+  - label: "Review the PR: payments service"
+    prompt: |
+      Review the open pull request for the payments service and list blocking issues first.
+  - label: Triage failing backend tasks
+    prompt: >
+      Look at the backend tasks that failed in the last 24 hours, group them by cause
+      and propose who should take each group.
+```
+
+| Rule | Limit |
+| --- | --- |
+| Items | at most 3 (extra ones are dropped by consumers) |
+| `label` | single line, non-empty, ≤ 80 Unicode code points |
+| `prompt` | non-empty, ≤ 4000 Unicode code points |
+| Multi-line `prompt` | only via a `|` or `>` block scalar |
+| Values containing `: ` | must be quoted |
+| Language | the same language as the agent's prompt (kit agents are English) |
+
+- **Not propagated** to `.claude/agents/` or `.opencode/` / `opencode.json`: the `sync_agents.py`
+  output whitelist (`build_agent_file`) only emits `name`/`description`/`tools` (+`model` for
+  opencode). Consumers read the key from the raw source file returned by `agents_load`
+  (both MCP servers return the file verbatim).
+- **Lint**: `sync_agents.py` YAML-parses the isolated `conversation_starters:` subtree (the same
+  unit Multica parses) and prints `⚠️` warnings for limit/format violations — it never fails the
+  build. A YAML syntax error that breaks the whole frontmatter still fails the schema gate.
+- Avoid starter lines that begin with another top-level key (`model:`, `description:`, …):
+  several kit consumers split frontmatter line by line and would treat such a line as that key.
+  The linter warns about it.
+
+---
+
 ## 🎯 Skill Loading Protocol
 
 ```plaintext

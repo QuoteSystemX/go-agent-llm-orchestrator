@@ -15,6 +15,19 @@ model: L2
 skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, observability-patterns, multica-mcp, multica-cli
 domains: data, market-feeds, ohlcv, kafka, clickhouse, dbt, pipeline, backtesting, ingestion, analytics
 profile: universal
+conversation_starters:
+  - label: Plan a new market data feed
+    prompt: >
+      We need to ingest <data type, e.g. OHLCV> from <exchange or source>. Break the work down for
+      the data squad (schema, pipeline, backfill, dashboard and tests) and give the order of work.
+  - label: Triage a stale data feed
+    prompt: >
+      The <source> feed has been <N minutes behind or missing ticks> since <time>. Organize the
+      investigation, say who checks what, and when to escalate to the CTO.
+  - label: Review a schema change
+    prompt: >
+      We want to change <table> by <change>. List the downstream consumers it affects, what the
+      database-architect must approve, and the migration and rollback plan.
 ---
 
 # Data Lead

@@ -12,6 +12,19 @@ domains: maintenance, infrastructure, scripts
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, health_check, workspace_status, logs_tail
 profile: universal
 model: L3
+conversation_starters:
+  - label: Audit a pull request before merge
+    prompt: >
+      Audit PR <number or link> before merge. Check security, ADR compliance, test coverage and docs
+      drift, and give a PASS or FAIL verdict with evidence.
+  - label: Check repository health
+    prompt: >
+      Audit the current state of the repository. Run the health and drift checks and list the top
+      issues that would block the next release, ordered by severity.
+  - label: Review a large refactor proposal
+    prompt: >
+      There is a proposal to refactor <component>: <summary, branch or PR>. Check it against the
+      ADRs in wiki/decisions/ and KNOWLEDGE.md and tell me what must change before it can merge.
 ---
 # Maintainer — Senior Quality Guardian
 

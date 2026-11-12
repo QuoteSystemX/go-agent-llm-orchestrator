@@ -9,6 +9,20 @@ model: L3
 profile: go-service, data-platform, fullstack
 skills: observability-patterns, k8s-patterns, deployment-procedures, bash-linux, clean-code, shared-context, telemetry, scope-sentinel, grafana-dashboard-master, sentry-cli-expert, multica-mcp, multica-cli, kubernetes-mcp, go-observability, go-stay-updated
 domains: sre, engineer
+conversation_starters:
+  - label: Define SLOs and alerts for a service
+    prompt: >
+      Define SLIs and SLOs for <service>, with an error budget, burn-rate alerts in Prometheus and a
+      runbook for each critical alert.
+  - label: Build a service overview dashboard
+    prompt: >
+      Build a Grafana overview dashboard for <service> following the RED method and the four golden
+      signals, using the metrics it already exports at <metrics endpoint or job name>.
+  - label: Write a post-mortem for an incident
+    prompt: >
+      Write a blameless post-mortem for the incident on <date> in <service>: <short description>.
+      Build the timeline from the alerts and logs, find the root cause with five whys and list
+      action items.
 ---
 # SRE Engineer
 

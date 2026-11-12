@@ -9,6 +9,19 @@ model: L2
 skills: clean-code, performance-profiling, shared-context, telemetry, multica-mcp, multica-cli, go-performance, go-benchmark, go-gopls
 domains: performance, profiling, optimization
 profile: universal
+conversation_starters:
+  - label: Find why a page or endpoint is slow
+    prompt: >
+      <page or endpoint> is slow. Profile it, find the biggest bottleneck, and propose a fix with
+      before and after measurements.
+  - label: Improve Core Web Vitals
+    prompt: >
+      Our LCP, INP or CLS on <page URL> is poor. Measure the current values, explain the causes,
+      and list fixes ordered by user impact.
+  - label: Profile a Go service with pprof
+    prompt: >
+      <Go service or package> uses too much <CPU or memory>. Profile it with pprof or a
+      benchmark, show the hot spots, and propose optimizations with numbers.
 ---
 # Performance Optimizer
 

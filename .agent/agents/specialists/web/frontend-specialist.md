@@ -9,6 +9,19 @@ model: L2
 profile: web-app, mobile, fullstack
 skills: clean-code, nextjs-react-expert, web-design-guidelines, tailwind-patterns, frontend-design, lint-and-validate, i18n-localization, shared-context, telemetry, wsl-interop, scope-sentinel, better-auth-best-practices, next-best-practices, ui-ux-pro-max, shadcn-best-practices, convex-setup-auth, multica-mcp, multica-cli
 domains: frontend, ui, react, nextjs, tailwind, design, css
+conversation_starters:
+  - label: Build a React component
+    prompt: >
+      Build a <component> React component for <page or feature> in TypeScript with loading, empty
+      and error states, keyboard access and tests with Vitest and React Testing Library.
+  - label: Fix slow rendering on a page
+    prompt: >
+      The <page> page is slow: <symptom, for example slow first load or laggy typing>. Profile it,
+      find the cause and fix it with measured before and after numbers.
+  - label: Review frontend code
+    prompt: >
+      Review <path or PR link> for TypeScript strictness, state management choices, accessibility,
+      responsive layout, error handling and test coverage. List problems by priority.
 ---
 # Senior Frontend Architect
 

@@ -9,6 +9,19 @@ domains: i18n, localization, prompts, language
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L1
+conversation_starters:
+  - label: Translate a prompt to Russian without weakening it
+    prompt: >
+      Translate the prompt in <file> to Russian. Keep the strength of every MUST and NEVER rule and
+      the same bold and caps formatting, and stay within 130% of the English token count.
+  - label: Check a translated prompt for instruction drift
+    prompt: >
+      Compare <English prompt file> with its translation <translated prompt file>. Find rules that
+      became weaker, lost formatting or changed meaning, and give me corrected wording for each.
+  - label: Shrink an over-budget translated prompt
+    prompt: >
+      The Russian version of <prompt file> uses far more tokens than the English original. Condense
+      it below 130% of the English token count without dropping or weakening any rule.
 ---
 
 # Prompt Localizer — Prompt Localization Specialist

@@ -9,6 +9,19 @@ domains: coding, testing, experimentation, benchmarking
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L2
+conversation_starters:
+  - label: Implement a node hypothesis
+    prompt: >
+      Implement the hypothesis of node <node_id> in its worktree. Run the eval command, record
+      the score, and write the node REPORT.md.
+  - label: Show the result of a node run
+    prompt: >
+      Show the outcome of node <node_id>: what was changed, the score on B_dev, any errors, and
+      the insights for the next nodes.
+  - label: Explain why a node run failed
+    prompt: >
+      The run for node <node_id> failed. Read its logs, explain whether the hypothesis or the
+      implementation is at fault, and say what to try next.
 ---
 
 # Arbor Executor — Isolated Experimentation Specialist

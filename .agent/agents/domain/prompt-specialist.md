@@ -9,6 +9,19 @@ model: L4
 skills: prompt-engineering, clean-code, brainstorming, shared-context, telemetry, bmad-lifecycle, command-development, prompts-best-practices, multica-mcp, multica-cli
 domains: prompts, ai, engineering
 profile: universal
+conversation_starters:
+  - label: Improve an agent prompt
+    prompt: >
+      The agent <name> keeps <failure, e.g. wrong format, invented tools or ignored constraints>.
+      Find the cause in its prompt, write an improved version, and compare both on test cases.
+  - label: Compare two prompt versions
+    prompt: >
+      Compare these two prompts for <task>. Prompt A is <prompt A>, prompt B is <prompt B>. Run both
+      on the same test cases and tell me which one is better and why.
+  - label: Write few-shot examples for a prompt
+    prompt: >
+      Write 3-5 few-shot examples for the prompt in <file> that cover <edge cases>, and show how the
+      output changes with them.
 ---
 # Prompt Specialist
 

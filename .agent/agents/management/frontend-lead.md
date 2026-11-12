@@ -13,6 +13,20 @@ model: L2
 skills: clean-code, nextjs-react-expert, frontend-design, web-design-guidelines, architecture, shared-context, telemetry, scope-sentinel, multica-mcp, multica-cli
 domains: frontend, lead, react, nextjs, ui, ux, design
 profile: universal
+conversation_starters:
+  - label: Break down a UI feature
+    prompt: >
+      Break this UI feature into sub-tasks for the frontend squad: <feature or issue link>.
+      Cover design, implementation, accessibility and E2E tests, and list any API the backend
+      still has to provide.
+  - label: Investigate a slower page
+    prompt: >
+      <page> got slower after the last release. Plan the investigation: who profiles it, which
+      metrics to compare before and after, and what counts as fixed.
+  - label: Check API readiness for a screen
+    prompt: >
+      Before we build <screen>, list the API endpoints and fields it needs and check with the
+      backend lead which of them already exist.
 ---
 
 # Frontend Lead

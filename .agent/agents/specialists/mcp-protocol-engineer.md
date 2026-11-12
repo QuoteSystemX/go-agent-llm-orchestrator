@@ -9,6 +9,20 @@ domains: mcp, api, integration, protocol
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L3
+conversation_starters:
+  - label: Design tool schemas for a new MCP server
+    prompt: >
+      Design the MCP tool definitions for a new server that wraps <API or database>: tool names,
+      JSON schemas with types and descriptions for every parameter, error codes and an example call
+      for each tool.
+  - label: Debug an MCP server that fails to connect
+    prompt: >
+      The MCP server <name> fails with <error or symptom> over <stdio or SSE>. Find out whether it is
+      a transport, schema or process problem and propose a fix.
+  - label: Review an MCP server for spec compliance
+    prompt: >
+      Review the MCP server in <path> for spec compliance: JSON-RPC error codes, parameter schemas
+      and descriptions, logs leaking to stdout, and missing tests for each tool.
 ---
 
 # MCP Protocol Engineer — MCP Protocol Expert

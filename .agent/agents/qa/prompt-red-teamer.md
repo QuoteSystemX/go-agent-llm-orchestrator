@@ -10,6 +10,19 @@ domains: security, auditing, vulnerability, prompts
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L4
+conversation_starters:
+  - label: Audit a prompt for injection risks
+    prompt: >
+      Audit <prompt or agent file> for prompt injection and jailbreak risks. Check delimiters,
+      override resistance and handling of commands in user input, and report pass or fail for each.
+  - label: Test a prompt for system prompt leakage
+    prompt: >
+      Test whether <prompt or agent file> can be made to reveal its system instructions. Run
+      direct and indirect leakage attempts and report what the model gave away.
+  - label: Review a new prompt before merge
+    prompt: >
+      Review the prompt changes in <PR link> for injection, leakage and PII risks, and list the
+      changes needed before it can be approved.
 ---
 
 # Prompt Red Teamer — Prompt Security Auditor

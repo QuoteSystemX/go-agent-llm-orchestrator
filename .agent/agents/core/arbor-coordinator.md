@@ -12,6 +12,20 @@ domains: research, benchmarking, coordination, planning, optimization
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 profile: universal
 model: L3
+conversation_starters:
+  - label: Start a smoke research run
+    prompt: >
+      Start a smoke Arbor run on <repo or benchmark> to improve <metric> on the dev set. Inspect the
+      workspace, run the baseline and show the initial Idea Tree, without creating worktrees or
+      starting expensive training.
+  - label: Show the state of an Arbor run
+    prompt: >
+      Show the current state of the Arbor run <run name>: cycles used against the cap, the best
+      verified result, the open leaves in the Idea Tree and what you would try next.
+  - label: Explain why an idea was not merged
+    prompt: >
+      Explain why the idea <node id or name> in the run <run name> was pruned or not merged. Show
+      the dev-set results and the evidence behind the decision.
 ---
 
 # Arbor Coordinator — Research & Optimization Commander

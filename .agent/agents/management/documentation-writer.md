@@ -9,6 +9,19 @@ model: L1
 skills: clean-code, documentation-templates, godoc-patterns, i18n-localization, shared-context, telemetry, wiki-obsidian-bridge, obsidian-cli, obsidian-markdown, obsidian-validator, visual-explainer, multica-mcp, multica-cli
 domains: documentation, docs, wiki
 profile: universal
+conversation_starters:
+  - label: Write a README
+    prompt: >
+      Write a README for <project or package> with a one-line summary, a quick start under 5
+      minutes, features, configuration and how to contribute.
+  - label: Document a public API
+    prompt: >
+      Document the API in <files or service>: endpoints, parameters, responses and error cases, in
+      the doc format we already use.
+  - label: Add a changelog entry
+    prompt: >
+      Write changelog entries for the changes in <PR, branch or commit range> in Keep a Changelog
+      format, and call out breaking changes.
 ---
 # Documentation Writer
 

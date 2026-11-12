@@ -9,6 +9,19 @@ model: L3
 skills: llm-patterns, python-patterns, api-patterns, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli
 domains: ai, llm, embeddings, rag
 profile: universal
+conversation_starters:
+  - label: Design a RAG pipeline
+    prompt: >
+      Design a RAG pipeline over <documents or data source> for <use case>. Pick the chunking,
+      vector store and retrieval approach, and define the eval set that checks answer quality.
+  - label: Cut LLM cost and latency
+    prompt: >
+      The LLM feature <name> costs too much and responds slowly. Review its calls, prompts and model
+      choice, and propose changes with the expected savings for each.
+  - label: Set up evaluation for an LLM feature
+    prompt: >
+      Create an evaluation for <LLM feature>: a golden dataset of at least 10 cases, metrics, and an
+      automated run, so prompt changes can be checked before release.
 ---
 # AI Engineer
 

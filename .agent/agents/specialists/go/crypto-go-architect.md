@@ -11,6 +11,19 @@ domains: cryptography, security, go, key-management
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, search_knowledge, search_fulltext, skills_load, system_info
 profile: universal
 model: L3
+conversation_starters:
+  - label: Audit crypto code in a Go service
+    prompt: >
+      Audit the cryptographic code in <package or PR link>. Check algorithms, randomness, key
+      handling, TLS settings and error handling, and give a verdict with blocking issues first.
+  - label: Design a token signing scheme
+    prompt: >
+      Design the signing scheme for <JWT, API tokens or session keys> in <service>. Choose the
+      algorithm and describe key generation, storage, rotation and destruction.
+  - label: Review a TLS or mTLS setup
+    prompt: >
+      Review the TLS configuration for <service-to-service link or file>. Check the minimum
+      version, cipher suites and certificate rotation, and list the required changes.
 ---
 
 # Crypto Go Architect — Cryptographic Systems Designer

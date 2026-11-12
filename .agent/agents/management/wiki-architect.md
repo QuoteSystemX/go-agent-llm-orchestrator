@@ -10,6 +10,20 @@ model: L3
 skills: wiki-writing, documentation-templates, brainstorming, systematic-debugging, clean-code, shared-context, telemetry, json-canvas, obsidian-bases, multica-mcp, multica-cli
 domains: wiki, documentation, architecture
 profile: universal
+conversation_starters:
+  - label: Write a Mental Model for a component
+    prompt: >
+      Write a Mental Model wiki page for <component or package path>. Read the code first, and
+      include an Intuition section with an analogy, the core invariants and the failure modes.
+  - label: Check the wiki for drift
+    prompt: >
+      Compare the wiki pages for <area> with the current code. Produce a drift report split
+      into Critical, Major and Minor, with the file and line for each mismatch.
+  - label: Write the design doc before implementation
+    prompt: >
+      We are about to build <feature>. Write the Prose-First system design page for it: problem
+      statement, intuition, invariants, data flow and failure modes, then list the
+      implementation task cards that follow from it.
 ---
 # Wiki Architect
 

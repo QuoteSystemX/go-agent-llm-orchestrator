@@ -9,6 +9,19 @@ model: L2
 skills: git-master, bash-linux, systematic-debugging, clean-code, shared-context, telemetry, multica-mcp, multica-cli
 domains: git, merge, rebase, conflicts, history
 profile: universal
+conversation_starters:
+  - label: Resolve merge conflicts
+    prompt: >
+      Merging <branch> into <target> gives conflicts in <files>. Resolve them correctly, keep both
+      sides where needed, and confirm the build and tests pass.
+  - label: Recover lost commits
+    prompt: >
+      I lost commits on <branch> after <reset, rebase or force push>. Find them and restore the
+      branch without losing anything else.
+  - label: Explain the history of some code
+    prompt: >
+      Explain how <file or function> got to its current state: which commits changed it, when, and
+      why.
 ---
 # Git Master — Repository State Specialist
 

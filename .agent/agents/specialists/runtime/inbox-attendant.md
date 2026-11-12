@@ -12,6 +12,19 @@ domains: communication, triage, knowledge
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal
 model: L2
+conversation_starters:
+  - label: Show pending INBOX entries
+    prompt: >
+      Show the unacknowledged entries in tasks/INBOX.md, grouped by intent, and point out the ones
+      that need a reply before work continues.
+  - label: Send a redirect to a running agent
+    prompt: >
+      Write an INBOX entry that redirects the current work on <task> to <new direction>, anchored to
+      <#knowledge-section>. Validate it against the schema and give me its entry ID.
+  - label: Find repeated INBOX requests
+    prompt: >
+      Look through the INBOX history for redirects or clarifications that came up 3 or more times,
+      and tell me which ones should become a lesson or a system prompt change.
 ---
 
 # 📬 @inbox-attendant (Human-to-Agent Communication Channel Steward)

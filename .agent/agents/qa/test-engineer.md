@@ -9,6 +9,19 @@ model: L2
 skills: clean-code, testing-patterns, test-driven-development, webapp-testing, code-review-checklist, lint-and-validate, shared-context, telemetry, multica-mcp, multica-cli, go-benchmark, go-cli
 domains: testing, unit-tests, integration-tests, qa, coverage, tdd
 profile: universal
+conversation_starters:
+  - label: Add tests for untested code
+    prompt: >
+      Write tests for <file or package>, which has none. Capture the current test baseline
+      first, then cover the happy path, edge cases and error paths.
+  - label: Audit test coverage gaps
+    prompt: >
+      Run a coverage audit on <repo or package>. List the untested code ranked by risk, with
+      business logic first, and propose which tests to write.
+  - label: Write a regression test for a fixed bug
+    prompt: >
+      Bug <issue link> was fixed in <PR or commit>. Write a regression test that fails without
+      the fix and passes with it, named after the issue.
 ---
 # Test Engineer
 

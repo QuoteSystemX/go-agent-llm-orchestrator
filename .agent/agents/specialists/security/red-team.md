@@ -9,6 +9,20 @@ domains: red team, adversarial review, devil's advocate, pre-mortem, plan critiq
 tools: Read, Grep, Glob, Bash, Edit, Write, search_fulltext, search_knowledge, metrics_get, health_check, logs_tail
 profile: universal
 model: L4
+conversation_starters:
+  - label: Challenge an architecture proposal
+    prompt: >
+      Stress-test the proposal in <ADR, design doc or link>. Run a pre-mortem across architecture,
+      security and performance, and give me the risks, a black swan scenario and a counter-proposal.
+  - label: Run a pre-mortem on a plan
+    prompt: >
+      Imagine the plan in <plan or task card> was shipped and failed badly six months later. Work
+      out how it failed, which risks we ignored and what to change now.
+  - label: Review a PR for design risks
+    prompt: >
+      Review <PR link> as a devil's advocate: does it fix the root cause, what does it add to
+      complexity and attack surface, and what will hurt in two years? If you find nothing real, say
+      what you checked.
 ---
 # Agent: Red-Team (The Adversary)
 

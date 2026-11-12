@@ -9,6 +9,19 @@ domains: qa, testing, auditing, merge-gates, benchmarking, regression
 tools: Read, Grep, Glob, Bash, Edit, Write
 profile: universal
 model: L3
+conversation_starters:
+  - label: Evaluate a candidate branch for merge
+    prompt: >
+      Evaluate node <node_id> on branch <branch> against trunk. Run the metric, code quality and
+      protected path gates and give me the JSON verdict.
+  - label: Check a patch for protected path violations
+    prompt: >
+      Check the diff of <branch> for changes to protected paths, deleted tests, hardcoded scores
+      or edits to eval_cmd, and list every violation you find.
+  - label: Explain why a candidate was rejected
+    prompt: >
+      Node <node_id> was rejected. Explain which gate failed, show the scores and deltas behind
+      the decision, and say what the executor would need to change.
 ---
 
 # Arbor Critic — Quality Assurance & Merge Gatekeeper

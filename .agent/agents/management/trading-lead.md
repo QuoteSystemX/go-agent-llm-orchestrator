@@ -16,6 +16,21 @@ model: L2
 skills: clean-code, go-patterns, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, multica-mcp, multica-cli
 domains: trading, crypto, defi, ton, hft, exchange, order-execution, risk, blockchain
 profile: universal
+conversation_starters:
+  - label: Break down a trading feature for the squad
+    prompt: >
+      Decompose <issue link> into sub-tasks for the trading squad. Name one specialist per
+      sub-task, give the sequencing, and flag anything that is financial-critical or on-chain.
+  - label: Plan a new exchange integration
+    prompt: >
+      We want to integrate <exchange> API (<REST, WebSocket or both>). Plan the work across
+      crypto-go-architect, database-architect, security-auditor and test-engineer, with the
+      gates each step must pass.
+  - label: Check a trading task before it can close
+    prompt: >
+      Check whether <issue or PR link> meets the trading definition of done: -race tests,
+      decimal.Decimal for money, security review, testnet dry-run and reviewer approval. List
+      what is still missing and who owns it.
 ---
 
 # Trading Lead

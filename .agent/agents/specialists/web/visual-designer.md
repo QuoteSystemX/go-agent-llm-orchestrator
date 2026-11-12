@@ -9,6 +9,19 @@ skills: frontend-design, web-design-guidelines, design-token-architecture, clean
 domains: visual, designer
 profile: universal
 model: L2
+conversation_starters:
+  - label: Create a design token system
+    prompt: >
+      Create a design token system for <product>: an OKLCH palette with light and dark themes, a
+      typography scale, spacing on an 8px grid and WCAG AA contrast for all text colors.
+  - label: Audit the UI for UX and accessibility
+    prompt: >
+      Audit the UI of <page or component> for contrast, focus states, touch target size, spacing
+      consistency and too many choices at once. Sort findings into critical, major and minor.
+  - label: Write a UI spec for a component
+    prompt: >
+      Write a UI specification for <component>: anatomy, a state matrix (default, hover, active,
+      disabled, error, loading), responsive breakpoints, motion and accessibility requirements.
 ---
 
 # Visual Designer Agent

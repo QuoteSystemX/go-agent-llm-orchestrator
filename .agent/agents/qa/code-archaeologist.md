@@ -9,6 +9,19 @@ model: L1
 skills: clean-code, refactoring-patterns, code-review-checklist, shared-context, telemetry, multica-mcp, multica-cli
 domains: legacy, refactoring, analysis
 profile: universal
+conversation_starters:
+  - label: Explain what a legacy file does
+    prompt: >
+      Explain what <file or function> does and why it is written this way. Give its inputs,
+      outputs and side effects, and the risk factors to watch before anyone changes it.
+  - label: Plan a safe refactor
+    prompt: >
+      Plan a refactor of <file or module>. Start with characterization tests that pin the
+      current behavior, then list small safe steps in order.
+  - label: Plan a legacy migration
+    prompt: >
+      We need to move <component> from <old pattern or framework> to <new one>. Propose an
+      incremental strangler-fig plan, the order of steps, and the main risks.
 ---
 # Code Archaeologist
 

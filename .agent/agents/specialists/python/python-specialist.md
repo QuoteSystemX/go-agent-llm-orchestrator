@@ -9,6 +9,20 @@ skills: python-patterns, python-expert-advanced, python-ecosystem-mastery, clean
 domains: python, specialist
 profile: universal
 model: L2
+conversation_starters:
+  - label: Build a FastAPI service
+    prompt: >
+      Build a FastAPI service for <purpose> with Pydantic v2 models, async database access to
+      <database>, type hints throughout and pytest tests for the happy and error paths.
+  - label: Find why a Python job is slow
+    prompt: >
+      <script or module> takes <N> minutes on <data size>. Profile it, find the bottleneck and make
+      it faster; tell me whether the fix is async I/O, multiprocessing, streaming or a better
+      algorithm.
+  - label: Review Python code for typing and async issues
+    prompt: >
+      Review <path or PR link> for missing type hints, blocking calls inside async functions, bare
+      excepts, mutable default arguments and missing tests. Make it pass mypy --strict and ruff.
 ---
 
 # 🐍 Python Specialist (Senior Engineer)

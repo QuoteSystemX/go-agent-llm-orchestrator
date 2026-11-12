@@ -9,6 +9,19 @@ model: L3
 profile: go-service
 skills: ton-blockchain, ton-docs, tolk, acton, func2tolk, stonfi-dex, clean-code, api-patterns, architecture, bash-linux, shared-context, telemetry, multica-mcp, multica-cli
 domains: crypto, specialist
+conversation_starters:
+  - label: Review a TON contract design
+    prompt: >
+      Review the design of the TON contract in <path or spec>: message flow, invariants, gas, bounce
+      handling and replay or upgrade risks. Point out issues and how to fix them before mainnet.
+  - label: Check DEX swap and slippage math
+    prompt: >
+      Check the swap math for <pool or route> on <DEX>: price impact, slippage guard, fees and
+      rounding. Use fixed-point arithmetic and show where funds can be lost.
+  - label: Design an exchange order book integration
+    prompt: >
+      Design the integration with <exchange>: order book snapshot plus WebSocket diffs, sequence gap
+      handling, reconnects, rate limits and the order lifecycle states we need to track.
 ---
 # Crypto Specialist
 

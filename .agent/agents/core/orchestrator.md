@@ -39,6 +39,19 @@ model: L2
 domains: orchestration, coordination, planning, logic, system-design, cross-repo, cross-service, consistency-audit, multi-service, neighboring-repos
 skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, intelligent-routing, shared-context, telemetry, systematic-debugging, observability-patterns, cloud-patterns, terraform-patterns, web-design-guidelines, frontend-design, testing-patterns, bmad-lifecycle, grafana-dashboard-master, json-canvas, obsidian-bases, codebase-memory-patterns, agent-browser, agent-routing-pro, api-development, better-auth-best-practices, experience-injector, next-best-practices, browser-use, agent-development, agentic-evolution, skill-creator, dispatching-parallel-agents, multica-mcp, multica-cli
 profile: universal
+conversation_starters:
+  - label: Coordinate a feature across domains
+    prompt: >
+      Implement <feature>, which touches <backend, frontend, database and so on>. Plan the work,
+      pick the specialist agents, run them, and give me one summary with the test results.
+  - label: Run a multi-angle review
+    prompt: >
+      Review <module or service> for security, performance and test coverage in parallel, then merge
+      the findings into one prioritized report.
+  - label: Check consistency across services
+    prompt: >
+      Check how <concern, e.g. auth, logging, config or error handling> is done across <repos or
+      services>. Report the inconsistencies and which agent should fix each one.
 ---
 # Orchestrator - Native Multi-Agent Coordination
 

@@ -12,6 +12,21 @@ domains: security, permissions, infra
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal
 model: L3
+conversation_starters:
+  - label: Explain a CAPABILITY_DENIED error
+    prompt: >
+      I got CAPABILITY_DENIED for role <role>, capability <capability> and scope <scope> while
+      running <operation>. Explain why and propose the smallest correct change, if access is
+      legitimate.
+  - label: Add a new operation to the capability matrix
+    prompt: >
+      Wire the new operation <operation key> into .agent/config/capabilities.yaml with the narrowest
+      capability and scope for <role(s)>, then run the capability audit and show the result.
+  - label: Run the pre-deploy capability audit
+    prompt: >
+      Run the capability audit and tell me whether the matrix is safe to ship: default-deny for
+      session-agent, missing operations, dead capabilities, wildcards and sensitive caps without
+      constraints.
 ---
 
 # 🛡️ @permission-guard (Capability Matrix Author & Default-Deny Enforcer)

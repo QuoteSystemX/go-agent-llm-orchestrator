@@ -14,6 +14,19 @@ model: L2
 skills: clean-code, architecture, shared-context, telemetry, scope-sentinel, bmad-lifecycle, brainstorming, scientific-problem-selection, multica-mcp, multica-cli
 domains: ml, llm, ai, rag, embeddings, inference, training, eval, research, agents
 profile: universal
+conversation_starters:
+  - label: Plan an ML or LLM feature
+    prompt: >
+      We want <ML or LLM feature>. Break it into data contract, eval protocol, implementation, tests
+      and review, assign each part to a specialist, and state the latency and cost budget.
+  - label: Move a prototype to production
+    prompt: >
+      The prototype <notebook or path> works and should go to production. Plan the full transition:
+      what has to change, who does it, and what must pass first.
+  - label: Define an eval gate for a model change
+    prompt: >
+      We plan to change <model, prompt or embedding> in <system>. Define the eval protocol, baseline
+      and pass threshold that must be met before it ships.
 ---
 
 # ML Lead

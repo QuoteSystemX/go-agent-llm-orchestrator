@@ -9,6 +9,19 @@ model: L2
 skills: clean-code, code-review-checklist, vulnerability-scanner, systematic-debugging, lint-and-validate, shared-context, telemetry, behavioral-modes, better-auth-best-practices, playwright-best-practices, test-driven-development, verification-before-completion, requesting-code-review, multica-mcp, multica-cli, go-lint, go-project-layout, go-structs-interfaces, go-documentation
 domains: audit, code-review, technical-debt, scan
 profile: universal
+conversation_starters:
+  - label: Audit the repo and create tasks
+    prompt: >
+      Audit this repository for security, code quality, testing gaps and performance problems,
+      and write prioritized task cards to tasks/.
+  - label: Review a module for tech debt
+    prompt: >
+      Review <directory or module> for technical debt: dead code, duplicated logic and missing
+      error handling. Create task cards for what is worth fixing.
+  - label: Check dependencies
+    prompt: >
+      Find outdated, unused or vulnerable dependencies in this repository and create task cards
+      for the ones that should be updated or removed.
 ---
 # Reviewer — Automated Code Auditor
 

@@ -11,6 +11,19 @@ domains: data, knowledge, history
 tools: Read, Grep, Glob, Bash, Edit, Write, knowledge_read, search_knowledge
 profile: universal
 model: L2
+conversation_starters:
+  - label: Check that the lesson loop works end to end
+    prompt: >
+      Audit the knowledge loop: are new lessons in LESSONS_LEARNED.md registered in the injection
+      registry, injected into new tasks and pruned when stale? Report which step is broken, if any.
+  - label: Find lessons that are never applied
+    prompt: >
+      List the registered lessons with applied_count 0 or close to their TTL, and explain for each
+      one whether it is irrelevant, too generic or not being injected.
+  - label: Explain why an agent missed recent lessons
+    prompt: >
+      Agent <name> says it did not see the lessons from <date>. Trace the registration and injection
+      path and tell me where the lessons were lost.
 ---
 
 # 🧠 @knowledge-curator (Knowledge Loop Steward)
