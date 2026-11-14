@@ -1,7 +1,7 @@
 ---
 name: multica-cli
-description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime."
-version: 1.8.0
+description: "Use when a local coding agent (Codex, Claude Code, Cursor, or similar) needs to operate Multica through the authenticated `multica` CLI: reading or updating issues, comments, metadata, projects, agents, squads, runtimes, repos, skills, autopilots, workflows, attachments, or workspace state; replying to a Multica issue from an external agent; creating or triaging issues; checking linked pull requests; or safely handling Multica mention/status side effects without relying on the Multica hosted agent runtime. Also read the \"Inside a Multica agent task\" section when running as a Multica-dispatched agent (task env MULTICA_TASK_ID / MULTICA_TASK_CONFIG_ROOT set): login, setup, workspace switch and daemon commands are refused there."
+version: 1.9.0
 ---
 
 # Multica CLI Reference
@@ -39,6 +39,32 @@ commands, `json` for most get/create/update commands) — always pass it explici
 the default.
 
 3. Prefer `--output json` for parsing CLI outputs programmatically.
+
+> Running as an agent dispatched by Multica (inside a task)? Skip the login/setup/workspace-switch steps above and read the next section first.
+
+## Inside a Multica agent task
+
+When the daemon runs you as a Multica agent task, the CLI already has everything it needs, and the **human/local commands are refused**. You are inside a task when any of these is true: `MULTICA_AGENT_ID`, `MULTICA_TASK_ID`, or `MULTICA_TASK_CONFIG_ROOT` is set, or the current directory is under a daemon task-context marker (`.multica/daemon_task_context.json` in the task workdir or the workspaces root).
+
+What the task already has (injected by the daemon, do not recreate it):
+- `MULTICA_TOKEN` — the task's credential (normally a task-scoped `mat_` token); `MULTICA_SERVER_URL`, `MULTICA_WORKSPACE_ID` and `MULTICA_AGENT_ID` are injected too. Task API commands (`issue`, `comment`, `repo checkout`, `pr`, ...) just work.
+- The task's workspace. A command that names a different workspace (`--workspace-id`) is refused by the server, so omit the flag.
+
+Blocked in a task (the CLI exits with `<command> is not available inside a daemon-managed task`; verified against `server/cmd/multica` in the Multica fork, guard `requireHumanLocalCommand` in `cmd_agent.go`):
+
+| Command | Use instead |
+|---|---|
+| `multica login` and `multica auth login` | nothing: the task is already authenticated through `MULTICA_TOKEN` |
+| `multica auth logout` | nothing: never remove the task's credential |
+| `multica setup` (`setup cloud`, `setup self-host`) | nothing: the CLI is already configured by the daemon |
+| `multica workspace switch` | nothing: the task is bound to its workspace; read it with `multica workspace get` |
+| `multica daemon start`, `stop`, `restart`, `status`, `logs`, `disk-usage` | nothing: the daemon belongs to the human owner; if the daemon looks unhealthy, say so in an issue comment instead of operating it |
+
+Not blocked, but do not use them to change anything:
+- `multica config show` / `multica config set <key> <value>` and `multica auth status` work only against a private per-task config directory (`MULTICA_TASK_CONFIG_ROOT`). They never touch the owner's `~/.multica`, so `config set server_url|app_url|workspace_id` cannot re-point the task and is useless here; `auth status` does not print token material. Do not rely on them to "fix" a missing credential.
+- Do not pass `--profile`: it is meaningless inside a task (a profile name that escapes the private root is rejected).
+
+If a task API command fails with `agent execution context requires MULTICA_TOKEN to be set by the daemon`, the process lost its injected environment (for example under `env -i` or a provider sandbox). Do not try to log in or point the CLI at another profile; report the failure on the issue and stop. A 401 on the task token means it was rejected: do not retry with another credential.
 
 ---
 
@@ -383,3 +409,7 @@ the CLI already works today and is what's proven in production.
 ### Pre-flight checklist before ending any Multica-issue run
 * [ ] Did I create a PR? → Did I add `Closes <ISSUE-ID>` to its title/body?
 * [ ] Did I run `multica issue status <id> in_review` (or `blocked`) myself?
+
+## Changelog
+
+- **1.9.0** (2026-11-14): Added "Inside a Multica agent task": commands the CLI refuses in a daemon-managed task (login, auth logout, setup, workspace switch, daemon start/stop/restart/status/logs/disk-usage) and what to do instead. Verified against the Multica fork `requireHumanLocalCommand` guard.
